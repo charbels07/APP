@@ -130,6 +130,8 @@ export interface Settings {
   timer: { display: TimerDisplay[]; sound: boolean; haptic: boolean };
   /** Speed of demonstrations and dictation replays (1 = normal, higher = slower). */
   modelPace: number;
+  /** Let the app ask an AI for TLA proposals (only the topic text is sent). */
+  aiSuggestions: boolean;
 }
 
 export interface HelpConfig {

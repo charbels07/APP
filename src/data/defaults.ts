@@ -247,6 +247,7 @@ export const DEFAULT_SETTINGS: Settings = {
   pin: '1234',
   timer: { display: ['circle', 'digits'], sound: true, haptic: true },
   modelPace: 1,
+  aiSuggestions: true,
 };
 
 export const DEFAULT_HELP: HelpConfig = {

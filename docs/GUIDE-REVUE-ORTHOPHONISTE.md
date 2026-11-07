@@ -38,11 +38,18 @@ Idéalement sur iPad, en paysage. Code accompagnant : **1234**.
 8. **Aide** (rouge) : plus grand. « J’ai besoin d’une pause » est l’un des choix de l’Aide.
 9. **Modèle** (main, dans la barre) : écrivez ou dictez « je veux jouer au ballon » → une main
    montre chaque mot sur la grille ; le bandeau du haut annonce chaque étape (« Ouvre le dossier
-   « activités » », « Touche « ballon » »), puis la phrase est lue. On peut aussi
-   **enregistrer une démonstration** (touchez les mots) et la **rejouer**.
+   « activités » », « Touche « ballon » »), puis la phrase est lue. Les **dossiers sont appuyés
+   exactement comme les mots** (la main vise, appuie, le nom du dossier est dit, puis il s’ouvre).
+   On peut aussi **enregistrer une démonstration** (touchez les mots) et la **rejouer**.
 10. **Mode accompagnant** :
-    - *TLA* → *Nouveau TLA* → tapez un sujet (piscine, zoo, anniversaire…) → *Proposer des mots* :
-      l’application propose les pictogrammes ; touchez-en un pour le retirer, ajoutez-en, puis créez.
+    - *TLA* → *Nouveau TLA* → tapez un sujet (ex. « préparer un gâteau ») → *Proposer des mots* :
+      l’application reconnaît la situation (≈ 45 situations : cuisine, routines, fêtes, sorties,
+      santé, école, transports, jeux…) et propose **les mots de l’activité** (farine, œufs, sucre,
+      fouet, moule, four, mélanger, verser…) et **les étapes dans l’ordre**. Pour un sujet inconnu,
+      *Demander à l’IA* propose les mots et les étapes avec les libellés libanais (dans la démo en
+      ligne ; sur l’iPad il faudra un petit serveur). Touchez un mot ou une étape pour le retirer,
+      ajoutez-en, puis créez. Option : *Créer aussi le planning de ces étapes* (relié au TLA, avec
+      minuteur, ex. four 30 min).
     - Nouveau mot (case vide → *Créer un nouveau mot*) : le pictogramme ARASAAC est choisi
       automatiquement parmi toute la bibliothèque ARASAAC (≈ 13 900 pictogrammes, hors ligne ;
       les pluriels sont compris : « bulles de savon » trouve « bulle de savon »).
@@ -60,16 +67,18 @@ Idéalement sur iPad, en paysage. Code accompagnant : **1234**.
    révélation de chaque mot (1, 2 ou 3).
 2. **Le code couleur** : clé de Fitzgerald modifiée (actuelle) ou autre ?
 3. **Les dossiers** (personnes, nourriture, émotions…) et leur contenu.
-4. **Les TLA de départ** : lesquels, et leur contenu. Actuellement chaque TLA a
+4. **Les situations proposées** à la création d’un TLA (fichier `src/data/situations.ts`) :
+   les mots et les étapes de chaque situation sont à valider.
+5. **Les TLA de départ** : lesquels, et leur contenu. Actuellement chaque TLA a
    un bloc fixe de mots de base dans les deux colonnes de gauche (je, vouloir,
    tu, aimer, encore, pas, fini, stop, aide-moi, quoi). Faut-il le garder ?
-5. **Les libellés en libanais** : tous à vérifier par un locuteur natif
+6. **Les libellés en libanais** : tous à vérifier par un locuteur natif
    (fichier `src/data/concepts.ts`, colonne arabe).
-6. **La grammaire arabe** : règles d’accord (genre de l’utilisateur, de
+7. **La grammaire arabe** : règles d’accord (genre de l’utilisateur, de
    l’interlocuteur, personne du verbe). Rien n’est automatisé en arabe pour
    l’instant ; seules les formes féminines des adjectifs le sont.
-7. **Les messages du bouton Aide** et des modes rapides.
-8. **Ce qui vous gêne** dans l’ergonomie : taille des cases, place de la barre,
+8. **Les messages du bouton Aide** et des modes rapides.
+9. **Ce qui vous gêne** dans l’ergonomie : taille des cases, place de la barre,
    bande de phrase, etc.
 
 Le plus simple : un tableau Excel avec une ligne par mot (français, anglais,

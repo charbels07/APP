@@ -105,14 +105,19 @@ const BROAD = new Set([
 /** Finds the pictogram for one exact keyword (used by the starter word lists). */
 export function exactPicto(index: PreparedIndex, keyword: string): number | undefined {
   const q = normalize(keyword);
+  const raw = keyword.trim().toLowerCase();
   let best: number | undefined;
-  let bestPos = 99;
+  let bestScore = Infinity;
   for (const { id, kw } of index.norm) {
     const pos = kw[0].findIndex((x) => x.k === q);
-    if (pos !== -1 && pos < bestPos) {
+    if (pos === -1) continue;
+    // Accents decide between homographs: « où » (where) is not « ou » (or).
+    const accentsDiffer = index.byId.get(id)?.[4][pos]?.toLowerCase() !== raw;
+    const score = pos + (accentsDiffer ? 50 : 0);
+    if (score < bestScore) {
       best = id;
-      bestPos = pos;
-      if (pos === 0) break;
+      bestScore = score;
+      if (score === 0) break;
     }
   }
   return best ?? searchPictos(index, keyword, 'fr', 1)[0];
@@ -120,8 +125,8 @@ export function exactPicto(index: PreparedIndex, keyword: string): number | unde
 
 /**
  * Suggests pictograms for a situation (TLA topic).
- * 1. Starter word lists for common situations (see data/tlaSeeds.ts).
- * 2. Otherwise: the pictogram that matches the topic, then others that share its
+ * Used when the situation library (data/situations.ts) doesn't know the topic:
+ * the pictogram that matches the topic, then others that share its
  *    most specific ARASAAC categories/tags (rarest first) or mention the topic.
  */
 export function suggestForTopic(

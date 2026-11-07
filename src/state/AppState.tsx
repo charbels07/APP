@@ -36,6 +36,8 @@ export interface TapOrigin {
 export interface Slot {
   board: string;
   index: number;
+  /** The demonstration hand is pushing the card right now. */
+  tap?: boolean;
 }
 
 export interface Highlight {
@@ -363,6 +365,17 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
       const alive = () => playToken.current === mine;
       const pace = () => profileRef.current.settings.modelPace || 1;
       const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms * pace()));
+      /** One press, identical for words and folders: aim, push (action), release. */
+      const press = async (slot: Slot, action: () => void): Promise<boolean> => {
+        setPointer(slot);
+        await sleep(800);
+        if (!alive()) return false;
+        setPointer({ ...slot, tap: true });
+        action();
+        await sleep(450);
+        setPointer(null);
+        return alive();
+      };
       stopSpeech();
       stripRef.current = [];
       editStrip((s) => (s.length ? [] : s));
@@ -388,12 +401,10 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
                 const folderConcept = p.boards.core.cells[folderIndex]?.concept ?? p.boards[loc.board]?.concept;
                 setDemoCaption({ text: `${ui.openingFolder} « ${label(p, folderConcept, l)} »`, concept: folderConcept });
                 await sleep(250);
-                setPointer({ board: 'core', index: folderIndex });
-                await sleep(1100);
-                if (!alive()) return;
-                setPointer(null);
+                // Pressed exactly like a word: the hand comes in, pushes the card, its name is said.
+                if (!(await press({ board: 'core', index: folderIndex }, () => speakConcept(folderConcept)))) return;
                 setPath(['core', loc.board]);
-                await sleep(250);
+                await sleep(400);
               }
             } else {
               setView('tla');
@@ -403,12 +414,7 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
             await sleep(350);
             if (!alive()) return;
             setDemoCaption({ text: `${ui.touching} « ${label(p, st.concept, l)} »`, concept: st.concept });
-            setPointer({ board: loc.board, index: loc.index });
-            await sleep(800);
-            if (!alive()) return;
-            touchConcept(st.concept);
-            await sleep(450);
-            setPointer(null);
+            if (!(await press({ board: loc.board, index: loc.index }, () => touchConcept(st.concept)))) return;
             if (loc.path.length > 1) {
               setDemoCaption({ text: ui.backHome });
               setPath(['core']);
@@ -434,7 +440,7 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
       if (alive() && opts.speakAtEnd) await speakStrip();
       if (alive()) stopPlaying();
     },
-    [addText, bestLocation, clearStrip, deleteLast, editStrip, speakStrip, stopPlaying, touchConcept],
+    [addText, bestLocation, clearStrip, deleteLast, editStrip, speakConcept, speakStrip, stopPlaying, touchConcept],
   );
 
   const [moveSource, setMoveSource] = useState<Slot | null>(null);

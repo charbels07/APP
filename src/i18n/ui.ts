@@ -231,6 +231,15 @@ const fr = {
   coreBlock: 'Mots de base',
   topicWords: 'Mots proposés',
   creating: 'Création…',
+  sourceLibrary: 'Proposition tirée de la bibliothèque de situations',
+  sourceAi: 'Proposition de l’IA — à vérifier (libellés libanais compris)',
+  sourceAuto: 'Proposition automatique (catégories ARASAAC)',
+  askAi: 'Demander à l’IA',
+  aiThinking: 'L’IA prépare le tableau et les étapes… (quelques secondes)',
+  aiFailed: 'L’IA n’a pas pu répondre : voici une proposition automatique à la place.',
+  stepsTitle: 'Étapes, dans l’ordre',
+  makeSchedule: 'Créer aussi le planning de ces étapes (relié au TLA)',
+  sAi: 'Propositions par IA pour les TLA (seul le sujet du TLA est envoyé)',
 };
 
 type Dict = typeof fr;
@@ -449,6 +458,15 @@ const en: Dict = {
   coreBlock: 'Core words',
   topicWords: 'Suggested words',
   creating: 'Creating…',
+  sourceLibrary: 'Suggested from the situation library',
+  sourceAi: 'Suggested by AI — please check (Lebanese labels included)',
+  sourceAuto: 'Automatic suggestion (ARASAAC categories)',
+  askAi: 'Ask the AI',
+  aiThinking: 'The AI is preparing the board and the steps… (a few seconds)',
+  aiFailed: 'The AI could not answer: here is an automatic suggestion instead.',
+  stepsTitle: 'Steps, in order',
+  makeSchedule: 'Also create a schedule of these steps (linked to the board)',
+  sAi: 'AI suggestions for boards (only the board topic is sent)',
 };
 
 const DICTS: Record<UiLang, Dict> = { fr, en };

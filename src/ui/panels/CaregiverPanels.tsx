@@ -682,6 +682,7 @@ function SettingsPanel() {
       </Section>
 
       <Section title={t.sData}>
+        <Toggle label={t.sAi} value={st.aiSuggestions !== false} onChange={(v) => set((x) => void (x.aiSuggestions = v))} />
         <View style={s.wrapRow}>
           <Btn icon="download" label={t.sExport} onPress={() => exportJson('profil-caa.json', profile)} />
           <Btn

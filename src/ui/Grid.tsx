@@ -129,6 +129,7 @@ export function Grid({ board }: { board: Board }) {
                 levelBadge={editMode && board.kind === 'core' ? cell.level ?? 1 : undefined}
                 highlighted={highlight?.board === board.id && highlight.index === index}
                 pointing={pointer?.board === board.id && pointer.index === index}
+                tapping={pointer?.board === board.id && pointer.index === index && !!pointer.tap}
                 moving={moveSource?.board === board.id && moveSource.index === index}
                 onPress={onCellPress}
                 onLongPress={onCellLongPress}
@@ -202,6 +203,8 @@ interface CellProps {
   highlighted: boolean;
   /** A demonstration is pressing this card. */
   pointing: boolean;
+  /** …and is pushing it right now (same look as a finger press). */
+  tapping?: boolean;
   /** Caregiver picked this card to move it. */
   moving: boolean;
   onPress: (index: number) => void;
@@ -281,7 +284,7 @@ export const CellView = React.memo(function CellView(p: CellProps) {
             opacity: p.dimmed ? 0.35 : 1,
           },
           p.isFolder && styles.folder,
-          pressed && styles.pressed,
+          (pressed || p.tapping) && styles.pressed,
         ]}
       >
         {p.isFolder && <View style={[styles.folderTab, { borderColor: colors.border }]} />}

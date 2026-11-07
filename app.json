@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "CAA",
+    "slug": "caa-app",
+    "version": "0.1.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "requireFullScreen": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Le micro sert uniquement à enregistrer la prononciation d’un mot (prénom, mot en dialecte). Les enregistrements restent sur l’appareil."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Les photos servent à illustrer les mots du vocabulaire personnel. Elles restent sur l’appareil.",
+          "cameraPermission": "L’appareil photo sert à photographier une personne, un objet ou un lieu pour l’ajouter au vocabulaire."
+        }
+      ],
+      "expo-sharing",
+      "expo-asset"
+    ]
+  }
+}

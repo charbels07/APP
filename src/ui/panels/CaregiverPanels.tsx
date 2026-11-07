@@ -1,0 +1,755 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { Image, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { BUILTIN_CONCEPTS } from '../../data/concepts';
+import { CLASS_NAMES, CLASS_ORDER, CLASS_COLORS, C, radius } from '../theme';
+import { allConceptIds, display, getConcept, isRtl, label, LANG_NAMES, symbolOf, wordClass } from '../../lib/lexicon';
+import { deleteMedia, saveMedia } from '../../lib/media';
+import { pickPhoto, searchArasaac, type ArasaacHit } from '../../lib/photos';
+import { exportJson, exportPdf, printDocument } from '../../lib/platform';
+import { boardCells, buildPrintHtml, conceptCell, type PrintOptions } from '../../lib/printHtml';
+import { search } from '../../lib/search';
+import { listVoices } from '../../lib/speech';
+import { resetProfile } from '../../lib/storage';
+import { LANGS, type CellDisplay, type Lang, type Profile, type WordClass } from '../../model/types';
+import { useApp } from '../../state/AppState';
+import { Btn, Field, Panel, Section, Segmented, Toggle } from '../common';
+import { PrintPreview } from '../PrintPreview';
+import { arasaacUrl, SymbolView } from '../SymbolView';
+import { scheduleTitle } from '../screens/ScheduleScreen';
+import { Recorder } from './Recorder';
+
+export function CaregiverOverlay() {
+  const { overlay } = useApp();
+  switch (overlay?.kind) {
+    case 'settings':
+      return <SettingsPanel />;
+    case 'print':
+      return <PrintPanel />;
+    case 'editor':
+      return <CellEditor board={overlay.board} index={overlay.index} />;
+    case 'conceptEditor':
+      return <ConceptEditorPanel concept={overlay.concept} />;
+    case 'picker':
+      return <PickerPanel title={overlay.title} onPick={overlay.onPick} />;
+    case 'scheduleEditor':
+      return <ScheduleEditor id={overlay.id} />;
+    default:
+      return null;
+  }
+}
+
+// ── Profile mutation helpers (built-in vocabulary is never modified, only overridden) ──
+
+function setLabel(d: Profile, id: string, lang: Lang, value: string) {
+  const custom = d.customConcepts[id];
+  if (custom) {
+    custom.labels[lang] = value;
+    return;
+  }
+  const base = BUILTIN_CONCEPTS[id]?.labels[lang];
+  const o = (d.overrides[id] ??= {});
+  o.labels = { ...(o.labels ?? {}) };
+  if (!value.trim() || value === base) delete o.labels[lang];
+  else o.labels[lang] = value;
+}
+
+function setClass(d: Profile, id: string, cls: WordClass) {
+  if (d.customConcepts[id]) d.customConcepts[id].cls = cls;
+  else (d.overrides[id] ??= {}).cls = cls;
+}
+
+// ── Word editor ──
+
+function CellEditor({ board, index }: { board: string; index: number }) {
+  const app = useApp();
+  const { profile, t } = app;
+  const b = profile.boards[board];
+  const cell = b?.cells[index];
+  if (!b || !cell) return null;
+  const isCore = b.kind === 'core';
+
+  const replace = () =>
+    app.setOverlay({
+      kind: 'picker',
+      onPick: (conceptId) => {
+        app.update((d) => {
+          const c = d.boards[board].cells[index];
+          if (c) c.concept = conceptId;
+        });
+        app.setOverlay({ kind: 'editor', board, index });
+      },
+    });
+  const remove = () => {
+    app.update((d) => void (d.boards[board].cells[index] = null));
+    app.setOverlay(null);
+  };
+
+  return (
+    <Panel title={t.editWord} onClose={() => app.setOverlay(null)} tone="edit">
+      <ConceptEditorBody conceptId={cell.concept} />
+      {isCore && !cell.folder && (
+        <Section title={t.level}>
+          <Segmented
+            value={cell.level ?? 1}
+            onChange={(v) => app.update((d) => void (d.boards[board].cells[index]!.level = v as 1 | 2 | 3))}
+            options={[1, 2, 3].map((n) => ({ value: n, label: `${t.levelN} ${n}` }))}
+          />
+          <Text style={s.note}>{t.levelHelp}</Text>
+        </Section>
+      )}
+      {isCore ? (
+        <Text style={[s.note, s.lockNote]}>{t.coreLocked}</Text>
+      ) : (
+        !cell.folder && (
+          <View style={s.row}>
+            <Btn icon="pencil" label={t.replaceWord} onPress={replace} style={{ flex: 1 }} />
+            <Btn kind="danger" icon="trash" label={t.removeFromBoard} onPress={remove} style={{ flex: 1 }} />
+          </View>
+        )
+      )}
+      <Btn kind="primary" icon="check" label={t.close} onPress={() => app.setOverlay(null)} />
+    </Panel>
+  );
+}
+
+function ConceptEditorPanel({ concept }: { concept: string }) {
+  const app = useApp();
+  return (
+    <Panel title={app.t.editWord} onClose={() => app.setOverlay(null)} tone="edit">
+      <ConceptEditorBody conceptId={concept} />
+      <Btn kind="primary" icon="check" label={app.t.close} onPress={() => app.setOverlay(null)} />
+    </Panel>
+  );
+}
+
+function LabelField({ conceptId, lang }: { conceptId: string; lang: Lang }) {
+  const app = useApp();
+  const [value, setValue] = useState(() => label(app.profile, conceptId, lang));
+  useEffect(() => {
+    const id = setTimeout(() => {
+      if (value !== label(app.profile, conceptId, lang)) app.update((d) => setLabel(d, conceptId, lang, value));
+    }, 250);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+  return (
+    <Field
+      label={LANG_NAMES[lang]}
+      value={value}
+      onChangeText={setValue}
+      style={isRtl(lang) ? { textAlign: 'right', writingDirection: 'rtl' } : undefined}
+    />
+  );
+}
+
+function ConceptEditorBody({ conceptId }: { conceptId: string }) {
+  const app = useApp();
+  const { profile, t, lang } = app;
+  const [audioLang, setAudioLang] = useState<Lang>(lang);
+  const [emoji, setEmoji] = useState('');
+  const [query, setQuery] = useState(() => label(profile, conceptId, 'fr'));
+  const [hits, setHits] = useState<ArasaacHit[] | null>(null);
+  const [netError, setNetError] = useState(false);
+  const cls = wordClass(profile, conceptId);
+  const sym = symbolOf(profile, conceptId);
+  const audio = profile.overrides[conceptId]?.audio?.[audioLang];
+
+  const setSymbol = (symbol: Profile['overrides'][string]['symbol']) =>
+    app.update((d) => {
+      const o = (d.overrides[conceptId] ??= {});
+      const old = o.symbol;
+      if (old?.kind === 'media' && (!symbol || symbol.kind !== 'media' || symbol.name !== old.name)) deleteMedia(old.name);
+      if (symbol) o.symbol = symbol;
+      else delete o.symbol;
+    });
+
+  const photo = async (source: 'library' | 'camera') => {
+    const name = await pickPhoto(source);
+    if (name) setSymbol({ kind: 'media', name });
+  };
+
+  const runSearch = async () => {
+    setNetError(false);
+    try {
+      setHits(await searchArasaac(query, profile.settings.uiLang));
+    } catch {
+      setHits([]);
+      setNetError(true);
+    }
+  };
+
+  const chooseArasaac = async (id: number) => {
+    try {
+      // Store a local copy so the word keeps working offline.
+      const name = await saveMedia(arasaacUrl(id), 'png');
+      setSymbol({ kind: 'media', name });
+    } catch {
+      setSymbol({ kind: 'arasaac', id });
+    }
+    setHits(null);
+  };
+
+  return (
+    <>
+      <View style={s.previewRow}>
+        <View style={[s.preview, { backgroundColor: CLASS_COLORS[cls].bg, borderColor: CLASS_COLORS[cls].border }]}>
+          <SymbolView symbol={sym} size={84} />
+          <Text style={s.previewText}>{label(profile, conceptId, lang)}</Text>
+        </View>
+        <View style={{ flex: 1, gap: 8 }}>
+          {LANGS.map((l) => (
+            <LabelField key={l} conceptId={conceptId} lang={l} />
+          ))}
+        </View>
+      </View>
+
+      <Section title={t.symbol}>
+        <View style={s.wrapRow}>
+          <Btn small icon="image" label={t.photoLibrary} onPress={() => photo('library')} />
+          <Btn small icon="camera" label={t.takePhoto} onPress={() => photo('camera')} />
+          <Btn small icon="undo" label={t.resetSymbol} onPress={() => setSymbol(undefined)} />
+        </View>
+        <View style={s.row}>
+          <TextInput value={query} onChangeText={setQuery} onSubmitEditing={runSearch} placeholder={t.arasaacSearch} style={[s.input, { flex: 1 }]} />
+          <Btn small icon="search" label={t.arasaacSearch} onPress={runSearch} />
+        </View>
+        {netError && <Text style={s.note}>{t.arasaacOffline}</Text>}
+        {hits && (
+          <View style={s.hits}>
+            {hits.map((h) => (
+              <Pressable key={h.id} onPress={() => chooseArasaac(h.id)} style={({ pressed }) => [s.hit, pressed && { opacity: 0.6 }]} accessibilityLabel={h.keyword}>
+                <Image source={{ uri: arasaacUrl(h.id) }} style={{ width: 64, height: 64 }} resizeMode="contain" />
+              </Pressable>
+            ))}
+          </View>
+        )}
+        <View style={s.row}>
+          <TextInput value={emoji} onChangeText={setEmoji} placeholder={t.emojiPlaceholder} style={[s.input, { width: 110 }]} maxLength={8} />
+          <Btn small label={t.emoji} disabled={!emoji.trim()} onPress={() => setSymbol({ kind: 'emoji', value: emoji.trim() })} />
+        </View>
+      </Section>
+
+      <Section title={t.displayMode}>
+        <Segmented
+          value={display(profile, conceptId)}
+          onChange={(v: CellDisplay) => app.update((d) => void ((d.overrides[conceptId] ??= {}).display = v))}
+          options={[
+            { value: 'both', label: t.displayBoth },
+            { value: 'image', label: t.displayImage },
+            { value: 'text', label: t.displayText },
+          ]}
+        />
+      </Section>
+
+      <Section title={`${t.voice} — ${LANG_NAMES[audioLang]}`}>
+        <Segmented value={audioLang} onChange={setAudioLang} options={LANGS.map((l) => ({ value: l, label: LANG_NAMES[l] }))} />
+        <Recorder
+          key={audioLang}
+          media={audio}
+          onChange={(name) =>
+            app.update((d) => {
+              const o = (d.overrides[conceptId] ??= {});
+              o.audio = { ...(o.audio ?? {}) };
+              if (name) o.audio[audioLang] = name;
+              else delete o.audio[audioLang];
+            })
+          }
+        />
+      </Section>
+
+      <Section title={t.category}>
+        <View style={s.wrapRow}>
+          {CLASS_ORDER.filter((c) => c !== 'folder').map((c) => (
+            <Pressable
+              key={c}
+              onPress={() => app.update((d) => setClass(d, conceptId, c))}
+              style={[s.classChip, { backgroundColor: CLASS_COLORS[c].bg, borderColor: CLASS_COLORS[c].border }, cls === c && s.classActive]}
+            >
+              <Text style={s.classText}>{CLASS_NAMES[c][profile.settings.uiLang]}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </Section>
+    </>
+  );
+}
+
+// ── Word picker (and new word creation) ──
+
+function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) => void }) {
+  const app = useApp();
+  const { profile, lang, t } = app;
+  const [q, setQ] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [draft, setDraft] = useState<{ fr: string; en: string; ar: string; emoji: string; cls: WordClass }>({
+    fr: '',
+    en: '',
+    ar: '',
+    emoji: '⭐',
+    cls: 'noun',
+  });
+
+  const ids = useMemo(() => {
+    if (q.trim()) return search(profile, q, 60).map((r) => r.concept);
+    return allConceptIds(profile)
+      .filter((id) => getConcept(profile, id)?.cls !== 'folder')
+      .sort((a, b) => label(profile, a, lang).localeCompare(label(profile, b, lang)));
+  }, [q, profile, lang]);
+
+  const create = () => {
+    const id = `c_${Date.now().toString(36)}`;
+    const name = draft.fr || draft.en || draft.ar;
+    if (!name) return;
+    app.update((d) => {
+      d.customConcepts[id] = {
+        id,
+        cls: draft.cls,
+        labels: { fr: draft.fr || name, en: draft.en || name, ar: draft.ar || name },
+        emoji: draft.emoji || '⭐',
+        custom: true,
+      };
+    });
+    onPick(id);
+  };
+
+  return (
+    <Panel title={title ?? t.chooseWord} onClose={() => app.setOverlay(null)} tone="edit">
+      {!creating ? (
+        <Btn icon="plus" label={t.createWord} onPress={() => setCreating(true)} />
+      ) : (
+        <View style={s.createBox}>
+          <View style={s.row}>
+            <View style={{ flex: 1 }}>
+              <Field label="Français" value={draft.fr} onChangeText={(fr) => setDraft({ ...draft, fr })} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Field label="English" value={draft.en} onChangeText={(en) => setDraft({ ...draft, en })} />
+            </View>
+          </View>
+          <View style={s.row}>
+            <View style={{ flex: 1 }}>
+              <Field label="عربي" value={draft.ar} onChangeText={(ar) => setDraft({ ...draft, ar })} style={{ textAlign: 'right' }} />
+            </View>
+            <View style={{ width: 110 }}>
+              <Field label={t.emoji} value={draft.emoji} onChangeText={(emoji) => setDraft({ ...draft, emoji })} maxLength={8} />
+            </View>
+          </View>
+          <View style={s.wrapRow}>
+            {CLASS_ORDER.filter((c) => c !== 'folder').map((c) => (
+              <Pressable
+                key={c}
+                onPress={() => setDraft({ ...draft, cls: c })}
+                style={[s.classChip, { backgroundColor: CLASS_COLORS[c].bg, borderColor: CLASS_COLORS[c].border }, draft.cls === c && s.classActive]}
+              >
+                <Text style={s.classText}>{CLASS_NAMES[c][profile.settings.uiLang]}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Btn kind="primary" icon="check" label={t.save} disabled={!(draft.fr || draft.en || draft.ar)} onPress={create} />
+        </View>
+      )}
+      <TextInput autoFocus value={q} onChangeText={setQ} placeholder={t.searchPlaceholder} style={s.input} placeholderTextColor="#98A2B3" />
+      <View style={s.pickGrid}>
+        {ids.slice(0, 120).map((id) => (
+          <Pressable key={id} onPress={() => onPick(id)} style={({ pressed }) => [s.pickItem, pressed && { opacity: 0.6 }]}>
+            <SymbolView symbol={symbolOf(profile, id)} size={44} />
+            <Text style={s.pickText} numberOfLines={2}>
+              {label(profile, id, lang)}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+    </Panel>
+  );
+}
+
+// ── Schedule editor ──
+
+function ScheduleEditor({ id }: { id: string }) {
+  const app = useApp();
+  const { profile, t, lang } = app;
+  const [confirm, setConfirm] = useState(false);
+  const sched = profile.schedules.find((x) => x.id === id);
+  if (!sched) return null;
+  const mutate = (fn: (s: Profile['schedules'][number]) => void) =>
+    app.update((d) => {
+      const target = d.schedules.find((x) => x.id === id);
+      if (target) fn(target);
+    });
+  const tlaOptions = [undefined, ...profile.tlaOrder];
+  const nextTla = (cur?: string) => tlaOptions[(tlaOptions.indexOf(cur) + 1) % tlaOptions.length];
+
+  return (
+    <Panel title={t.editSchedule} onClose={() => app.setOverlay(null)} tone="edit">
+      <View style={s.row}>
+        <Pressable
+          onPress={() =>
+            app.setOverlay({
+              kind: 'picker',
+              onPick: (c) => {
+                mutate((x) => void (x.concept = c));
+                app.setOverlay({ kind: 'scheduleEditor', id });
+              },
+            })
+          }
+          style={s.iconPick}
+        >
+          <SymbolView symbol={symbolOf(profile, sched.concept)} size={48} />
+        </Pressable>
+        <View style={{ flex: 1 }}>
+          <Field label={t.scheduleName} value={sched.title} placeholder={scheduleTitle({ ...sched, title: '' }, profile, lang)} onChangeText={(v) => mutate((x) => void (x.title = v))} />
+        </View>
+      </View>
+      {sched.steps.map((st, i) => (
+        <View key={st.id} style={s.stepRow}>
+          <Text style={s.stepNum}>{i + 1}</Text>
+          <SymbolView symbol={symbolOf(profile, st.concept)} size={40} />
+          <Text style={s.stepText} numberOfLines={1}>
+            {label(profile, st.concept, lang)}
+          </Text>
+          <Btn small icon="arrowUp" accessibilityLabel="up" disabled={i === 0} onPress={() => mutate((x) => void x.steps.splice(i - 1, 0, ...x.steps.splice(i, 1)))} />
+          <Btn small icon="arrowDown" accessibilityLabel="down" disabled={i === sched.steps.length - 1} onPress={() => mutate((x) => void x.steps.splice(i + 1, 0, ...x.steps.splice(i, 1)))} />
+          <Btn
+            small
+            icon="grid"
+            label={st.tla && profile.boards[st.tla] ? label(profile, profile.boards[st.tla].concept, lang) : t.none}
+            accessibilityLabel={t.linkTla}
+            onPress={() => mutate((x) => void (x.steps[i].tla = nextTla(st.tla)))}
+          />
+          <Btn small icon="minus" accessibilityLabel="-" onPress={() => mutate((x) => void (x.steps[i].timerMin = Math.max(0, (st.timerMin ?? 0) - 1) || undefined))} />
+          <Text style={s.minutes}>
+            {st.timerMin ?? 0} {t.minutes}
+          </Text>
+          <Btn small icon="plus" accessibilityLabel="+" onPress={() => mutate((x) => void (x.steps[i].timerMin = (st.timerMin ?? 0) + 1))} />
+          <Btn small kind="danger" icon="trash" accessibilityLabel={t.remove} onPress={() => mutate((x) => void x.steps.splice(i, 1))} />
+        </View>
+      ))}
+      <Btn
+        icon="plus"
+        label={t.addStep}
+        onPress={() =>
+          app.setOverlay({
+            kind: 'picker',
+            onPick: (c) => {
+              mutate((x) => void x.steps.push({ id: `step_${Date.now().toString(36)}`, concept: c, done: false }));
+              app.setOverlay({ kind: 'scheduleEditor', id });
+            },
+          })
+        }
+      />
+      <View style={s.row}>
+        <Btn
+          kind="danger"
+          icon="trash"
+          label={confirm ? `${t.deleteSchedule} ?` : t.deleteSchedule}
+          onPress={() => {
+            if (!confirm) return setConfirm(true);
+            app.update((d) => {
+              d.schedules = d.schedules.filter((x) => x.id !== id);
+              d.activeSchedule = d.schedules[0]?.id;
+            });
+            app.setOverlay(null);
+          }}
+          style={{ flex: 1 }}
+        />
+        <Btn kind="primary" icon="check" label={t.close} onPress={() => app.setOverlay(null)} style={{ flex: 1 }} />
+      </View>
+    </Panel>
+  );
+}
+
+// ── Settings ──
+
+function SettingsPanel() {
+  const app = useApp();
+  const { profile, t } = app;
+  const st = profile.settings;
+  const set = (fn: (s: Profile['settings']) => void) => app.update((d) => fn(d.settings));
+  const [voiceLang, setVoiceLang] = useState<Lang>(st.lang);
+  const [voices, setVoices] = useState<{ id: string; name: string }[]>([]);
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [pin, setPin] = useState(st.pin);
+  useEffect(() => {
+    listVoices(voiceLang).then(setVoices);
+  }, [voiceLang]);
+
+  return (
+    <Panel title={t.settings} onClose={() => app.setOverlay(null)} tone="edit">
+      <Section title={t.sCommunication}>
+        <Text style={s.label}>{t.sCommLang}</Text>
+        <Segmented value={st.lang} onChange={(v: Lang) => set((x) => void (x.lang = v))} options={LANGS.map((l) => ({ value: l, label: LANG_NAMES[l] }))} />
+        <Text style={s.label}>{t.sGender}</Text>
+        <Segmented
+          value={st.gender}
+          onChange={(v) => set((x) => void (x.gender = v))}
+          options={[
+            { value: 'm', label: t.masculine },
+            { value: 'f', label: t.feminine },
+          ]}
+        />
+        <Text style={s.label}>{t.sLevel}</Text>
+        <Segmented
+          value={st.revealLevel}
+          onChange={(v) => set((x) => void (x.revealLevel = v as 1 | 2 | 3))}
+          options={[1, 2, 3].map((n) => ({ value: n, label: `${t.levelN} ${n}` }))}
+        />
+        <Text style={s.label}>{t.sSymbols}</Text>
+        <Segmented
+          value={st.symbolSet}
+          onChange={(v) => set((x) => void (x.symbolSet = v))}
+          options={[
+            { value: 'arasaac', label: 'ARASAAC' },
+            { value: 'emoji', label: 'Emoji' },
+          ]}
+        />
+        <Toggle label={t.sShowLabels} value={st.showLabels} onChange={(v) => set((x) => void (x.showLabels = v))} />
+        <Toggle label={t.sSpeakOnTap} value={st.speakOnTap} onChange={(v) => set((x) => void (x.speakOnTap = v))} />
+        <Toggle label={t.sAddToStrip} value={st.addToStrip} onChange={(v) => set((x) => void (x.addToStrip = v))} />
+        <Toggle label={t.sGrammar} value={st.grammar} onChange={(v) => set((x) => void (x.grammar = v))} />
+        <Toggle label={t.sQuickZone} value={st.quickZone} onChange={(v) => set((x) => void (x.quickZone = v))} />
+      </Section>
+
+      <Section title={t.sBar}>
+        <Toggle label={t.tla} value={st.bar.tla} onChange={(v) => set((x) => void (x.bar.tla = v))} />
+        <Toggle label={t.schedule} value={st.bar.schedule} onChange={(v) => set((x) => void (x.bar.schedule = v))} />
+        <Toggle label={t.timer} value={st.bar.timer} onChange={(v) => set((x) => void (x.bar.timer = v))} note={t.sBarNote} />
+      </Section>
+
+      <Section title={t.sVoice}>
+        <View style={s.row}>
+          <Text style={[s.label, { flex: 1 }]}>
+            {t.sRate} : {st.speechRate.toFixed(1)}×
+          </Text>
+          <Btn small icon="minus" accessibilityLabel="-" onPress={() => set((x) => void (x.speechRate = Math.max(0.5, +(x.speechRate - 0.1).toFixed(1))))} />
+          <Btn small icon="plus" accessibilityLabel="+" onPress={() => set((x) => void (x.speechRate = Math.min(1.6, +(x.speechRate + 0.1).toFixed(1))))} />
+        </View>
+        <Text style={s.label}>{t.sVoiceFor}</Text>
+        <Segmented value={voiceLang} onChange={setVoiceLang} options={LANGS.map((l) => ({ value: l, label: LANG_NAMES[l] }))} />
+        <View style={s.wrapRow}>
+          <Btn
+            small
+            kind={!st.voices[voiceLang] ? 'primary' : 'secondary'}
+            label={t.sDefaultVoice}
+            onPress={() => set((x) => void delete x.voices[voiceLang])}
+          />
+          {voices.slice(0, 12).map((v) => (
+            <Btn key={v.id} small kind={st.voices[voiceLang] === v.id ? 'primary' : 'secondary'} label={v.name} onPress={() => set((x) => void (x.voices[voiceLang] = v.id))} />
+          ))}
+        </View>
+      </Section>
+
+      <Section title={t.sHelp}>
+        {LANGS.map((l) => (
+          <Field
+            key={l}
+            label={`${t.sHelpMessage} — ${LANG_NAMES[l]}`}
+            value={profile.help.message[l]}
+            onChangeText={(v) => app.update((d) => void (d.help.message[l] = v))}
+            style={isRtl(l) ? { textAlign: 'right' } : undefined}
+          />
+        ))}
+        <Field label={t.helpHowI} multiline value={profile.help.howICommunicate} onChangeText={(v) => app.update((d) => void (d.help.howICommunicate = v))} style={{ minHeight: 70 }} />
+        <Field label={t.helpContact} value={profile.help.emergencyContact} onChangeText={(v) => app.update((d) => void (d.help.emergencyContact = v))} />
+      </Section>
+
+      <Section title={t.sSecurity}>
+        <View style={s.row}>
+          <View style={{ flex: 1 }}>
+            <Field label={t.sPin} value={pin} keyboardType="number-pad" maxLength={4} onChangeText={(v) => setPin(v.replace(/\D/g, ''))} />
+          </View>
+          <Btn small kind="primary" label={t.save} disabled={pin.length !== 4 || pin === st.pin} onPress={() => set((x) => void (x.pin = pin))} style={{ alignSelf: 'flex-end' }} />
+        </View>
+      </Section>
+
+      <Section title={t.sInterface}>
+        <Segmented
+          value={st.uiLang}
+          onChange={(v) => set((x) => void (x.uiLang = v))}
+          options={[
+            { value: 'fr', label: 'Français' },
+            { value: 'en', label: 'English' },
+          ]}
+        />
+      </Section>
+
+      <Section title={t.sData}>
+        <View style={s.wrapRow}>
+          <Btn icon="download" label={t.sExport} onPress={() => exportJson('profil-caa.json', profile)} />
+          <Btn
+            kind="danger"
+            icon="trash"
+            label={confirmReset ? t.sResetConfirm : t.sReset}
+            onPress={async () => {
+              if (!confirmReset) return setConfirmReset(true);
+              app.replaceProfile(await resetProfile());
+              app.setEditMode(false);
+            }}
+          />
+        </View>
+      </Section>
+
+      <Section title={t.sAbout}>
+        <Text style={s.note}>{t.aboutText}</Text>
+        <Text style={s.note}>{t.attribution}</Text>
+      </Section>
+    </Panel>
+  );
+}
+
+// ── Print / PDF ──
+
+type PrintTarget = { kind: 'board'; id: string } | { kind: 'schedule'; id: string } | { kind: 'firstThen' };
+
+function PrintPanel() {
+  const app = useApp();
+  const { profile, t, lang, view, path, tlaId } = app;
+  const currentBoard = view === 'tla' && tlaId ? tlaId : path[path.length - 1];
+  const [target, setTarget] = useState<PrintTarget>(
+    view === 'schedule' && profile.activeSchedule ? { kind: 'schedule', id: profile.activeSchedule } : { kind: 'board', id: currentBoard },
+  );
+  const [o, setO] = useState<PrintOptions>({ paper: 'A4', landscape: true, blackWhite: false, labels: true, cutCards: false });
+  const [html, setHtml] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      let doc = '';
+      if (target.kind === 'board') {
+        const b = profile.boards[target.id];
+        if (b) doc = buildPrintHtml(label(profile, b.concept, lang), b.rows, b.cols, await boardCells(profile, b, lang), o, lang);
+      } else if (target.kind === 'schedule') {
+        const sc = profile.schedules.find((x) => x.id === target.id);
+        if (sc) {
+          const cells = await Promise.all(sc.steps.map((st, i) => conceptCell(profile, st.concept, lang, String(i + 1))));
+          const cols = Math.max(1, Math.min(cells.length, o.landscape ? 4 : 3));
+          doc = buildPrintHtml(scheduleTitle(sc, profile, lang), Math.max(1, Math.ceil(cells.length / cols)), cols, cells, o, lang);
+        }
+      } else {
+        const sc = profile.schedules.find((x) => x.id === profile.activeSchedule);
+        const pending = sc?.steps.filter((x) => !x.done) ?? [];
+        const first = profile.firstThen?.first ?? pending[0]?.concept;
+        const then = profile.firstThen?.then ?? pending[1]?.concept;
+        const cells = await Promise.all(
+          [first, then].map((c, i) => (c ? conceptCell(profile, c, lang, i === 0 ? t.first : t.then) : Promise.resolve(null))),
+        );
+        doc = buildPrintHtml(t.firstThen, 1, 2, cells, o, lang);
+      }
+      if (alive) setHtml(doc);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [target, o, profile, lang, t]);
+
+  const run = async (fn: () => Promise<void>) => {
+    setBusy(true);
+    try {
+      await fn();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const targets: { key: string; label: string; value: PrintTarget }[] = [
+    {
+      key: `b:${currentBoard}`,
+      label: `${t.currentBoard} : ${label(profile, profile.boards[currentBoard]?.concept ?? 'f_mine', lang)}`,
+      value: { kind: 'board', id: currentBoard },
+    },
+    ...profile.tlaOrder
+      .filter((id) => id !== currentBoard)
+      .map((id) => ({ key: `b:${id}`, label: `${t.tla} : ${label(profile, profile.boards[id].concept, lang)}`, value: { kind: 'board' as const, id } })),
+    ...profile.schedules.map((sc) => ({
+      key: `s:${sc.id}`,
+      label: `${t.schedule} : ${scheduleTitle(sc, profile, lang)}`,
+      value: { kind: 'schedule' as const, id: sc.id },
+    })),
+    { key: 'ft', label: t.firstThen, value: { kind: 'firstThen' } },
+  ];
+  const targetKey = target.kind === 'firstThen' ? 'ft' : `${target.kind === 'board' ? 'b' : 's'}:${target.id}`;
+
+  return (
+    <Panel title={t.printTitle} onClose={() => app.setOverlay(null)} tone="edit" maxWidth={980}>
+      <Section title={t.printWhat}>
+        <View style={s.wrapRow}>
+          {targets.map((x) => (
+            <Btn key={x.key} small kind={x.key === targetKey ? 'primary' : 'secondary'} label={x.label} onPress={() => setTarget(x.value)} />
+          ))}
+        </View>
+      </Section>
+      <View style={[s.row, { flexWrap: 'wrap' }]}>
+        <View style={{ minWidth: 180, flex: 1, gap: 6 }}>
+          <Text style={s.label}>{t.paper}</Text>
+          <Segmented value={o.paper} onChange={(paper) => setO({ ...o, paper })} options={[{ value: 'A4', label: 'A4' }, { value: 'A3', label: 'A3' }]} />
+        </View>
+        <View style={{ minWidth: 240, flex: 1, gap: 6 }}>
+          <Text style={s.label}>{t.orientation}</Text>
+          <Segmented
+            value={o.landscape ? 'l' : 'p'}
+            onChange={(v) => setO({ ...o, landscape: v === 'l' })}
+            options={[
+              { value: 'p', label: t.portrait },
+              { value: 'l', label: t.landscape },
+            ]}
+          />
+        </View>
+      </View>
+      <Toggle label={t.blackWhite} value={o.blackWhite} onChange={(blackWhite) => setO({ ...o, blackWhite })} />
+      <Toggle label={t.printLabels} value={o.labels} onChange={(labels) => setO({ ...o, labels })} />
+      <Toggle label={t.cutCards} value={o.cutCards} onChange={(cutCards) => setO({ ...o, cutCards })} />
+      <Text style={s.note}>{t.privacyNote}</Text>
+      {Platform.OS === 'web' && <Text style={[s.note, s.lockNote]}>{t.printWebNote}</Text>}
+      {html ? <PrintPreview html={html} landscape={o.landscape} /> : null}
+      <View style={s.row}>
+        <Btn kind="primary" icon="printer" label={t.printNow} disabled={!html || busy} onPress={() => run(() => printDocument(html, o.landscape))} style={{ flex: 1 }} />
+        <Btn icon="download" label={t.exportPdf} disabled={!html || busy} onPress={() => run(() => exportPdf(html, o.paper, o.landscape))} style={{ flex: 1 }} />
+      </View>
+    </Panel>
+  );
+}
+
+const s = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  wrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  note: { fontSize: 13, color: C.textMuted },
+  lockNote: { backgroundColor: C.surfaceAlt, padding: 10, borderRadius: radius.md },
+  label: { fontSize: 14, fontWeight: '700', color: C.text },
+  previewRow: { flexDirection: 'row', gap: 14, alignItems: 'flex-start', flexWrap: 'wrap' },
+  preview: { width: 130, height: 140, borderRadius: 12, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center', gap: 4, padding: 6 },
+  previewText: { fontSize: 16, fontWeight: '700', color: C.text, textAlign: 'center' },
+  input: {
+    borderWidth: 1.5,
+    borderColor: C.border,
+    borderRadius: radius.md,
+    paddingHorizontal: 12,
+    minHeight: 46,
+    fontSize: 16,
+    color: C.text,
+  },
+  hits: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  hit: { width: 76, height: 76, borderRadius: 10, borderWidth: 1.5, borderColor: C.border, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' },
+  classChip: { paddingHorizontal: 12, minHeight: 38, justifyContent: 'center', borderRadius: 19, borderWidth: 2 },
+  classActive: { borderWidth: 4 },
+  classText: { fontSize: 14, fontWeight: '700', color: C.text },
+  createBox: { gap: 10, padding: 12, borderRadius: radius.md, backgroundColor: C.surfaceAlt },
+  pickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  pickItem: {
+    width: 104,
+    height: 96,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: C.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 4,
+    gap: 2,
+    backgroundColor: '#fff',
+  },
+  pickText: { fontSize: 13, fontWeight: '600', textAlign: 'center', color: C.text },
+  iconPick: { width: 64, height: 64, borderRadius: 12, borderWidth: 1.5, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
+  stepRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap', paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: C.border },
+  stepNum: { width: 20, fontWeight: '800', color: C.textMuted },
+  stepText: { flex: 1, minWidth: 100, fontSize: 16, fontWeight: '700', color: C.text },
+  minutes: { minWidth: 46, textAlign: 'center', fontWeight: '700', color: C.text },
+});

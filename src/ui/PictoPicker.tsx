@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { searchArasaac } from '../lib/photos';
 import { loadPictoLibrary, pictoImageUri } from '../lib/pictoLibrary';
 import { searchPictos, type PreparedIndex } from '../lib/pictoSearch';
 import type { Lang } from '../model/types';
@@ -117,10 +118,25 @@ export function PictoSearch({
   }, [query]);
   const [ids, setIds] = useState<number[]>([]);
   useEffect(() => {
-    if (!lib) return;
-    const r = searchPictos(lib, debounced, lang ?? app.profile.settings.uiLang, max);
-    setIds(r);
-    onResults?.(r);
+    if (lib === null) return;
+    const l = lang ?? app.profile.settings.uiLang;
+    const local = lib ? searchPictos(lib, debounced, l, max) : [];
+    setIds(local);
+    onResults?.(local);
+    // Few offline results: also ask ARASAAC online (works on the device when connected).
+    if (local.length >= 6 || !debounced.trim()) return;
+    let alive = true;
+    searchArasaac(debounced, l)
+      .then((hits) => {
+        if (!alive) return;
+        const more = [...local, ...hits.map((h) => h.id).filter((id) => !local.includes(id))].slice(0, max);
+        setIds(more);
+        if (!local.length) onResults?.(more);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lib, debounced, lang, max]);
 

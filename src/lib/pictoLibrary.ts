@@ -3,7 +3,7 @@
  * picture when the family creates a word or a TLA, with or without internet.
  */
 import { PICTO_INDEX, PICTO_PACKS } from '../data/pictoLibrary';
-import { saveMediaBytes } from './media';
+import { saveMedia, saveMediaBytes } from './media';
 import { prepareIndex, type PreparedIndex } from './pictoSearch';
 import { bytesToImageUri, readAssetText } from './platform';
 
@@ -63,15 +63,19 @@ async function bytesOf(id: number): Promise<Uint8Array | undefined> {
   return buf.slice(it[2], it[2] + it[3]);
 }
 
+/** ARASAAC's own server, for pictograms found online that aren't in the offline library. */
+export const remotePictoUrl = (id: number) => `https://static.arasaac.org/pictograms/${id}/${id}_300.png`;
+
 export async function pictoImageUri(id: number): Promise<string | undefined> {
   const bytes = await bytesOf(id);
-  return bytes ? bytesToImageUri(bytes, `p${id}`) : undefined;
+  return bytes ? bytesToImageUri(bytes, `p${id}`) : remotePictoUrl(id);
 }
 
 /** Copies a library pictogram into the media store so the word keeps it offline. */
 export async function pictoToMedia(id: number): Promise<string | undefined> {
   const bytes = await bytesOf(id);
-  return bytes ? saveMediaBytes(bytes, 'webp') : undefined;
+  if (bytes) return saveMediaBytes(bytes, 'webp');
+  return saveMedia(remotePictoUrl(id), 'png');
 }
 
 export async function pictoLabels(id: number): Promise<{ fr?: string; en?: string; ar?: string }> {

@@ -91,6 +91,9 @@ describe('offline pictogram search (item 2)', () => {
       [1, 0, 0, 10, ['voiture', 'auto'], ['car'], ['سيارة']],
       [2, 0, 10, 10, ['voiture de police'], ['police car'], []],
       [3, 0, 20, 10, ['pomme'], ['apple'], ['تفاحة']],
+      [4, 0, 30, 10, ['bulle', 'bulle de savon'], ['bubble'], []],
+      [5, 0, 40, 10, ['savon'], ['soap'], []],
+      [6, 0, 50, 10, ['jeux de société'], ['board games'], []],
     ],
   });
   it('ranks exact keywords first, then longer phrases', () => {
@@ -98,6 +101,12 @@ describe('offline pictogram search (item 2)', () => {
     expect(searchPictos(index, 'car', 'en')[0]).toBe(1);
     expect(searchPictos(index, 'تفاحة', 'ar')).toEqual([3]);
     expect(searchPictos(index, 'Pommé', 'fr')).toEqual([3]);
+  });
+  it('matches plurals and phrases written differently', () => {
+    expect(searchPictos(index, 'bulles de savon', 'fr')[0]).toBe(4);
+    expect(searchPictos(index, 'bulles', 'fr')[0]).toBe(4);
+    expect(searchPictos(index, 'jeu de societe', 'fr')[0]).toBe(6);
+    expect(searchPictos(index, 'bulle de savo', 'fr')[0]).toBe(4); // still typing
   });
 });
 

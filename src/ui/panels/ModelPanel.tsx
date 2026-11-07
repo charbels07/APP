@@ -48,6 +48,7 @@ export function ModelPanel() {
               style={lang === 'ar' ? { textAlign: 'right' } : undefined}
             />
           </View>
+          <Btn kind="danger" icon="trash" label={t.clear} disabled={!text} onPress={() => setText('')} />
           <Btn kind="primary" icon="pointer" label={t.showOnBoard} disabled={!text.trim()} onPress={() => show(text)} style={styles.grow} />
         </View>
       </Section>

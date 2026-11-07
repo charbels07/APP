@@ -5,11 +5,13 @@
  *   NODE_USE_ENV_PROXY=1 node --experimental-strip-types scripts/build-picto-library.ts
  *
  * Requires ImageMagick (`convert`). Output:
- *   assets/picto/index.pidx      JSON: { packs, items: [id, pack, offset, length, fr[], en[], ar[], topics[]] }
+ *   assets/picto/index.pidx      JSON: { packs, items: [id, pack, offset, length, fr[], en[], ar[], topics[], sensitive] }
  *   assets/picto/pNN.pack        base64 text of concatenated 160 px WebP images (offsets are in decoded bytes)
  *
- * Selection: one pictogram per distinct French keyword (the oldest, i.e. the
- * canonical one), excluding pictograms ARASAAC flags as violent or sexual.
+ * Selection: the whole ARASAAC catalogue (every pictogram with a keyword in French,
+ * English or Arabic). Pictograms ARASAAC flags as violent or sexual are kept (they
+ * matter for body, consent and safety vocabulary) but marked, so the app can leave
+ * them out of automatic suggestions.
  * ARASAAC: Sergio Palao, CC BY-NC-SA, Government of Aragón.
  */
 import { execFile } from 'node:child_process';
@@ -62,21 +64,17 @@ async function main() {
   const [fr, en, ar] = await Promise.all(['fr', 'en', 'ar'].map(getJson));
   const enById = new Map(en.map((p) => [p._id, p]));
   const arById = new Map(ar.map((p) => [p._id, p]));
-  const kw = (p?: Raw) => [...new Set((p?.keywords ?? []).map((k) => (k.keyword ?? '').trim()).filter(Boolean))].slice(0, 4);
+  const kw = (p?: Raw) => [...new Set((p?.keywords ?? []).map((k) => (k.keyword ?? '').trim()).filter(Boolean))].slice(0, 8);
 
-  // One canonical pictogram per distinct French first keyword.
-  const byKeyword = new Map<string, number>();
-  for (const p of fr) {
-    if (p.violence || p.sex) continue;
-    const first = p.keywords?.[0]?.keyword?.trim().toLowerCase();
-    if (!first) continue;
-    const cur = byKeyword.get(first);
-    if (cur === undefined || p._id < cur) byKeyword.set(first, p._id);
-  }
+  // Every pictogram that can be found by a keyword, sorted by French keyword so that
+  // similar words share packs (fewer packs to load per search).
   const frById = new Map(fr.map((p) => [p._id, p]));
-  const chosen = [...byKeyword.entries()]
-    .sort(([a], [b]) => a.localeCompare(b, 'fr'))
-    .map(([, id]) => id);
+  const sortKey = (id: number) =>
+    (kw(frById.get(id))[0] ?? kw(enById.get(id))[0] ?? kw(arById.get(id))[0] ?? '').toLowerCase();
+  const chosen = fr
+    .map((p) => p._id)
+    .filter((id) => kw(frById.get(id)).length || kw(enById.get(id)).length || kw(arById.get(id)).length)
+    .sort((a, b) => sortKey(a).localeCompare(sortKey(b), 'fr') || a - b);
   console.log(`selected ${chosen.length} pictograms`);
 
   let done = 0;
@@ -95,7 +93,7 @@ async function main() {
   });
 
   for (const f of readdirSync(outDir)) if (f.endsWith('.pack') || f.endsWith('.pidx')) unlinkSync(join(outDir, f));
-  const items: [number, number, number, number, string[], string[], string[], string[]][] = [];
+  const items: [number, number, number, number, string[], string[], string[], string[], number][] = [];
   const packs: string[] = [];
   for (let start = 0, pack = 0; start < chosen.length; start += PACK_SIZE, pack++) {
     const parts: Buffer[] = [];
@@ -106,7 +104,8 @@ async function main() {
       const buf = readFileSync(file);
       const p = frById.get(id);
       const topics = [...new Set([...(p?.categories ?? []), ...(p?.tags ?? [])])];
-      items.push([id, pack, offset, buf.length, kw(p), kw(enById.get(id)), kw(arById.get(id)), topics]);
+      const sensitive = p?.violence || p?.sex ? 1 : 0;
+      items.push([id, pack, offset, buf.length, kw(p), kw(enById.get(id)), kw(arById.get(id)), topics, sensitive]);
       parts.push(buf);
       offset += buf.length;
     }

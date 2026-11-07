@@ -15,9 +15,10 @@ must replace and validate.
   (`npx eas-cli build -p ios`), so no Mac is required to build.
 - No backend yet: everything is stored on the device (offline-first, spec §32).
   Profiles are versioned (`src/lib/storage.ts`) so cloud sync can be added later.
-- Pictograms: ARASAAC. The starter vocabulary's pictograms are in `assets/arasaac/`; an offline
-  library of ~9,000 more (one per French keyword, 160 px WebP, base64 packs) is in `assets/picto/`,
-  built by `npm run build:picto` (needs ImageMagick).
+- Pictograms: ARASAAC. The starter vocabulary's pictograms are in `assets/arasaac/`; the whole
+  ARASAAC catalogue (~13,900 pictograms, all keywords in FR/EN/AR, 160 px WebP, base64 packs) is in
+  `assets/picto/` for offline search, built by `npm run build:picto` (needs ImageMagick). When the
+  device is online and the offline search finds little, the app also queries ARASAAC's API.
 - Speech recognition: `expo-speech-recognition` (native module: needs a development build or an
   EAS build, not Expo Go).
 

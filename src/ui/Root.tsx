@@ -57,9 +57,13 @@ export function Root() {
       )}
       {app.playing && (
         <View style={[styles.banner, styles.playBanner]}>
-          <Icon name="pointer" size={22} color={C.accent} />
-          <Text style={[styles.bannerText, { color: C.accent }]} numberOfLines={1}>
-            {t.playingBanner}
+          {app.demoCaption?.concept ? (
+            <SymbolView symbol={symbolOf(profile, app.demoCaption.concept)} size={34} />
+          ) : (
+            <Icon name="pointer" size={22} color={C.accent} />
+          )}
+          <Text style={[styles.bannerText, styles.captionText]} numberOfLines={1}>
+            {app.demoCaption?.text ?? t.playingBanner}
           </Text>
           <Btn small kind="primary" icon="pause" label={t.stopDemo} onPress={app.stopPlaying} />
         </View>
@@ -158,6 +162,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   bannerText: { flex: 1, fontWeight: '800', fontSize: 15 },
+  captionText: { color: C.accent, fontSize: 19 },
   recBanner: { backgroundColor: C.helpSoft, borderColor: '#F4B4AE' },
   playBanner: { backgroundColor: C.accentSoft, borderColor: '#A4C2FF' },
   recDot: { width: 14, height: 14, borderRadius: 7, backgroundColor: C.help },

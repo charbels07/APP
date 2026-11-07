@@ -93,6 +93,8 @@ interface AppCtx {
   playSteps: (steps: DemoStep[], opts?: { speakAtEnd?: boolean }) => Promise<void>;
   stopPlaying: () => void;
   pointer: Slot | null;
+  /** What the replay is doing right now ("Ouvre le dossier « activités »"). */
+  demoCaption: { text: string; concept?: string } | null;
 
   /** Caregiver mode: card waiting to be moved. */
   moveSource: Slot | null;
@@ -300,6 +302,7 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
   // ── Demonstrations: replay with an animated pointer so the child sees where each word is ──
   const [playing, setPlaying] = useState(false);
   const [pointer, setPointer] = useState<Slot | null>(null);
+  const [demoCaption, setDemoCaption] = useState<{ text: string; concept?: string } | null>(null);
   const playToken = useRef(0);
 
   const stopPlaying = useCallback(() => {
@@ -307,6 +310,7 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
     playingRef.current = false;
     setPlaying(false);
     setPointer(null);
+    setDemoCaption(null);
   }, []);
 
   const startRecording = useCallback(() => {
@@ -368,6 +372,8 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
         if (!alive()) return;
         if (st.kind === 'tap' || st.kind === 'word') {
           const p = profileRef.current;
+          const ui = strings(p.settings.uiLang);
+          const l = p.settings.lang;
           let loc: { board: string; index: number; path: string[] } | undefined =
             st.kind === 'tap' && p.boards[st.board]?.cells[st.index]?.concept === st.concept ? st : undefined;
           loc ??= bestLocation(st.concept);
@@ -377,13 +383,17 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
               viewRef.current = { view: 'board' };
               setPath(['core']);
               if (loc.path.length > 1) {
+                // Say which folder we open, and linger on it, so the child sees the way in.
                 const folderIndex = p.boards.core.cells.findIndex((c) => c?.folder === loc!.board);
+                const folderConcept = p.boards.core.cells[folderIndex]?.concept ?? p.boards[loc.board]?.concept;
+                setDemoCaption({ text: `${ui.openingFolder} « ${label(p, folderConcept, l)} »`, concept: folderConcept });
                 await sleep(250);
                 setPointer({ board: 'core', index: folderIndex });
-                await sleep(750);
+                await sleep(1100);
                 if (!alive()) return;
                 setPointer(null);
                 setPath(['core', loc.board]);
+                await sleep(250);
               }
             } else {
               setView('tla');
@@ -392,13 +402,17 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
             }
             await sleep(350);
             if (!alive()) return;
+            setDemoCaption({ text: `${ui.touching} « ${label(p, st.concept, l)} »`, concept: st.concept });
             setPointer({ board: loc.board, index: loc.index });
             await sleep(800);
             if (!alive()) return;
             touchConcept(st.concept);
             await sleep(450);
             setPointer(null);
-            if (loc.path.length > 1) setPath(['core']);
+            if (loc.path.length > 1) {
+              setDemoCaption({ text: ui.backHome });
+              setPath(['core']);
+            }
           } else {
             touchConcept(st.concept);
           }
@@ -547,6 +561,7 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
       playSteps,
       stopPlaying,
       pointer,
+      demoCaption,
       moveSource,
       setMoveSource,
       highlight,
@@ -563,7 +578,7 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
       profile, update, replaceProfile, t, lang, view, path, tlaId, overlay, editMode, setEditMode, strip,
       stripState.history.length, touchConcept, addText, speakStrip, speakConcept, deleteLast, clearStrip, undo, goHome,
       openFolder, goBack, openTla, openSchedule, pressHelp, recording, startRecording, finishRecording,
-      playing, playSteps, stopPlaying, pointer, moveSource, highlight, showMeWhere, clearHighlight, timer,
+      playing, playSteps, stopPlaying, pointer, demoCaption, moveSource, highlight, showMeWhere, clearHighlight, timer,
       startTimer, pauseTimer, resumeTimer, resetTimer, setTimerOpen,
     ],
   );

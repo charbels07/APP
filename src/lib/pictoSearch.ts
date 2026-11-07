@@ -2,8 +2,8 @@
 import type { Lang } from '../model/types';
 import { normalize } from './search';
 
-/** [id, pack, offset, length, fr keywords, en keywords, ar keywords, ARASAAC categories + tags] */
-export type PictoItem = [number, number, number, number, string[], string[], string[], string[]?];
+/** [id, pack, offset, length, fr keywords, en keywords, ar keywords, ARASAAC categories + tags, sensitive (1)] */
+export type PictoItem = [number, number, number, number, string[], string[], string[], string[]?, number?];
 
 export interface PictoIndex {
   size: number;
@@ -11,25 +11,69 @@ export interface PictoIndex {
   items: PictoItem[];
 }
 
+interface Keyword {
+  /** Normalised keyword ("bulle de savon"). */
+  k: string;
+  /** Meaningful words, singular ("bulle", "savon"). */
+  words: string[];
+}
+
 export interface PreparedIndex {
   raw: PictoIndex;
   byId: Map<number, PictoItem>;
-  norm: { id: number; kw: [string[], string[], string[]] }[];
+  norm: { id: number; kw: [Keyword[], Keyword[], Keyword[]] }[];
 }
+
+/** Little words ignored when comparing phrases ("bulles de savon" ≈ "bulle savon"). */
+const STOP = new Set(
+  "de du des d' la le les l' un une et a au aux en pour avec sur the a an of to and for with in on".split(' '),
+);
+
+/** Very light singular form: "bulles" → "bulle", "jeux" → "jeu". Same rule on both sides. */
+const singular = (w: string) => (w.length > 3 && /[sx]$/.test(w) ? w.slice(0, -1) : w);
+
+export function keywordWords(s: string): string[] {
+  return normalize(s)
+    .replace(/\b(qu|[jlmntsdc])'/g, "$1' ")
+    .split(/[\s-]+/)
+    .filter((w) => w && !STOP.has(w))
+    .map(singular);
+}
+
+const prep = (list: string[]): Keyword[] => list.map((x) => ({ k: normalize(x), words: keywordWords(x) }));
 
 export function prepareIndex(raw: PictoIndex): PreparedIndex {
   return {
     raw,
     byId: new Map(raw.items.map((it) => [it[0], it])),
-    norm: raw.items.map((it) => ({ id: it[0], kw: [it[4].map(normalize), it[5].map(normalize), it[6].map(normalize)] })),
+    norm: raw.items.map((it) => ({ id: it[0], kw: [prep(it[4]), prep(it[5]), prep(it[6])] })),
   };
 }
 
 const LANG_SLOT: Record<Lang, 0 | 1 | 2> = { fr: 0, en: 1, ar: 2 };
 
+/** Scores one keyword against the query (0 = no match). */
+function score(kw: Keyword, q: string, qWords: string[], pos: number): number {
+  if (kw.k === q) return 100 - pos * 4;
+  if (qWords.length && kw.words.join(' ') === qWords.join(' ')) return 95 - pos * 4; // plural / little words differ
+  if (kw.k.startsWith(q)) return 72 - pos * 3;
+  if (qWords.length) {
+    const hits = qWords.filter((w) => kw.words.includes(w)).length;
+    if (hits === qWords.length) return 58 + 20 * (qWords.length / Math.max(kw.words.length, 1)) - pos;
+    if (qWords.length >= 2 && hits * 2 >= qWords.length) return 24 + hits * 4;
+    // Prefix of a word while typing: "savo" → "savon".
+    const last = qWords[qWords.length - 1];
+    if (last.length >= 3 && qWords.slice(0, -1).every((w) => kw.words.includes(w)) && kw.words.some((w) => w.startsWith(last)))
+      return 45;
+  }
+  if (q.length >= 4 && kw.k.includes(q)) return 30;
+  return 0;
+}
+
 export function searchPictos(index: PreparedIndex, query: string, lang: Lang, max = 24): number[] {
   const q = normalize(query);
   if (!q) return [];
+  const qWords = keywordWords(query);
   const slot = LANG_SLOT[lang];
   const scored: { id: number; s: number; len: number }[] = [];
   for (const { id, kw } of index.norm) {
@@ -38,14 +82,10 @@ export function searchPictos(index: PreparedIndex, query: string, lang: Lang, ma
     kw.forEach((list, l) => {
       const w = l === slot ? 1 : 0.8;
       list.forEach((k, pos) => {
-        let v = 0;
-        if (k === q) v = 100 - pos * 5;
-        else if (k.startsWith(q)) v = 70 - pos * 3;
-        else if (q.length >= 3 && k.split(' ').includes(q)) v = 60;
-        else if (q.length >= 4 && k.includes(q)) v = 30;
-        if (v * w > best) {
-          best = v * w;
-          len = k.length;
+        const v = score(k, q, qWords, pos) * w;
+        if (v > best || (v === best && v > 0 && k.k.length < len)) {
+          best = v;
+          len = k.k.length;
         }
       });
     });
@@ -68,7 +108,7 @@ export function exactPicto(index: PreparedIndex, keyword: string): number | unde
   let best: number | undefined;
   let bestPos = 99;
   for (const { id, kw } of index.norm) {
-    const pos = kw[0].indexOf(q);
+    const pos = kw[0].findIndex((x) => x.k === q);
     if (pos !== -1 && pos < bestPos) {
       best = id;
       bestPos = pos;
@@ -112,7 +152,7 @@ export function suggestForTopic(
   const q = normalize(topic);
   const tiers: number[][] = [[], ...specific.map(() => [] as number[])];
   for (const it of index.raw.items) {
-    if (it[0] === anchor) continue;
+    if (it[0] === anchor || it[8]) continue;
     if (q.length >= 3 && it[4].some((k) => normalize(k).split(' ').includes(q))) {
       tiers[0].push(it[0]);
       continue;

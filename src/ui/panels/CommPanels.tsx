@@ -101,7 +101,8 @@ export function KeyboardPanel() {
         placeholderTextColor="#98A2B3"
         style={[styles.keyboardInput, { textAlign: isRtl(lang) ? 'right' : 'left', writingDirection: isRtl(lang) ? 'rtl' : 'ltr' }]}
       />
-      <View style={styles.row}>
+      <View style={[styles.row, { flexWrap: 'wrap' }]}>
+        <Btn kind="danger" icon="trash" label={t.clear} disabled={!text} onPress={() => setText('')} style={{ flexGrow: 1 }} />
         <Btn kind="success" icon="volume" label={t.speak} disabled={!text.trim()} onPress={() => speakText(text, lang, profile.settings)} style={{ flex: 1 }} />
         <Btn
           kind="primary"

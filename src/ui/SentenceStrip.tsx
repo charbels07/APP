@@ -62,9 +62,9 @@ export function SentenceStrip({ compact }: { compact: boolean }) {
         </ScrollView>
       </Pressable>
       <View style={styles.actions}>
-        <StripButton icon="undo" label={t.undo} onPress={undo} disabled={!canUndo} compact={compact} />
-        <StripButton icon="backspace" label={t.deleteLast} onPress={deleteLast} disabled={!strip.length} compact={compact} />
-        <StripButton icon="x" label={t.clear} onPress={clearStrip} disabled={!strip.length} compact={compact} />
+        <StripButton icon="undo" label={t.undo} caption={t.undo} onPress={undo} disabled={!canUndo} compact={compact} />
+        <StripButton icon="backspace" label={t.deleteLast} caption={t.deleteShort} onPress={deleteLast} disabled={!strip.length} compact={compact} />
+        <StripButton icon="trash" label={t.clear} caption={t.clear} onPress={clearStrip} disabled={!strip.length} compact={compact} danger />
         <Pressable
           onPress={speakStrip}
           accessibilityRole="button"
@@ -82,15 +82,19 @@ export function SentenceStrip({ compact }: { compact: boolean }) {
 function StripButton({
   icon,
   label,
+  caption,
   onPress,
   disabled,
   compact,
+  danger,
 }: {
-  icon: 'undo' | 'backspace' | 'x';
+  icon: 'undo' | 'backspace' | 'trash';
   label: string;
+  caption: string;
   onPress: () => void;
   disabled: boolean;
   compact: boolean;
+  danger?: boolean;
 }) {
   return (
     <Pressable
@@ -101,10 +105,16 @@ function StripButton({
       style={({ pressed }) => [
         styles.stripBtn,
         compact && { width: 44 },
+        danger && !disabled && styles.danger,
         { opacity: disabled ? 0.3 : pressed ? 0.6 : 1 },
       ]}
     >
-      <Icon name={icon} size={compact ? 22 : 26} color={C.text} />
+      <Icon name={icon} size={compact ? 22 : 24} color={danger ? C.help : C.text} />
+      {!compact && (
+        <Text style={[styles.caption, danger && { color: C.help }]} numberOfLines={2}>
+          {caption}
+        </Text>
+      )}
     </Pressable>
   );
 }
@@ -137,7 +147,9 @@ const styles = StyleSheet.create({
   },
   chipText: { fontSize: 18, fontWeight: '700', color: C.text },
   actions: { flexDirection: 'row', alignItems: 'stretch', gap: 4 },
-  stripBtn: { width: 54, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md },
+  stripBtn: { width: 66, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, gap: 2 },
+  danger: { backgroundColor: C.helpSoft },
+  caption: { fontSize: 11, fontWeight: '700', color: C.textMuted, textAlign: 'center' },
   speak: {
     width: 104,
     borderRadius: radius.md,

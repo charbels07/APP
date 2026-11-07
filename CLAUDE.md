@@ -11,3 +11,6 @@
 - Platform-specific code uses `.web.ts(x)` siblings (media store, printing, preview).
 - `npm run fetch:arasaac` regenerates `src/data/arasaacMap.ts` (needs access to
   api.arasaac.org and static.arasaac.org).
+- `npm run build:picto` rebuilds the offline pictogram library (`assets/picto/`, base64 text packs:
+  some hosts refuse binary files) and `src/data/pictoLibrary.ts`. Set `PICTO_CACHE` to reuse downloads.
+- Speech recognition uses `expo-speech-recognition` (native module): test on a dev/EAS build, not Expo Go.

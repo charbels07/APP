@@ -64,6 +64,12 @@ export interface Cell {
   folder?: string;
   /** Progressive reveal: the cell is visible from this level (1–3). */
   level?: 1 | 2 | 3;
+  /** Card size inside its slot (0.6–1). Default 1. */
+  size?: number;
+  /** Spread over neighbouring empty slots: [columns, rows]. Default [1, 1]. */
+  span?: [number, number];
+  /** Strength of the background colour (0 = white … 1 = full colour). Default: soft tint. */
+  intensity?: number;
 }
 
 export type BoardKind = 'core' | 'folder' | 'tla';
@@ -117,11 +123,13 @@ export interface Settings {
   /** Fixed zone with urgent/repair messages (spec §7). */
   quickZone: boolean;
   /** Optional universal-bar buttons (CAA and Help can never be hidden). */
-  bar: { tla: boolean; schedule: boolean; timer: boolean };
+  bar: { tla: boolean; schedule: boolean; timer: boolean; pause: boolean };
   speechRate: number;
   voices: Partial<Record<Lang, string>>;
   pin: string;
   timer: { display: TimerDisplay[]; sound: boolean; haptic: boolean };
+  /** Speed of demonstrations and dictation replays (1 = normal, higher = slower). */
+  modelPace: number;
 }
 
 export interface HelpConfig {
@@ -147,6 +155,25 @@ export interface Profile {
   overrides: Record<string, ConceptOverride>;
   customConcepts: Record<string, Concept>;
   help: HelpConfig;
+  /** Recorded demonstrations (modelling), replayed with an animated pointer. */
+  demos: Demo[];
+}
+
+/** One recorded action of a demonstration. */
+export type DemoStep =
+  | { kind: 'tap'; concept: string; board: string; index: number; path: string[] }
+  /** A word without a known position (quick zone, dictation): replay finds it on the boards. */
+  | { kind: 'word'; concept: string }
+  | { kind: 'text'; text: string }
+  | { kind: 'speak' }
+  | { kind: 'delete' }
+  | { kind: 'clear' };
+
+export interface Demo {
+  id: string;
+  title: string;
+  lang: Lang;
+  steps: DemoStep[];
 }
 
 /** An item in the sentence strip. */

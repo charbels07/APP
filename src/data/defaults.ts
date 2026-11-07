@@ -131,7 +131,7 @@ const FOLDERS: Board[] = [
 ];
 
 /** TLAs share a fixed block of core words in the two left columns (TLA-01, TLA-02). */
-const TLA_CORE: string[][] = [
+export const TLA_CORE: string[][] = [
   ['i', 'want'],
   ['you', 'like'],
   ['more', 'not'],
@@ -241,11 +241,12 @@ export const DEFAULT_SETTINGS: Settings = {
   addToStrip: true,
   grammar: true,
   quickZone: false,
-  bar: { tla: true, schedule: true, timer: true },
+  bar: { tla: true, schedule: true, timer: true, pause: true },
   speechRate: 1,
   voices: {},
   pin: '1234',
   timer: { display: ['circle', 'digits'], sound: true, haptic: true },
+  modelPace: 1,
 };
 
 export const DEFAULT_HELP: HelpConfig = {
@@ -271,5 +272,6 @@ export function createDefaultProfile(): Profile {
     overrides: {},
     customConcepts: {},
     help: structuredClone(DEFAULT_HELP),
+    demos: [],
   };
 }

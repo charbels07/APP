@@ -40,3 +40,12 @@ export async function deleteMedia(name: string): Promise<void> {
   const f = new File(dir(), name);
   if (f.exists) f.delete();
 }
+
+/** Stores raw bytes (e.g. a pictogram from the offline library) in the media store. */
+export async function saveMediaBytes(bytes: Uint8Array, ext: string): Promise<string> {
+  const name = newMediaName(ext);
+  const file = new File(dir(), name);
+  file.create();
+  await file.write(bytes);
+  return name;
+}

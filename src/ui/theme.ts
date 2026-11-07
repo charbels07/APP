@@ -13,6 +13,7 @@ export const C = {
   accent: '#2563EB',
   accentSoft: '#DBE7FF',
   help: '#D92D20',
+  pause: '#B54708',
   helpSoft: '#FEE4E2',
   edit: '#B54708',
   editSoft: '#FEF0C7',
@@ -54,3 +55,29 @@ export const CLASS_NAMES: Record<WordClass, { fr: string; en: string }> = {
 };
 
 export const radius = { sm: 8, md: 12, lg: 16 };
+
+const hex = (h: string) => {
+  const v = h.replace('#', '');
+  return [0, 2, 4].map((i) => parseInt(v.slice(i, i + 2), 16));
+};
+
+/** Mixes white with `color`: 0 = white, 1 = the full colour. Used for per-card colour strength. */
+export function tint(color: string, strength: number): string {
+  const k = Math.max(0, Math.min(1, strength));
+  return (
+    '#' +
+    hex(color)
+      .map((c) => Math.round(255 + (c - 255) * k).toString(16).padStart(2, '0'))
+      .join('')
+  );
+}
+
+/** True when white text reads better than dark text on this background. */
+export function isDarkColor(color: string): boolean {
+  if (!color.startsWith('#') || color.length !== 7) return false;
+  const [r, g, b] = hex(color).map((c) => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.28;
+}

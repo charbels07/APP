@@ -3,7 +3,7 @@
  * and image helpers. The browser demo uses platform.web.ts instead.
  */
 import { Asset } from 'expo-asset';
-import { File, Paths } from 'expo-file-system';
+import { Directory, File, Paths } from 'expo-file-system';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 
@@ -38,4 +38,29 @@ export async function exportJson(filename: string, data: unknown): Promise<void>
   file.create();
   await file.write(JSON.stringify(data, null, 2));
   await Sharing.shareAsync(file.uri, { mimeType: 'application/json' });
+}
+
+/** Reads a bundled asset (e.g. the pictogram library) as bytes or text. */
+export async function readAssetBytes(mod: number): Promise<Uint8Array> {
+  const asset = Asset.fromModule(mod);
+  await asset.downloadAsync();
+  return new File(asset.localUri ?? asset.uri).bytes();
+}
+
+export async function readAssetText(mod: number): Promise<string> {
+  const asset = Asset.fromModule(mod);
+  await asset.downloadAsync();
+  return new File(asset.localUri ?? asset.uri).text();
+}
+
+/** Writes image bytes to the cache once and returns a displayable URI. */
+export async function bytesToImageUri(bytes: Uint8Array, key: string): Promise<string> {
+  const dir = new Directory(Paths.cache, 'picto');
+  if (!dir.exists) dir.create({ idempotent: true, intermediates: true });
+  const file = new File(dir, `${key}.webp`);
+  if (!file.exists) {
+    file.create();
+    await file.write(bytes);
+  }
+  return file.uri;
 }

@@ -43,3 +43,22 @@ export async function exportJson(filename: string, data: unknown): Promise<void>
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
+
+export async function readAssetBytes(mod: number): Promise<Uint8Array> {
+  const res = await fetch(Asset.fromModule(mod).uri);
+  return new Uint8Array(await res.arrayBuffer());
+}
+
+export async function readAssetText(mod: number): Promise<string> {
+  return (await fetch(Asset.fromModule(mod).uri)).text();
+}
+
+const imageUrls = new Map<string, string>();
+export async function bytesToImageUri(bytes: Uint8Array, key: string): Promise<string> {
+  let url = imageUrls.get(key);
+  if (!url) {
+    url = URL.createObjectURL(new Blob([bytes as Uint8Array<ArrayBuffer>], { type: 'image/webp' }));
+    imageUrls.set(key, url);
+  }
+  return url;
+}

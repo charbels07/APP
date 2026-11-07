@@ -55,5 +55,6 @@ export function migrate(p: Partial<Profile>): Profile {
     overrides: p.overrides ?? {},
     customConcepts: p.customConcepts ?? {},
     schedules: p.schedules ?? base.schedules,
+    demos: p.demos ?? [],
   };
 }

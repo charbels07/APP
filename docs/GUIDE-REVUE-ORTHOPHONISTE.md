@@ -32,6 +32,21 @@ Idéalement sur iPad, en paysage. Code accompagnant : **1234**.
    - Ouvrez *mes mots* et touchez une case vide pour créer un mot personnel.
    - *Imprimer / PDF* : TLA, plannings, D’abord/Ensuite, A4/A3, noir et blanc.
 
+**Nouveautés du brouillon 0.2**
+
+7. **Mot prononcé accordé** : « je » puis « vouloir » fait dire « veux ».
+8. **Pause** (orange) et **Aide** (rouge) : plus grands, toujours visibles, prononcés au premier appui.
+9. **Modèle** (main, dans la barre) : écrivez ou dictez « je veux des pommes » → une main montre
+   chaque mot sur la grille (y compris dans les dossiers), puis la phrase est lue. On peut aussi
+   **enregistrer une démonstration** (touchez les mots) et la **rejouer**.
+10. **Mode accompagnant** :
+    - *TLA* → *Nouveau TLA* → tapez un sujet (piscine, zoo, anniversaire…) → *Proposer des mots* :
+      l’application propose les pictogrammes ; touchez-en un pour le retirer, ajoutez-en, puis créez.
+    - Nouveau mot (case vide → *Créer un nouveau mot*) : le pictogramme ARASAAC est choisi
+      automatiquement (≈ 9 000 pictogrammes, hors ligne).
+    - Sur une case : *Taille de la carte*, *Agrandir sur les cases vides voisines*, *Intensité de la
+      couleur*, et *Déplacer cette case* (puis touchez la nouvelle place).
+
 > Dans la démo en ligne, le micro et la fenêtre d’impression sont bloqués par le
 > navigateur de démonstration (l’aperçu d’impression reste visible). Sur l’iPad,
 > l’application utilisera le micro, AirPrint et l’export PDF hors ligne.

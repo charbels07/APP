@@ -172,3 +172,17 @@ export function toSegments(tokens: Token[]): Segment[] {
   flush();
   return segs;
 }
+
+/**
+ * Inflected verb forms → verb concept ("veux" → want), used to recognise
+ * dictated sentences. Arabic is not covered yet (see note at the top).
+ */
+export function inflectedForms(lang: Lang): Map<string, string> {
+  const m = new Map<string, string>();
+  if (lang === 'fr') for (const [id, forms] of Object.entries(FR)) for (const f of forms) m.set(f, id);
+  if (lang === 'en') {
+    for (const [id, f] of Object.entries(EN_3SG)) m.set(f, id);
+    for (const f of EN_BE) m.set(f, 'be');
+  }
+  return m;
+}

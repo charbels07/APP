@@ -7,12 +7,15 @@ import { deleteMedia, saveMedia } from '../../lib/media';
 import { pickPhoto, searchArasaac, type ArasaacHit } from '../../lib/photos';
 import { exportJson, exportPdf, printDocument } from '../../lib/platform';
 import { boardCells, buildPrintHtml, conceptCell, type PrintOptions } from '../../lib/printHtml';
+import { canSpan } from '../../lib/boardOps';
+import { pictoToMedia } from '../../lib/pictoLibrary';
 import { search } from '../../lib/search';
 import { listVoices } from '../../lib/speech';
 import { resetProfile } from '../../lib/storage';
 import { LANGS, type CellDisplay, type Lang, type Profile, type WordClass } from '../../model/types';
 import { useApp } from '../../state/AppState';
 import { Btn, Field, Panel, Section, Segmented, Toggle } from '../common';
+import { PictoSearch } from '../PictoPicker';
 import { PrintPreview } from '../PrintPreview';
 import { arasaacUrl, SymbolView } from '../SymbolView';
 import { scheduleTitle } from '../screens/ScheduleScreen';
@@ -63,6 +66,7 @@ function setClass(d: Profile, id: string, cls: WordClass) {
 function CellEditor({ board, index }: { board: string; index: number }) {
   const app = useApp();
   const { profile, t } = app;
+  const [spanError, setSpanError] = useState(false);
   const b = profile.boards[board];
   const cell = b?.cells[index];
   if (!b || !cell) return null;
@@ -83,30 +87,91 @@ function CellEditor({ board, index }: { board: string; index: number }) {
     app.update((d) => void (d.boards[board].cells[index] = null));
     app.setOverlay(null);
   };
+  const setCell = (fn: (c: NonNullable<typeof cell>) => void) =>
+    app.update((d) => {
+      const c = d.boards[board].cells[index];
+      if (c) fn(c);
+    });
+  const span = cell.span ?? [1, 1];
+  const spans: { value: string; label: string; span: [number, number] }[] = [
+    { value: '1x1', label: '1 × 1', span: [1, 1] },
+    { value: '2x1', label: '2 × 1', span: [2, 1] },
+    { value: '1x2', label: '1 × 2', span: [1, 2] },
+    { value: '2x2', label: '2 × 2', span: [2, 2] },
+  ];
+  const STRENGTHS: { value: string; label: string; v?: number }[] = [
+    { value: 'pale', label: t.pale, v: 0.1 },
+    { value: 'soft', label: t.soft },
+    { value: 'medium', label: t.medium, v: 0.45 },
+    { value: 'strong', label: t.strong, v: 0.72 },
+    { value: 'full', label: t.full, v: 1 },
+  ];
+  const strength = STRENGTHS.find((x) => x.v === cell.intensity)?.value ?? 'soft';
 
   return (
     <Panel title={t.editWord} onClose={() => app.setOverlay(null)} tone="edit">
       <ConceptEditorBody conceptId={cell.concept} />
+
+      <Section title={t.card}>
+        <Text style={s.label}>{t.cardSize}</Text>
+        <Segmented
+          value={String(cell.size ?? 1)}
+          onChange={(v) => setCell((c) => (v === '1' ? delete c.size : (c.size = Number(v))))}
+          options={[
+            { value: '0.6', label: '60 %' },
+            { value: '0.8', label: '80 %' },
+            { value: '1', label: '100 %' },
+          ]}
+        />
+        <Text style={s.label}>{t.cardSpan}</Text>
+        <Segmented
+          value={`${span[0]}x${span[1]}`}
+          onChange={(v) => {
+            const next = spans.find((x) => x.value === v)!.span;
+            const test = structuredClone(b);
+            delete test.cells[index]!.span;
+            if (!canSpan(test, index, next)) return setSpanError(true);
+            setSpanError(false);
+            setCell((c) => (next[0] === 1 && next[1] === 1 ? delete c.span : (c.span = next)));
+          }}
+          options={spans.map(({ value, label }) => ({ value, label }))}
+        />
+        {spanError && <Text style={[s.note, { color: C.help }]}>{t.spanBlocked}</Text>}
+        <Text style={s.label}>{t.colorStrength}</Text>
+        <Segmented
+          value={strength}
+          onChange={(v) => {
+            const x = STRENGTHS.find((o) => o.value === v)!;
+            setCell((c) => (x.v === undefined ? delete c.intensity : (c.intensity = x.v)));
+          }}
+          options={STRENGTHS.map(({ value, label }) => ({ value, label }))}
+        />
+      </Section>
+
       {isCore && !cell.folder && (
         <Section title={t.level}>
           <Segmented
             value={cell.level ?? 1}
-            onChange={(v) => app.update((d) => void (d.boards[board].cells[index]!.level = v as 1 | 2 | 3))}
+            onChange={(v) => setCell((c) => void (c.level = v as 1 | 2 | 3))}
             options={[1, 2, 3].map((n) => ({ value: n, label: `${t.levelN} ${n}` }))}
           />
           <Text style={s.note}>{t.levelHelp}</Text>
         </Section>
       )}
-      {isCore ? (
-        <Text style={[s.note, s.lockNote]}>{t.coreLocked}</Text>
-      ) : (
-        !cell.folder && (
-          <View style={s.row}>
-            <Btn icon="pencil" label={t.replaceWord} onPress={replace} style={{ flex: 1 }} />
-            <Btn kind="danger" icon="trash" label={t.removeFromBoard} onPress={remove} style={{ flex: 1 }} />
-          </View>
-        )
-      )}
+      {isCore && <Text style={[s.note, s.lockNote]}>{t.moveWarning}</Text>}
+      <View style={[s.row, { flexWrap: 'wrap' }]}>
+        <Btn
+          icon="target"
+          label={t.moveCell}
+          onPress={() => {
+            app.setMoveSource({ board, index });
+            app.setOverlay(null);
+          }}
+          style={{ flexGrow: 1 }}
+        />
+        {!cell.folder && <Btn icon="pencil" label={t.replaceWord} onPress={replace} style={{ flexGrow: 1 }} />}
+        {!cell.folder && <Btn kind="danger" icon="trash" label={t.removeFromBoard} onPress={remove} style={{ flexGrow: 1 }} />}
+      </View>
       <Btn kind="primary" icon="check" label={t.close} onPress={() => app.setOverlay(null)} />
     </Panel>
   );
@@ -209,9 +274,18 @@ function ConceptEditorBody({ conceptId }: { conceptId: string }) {
           <Btn small icon="camera" label={t.takePhoto} onPress={() => photo('camera')} />
           <Btn small icon="undo" label={t.resetSymbol} onPress={() => setSymbol(undefined)} />
         </View>
+        <Text style={s.label}>{t.pictoLibrary}</Text>
+        <PictoSearch
+          initialQuery={label(profile, conceptId, profile.settings.uiLang === 'en' ? 'en' : 'fr')}
+          lang={profile.settings.uiLang}
+          onPick={async (id) => {
+            const name = await pictoToMedia(id);
+            if (name) setSymbol({ kind: 'media', name });
+          }}
+        />
         <View style={s.row}>
-          <TextInput value={query} onChangeText={setQuery} onSubmitEditing={runSearch} placeholder={t.arasaacSearch} style={[s.input, { flex: 1 }]} />
-          <Btn small icon="search" label={t.arasaacSearch} onPress={runSearch} />
+          <TextInput value={query} onChangeText={setQuery} onSubmitEditing={runSearch} placeholder={t.pictoSearchOnline} style={[s.input, { flex: 1 }]} />
+          <Btn small icon="search" label={t.pictoSearchOnline} onPress={runSearch} />
         </View>
         {netError && <Text style={s.note}>{t.arasaacOffline}</Text>}
         {hits && (
@@ -296,10 +370,18 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
       .sort((a, b) => label(profile, a, lang).localeCompare(label(profile, b, lang)));
   }, [q, profile, lang]);
 
-  const create = () => {
+  // Pictogram picked automatically from the offline ARASAAC library as the name is typed.
+  const [picto, setPicto] = useState<number | undefined>();
+  const [pictoTouched, setPictoTouched] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const pictoQuery = draft.fr || draft.en || draft.ar;
+
+  const create = async () => {
     const id = `c_${Date.now().toString(36)}`;
     const name = draft.fr || draft.en || draft.ar;
     if (!name) return;
+    setBusy(true);
+    const media = picto !== undefined ? await pictoToMedia(picto).catch(() => undefined) : undefined;
     app.update((d) => {
       d.customConcepts[id] = {
         id,
@@ -308,7 +390,9 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
         emoji: draft.emoji || '⭐',
         custom: true,
       };
+      if (media) d.overrides[id] = { symbol: { kind: 'media', name: media } };
     });
+    setBusy(false);
     onPick(id);
   };
 
@@ -345,7 +429,32 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
               </Pressable>
             ))}
           </View>
-          <Btn kind="primary" icon="check" label={t.save} disabled={!(draft.fr || draft.en || draft.ar)} onPress={create} />
+          {pictoQuery ? (
+            <View style={{ gap: 6 }}>
+              <Text style={s.note}>{t.suggestedPicto}</Text>
+              <PictoSearch
+                query={pictoQuery}
+                showInput={false}
+                max={12}
+                lang={draft.fr ? 'fr' : draft.en ? 'en' : 'ar'}
+                selectedId={picto}
+                onResults={(ids) => {
+                  if (!pictoTouched) setPicto(ids[0]);
+                }}
+                onPick={(id) => {
+                  setPictoTouched(true);
+                  setPicto(id);
+                }}
+              />
+            </View>
+          ) : null}
+          <Btn
+            kind="primary"
+            icon="check"
+            label={busy ? t.creating : t.save}
+            disabled={busy || !(draft.fr || draft.en || draft.ar)}
+            onPress={create}
+          />
         </View>
       )}
       <TextInput autoFocus value={q} onChangeText={setQ} placeholder={t.searchPlaceholder} style={s.input} placeholderTextColor="#98A2B3" />
@@ -512,7 +621,8 @@ function SettingsPanel() {
       <Section title={t.sBar}>
         <Toggle label={t.tla} value={st.bar.tla} onChange={(v) => set((x) => void (x.bar.tla = v))} />
         <Toggle label={t.schedule} value={st.bar.schedule} onChange={(v) => set((x) => void (x.bar.schedule = v))} />
-        <Toggle label={t.timer} value={st.bar.timer} onChange={(v) => set((x) => void (x.bar.timer = v))} note={t.sBarNote} />
+        <Toggle label={t.timer} value={st.bar.timer} onChange={(v) => set((x) => void (x.bar.timer = v))} />
+        <Toggle label={t.sPause} value={st.bar.pause !== false} onChange={(v) => set((x) => void (x.bar.pause = v))} note={t.sBarNote} />
       </Section>
 
       <Section title={t.sVoice}>

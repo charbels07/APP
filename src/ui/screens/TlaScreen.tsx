@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { blankTla } from '../../data/defaults';
 import { isRtl, label, symbolOf } from '../../lib/lexicon';
 import { useApp } from '../../state/AppState';
 import { Btn } from '../common';
@@ -14,25 +13,6 @@ export function TlaScreen() {
   const { profile, tlaId, lang, editMode, t } = app;
   const [confirmDelete, setConfirmDelete] = useState(false);
   const current = tlaId && profile.boards[tlaId] ? profile.boards[tlaId] : profile.boards[profile.tlaOrder[0]];
-
-  const createTla = () => {
-    const stamp = Date.now().toString(36);
-    const conceptId = `c_tla_${stamp}`;
-    const boardId = `tla_${stamp}`;
-    app.update((d) => {
-      d.customConcepts[conceptId] = {
-        id: conceptId,
-        cls: 'noun',
-        labels: { fr: 'Nouveau TLA', en: 'New board', ar: 'لوح جديد' },
-        emoji: '🗂️',
-        custom: true,
-      };
-      d.boards[boardId] = blankTla(boardId, conceptId);
-      d.tlaOrder.push(boardId);
-    });
-    app.openTla(boardId);
-    app.setOverlay({ kind: 'conceptEditor', concept: conceptId });
-  };
 
   const deleteTla = () => {
     if (!current) return;
@@ -78,7 +58,7 @@ export function TlaScreen() {
         </ScrollView>
         {editMode && (
           <View style={{ flexDirection: 'row', gap: 6 }}>
-            <Btn small icon="plus" label={t.newTla} onPress={createTla} />
+            <Btn small icon="plus" label={t.newTla} onPress={() => app.setOverlay({ kind: 'newTla' })} />
             {current && (
               <Btn small kind="danger" icon="trash" label={confirmDelete ? '?' : undefined} accessibilityLabel={t.deleteTla} onPress={deleteTla} />
             )}

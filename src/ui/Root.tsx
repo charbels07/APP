@@ -5,8 +5,11 @@ import { QUICK_ZONE } from '../data/defaults';
 import { isRtl, label, symbolOf } from '../lib/lexicon';
 import { useApp } from '../state/AppState';
 import { Btn } from './common';
+import { Icon } from './Icon';
 import { CaregiverOverlay } from './panels/CaregiverPanels';
 import { HelpPanel, KeyboardPanel, LangPanel, PinPanel, SearchPanel } from './panels/CommPanels';
+import { ModelPanel } from './panels/ModelPanel';
+import { NewTlaPanel } from './panels/NewTlaPanel';
 import { BoardScreen } from './screens/BoardScreen';
 import { ScheduleScreen } from './screens/ScheduleScreen';
 import { TlaScreen } from './screens/TlaScreen';
@@ -34,12 +37,42 @@ export function Root() {
       {overlay?.kind === 'help' && <HelpPanel />}
       {overlay?.kind === 'lang' && <LangPanel />}
       {overlay?.kind === 'pin' && <PinPanel />}
+      {overlay?.kind === 'model' && <ModelPanel />}
+      {overlay?.kind === 'newTla' && <NewTlaPanel />}
       <CaregiverOverlay />
     </View>
   );
 
   const main = (
     <View style={styles.main}>
+      {app.recording && (
+        <View style={[styles.banner, styles.recBanner]}>
+          <View style={styles.recDot} />
+          <Text style={[styles.bannerText, { color: C.help }]} numberOfLines={1}>
+            {t.recordingBanner}
+          </Text>
+          <Btn small label={t.cancel} onPress={() => app.finishRecording(false)} />
+          <Btn small kind="primary" icon="check" label={t.saveDemo} onPress={() => app.finishRecording(true)} />
+        </View>
+      )}
+      {app.playing && (
+        <View style={[styles.banner, styles.playBanner]}>
+          <Icon name="pointer" size={22} color={C.accent} />
+          <Text style={[styles.bannerText, { color: C.accent }]} numberOfLines={1}>
+            {t.playingBanner}
+          </Text>
+          <Btn small kind="primary" icon="pause" label={t.stopDemo} onPress={app.stopPlaying} />
+        </View>
+      )}
+      {editMode && app.moveSource && (
+        <View style={[styles.banner, styles.playBanner]}>
+          <Icon name="target" size={22} color={C.accent} />
+          <Text style={[styles.bannerText, { color: C.accent }]} numberOfLines={2}>
+            {t.moveBanner}
+          </Text>
+          <Btn small label={t.cancel} onPress={() => app.setMoveSource(null)} />
+        </View>
+      )}
       {editMode && (
         <View style={styles.editBanner}>
           <Text style={styles.editText} numberOfLines={1}>
@@ -114,6 +147,20 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   editText: { flex: 1, color: C.edit, fontWeight: '800', fontSize: 15 },
+  banner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1.5,
+    borderRadius: radius.md,
+    paddingLeft: 12,
+    paddingRight: 6,
+    paddingVertical: 5,
+  },
+  bannerText: { flex: 1, fontWeight: '800', fontSize: 15 },
+  recBanner: { backgroundColor: C.helpSoft, borderColor: '#F4B4AE' },
+  playBanner: { backgroundColor: C.accentSoft, borderColor: '#A4C2FF' },
+  recDot: { width: 14, height: 14, borderRadius: 7, backgroundColor: C.help },
   quick: { flexDirection: 'row', gap: 6 },
   quickBtn: {
     flex: 1,

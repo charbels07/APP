@@ -1,12 +1,12 @@
 import * as Haptics from 'expo-haptics';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { strings, type UiStrings } from '../i18n/ui';
-import { renderStrip, toSegments } from '../lib/grammar';
+import { joinTokens, renderStrip, toSegments } from '../lib/grammar';
 import { audioOf, label } from '../lib/lexicon';
-import type { Location } from '../lib/search';
+import { locate, type Location } from '../lib/search';
 import { beep, speakSegments, speakText, stopSpeech } from '../lib/speech';
 import { loadProfile, saveProfile } from '../lib/storage';
-import type { Lang, Profile, StripItem } from '../model/types';
+import type { DemoStep, Lang, Profile, StripItem } from '../model/types';
 
 export type View = 'board' | 'tla' | 'schedule';
 
@@ -22,7 +22,21 @@ export type Overlay =
   | { kind: 'editor'; board: string; index: number }
   | { kind: 'conceptEditor'; concept: string }
   | { kind: 'picker'; title?: string; onPick: (conceptId: string) => void }
-  | { kind: 'scheduleEditor'; id: string };
+  | { kind: 'scheduleEditor'; id: string }
+  | { kind: 'model' }
+  | { kind: 'newTla' };
+
+/** Where a touched word sits, so a demonstration can replay the exact gesture. */
+export interface TapOrigin {
+  board: string;
+  index: number;
+  path: string[];
+}
+
+export interface Slot {
+  board: string;
+  index: number;
+}
 
 export interface Highlight {
   board: string;
@@ -56,9 +70,9 @@ interface AppCtx {
 
   strip: StripItem[];
   canUndo: boolean;
-  touchConcept: (conceptId: string) => void;
+  touchConcept: (conceptId: string, origin?: TapOrigin) => void;
   addText: (text: string) => void;
-  speakStrip: () => void;
+  speakStrip: () => Promise<void>;
   speakConcept: (conceptId: string) => void;
   deleteLast: () => void;
   clearStrip: () => void;
@@ -70,6 +84,20 @@ interface AppCtx {
   openTla: (id?: string) => void;
   openSchedule: () => void;
   pressHelp: () => void;
+  pressPause: () => void;
+
+  /** Demonstrations (modelling): record taps, replay them with an animated pointer. */
+  recording: boolean;
+  startRecording: () => void;
+  finishRecording: (save: boolean) => void;
+  playing: boolean;
+  playSteps: (steps: DemoStep[], opts?: { speakAtEnd?: boolean }) => Promise<void>;
+  stopPlaying: () => void;
+  pointer: Slot | null;
+
+  /** Caregiver mode: card waiting to be moved. */
+  moveSource: Slot | null;
+  setMoveSource: (s: Slot | null) => void;
 
   highlight: Highlight | null;
   showMeWhere: (loc: Location) => void;
@@ -125,6 +153,8 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
   const t = strings(profile.settings.uiLang);
 
   const [view, setView] = useState<View>('board');
+  /** Latest navigation, readable from async replays without stale closures. */
+  const viewRef = useRef<{ view: View; tlaId?: string }>({ view: 'board' });
   const [path, setPath] = useState<string[]>(['core']);
   const [tlaId, setTlaId] = useState<string | undefined>(initial.lastTla ?? initial.tlaOrder[0]);
   const [overlay, setOverlay] = useState<Overlay>(null);
@@ -157,40 +187,67 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
     );
   }, []);
 
+  // ── Demonstration recording ──
+  const recordRef = useRef<DemoStep[] | null>(null);
+  const playingRef = useRef(false);
+  const [recording, setRecording] = useState(false);
+  const record = useCallback((step: DemoStep) => {
+    if (recordRef.current && !playingRef.current) recordRef.current.push(step);
+  }, []);
+
   const touchConcept = useCallback(
-    (conceptId: string) => {
+    (conceptId: string, origin?: TapOrigin) => {
       const p = profileRef.current;
-      if (p.settings.speakOnTap || !p.settings.addToStrip) speakConcept(conceptId);
+      const l = p.settings.lang;
+      record(origin ? { kind: 'tap', concept: conceptId, ...origin } : { kind: 'word', concept: conceptId });
+      const item: StripItem = { key: newKey(), kind: 'concept', concept: conceptId, lang: l };
+      if (p.settings.speakOnTap || !p.settings.addToStrip) {
+        if (p.settings.addToStrip) {
+          // Say the word as it appears in the sentence: "je" + "vouloir" → "veux".
+          const tokens = renderStrip([...stripRef.current, item], p);
+          const tok = tokens[tokens.length - 1];
+          speakSegments(tok.audio ? [{ kind: 'audio', media: tok.audio }] : [{ kind: 'tts', text: tok.text, lang: l }], p.settings);
+        } else speakConcept(conceptId);
+      }
       if (p.settings.addToStrip) {
-        const item: StripItem = { key: newKey(), kind: 'concept', concept: conceptId, lang: p.settings.lang };
+        stripRef.current = [...stripRef.current, item];
         editStrip((s) => [...s, item]);
       }
     },
-    [editStrip, speakConcept],
+    [editStrip, speakConcept, record],
   );
 
   const addText = useCallback(
     (text: string) => {
       const clean = text.trim();
       if (!clean) return;
+      record({ kind: 'text', text: clean });
       const item: StripItem = { key: newKey(), kind: 'text', text: clean, lang: profileRef.current.settings.lang };
+      stripRef.current = [...stripRef.current, item];
       editStrip((s) => [...s, item]);
     },
-    [editStrip],
+    [editStrip, record],
   );
 
-  const speakStrip = useCallback(() => {
+  const speakStrip = useCallback(async () => {
     const p = profileRef.current;
     const items = stripRef.current;
-    if (items.length) speakSegments(toSegments(renderStrip(items, p)), p.settings);
-  }, []);
+    record({ kind: 'speak' });
+    if (items.length) await speakSegments(toSegments(renderStrip(items, p)), p.settings);
+  }, [record]);
 
-  const deleteLast = useCallback(() => editStrip((s) => (s.length ? s.slice(0, -1) : s)), [editStrip]);
+  const deleteLast = useCallback(() => {
+    record({ kind: 'delete' });
+    stripRef.current = stripRef.current.slice(0, -1);
+    editStrip((s) => (s.length ? s.slice(0, -1) : s));
+  }, [editStrip, record]);
 
   const clearStrip = useCallback(() => {
     stopSpeech();
+    record({ kind: 'clear' });
+    stripRef.current = [];
     editStrip((s) => (s.length ? [] : s));
-  }, [editStrip]);
+  }, [editStrip, record]);
 
   const undo = useCallback(() => {
     setStripState((s) =>
@@ -199,6 +256,7 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
   }, []);
 
   const goHome = useCallback(() => {
+    viewRef.current = { view: 'board' };
     setView('board');
     setPath(['core']);
     setOverlay(null);
@@ -215,6 +273,7 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
     (id?: string) => {
       const p = profileRef.current;
       const target = id ?? p.lastTla ?? p.tlaOrder[0];
+      viewRef.current = { view: 'tla', tlaId: target };
       setView('tla');
       setOverlay(null);
       if (target) {
@@ -226,6 +285,7 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
   );
 
   const openSchedule = useCallback(() => {
+    viewRef.current = { view: 'schedule' };
     setView('schedule');
     setOverlay(null);
   }, []);
@@ -236,6 +296,137 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
     speakText(p.help.message[p.settings.lang], p.settings.lang, p.settings);
     setOverlay({ kind: 'help' });
   }, []);
+
+  /** Pause: a priority request, spoken at once like Help. */
+  const pressPause = useCallback(() => speakConcept('need_break'), [speakConcept]);
+
+  // ── Demonstrations: replay with an animated pointer so the child sees where each word is ──
+  const [playing, setPlaying] = useState(false);
+  const [pointer, setPointer] = useState<Slot | null>(null);
+  const playToken = useRef(0);
+
+  const stopPlaying = useCallback(() => {
+    playToken.current++;
+    playingRef.current = false;
+    setPlaying(false);
+    setPointer(null);
+  }, []);
+
+  const startRecording = useCallback(() => {
+    stopPlaying();
+    stopSpeech();
+    stripRef.current = [];
+    editStrip((s) => (s.length ? [] : s));
+    recordRef.current = [];
+    setRecording(true);
+    setEditModeState(false);
+    setOverlay(null);
+    setView('board');
+    setPath(['core']);
+  }, [editStrip, stopPlaying]);
+
+  const finishRecording = useCallback(
+    (save: boolean) => {
+      const steps = recordRef.current;
+      recordRef.current = null;
+      setRecording(false);
+      if (!save || !steps?.length) return;
+      const p = profileRef.current;
+      const title = joinTokens(renderStrip(stripRef.current, p)) || strings(p.settings.uiLang).demoUntitled;
+      update((d) => {
+        d.demos.push({ id: `demo_${Date.now().toString(36)}`, title, lang: p.settings.lang, steps });
+      });
+    },
+    [update],
+  );
+
+  /** Best place to show a word: the open TLA, then the main board, then folders, then other TLAs. */
+  const bestLocation = useCallback((conceptId: string): Location | undefined => {
+    const locs = (locate(profileRef.current).get(conceptId) ?? []).filter((l) => l.visible);
+    const v = viewRef.current;
+    return (
+      (v.view === 'tla' ? locs.find((l) => l.board === v.tlaId) : undefined) ??
+      locs.find((l) => l.board === 'core') ??
+      locs.find((l) => l.path[0] === 'core') ??
+      locs[0]
+    );
+  }, []);
+
+  const playSteps = useCallback(
+    async (steps: DemoStep[], opts: { speakAtEnd?: boolean } = {}) => {
+      const mine = ++playToken.current;
+      playingRef.current = true;
+      setPlaying(true);
+      setOverlay(null);
+      setEditModeState(false);
+      const alive = () => playToken.current === mine;
+      const pace = () => profileRef.current.settings.modelPace || 1;
+      const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms * pace()));
+      stopSpeech();
+      stripRef.current = [];
+      editStrip((s) => (s.length ? [] : s));
+      await sleep(300);
+
+      for (const st of steps) {
+        if (!alive()) return;
+        if (st.kind === 'tap' || st.kind === 'word') {
+          const p = profileRef.current;
+          let loc: { board: string; index: number; path: string[] } | undefined =
+            st.kind === 'tap' && p.boards[st.board]?.cells[st.index]?.concept === st.concept ? st : undefined;
+          loc ??= bestLocation(st.concept);
+          if (loc) {
+            if (loc.path[0] === 'core') {
+              setView('board');
+              viewRef.current = { view: 'board' };
+              setPath(['core']);
+              if (loc.path.length > 1) {
+                const folderIndex = p.boards.core.cells.findIndex((c) => c?.folder === loc!.board);
+                await sleep(250);
+                setPointer({ board: 'core', index: folderIndex });
+                await sleep(750);
+                if (!alive()) return;
+                setPointer(null);
+                setPath(['core', loc.board]);
+              }
+            } else {
+              setView('tla');
+              setTlaId(loc.board);
+              viewRef.current = { view: 'tla', tlaId: loc.board };
+            }
+            await sleep(350);
+            if (!alive()) return;
+            setPointer({ board: loc.board, index: loc.index });
+            await sleep(800);
+            if (!alive()) return;
+            touchConcept(st.concept);
+            await sleep(450);
+            setPointer(null);
+            if (loc.path.length > 1) setPath(['core']);
+          } else {
+            touchConcept(st.concept);
+          }
+          await sleep(350);
+        } else if (st.kind === 'text') {
+          addText(st.text);
+          await sleep(500);
+        } else if (st.kind === 'speak') {
+          await speakStrip();
+          await sleep(300);
+        } else if (st.kind === 'delete') {
+          deleteLast();
+          await sleep(400);
+        } else if (st.kind === 'clear') {
+          clearStrip();
+          await sleep(400);
+        }
+      }
+      if (alive() && opts.speakAtEnd) await speakStrip();
+      if (alive()) stopPlaying();
+    },
+    [addText, bestLocation, clearStrip, deleteLast, editStrip, speakStrip, stopPlaying, touchConcept],
+  );
+
+  const [moveSource, setMoveSource] = useState<Slot | null>(null);
 
   const showMeWhere = useCallback(
     (loc: Location) => {
@@ -268,6 +459,7 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
   const setEditMode = useCallback((on: boolean) => {
     setEditModeState(on);
     setOverlay(null);
+    setMoveSource(null);
   }, []);
 
   // ── Timer (keeps running while the user communicates) ──
@@ -351,6 +543,16 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
       openTla,
       openSchedule,
       pressHelp,
+      pressPause,
+      recording,
+      startRecording,
+      finishRecording,
+      playing,
+      playSteps,
+      stopPlaying,
+      pointer,
+      moveSource,
+      setMoveSource,
       highlight,
       showMeWhere,
       clearHighlight,
@@ -364,7 +566,8 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
     [
       profile, update, replaceProfile, t, lang, view, path, tlaId, overlay, editMode, setEditMode, strip,
       stripState.history.length, touchConcept, addText, speakStrip, speakConcept, deleteLast, clearStrip, undo, goHome,
-      openFolder, goBack, openTla, openSchedule, pressHelp, highlight, showMeWhere, clearHighlight, timer,
+      openFolder, goBack, openTla, openSchedule, pressHelp, pressPause, recording, startRecording, finishRecording,
+      playing, playSteps, stopPlaying, pointer, moveSource, highlight, showMeWhere, clearHighlight, timer,
       startTimer, pauseTimer, resumeTimer, resetTimer, setTimerOpen,
     ],
   );

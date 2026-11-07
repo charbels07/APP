@@ -9,20 +9,37 @@ export const formatTime = (ms: number) => {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 };
 
+type Tone = 'help' | 'pause';
+
+interface Item {
+  key: string;
+  icon: IconName;
+  label: string;
+  onPress: () => void;
+  active: boolean;
+  show?: boolean;
+  tone?: Tone;
+  badge?: string;
+}
+
 /**
  * Universal bar (spec §6): always visible, same position on every screen.
- * CAA and Help can never be hidden; TLA / Schedule / Timer are optional per profile.
+ * CAA and Help can never be hidden; TLA / Schedule / Timer / Pause are optional per profile.
+ * Pause and Help are priority messages: bigger, coloured, spoken on the first press.
  */
 export function UniversalBar({ vertical }: { vertical: boolean }) {
   const app = useApp();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const iconsOnly = !vertical && width < 520;
+  // Tall screens (iPad landscape): tools in one column with full labels; otherwise two columns of icons.
+  const toolColumn = height >= 790;
   const { t, view, path, overlay, profile, timer, editMode } = app;
   const bar = profile.settings.bar;
-  const timerLabel = timer.endAt || (timer.remainingMs > 0 && timer.remainingMs < timer.totalMs) ? formatTime(timer.remainingMs) : t.timer;
+  const timerLabel =
+    timer.endAt || (timer.remainingMs > 0 && timer.remainingMs < timer.totalMs) ? formatTime(timer.remainingMs) : t.timer;
   const langCode = profile.settings.lang === 'ar' ? 'ع' : profile.settings.lang.toUpperCase();
 
-  const main: { key: string; icon: IconName; label: string; onPress: () => void; active: boolean; show: boolean; tone?: 'help' }[] = [
+  const main: Item[] = [
     {
       key: 'caa',
       icon: 'home',
@@ -32,7 +49,6 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
         app.clearHighlight();
       },
       active: view === 'board' && path.length === 1 && !overlay,
-      show: true,
     },
     { key: 'tla', icon: 'grid', label: t.tla, onPress: () => app.openTla(), active: view === 'tla', show: bar.tla },
     { key: 'schedule', icon: 'calendar', label: t.schedule, onPress: app.openSchedule, active: view === 'schedule', show: bar.schedule },
@@ -44,12 +60,15 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
       active: timer.open || !!timer.endAt,
       show: bar.timer,
     },
-    { key: 'help', icon: 'help', label: t.help, onPress: app.pressHelp, active: overlay?.kind === 'help', show: true, tone: 'help' },
   ];
-
-  const tools: { key: string; icon: IconName; label: string; onPress: () => void; active: boolean; badge?: string }[] = [
+  const priority: Item[] = [
+    { key: 'pause', icon: 'pause', label: t.pauseBtn, onPress: app.pressPause, active: false, show: bar.pause !== false, tone: 'pause' },
+    { key: 'help', icon: 'help', label: t.help, onPress: app.pressHelp, active: overlay?.kind === 'help', tone: 'help' },
+  ];
+  const tools: Item[] = [
     { key: 'search', icon: 'search', label: t.search, onPress: () => app.setOverlay({ kind: 'search' }), active: overlay?.kind === 'search' },
     { key: 'keyboard', icon: 'keyboard', label: t.keyboard, onPress: () => app.setOverlay({ kind: 'keyboard' }), active: overlay?.kind === 'keyboard' },
+    { key: 'model', icon: 'pointer', label: t.model, onPress: () => app.setOverlay({ kind: 'model' }), active: overlay?.kind === 'model' || app.recording },
     { key: 'lang', icon: 'globe', label: t.language, onPress: () => app.setOverlay({ kind: 'lang' }), active: overlay?.kind === 'lang', badge: langCode },
     {
       key: 'lock',
@@ -59,21 +78,32 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
       active: editMode,
     },
   ];
+  const visible = (items: Item[]) => items.filter((m) => m.show !== false);
 
-  return (
-    <View style={[styles.bar, vertical ? styles.vertical : styles.horizontal]}>
-      <View style={[styles.group, vertical ? { flexDirection: 'column' } : { flexDirection: 'row', flex: 5 }]}>
-        {main
-          .filter((m) => m.show)
-          .map(({ key, ...m }) => (
-            <BarButton key={key} {...m} vertical={vertical} big iconsOnly={iconsOnly} />
+  if (vertical) {
+    return (
+      <View style={[styles.bar, styles.vertical]}>
+        <View style={styles.colGroup}>
+          {visible(main).map(({ key, ...m }) => (
+            <BarButton key={key} {...m} size="main" />
           ))}
+          {visible(priority).map(({ key, ...m }) => (
+            <BarButton key={key} {...m} size="priority" />
+          ))}
+        </View>
+        <View style={toolColumn ? styles.colGroup : styles.toolGrid}>
+          {tools.map(({ key, ...m }) => (
+            <BarButton key={key} {...m} size={toolColumn ? 'toolWide' : 'tool'} iconsOnly={!toolColumn} />
+          ))}
+        </View>
       </View>
-      <View style={[styles.group, vertical ? { flexDirection: 'column' } : { flexDirection: 'row', flex: 4 }]}>
-        {tools.map(({ key, ...m }) => (
-          <BarButton key={key} {...m} vertical={vertical} iconsOnly={iconsOnly} />
-        ))}
-      </View>
+    );
+  }
+  return (
+    <View style={[styles.bar, styles.horizontal]}>
+      {[...visible(main), ...visible(priority), ...tools].map(({ key, ...m }) => (
+        <BarButton key={key} {...m} size={m.tone ? 'priorityRow' : 'row'} iconsOnly={iconsOnly} />
+      ))}
     </View>
   );
 }
@@ -84,22 +114,15 @@ function BarButton({
   onPress,
   active,
   tone,
-  big,
   badge,
-  vertical,
+  size,
   iconsOnly,
-}: {
-  icon: IconName;
-  label: string;
-  onPress: () => void;
-  active: boolean;
-  tone?: 'help';
-  big?: boolean;
-  badge?: string;
-  vertical: boolean;
+}: Omit<Item, 'key' | 'show'> & {
+  size: 'main' | 'priority' | 'tool' | 'toolWide' | 'row' | 'priorityRow';
   iconsOnly?: boolean;
 }) {
-  const isHelp = tone === 'help';
+  const toneBg = tone === 'help' ? C.help : tone === 'pause' ? C.pause : undefined;
+  const iconSize = size === 'priority' ? 38 : size === 'priorityRow' ? 30 : size === 'main' ? 28 : 22;
   return (
     <Pressable
       onPress={onPress}
@@ -107,14 +130,14 @@ function BarButton({
       accessibilityLabel={label}
       style={({ pressed }) => [
         styles.btn,
-        vertical ? (big ? styles.btnBigV : styles.btnSmallV) : styles.btnH,
+        styles[size],
         active && styles.active,
-        isHelp && styles.help,
-        pressed && { opacity: 0.7 },
+        toneBg ? { backgroundColor: toneBg } : null,
+        pressed && { opacity: 0.7, transform: [{ scale: 0.96 }] },
       ]}
     >
       <View>
-        <Icon name={icon} size={big ? 30 : 24} color={isHelp ? '#fff' : C.railText} />
+        <Icon name={icon} size={iconSize} color={tone ? '#fff' : C.railText} strokeWidth={tone ? 2.6 : 2} />
         {badge ? (
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{badge}</Text>
@@ -122,7 +145,15 @@ function BarButton({
         ) : null}
       </View>
       {!iconsOnly && (
-        <Text numberOfLines={1} style={[styles.label, big && styles.labelBig, isHelp && { color: '#fff' }]}>
+        <Text
+          numberOfLines={1}
+          style={[
+            styles.label,
+            (size === 'main' || size === 'row') && styles.labelMain,
+            (size === 'priority' || size === 'priorityRow') && styles.labelPriority,
+            tone && { color: '#fff' },
+          ]}
+        >
           {label}
         </Text>
       )}
@@ -131,18 +162,22 @@ function BarButton({
 }
 
 const styles = StyleSheet.create({
-  bar: { backgroundColor: C.rail, justifyContent: 'space-between' },
-  vertical: { width: 96, paddingVertical: 8, paddingHorizontal: 6, gap: 10 },
-  horizontal: { flexDirection: 'row', paddingHorizontal: 6, paddingVertical: 6, gap: 6 },
-  group: { gap: 6 },
+  bar: { backgroundColor: C.rail },
+  vertical: { width: 100, paddingVertical: 8, paddingHorizontal: 6, justifyContent: 'space-between', gap: 8 },
+  horizontal: { flexDirection: 'row', paddingHorizontal: 6, paddingVertical: 6, gap: 4 },
+  colGroup: { gap: 6 },
+  toolGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, justifyContent: 'space-between' },
   btn: { alignItems: 'center', justifyContent: 'center', borderRadius: 12, gap: 3 },
-  btnBigV: { minHeight: 74 },
-  btnSmallV: { minHeight: 54 },
-  btnH: { flex: 1, minHeight: 60, paddingHorizontal: 2 },
+  main: { minHeight: 64 },
+  priority: { minHeight: 96, borderRadius: 16 },
+  tool: { width: 42, minHeight: 46 },
+  toolWide: { minHeight: 50 },
+  row: { flex: 1, minHeight: 60, paddingHorizontal: 2 },
+  priorityRow: { flex: 1.5, minHeight: 64, paddingHorizontal: 2, borderRadius: 14 },
   active: { backgroundColor: C.railActive },
-  help: { backgroundColor: C.help },
   label: { color: C.railText, fontSize: 11, fontWeight: '600' },
-  labelBig: { fontSize: 13, fontWeight: '800' },
+  labelMain: { fontSize: 13, fontWeight: '800' },
+  labelPriority: { fontSize: 16, fontWeight: '900' },
   badge: {
     position: 'absolute',
     right: -12,

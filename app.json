@@ -39,6 +39,13 @@
           "cameraPermission": "L’appareil photo sert à photographier une personne, un objet ou un lieu pour l’ajouter au vocabulaire."
         }
       ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Le micro sert à enregistrer la prononciation d’un mot et à dicter une phrase pour la montrer sur la grille. Rien n’est conservé sans votre accord.",
+          "speechRecognitionPermission": "La reconnaissance vocale transforme la phrase dictée par l’accompagnant en mots montrés sur la grille."
+        }
+      ],
       "expo-sharing",
       "expo-asset"
     ]

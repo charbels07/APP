@@ -15,6 +15,7 @@
     "expo-print": "~58.0.8",
     "expo-sharing": "~58.0.22",
     "expo-speech": "~58.0.3",
+    "expo-speech-recognition": "^58.0.1",
     "expo-status-bar": "~58.0.4",
     "react": "19.3.0",
     "react-dom": "19.3.0",
@@ -38,7 +39,8 @@
     "test": "jest",
     "typecheck": "tsc --noEmit",
     "export:web": "expo export -p web",
-    "fetch:arasaac": "NODE_USE_ENV_PROXY=1 node --experimental-strip-types scripts/fetch-arasaac.ts"
+    "fetch:arasaac": "NODE_USE_ENV_PROXY=1 node --experimental-strip-types scripts/fetch-arasaac.ts",
+    "build:picto": "NODE_USE_ENV_PROXY=1 node --experimental-strip-types scripts/build-picto-library.ts"
   },
   "private": true,
   "jest": {

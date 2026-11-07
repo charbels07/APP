@@ -621,8 +621,7 @@ function SettingsPanel() {
       <Section title={t.sBar}>
         <Toggle label={t.tla} value={st.bar.tla} onChange={(v) => set((x) => void (x.bar.tla = v))} />
         <Toggle label={t.schedule} value={st.bar.schedule} onChange={(v) => set((x) => void (x.bar.schedule = v))} />
-        <Toggle label={t.timer} value={st.bar.timer} onChange={(v) => set((x) => void (x.bar.timer = v))} />
-        <Toggle label={t.sPause} value={st.bar.pause !== false} onChange={(v) => set((x) => void (x.bar.pause = v))} note={t.sBarNote} />
+        <Toggle label={t.timer} value={st.bar.timer} onChange={(v) => set((x) => void (x.bar.timer = v))} note={t.sBarNote} />
       </Section>
 
       <Section title={t.sVoice}>

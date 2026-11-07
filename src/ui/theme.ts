@@ -13,7 +13,6 @@ export const C = {
   accent: '#2563EB',
   accentSoft: '#DBE7FF',
   help: '#D92D20',
-  pause: '#B54708',
   helpSoft: '#FEE4E2',
   edit: '#B54708',
   editSoft: '#FEF0C7',

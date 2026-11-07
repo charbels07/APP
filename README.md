@@ -67,8 +67,8 @@ library, ARASAAC search, emoji, display mode, colour, reveal level, voice
 recording per language) · custom words · new TLAs and schedules · settings ·
 print / PDF · profile export · no sentence history (privacy by default).
 
-Draft 0.2 adds: the spoken word follows the grammar ("je" + "vouloir" says "veux") · Pause button
-next to Help, both larger · offline pictogram library with automatic picture for new words · TLA
+Draft 0.2 adds: the spoken word follows the grammar ("je" + "vouloir" says "veux") · larger Help
+button (the "I need a break" message lives inside Help) · offline pictogram library with automatic picture for new words · TLA
 creation from a topic with suggested words (editable before and after) · per-card size, spread
 over empty neighbours, colour strength · moving words in caregiver mode · voice dictation and
 recorded demonstrations replayed with an animated hand (*Modèle*).

@@ -84,7 +84,6 @@ interface AppCtx {
   openTla: (id?: string) => void;
   openSchedule: () => void;
   pressHelp: () => void;
-  pressPause: () => void;
 
   /** Demonstrations (modelling): record taps, replay them with an animated pointer. */
   recording: boolean;
@@ -297,8 +296,6 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
     setOverlay({ kind: 'help' });
   }, []);
 
-  /** Pause: a priority request, spoken at once like Help. */
-  const pressPause = useCallback(() => speakConcept('need_break'), [speakConcept]);
 
   // ── Demonstrations: replay with an animated pointer so the child sees where each word is ──
   const [playing, setPlaying] = useState(false);
@@ -543,7 +540,6 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
       openTla,
       openSchedule,
       pressHelp,
-      pressPause,
       recording,
       startRecording,
       finishRecording,
@@ -566,7 +562,7 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
     [
       profile, update, replaceProfile, t, lang, view, path, tlaId, overlay, editMode, setEditMode, strip,
       stripState.history.length, touchConcept, addText, speakStrip, speakConcept, deleteLast, clearStrip, undo, goHome,
-      openFolder, goBack, openTla, openSchedule, pressHelp, pressPause, recording, startRecording, finishRecording,
+      openFolder, goBack, openTla, openSchedule, pressHelp, recording, startRecording, finishRecording,
       playing, playSteps, stopPlaying, pointer, moveSource, highlight, showMeWhere, clearHighlight, timer,
       startTimer, pauseTimer, resumeTimer, resetTimer, setTimerOpen,
     ],

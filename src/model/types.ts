@@ -123,7 +123,7 @@ export interface Settings {
   /** Fixed zone with urgent/repair messages (spec §7). */
   quickZone: boolean;
   /** Optional universal-bar buttons (CAA and Help can never be hidden). */
-  bar: { tla: boolean; schedule: boolean; timer: boolean; pause: boolean };
+  bar: { tla: boolean; schedule: boolean; timer: boolean };
   speechRate: number;
   voices: Partial<Record<Lang, string>>;
   pin: string;

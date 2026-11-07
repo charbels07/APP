@@ -176,7 +176,6 @@ const fr = {
   folder: 'Dossier',
   demo: 'Brouillon',
   // round 2
-  pauseBtn: 'Pause',
   model: 'Modèle',
   modelTitle: 'Montrer et modéliser',
   dictate: 'Dicter une phrase',
@@ -228,7 +227,6 @@ const fr = {
   coreBlock: 'Mots de base',
   topicWords: 'Mots proposés',
   creating: 'Création…',
-  sPause: 'Bouton Pause',
 };
 
 type Dict = typeof fr;
@@ -392,7 +390,6 @@ const en: Dict = {
   emptyCell: 'Empty cell',
   folder: 'Folder',
   demo: 'Draft',
-  pauseBtn: 'Break',
   model: 'Model',
   modelTitle: 'Show & model',
   dictate: 'Dictate a sentence',
@@ -444,7 +441,6 @@ const en: Dict = {
   coreBlock: 'Core words',
   topicWords: 'Suggested words',
   creating: 'Creating…',
-  sPause: 'Break button',
 };
 
 const DICTS: Record<UiLang, Dict> = { fr, en };

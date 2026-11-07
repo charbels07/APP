@@ -35,7 +35,7 @@ Idéalement sur iPad, en paysage. Code accompagnant : **1234**.
 **Nouveautés du brouillon 0.2**
 
 7. **Mot prononcé accordé** : « je » puis « vouloir » fait dire « veux ».
-8. **Pause** (orange) et **Aide** (rouge) : plus grands, toujours visibles, prononcés au premier appui.
+8. **Aide** (rouge) : plus grand. « J’ai besoin d’une pause » est l’un des choix de l’Aide.
 9. **Modèle** (main, dans la barre) : écrivez ou dictez « je veux des pommes » → une main montre
    chaque mot sur la grille (y compris dans les dossiers), puis la phrase est lue. On peut aussi
    **enregistrer une démonstration** (touchez les mots) et la **rejouer**.

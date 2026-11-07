@@ -9,7 +9,7 @@ export const formatTime = (ms: number) => {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 };
 
-type Tone = 'help' | 'pause';
+type Tone = 'help';
 
 interface Item {
   key: string;
@@ -24,8 +24,8 @@ interface Item {
 
 /**
  * Universal bar (spec §6): always visible, same position on every screen.
- * CAA and Help can never be hidden; TLA / Schedule / Timer / Pause are optional per profile.
- * Pause and Help are priority messages: bigger, coloured, spoken on the first press.
+ * CAA and Help can never be hidden; TLA / Schedule / Timer are optional per profile.
+ * Help is a priority message: bigger, coloured, spoken on the first press.
  */
 export function UniversalBar({ vertical }: { vertical: boolean }) {
   const app = useApp();
@@ -62,7 +62,6 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
     },
   ];
   const priority: Item[] = [
-    { key: 'pause', icon: 'pause', label: t.pauseBtn, onPress: app.pressPause, active: false, show: bar.pause !== false, tone: 'pause' },
     { key: 'help', icon: 'help', label: t.help, onPress: app.pressHelp, active: overlay?.kind === 'help', tone: 'help' },
   ];
   const tools: Item[] = [
@@ -121,7 +120,7 @@ function BarButton({
   size: 'main' | 'priority' | 'tool' | 'toolWide' | 'row' | 'priorityRow';
   iconsOnly?: boolean;
 }) {
-  const toneBg = tone === 'help' ? C.help : tone === 'pause' ? C.pause : undefined;
+  const toneBg = tone === 'help' ? C.help : undefined;
   const iconSize = size === 'priority' ? 38 : size === 'priorityRow' ? 30 : size === 'main' ? 28 : 22;
   return (
     <Pressable

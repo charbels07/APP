@@ -138,7 +138,7 @@ export function NewTlaPanel() {
   return (
     <Panel title={t.newTlaTitle} onClose={() => app.setOverlay(null)} tone="edit" maxWidth={900}>
       <View style={styles.row}>
-        <View style={{ flex: 1 }}>
+        <View style={styles.grow}>
           <Field
             label={t.tlaTopic}
             value={topic}
@@ -148,7 +148,7 @@ export function NewTlaPanel() {
             placeholder="piscine"
           />
         </View>
-        <Btn kind="primary" icon="star" label={t.suggest} disabled={!lib || !topic.trim()} onPress={suggest} style={{ alignSelf: 'flex-end' }} />
+        <Btn kind="primary" icon="star" label={t.suggest} disabled={!lib || !topic.trim()} onPress={suggest} style={styles.grow} />
       </View>
       {lib === null && <Text style={styles.note}>{t.pictoLoading}</Text>}
 
@@ -193,7 +193,8 @@ export function NewTlaPanel() {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', gap: 8, alignItems: 'flex-end' },
+  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'flex-end' },
+  grow: { flexGrow: 1, flexBasis: 240, minWidth: 0 },
   note: { fontSize: 13, color: C.textMuted },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   chip: {

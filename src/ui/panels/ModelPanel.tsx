@@ -37,17 +37,18 @@ export function ModelPanel() {
         <Text style={styles.note}>{t.dictateHint}</Text>
         <VoiceButton lang={lang} onFinal={show} />
         <View style={styles.row}>
-          <View style={{ flex: 1 }}>
+          <View style={styles.grow}>
             <Field
               label={t.orType}
               value={text}
               onChangeText={setText}
               onSubmitEditing={() => text.trim() && show(text)}
               placeholder="je veux manger"
+              returnKeyType="go"
               style={lang === 'ar' ? { textAlign: 'right' } : undefined}
             />
           </View>
-          <Btn kind="primary" icon="pointer" label={t.showOnBoard} disabled={!text.trim()} onPress={() => show(text)} style={{ alignSelf: 'flex-end' }} />
+          <Btn kind="primary" icon="pointer" label={t.showOnBoard} disabled={!text.trim()} onPress={() => show(text)} style={styles.grow} />
         </View>
       </Section>
 
@@ -160,7 +161,8 @@ const styles = StyleSheet.create({
   note: { fontSize: 13, color: C.textMuted },
   warn: { backgroundColor: C.editSoft, padding: 10, borderRadius: radius.md, color: C.edit },
   label: { fontSize: 14, fontWeight: '700', color: C.text },
-  row: { flexDirection: 'row', gap: 8, alignItems: 'flex-end' },
+  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'flex-end' },
+  grow: { flexGrow: 1, flexBasis: 240, minWidth: 0 },
   mic: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -182,8 +182,8 @@ const fr = {
   dictateHint: 'Touchez le micro et dites la phrase (ex. « je veux manger ») : les mots sont montrés un par un sur la grille, puis la phrase est lue.',
   listening: 'J’écoute…',
   dictateUnavailable:
-    'Reconnaissance vocale indisponible ici (la démo en ligne bloque le micro). Écrivez la phrase ci-dessous pour voir l’animation ; sur l’iPad, le micro fonctionnera.',
-  orType: 'Ou écrivez la phrase',
+    'Le micro intégré est bloqué dans la démo en ligne. Astuce iPhone / iPad : touchez le champ ci-dessous puis la touche micro du clavier pour dicter. Dans l’application installée, le bouton bleu fonctionnera directement.',
+  orType: 'Ou écrivez (ou dictez avec le clavier) la phrase',
   showOnBoard: 'Montrer sur la grille',
   demos: 'Démonstrations enregistrées',
   recordDemo: 'Enregistrer une démonstration',
@@ -396,8 +396,8 @@ const en: Dict = {
   dictateHint: 'Tap the mic and say the sentence (e.g. “I want to eat”): each word is shown on the board, then the sentence is read.',
   listening: 'Listening…',
   dictateUnavailable:
-    'Speech recognition is unavailable here (the online demo blocks the microphone). Type the sentence below to see the animation; on the iPad the mic will work.',
-  orType: 'Or type the sentence',
+    'The built-in mic is blocked in the online demo. Tip on iPhone / iPad: tap the field below, then the keyboard’s mic key to dictate. In the installed app, the blue button works directly.',
+  orType: 'Or type (or dictate with the keyboard) the sentence',
   showOnBoard: 'Show on the board',
   demos: 'Recorded demonstrations',
   recordDemo: 'Record a demonstration',

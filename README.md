@@ -101,6 +101,11 @@ Draft 0.5 adds: an in-app guide from A to Z (bar → *Guide*, and Settings), in 
 first steps for families and new users, and caregivers & professionals — with a “Try it” button
 per chapter that opens the place it describes; a welcome card offers it once on first launch.
 
+Draft 0.6 adds: the navigation language (menus, buttons, messages, guide) is chosen separately
+from the words' language, both from the bar's *Language* button: French, English or Arabic
+navigation × French, English or Lebanese Arabic words. Arabic navigation (simple Modern Standard
+Arabic, to be reviewed) mirrors the menus right to left; boards are never mirrored (motor plan).
+
 Not yet (later phases of the spec): accounts, multi-device sync, roles and
 companion app, AI generation from photos, on-device/server AI for TLAs on iPad, switch scanning / eye gaze,
 Arabic morphology, other dialects, opt-in usage statistics, version history.

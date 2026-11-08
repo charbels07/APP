@@ -70,7 +70,7 @@ export function NewTlaPanel() {
   const caption = (item: PlanItem) => {
     if (!lib) return '';
     const l = labelsFor(lib, item);
-    return ui === 'en' ? l.en : l.fr;
+    return l[ui] || l.fr || l.en || '';
   };
 
   const askAi = async () => {
@@ -249,7 +249,7 @@ export function NewTlaPanel() {
               {[...TLA_CORE.flat(), ...FUNCTION_WORDS].map((id) => (
                 <View key={id} style={styles.chip}>
                   <SymbolView symbol={symbolOf(profile, id)} size={28} />
-                  <Text style={styles.chipText}>{label(profile, id, ui === 'en' ? 'en' : 'fr')}</Text>
+                  <Text style={styles.chipText}>{label(profile, id, ui)}</Text>
                 </View>
               ))}
             </View>

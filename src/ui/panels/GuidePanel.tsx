@@ -4,7 +4,7 @@ import { GUIDE, GUIDE_TRACK_INTRO, type GuideAction, type GuideChapter, type Gui
 import { locate } from '../../lib/search';
 import type { DemoStep } from '../../model/types';
 import { useApp } from '../../state/AppState';
-import { Btn, Panel, Segmented } from '../common';
+import { Btn, Panel, Segmented, useNavRtl } from '../common';
 import { Icon } from '../Icon';
 import { C, radius } from '../theme';
 
@@ -84,8 +84,8 @@ export function GuidePanel() {
           { value: 'pro', label: t.guidePro },
         ]}
       />
-      <Text style={s.intro}>{GUIDE_TRACK_INTRO[track][ui]}</Text>
-      <Text style={s.progress}>
+      <Text style={[s.intro, ui === 'ar' && s.textRtl]}>{GUIDE_TRACK_INTRO[track][ui]}</Text>
+      <Text style={[s.progress, ui === 'ar' && s.textRtl]}>
         {readHere} / {chapters.length} {t.guideRead}
       </Text>
       {chapters.map((c, i) => (
@@ -126,6 +126,9 @@ function Chapter({
 }) {
   const { t, profile } = useApp();
   const ui = profile.settings.uiLang;
+  const rtl = useNavRtl();
+  const row = rtl ? s.rowRtl : null;
+  const right = rtl ? s.textRtl : null;
   return (
     <View style={[s.chapter, open && s.chapterOpen]}>
       <Pressable
@@ -133,26 +136,26 @@ function Chapter({
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
         accessibilityLabel={chapter.title[ui]}
-        style={({ pressed }) => [s.head, pressed && { opacity: 0.7 }]}
+        style={({ pressed }) => [s.head, row, pressed && { opacity: 0.7 }]}
       >
         <View style={[s.num, read && s.numRead]}>
           {read ? <Icon name="check" size={16} color="#fff" strokeWidth={3} /> : <Text style={s.numText}>{number}</Text>}
         </View>
         <Icon name={chapter.icon} size={22} color={C.accent} />
-        <Text style={s.title}>{chapter.title[ui]}</Text>
-        <Icon name={open ? 'chevronDown' : 'chevronRight'} size={20} color={C.textMuted} />
+        <Text style={[s.title, right]}>{chapter.title[ui]}</Text>
+        <Icon name={open ? 'chevronDown' : rtl ? 'chevronLeft' : 'chevronRight'} size={20} color={C.textMuted} />
       </Pressable>
       {open && (
         <View style={s.body}>
           {chapter.steps[ui].map((step, k) => (
-            <View key={k} style={s.step}>
-              <Text style={s.bullet}>{k + 1}.</Text>
-              <Text style={s.stepText}>{step}</Text>
+            <View key={k} style={[s.step, row]}>
+              <Text style={[s.bullet, right]}>{k + 1}.</Text>
+              <Text style={[s.stepText, right]}>{step}</Text>
             </View>
           ))}
-          {chapter.tip && <Text style={s.tip}>{chapter.tip[ui]}</Text>}
-          {lockedNote && <Text style={s.tip}>{lockedNote}</Text>}
-          <View style={s.actions}>
+          {chapter.tip && <Text style={[s.tip, right]}>{chapter.tip[ui]}</Text>}
+          {lockedNote && <Text style={[s.tip, right]}>{lockedNote}</Text>}
+          <View style={[s.actions, row]}>
             {onTry && (
               <Btn
                 kind="primary"
@@ -161,7 +164,7 @@ function Chapter({
                 onPress={onTry}
               />
             )}
-            {onNext && <Btn icon="chevronRight" label={t.nextChapter} onPress={onNext} />}
+            {onNext && <Btn icon={rtl ? 'chevronLeft' : 'chevronRight'} label={t.nextChapter} onPress={onNext} />}
           </View>
         </View>
       )}
@@ -173,16 +176,17 @@ function Chapter({
 export function WelcomeCard() {
   const app = useApp();
   const { t } = app;
+  const rtl = useNavRtl();
   const dismiss = () => app.update((d) => void (d.guide = { ...d.guide, seen: true }));
   return (
     <Panel title={t.welcomeTitle} onClose={dismiss} maxWidth={560}>
-      <View style={s.welcome}>
+      <View style={[s.welcome, rtl && s.rowRtl]}>
         <View style={s.welcomeIcon}>
           <Icon name="book" size={40} color={C.accent} />
         </View>
-        <Text style={s.welcomeText}>{t.welcomeText}</Text>
+        <Text style={[s.welcomeText, rtl && s.textRtl]}>{t.welcomeText}</Text>
       </View>
-      <View style={s.actions}>
+      <View style={[s.actions, rtl && s.rowRtl]}>
         <Btn kind="primary" icon="book" label={t.openGuide} onPress={() => app.setOverlay({ kind: 'guide' })} style={{ flexGrow: 1 }} />
         <Btn label={t.later} onPress={dismiss} />
       </View>
@@ -192,6 +196,8 @@ export function WelcomeCard() {
 
 const s = StyleSheet.create({
   intro: { fontSize: 15, color: C.text, lineHeight: 21 },
+  rowRtl: { flexDirection: 'row-reverse' },
+  textRtl: { textAlign: 'right', writingDirection: 'rtl' },
   progress: { fontSize: 13, color: C.textMuted, fontWeight: '700' },
   chapter: { borderWidth: 1.5, borderColor: C.border, borderRadius: radius.md, backgroundColor: C.surface },
   chapterOpen: { borderColor: C.accent },

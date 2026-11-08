@@ -4,9 +4,10 @@ import { aiAvailable, askAiToReadDrawing, type DrawingGuess, type Stroke } from 
 import { isRtl, label, LANG_NAMES, symbolOf } from '../../lib/lexicon';
 import { search, type Location } from '../../lib/search';
 import { speakText } from '../../lib/speech';
-import { LANGS, type Lang } from '../../model/types';
+import { LANGS, type Lang, type UiLang } from '../../model/types';
+import { UI_LANG_NAMES } from '../../i18n/ui';
 import { useApp } from '../../state/AppState';
-import { Btn, Panel } from '../common';
+import { Btn, Panel, Section } from '../common';
 import { DrawPad } from '../DrawPad';
 import { Icon } from '../Icon';
 import { SymbolView } from '../SymbolView';
@@ -258,32 +259,61 @@ export function HelpPanel() {
 }
 
 /** Language switch: two actions (protected against accidental change, spec §26). */
+const UI_LANGS: UiLang[] = ['fr', 'en', 'ar'];
+
+/**
+ * Two separate choices, open to everyone from the bar: the words' language (what the
+ * device says and writes on the cards) and the navigation language (menus, buttons, guide).
+ */
 export function LangPanel() {
   const app = useApp();
   const { t, profile } = app;
-  const choose = (l: Lang) => {
-    app.update((d) => void (d.settings.lang = l));
-    app.setOverlay(null);
-  };
+  const st = profile.settings;
   return (
-    <Panel title={t.language} onClose={() => app.setOverlay(null)} maxWidth={480}>
-      {LANGS.map((l) => {
-        const active = profile.settings.lang === l;
-        return (
-          <Pressable
+    <Panel title={t.language} onClose={() => app.setOverlay(null)} maxWidth={560}>
+      <Section title={t.wordsLang}>
+        <Text style={styles.muted}>{t.wordsLangNote}</Text>
+        {LANGS.map((l) => (
+          <LangChoice
             key={l}
-            onPress={() => choose(l)}
-            style={({ pressed }) => [styles.langBtn, active && styles.langActive, pressed && { opacity: 0.7 }]}
-            accessibilityRole="button"
-            accessibilityState={{ selected: active }}
-          >
-            <Text style={[styles.langText, active && { color: C.accent }]}>{LANG_NAMES[l]}</Text>
-            {active && <Icon name="check" size={24} color={C.accent} strokeWidth={3} />}
-          </Pressable>
-        );
-      })}
-      <Text style={styles.muted}>{t.langNote}</Text>
+            label={LANG_NAMES[l]}
+            active={st.lang === l}
+            onPress={() => app.update((d) => void (d.settings.lang = l))}
+          />
+        ))}
+        <Text style={styles.muted}>{t.langNote}</Text>
+      </Section>
+      <Section title={t.navLang}>
+        <Text style={styles.muted}>{t.navLangNote}</Text>
+        <View style={[styles.row, { flexWrap: 'wrap' }]}>
+          {UI_LANGS.map((l) => (
+            <LangChoice
+              key={l}
+              compact
+              label={UI_LANG_NAMES[l]}
+              active={st.uiLang === l}
+              onPress={() => app.update((d) => void (d.settings.uiLang = l))}
+            />
+          ))}
+        </View>
+      </Section>
+      <Btn kind="primary" icon="check" label={t.close} onPress={() => app.setOverlay(null)} />
     </Panel>
+  );
+}
+
+function LangChoice({ label, active, onPress, compact }: { label: string; active: boolean; onPress: () => void; compact?: boolean }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.langBtn, compact && styles.langCompact, active && styles.langActive, pressed && { opacity: 0.7 }]}
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      accessibilityLabel={label}
+    >
+      <Text style={[styles.langText, active && { color: C.accent }]}>{label}</Text>
+      {active && <Icon name="check" size={compact ? 20 : 24} color={C.accent} strokeWidth={3} />}
+    </Pressable>
   );
 }
 
@@ -400,6 +430,7 @@ const styles = StyleSheet.create({
     borderColor: C.border,
   },
   langActive: { borderColor: C.accent, backgroundColor: C.accentSoft },
+  langCompact: { flexGrow: 1, flexBasis: 140, minHeight: 52, paddingHorizontal: 14, gap: 8 },
   langText: { fontSize: 22, fontWeight: '700', color: C.text },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 14, marginVertical: 6 },
   dot: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: C.edit },

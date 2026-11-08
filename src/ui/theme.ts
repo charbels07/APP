@@ -1,4 +1,4 @@
-import type { WordClass } from '../model/types';
+import type { WordClass, UiLang } from '../model/types';
 
 export const C = {
   bg: '#EEF1F5',
@@ -40,17 +40,17 @@ export const CLASS_ORDER: WordClass[] = [
   'pronoun', 'people', 'verb', 'descriptor', 'noun', 'little', 'question', 'social', 'negation', 'folder',
 ];
 
-export const CLASS_NAMES: Record<WordClass, { fr: string; en: string }> = {
-  pronoun: { fr: 'Pronoms', en: 'Pronouns' },
-  people: { fr: 'Personnes', en: 'People' },
-  verb: { fr: 'Verbes', en: 'Verbs' },
-  descriptor: { fr: 'Descripteurs', en: 'Describing' },
-  noun: { fr: 'Noms', en: 'Nouns' },
-  little: { fr: 'Petits mots', en: 'Little words' },
-  question: { fr: 'Questions', en: 'Questions' },
-  social: { fr: 'Social', en: 'Social' },
-  negation: { fr: 'Négation', en: 'Negation' },
-  folder: { fr: 'Dossier', en: 'Folder' },
+export const CLASS_NAMES: Record<WordClass, Record<UiLang, string>> = {
+  pronoun: { fr: 'Pronoms', en: 'Pronouns', ar: 'ضمائر' },
+  people: { fr: 'Personnes', en: 'People', ar: 'أشخاص' },
+  verb: { fr: 'Verbes', en: 'Verbs', ar: 'أفعال' },
+  descriptor: { fr: 'Descripteurs', en: 'Describing', ar: 'صفات' },
+  noun: { fr: 'Noms', en: 'Nouns', ar: 'أسماء' },
+  little: { fr: 'Petits mots', en: 'Little words', ar: 'كلمات صغيرة' },
+  question: { fr: 'Questions', en: 'Questions', ar: 'أسئلة' },
+  social: { fr: 'Social', en: 'Social', ar: 'اجتماعي' },
+  negation: { fr: 'Négation', en: 'Negation', ar: 'نفي' },
+  folder: { fr: 'Dossier', en: 'Folder', ar: 'مجلد' },
 };
 
 export const radius = { sm: 8, md: 12, lg: 16 };

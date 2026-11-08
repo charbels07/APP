@@ -15,7 +15,8 @@ export function SentenceStrip({ compact }: { compact: boolean }) {
   const { strip, profile, lang, t, speakStrip, deleteLast, clearStrip, undo, canUndo, wiggle, pulse } = useApp();
   const tokens = useMemo(() => renderStrip(strip, profile), [strip, profile]);
   // Base direction follows the first word of the sentence (Unicode "first strong" rule).
-  const rtl = isRtl(strip.length ? strip[0].lang : lang);
+  // An empty strip shows a hint in the navigation language, so it follows that direction.
+  const rtl = strip.length ? isRtl(strip[0].lang) : profile.settings.uiLang === 'ar';
   const scroller = useRef<ScrollViewInstance>(null);
   useEffect(() => {
     if (tokens.length) scroller.current?.scrollToEnd({ animated: true });

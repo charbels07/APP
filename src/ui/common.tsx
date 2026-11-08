@@ -10,8 +10,18 @@ import {
   type TextInputProps,
   type ViewStyle,
 } from 'react-native';
+import { useApp } from '../state/AppState';
 import { Icon, type IconName } from './Icon';
 import { C, radius } from './theme';
+
+/**
+ * Arabic navigation: menus read right to left (header, switches, fields, guide rows).
+ * The boards are never mirrored: word positions are the child's motor plan.
+ */
+export function useNavRtl(): boolean {
+  return useApp().profile.settings.uiLang === 'ar';
+}
+const RIGHT = { textAlign: 'right' as const, writingDirection: 'rtl' as const };
 
 export function Panel({
   title,
@@ -34,12 +44,13 @@ export function Panel({
   scrollLocked?: boolean;
 }) {
   const headerBg = tone === 'help' ? C.helpSoft : tone === 'edit' ? C.editSoft : C.surface;
+  const rtl = useNavRtl();
   return (
     <View style={styles.backdrop}>
       <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessible={false} />
       <View style={[styles.panel, { maxWidth }]}>
-        <View style={[styles.panelHeader, { backgroundColor: headerBg }]}>
-          <Text style={styles.panelTitle} numberOfLines={1}>
+        <View style={[styles.panelHeader, rtl && styles.headerRtl, { backgroundColor: headerBg }]}>
+          <Text style={[styles.panelTitle, rtl && RIGHT]} numberOfLines={1}>
             {title}
           </Text>
           {headerRight}
@@ -108,16 +119,17 @@ export function Btn({
 }
 
 export function Toggle({ label, value, onChange, note }: { label: string; value: boolean; onChange: (v: boolean) => void; note?: string }) {
+  const rtl = useNavRtl();
   return (
     <Pressable
       onPress={() => onChange(!value)}
-      style={styles.row}
+      style={[styles.row, rtl && { flexDirection: 'row-reverse' }]}
       accessibilityRole="switch"
       accessibilityState={{ checked: value }}
     >
       <View style={{ flex: 1 }}>
-        <Text style={styles.rowLabel}>{label}</Text>
-        {note ? <Text style={styles.note}>{note}</Text> : null}
+        <Text style={[styles.rowLabel, rtl && RIGHT]}>{label}</Text>
+        {note ? <Text style={[styles.note, rtl && RIGHT]}>{note}</Text> : null}
       </View>
       <View style={[styles.switch, value && styles.switchOn]}>
         <View style={[styles.knob, value && styles.knobOn]} />
@@ -156,9 +168,10 @@ export function Segmented<T extends string | number>({
 }
 
 export function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  const rtl = useNavRtl();
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <Text style={[styles.sectionTitle, rtl && RIGHT]}>{title}</Text>
       {children}
     </View>
   );
@@ -166,10 +179,11 @@ export function Section({ title, children }: { title: string; children: React.Re
 
 export function Field(props: TextInputProps & { label?: string }) {
   const { label, style, ...rest } = props;
+  const rtl = useNavRtl();
   return (
     <View style={{ gap: 4 }}>
-      {label ? <Text style={styles.fieldLabel}>{label}</Text> : null}
-      <TextInput placeholderTextColor="#98A2B3" style={[styles.input, style]} {...rest} />
+      {label ? <Text style={[styles.fieldLabel, rtl && RIGHT]}>{label}</Text> : null}
+      <TextInput placeholderTextColor="#98A2B3" style={[styles.input, rtl && { textAlign: 'right' }, style]} {...rest} />
     </View>
   );
 }
@@ -205,6 +219,7 @@ export const styles = StyleSheet.create({
     borderBottomColor: C.border,
     gap: 8,
   },
+  headerRtl: { flexDirection: 'row-reverse', paddingLeft: 6, paddingRight: 18 },
   panelTitle: { flex: 1, fontSize: 20, fontWeight: '700', color: C.text },
   closeBtn: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   panelBody: { padding: 18, gap: 14 },

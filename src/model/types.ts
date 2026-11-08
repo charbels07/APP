@@ -9,7 +9,8 @@
 export type Lang = 'fr' | 'en' | 'ar';
 export const LANGS: Lang[] = ['fr', 'en', 'ar'];
 
-export type UiLang = 'fr' | 'en';
+/** Navigation language (menus, buttons, guide) — chosen separately from the words' language. */
+export type UiLang = 'fr' | 'en' | 'ar';
 
 /** Modified Fitzgerald key categories, used for cell colours. */
 export type WordClass =

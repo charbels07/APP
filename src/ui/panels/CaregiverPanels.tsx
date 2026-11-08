@@ -13,7 +13,8 @@ import { pictoToMedia } from '../../lib/pictoLibrary';
 import { search } from '../../lib/search';
 import { listVoices } from '../../lib/speech';
 import { resetProfile } from '../../lib/storage';
-import { LANGS, type AppLink, type CellDisplay, type Lang, type Profile, type WordClass } from '../../model/types';
+import { UI_LANG_NAMES } from '../../i18n/ui';
+import { LANGS, type AppLink, type CellDisplay, type Lang, type Profile, type UiLang, type WordClass } from '../../model/types';
 import { useApp } from '../../state/AppState';
 import { Btn, Field, Panel, Section, Segmented, Toggle } from '../common';
 import { PictoSearch } from '../PictoPicker';
@@ -261,7 +262,7 @@ function ConceptEditorBody({ conceptId }: { conceptId: string }) {
           <>
             <Text style={s.label}>{t.pictoLibrary}</Text>
             <PictoSearch
-              initialQuery={label(profile, conceptId, profile.settings.uiLang === 'en' ? 'en' : 'fr')}
+              initialQuery={label(profile, conceptId, profile.settings.uiLang)}
               lang={profile.settings.uiLang}
               onPick={async (id) => {
                 const name = await pictoToMedia(id);
@@ -278,7 +279,7 @@ function ConceptEditorBody({ conceptId }: { conceptId: string }) {
         )}
         {source === 'web' && (
           <WebPicturePicker
-            initialQuery={label(profile, conceptId, profile.settings.uiLang === 'en' ? 'en' : 'fr')}
+            initialQuery={label(profile, conceptId, profile.settings.uiLang)}
             onPicked={(name, credit) => setSymbol({ kind: 'media', name }, credit)}
           />
         )}
@@ -702,6 +703,12 @@ function SettingsPanel() {
       <Section title={t.sCommunication}>
         <Text style={s.label}>{t.sCommLang}</Text>
         <Segmented value={st.lang} onChange={(v: Lang) => set((x) => void (x.lang = v))} options={LANGS.map((l) => ({ value: l, label: LANG_NAMES[l] }))} />
+        <Text style={s.label}>{t.sInterface}</Text>
+        <Segmented
+          value={st.uiLang}
+          onChange={(v: UiLang) => set((x) => void (x.uiLang = v))}
+          options={(['fr', 'en', 'ar'] as UiLang[]).map((l) => ({ value: l, label: UI_LANG_NAMES[l] }))}
+        />
         <Text style={s.label}>{t.sGender}</Text>
         <Segmented
           value={st.gender}
@@ -785,17 +792,6 @@ function SettingsPanel() {
           </View>
           <Btn small kind="primary" label={t.save} disabled={pin.length !== 4 || pin === st.pin} onPress={() => set((x) => void (x.pin = pin))} style={{ alignSelf: 'flex-end' }} />
         </View>
-      </Section>
-
-      <Section title={t.sInterface}>
-        <Segmented
-          value={st.uiLang}
-          onChange={(v) => set((x) => void (x.uiLang = v))}
-          options={[
-            { value: 'fr', label: 'Français' },
-            { value: 'en', label: 'English' },
-          ]}
-        />
       </Section>
 
       <Section title={t.sData}>

@@ -19,7 +19,7 @@ export function WebPicturePicker({
   onPicked: (mediaName: string, credit?: string) => void;
 }) {
   const { t, profile } = useApp();
-  const lang = profile.settings.uiLang === 'en' ? 'en' : 'fr';
+  const lang = profile.settings.uiLang;
   const [kind, setKind] = useState<WebKind>('symbols');
   const [q, setQ] = useState(initialQuery);
   const [state, setState] = useState<'idle' | 'loading' | 'done' | 'offline'>('idle');

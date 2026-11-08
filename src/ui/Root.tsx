@@ -125,6 +125,25 @@ function AppLaunchBanner() {
   }, []);
   if (!appLaunch) return null;
   const name = label(profile, appLaunch.concept, lang);
+  if (appLaunch.blocked || (!appLaunch.at && appLaunch.url)) {
+    return (
+      <View style={[styles.banner, appLaunch.blocked ? styles.missingBanner : styles.playBanner]} accessibilityRole="alert">
+        <SymbolView symbol={symbolOf(profile, appLaunch.concept)} size={36} />
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={[styles.bannerText, appLaunch.blocked ? { color: C.edit } : styles.captionText]} numberOfLines={2}>
+            {appLaunch.blocked ? `${t.appBlocked} ${name}.` : `${name} — ${t.appTapToOpen}`}
+          </Text>
+          {appLaunch.blocked && (
+            <Text style={styles.missingHint} selectable>
+              {t.appBlockedHint} {appLaunch.url}
+            </Text>
+          )}
+        </View>
+        <Btn small label={appLaunch.blocked ? t.close : t.cancel} onPress={app.cancelAppLaunch} />
+        <Btn small kind="primary" icon="external" label={`${t.openNow} ${name}`} onPress={app.openAppNow} />
+      </View>
+    );
+  }
   if (!appLaunch.at) {
     return (
       <View style={[styles.banner, styles.missingBanner]} accessibilityRole="alert">

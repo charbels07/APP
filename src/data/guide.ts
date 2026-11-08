@@ -241,12 +241,12 @@ export const GUIDE: GuideChapter[] = [
     title: { fr: 'Les applis', en: 'Apps' },
     steps: {
       fr: [
-        'Dossier applis : YouTube, WhatsApp, Spotify, Anghami. Toucher une appli l’ouvre après 3 secondes (Annuler si c’est une erreur).',
+        'Dossier applis : YouTube, WhatsApp, Spotify, Anghami. Toucher une appli l’ouvre après 3 secondes (Annuler si c’est une erreur). Dans un navigateur (démo en ligne), touchez Ouvrir : les navigateurs interdisent l’ouverture automatique.',
         'Une phrase qui parle d’une appli l’ouvre aussi : « je veux écouter de la musique » puis Parler → Spotify.',
         'WhatsApp attend d’abord le numéro de la personne à appeler (voir « Relier une application »).',
       ],
       en: [
-        'Apps folder: YouTube, WhatsApp, Spotify, Anghami. Touching an app opens it after 3 seconds (Cancel if it was a mistake).',
+        'Apps folder: YouTube, WhatsApp, Spotify, Anghami. Touching an app opens it after 3 seconds (Cancel if it was a mistake). In a browser (online demo), tap Open: browsers forbid opening it automatically.',
         'A sentence that mentions an app opens it too: “I want to listen to music”, then Speak → Spotify.',
         'WhatsApp first needs the number of the person to call (see “Linking an app”).',
       ],

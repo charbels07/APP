@@ -5,7 +5,7 @@
  * when the sentence the child says mentions it: « je veux écouter de la musique »
  * opens Spotify because « musique » is one of Spotify's trigger words.
  */
-import { Linking } from 'react-native';
+import { Linking, Platform } from 'react-native';
 import type { AppLink, Profile, StripItem } from '../model/types';
 import { allConceptIds, getConcept, label } from './lexicon';
 import { normalize } from './search';
@@ -42,14 +42,34 @@ export function isIncomplete(link: AppLink | undefined): boolean {
   return !u || /^https?:\/\/(wa\.me|api\.whatsapp\.com)\/?$/i.test(u);
 }
 
+/**
+ * In a browser this must run inside the tap itself: browsers block new windows that are
+ * not opened right after a tap (Safari / iPhone / iPad allow about 1 second, Chrome 5).
+ * Returns false when the browser refused (pop-up blocked, or a frame that forbids pop-ups).
+ */
 export async function openAppUrl(url: string): Promise<boolean> {
+  const target = cleanUrl(url);
+  if (Platform.OS === 'web') {
+    // Called synchronously (no await before this line), so it still counts as the tap.
+    const w = typeof window !== 'undefined' ? window.open(target, '_blank') : null;
+    if (!w) return false;
+    try {
+      w.opener = null;
+    } catch {
+      /* cross-origin already */
+    }
+    return true;
+  }
   try {
-    await Linking.openURL(cleanUrl(url));
+    await Linking.openURL(target);
     return true;
   } catch {
     return false;
   }
 }
+
+/** Devices open apps by themselves after the countdown; browsers need one more tap (see openAppUrl). */
+export const APPS_NEED_TAP = Platform.OS === 'web';
 
 const words = (text: string) => normalize(text).split(/[^\p{L}\p{N}]+/u).filter(Boolean);
 

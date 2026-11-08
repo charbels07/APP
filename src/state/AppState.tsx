@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { strings, type UiStrings } from '../i18n/ui';
-import { appLinkOf, findAppInSentence, isIncomplete, openAppUrl } from '../lib/appLinks';
+import { APPS_NEED_TAP, appLinkOf, findAppInSentence, isIncomplete, openAppUrl } from '../lib/appLinks';
 import { joinTokens, renderStrip, toSpeechPlan } from '../lib/grammar';
 import { audioOf, label } from '../lib/lexicon';
 import { locate, type Location } from '../lib/search';
@@ -62,8 +62,10 @@ export interface Wiggle {
 export interface AppLaunch {
   concept: string;
   url: string;
-  /** When it opens (ms); undefined = link missing. */
+  /** When it opens (ms). Not set: waiting for a tap on "Open" (browser), or link missing (url ''). */
   at?: number;
+  /** The browser refused to open it (pop-up blocked). */
+  blocked?: boolean;
 }
 
 export interface TimerState {
@@ -226,11 +228,12 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
     clearTimeout(launchTimer.current);
     setAppLaunch(null);
   }, []);
+  /** Called from the "Open" button: inside the tap, so browsers allow the new window. */
   const openAppNow = useCallback(() => {
     const a = appLaunchRef.current;
     clearTimeout(launchTimer.current);
-    setAppLaunch(null);
-    if (a?.url) openAppUrl(a.url);
+    if (!a?.url) return setAppLaunch(null);
+    openAppUrl(a.url).then((ok) => setAppLaunch(ok ? null : { concept: a.concept, url: a.url, blocked: true }));
   }, []);
   const launchApp = useCallback((conceptId: string) => {
     const link = appLinkOf(profileRef.current, conceptId);
@@ -238,6 +241,11 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
     if (!link) return;
     if (isIncomplete(link)) {
       setAppLaunch({ concept: conceptId, url: '' });
+      return;
+    }
+    // A browser would block a window opened by a timer: there the banner waits for a tap on "Open".
+    if (APPS_NEED_TAP) {
+      setAppLaunch({ concept: conceptId, url: link.url });
       return;
     }
     const delay = 3000;

@@ -71,6 +71,21 @@ export async function openAppUrl(url: string): Promise<boolean> {
 /** Devices open apps by themselves after the countdown; browsers need one more tap (see openAppUrl). */
 export const APPS_NEED_TAP = Platform.OS === 'web';
 
+/**
+ * The web app is shown inside another page (the online demo). Such pages are sandboxed and
+ * every tab they open inherits the sandbox: sites that protect themselves with a
+ * Cross-Origin-Opener-Policy header — YouTube does — then refuse to load
+ * (ERR_BLOCKED_BY_RESPONSE). Nothing inside the page can lift that; the installed app is not affected.
+ */
+export const IN_EMBEDDED_PAGE = (() => {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') return false;
+  try {
+    return window.self !== window.top;
+  } catch {
+    return true;
+  }
+})();
+
 const words = (text: string) => normalize(text).split(/[^\p{L}\p{N}]+/u).filter(Boolean);
 
 /** Same rule as the situation library: 5+ letters match the start of a word, shorter ones the whole word. */

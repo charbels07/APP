@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { QUICK_ZONE } from '../data/defaults';
+import { IN_EMBEDDED_PAGE } from '../lib/appLinks';
 import { isRtl, label, symbolOf } from '../lib/lexicon';
 import { useApp } from '../state/AppState';
 import { Btn } from './common';
@@ -136,6 +137,11 @@ function AppLaunchBanner() {
           {appLaunch.blocked && (
             <Text style={styles.missingHint} selectable>
               {t.appBlockedHint} {appLaunch.url}
+            </Text>
+          )}
+          {!appLaunch.blocked && IN_EMBEDDED_PAGE && (
+            <Text style={styles.missingHint} selectable>
+              {t.appDemoHint} {appLaunch.url}
             </Text>
           )}
         </View>

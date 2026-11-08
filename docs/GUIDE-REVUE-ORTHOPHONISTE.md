@@ -24,8 +24,10 @@ données). Chaque chapitre a un bouton *Essayer* qui ouvre l’endroit dont il p
 5. *Aide* : un appui dit « Aide-moi ! » tout de suite, puis les choix.
 6. Dossier *applis* → *YouTube* : dans la démo, un bandeau propose *Ouvrir YouTube* (les
    navigateurs interdisent l’ouverture automatique ; sur l’iPad, l’appli s’ouvre seule après un
-   compte à rebours de 3 s). *WhatsApp* : message pour les parents. Puis *je* → *vouloir* →
-   *musique* (dossier *activités*) → *Parler* → *Ouvrir Spotify*.
+   compte à rebours de 3 s). YouTube refuse de s’ouvrir depuis la page de démonstration
+   (sécurité de YouTube face aux pages « bac à sable ») : c’est normal dans la démo, le bandeau
+   donne le lien à copier ; dans l’application il s’ouvre directement. *WhatsApp* : message pour
+   les parents. Puis *je* → *vouloir* → *musique* (dossier *activités*) → *Parler* → *Ouvrir Spotify*.
 7. *Planning* : *Fait*, *D’abord / Ensuite* ; *Minuteur* d’1 minute.
 8. *Accompagnant* (1234) → *Réglages* → *Faire vibrer les pictogrammes* → *Terminer* → toucher
    des mots puis *Parler* : chaque image bouge quand elle est dite.

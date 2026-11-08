@@ -7,7 +7,36 @@ faire tourner l’application et doit être remplacé par votre propre vocabulai
 **Démo :** https://claude.ai/artifact/6KiN8TkiZfScTfEq8HAqzS
 Idéalement sur iPad, en paysage. Code accompagnant : **1234**.
 
-## Ce qu’il faut essayer (10 minutes)
+**Guide intégré :** l’application contient maintenant son propre guide (bouton *Guide* dans la
+barre, et dans *Réglages*). Deux parcours : *Premiers pas* (familles, débutants) et
+*Accompagnants & pros* (principes, personnalisation, TLA, plannings, modélisation, impression,
+données). Chaque chapitre a un bouton *Essayer* qui ouvre l’endroit dont il parle. Une carte
+*Bienvenue* le propose au premier lancement.
+
+## À tester maintenant (15 minutes)
+
+1. Ouvrir le lien : la carte *Bienvenue* s’affiche → *Ouvrir le guide* → lire *Premiers pas* et
+   toucher *Essayer* sur 2 ou 3 chapitres.
+2. Toucher *je* → *vouloir* → *manger* → *Parler* : on doit entendre « je veux manger » (pas « vouloir »).
+3. *Langue* → عربي : les mots sont aux mêmes places ; faire une phrase, puis revenir au français.
+4. *Chercher* → taper « pome » → *Montre-moi où* ; puis *Dessiner* un ballon → *Trouver*
+   (accepter l’accès à l’IA la première fois).
+5. *Aide* : un appui dit « Aide-moi ! » tout de suite, puis les choix.
+6. Dossier *applis* → *Spotify* : compte à rebours de 3 s, puis ouverture (onglet dans la démo).
+   *WhatsApp* : message pour les parents. Puis *je* → *vouloir* → *musique* (dossier *activités*)
+   → *Parler* : Spotify s’ouvre.
+7. *Planning* : *Fait*, *D’abord / Ensuite* ; *Minuteur* d’1 minute.
+8. *Accompagnant* (1234) → *Réglages* → *Faire vibrer les pictogrammes* → *Terminer* → toucher
+   des mots puis *Parler* : chaque image bouge quand elle est dite.
+9. *Accompagnant* → *TLA* → *Nouveau TLA* → « préparer un gâteau » → *Proposer des mots* :
+   ingrédients, ustensiles et étapes ; créer avec le planning.
+10. *Accompagnant* → toucher une case → *Internet* → *Coller l’image* (copiée sur un site) ;
+    *Voix enregistrée* en libanais.
+11. *Modèle* → écrire « je veux jouer au ballon » → *Montrer sur la grille* : la main ouvre le
+    dossier *activités* puis touche *ballon*.
+12. Noter tout ce qui ne convient pas : mots, places, couleurs, libellés libanais, ce qui manque.
+
+## Détail des fonctions
 
 1. **Construire une phrase** : touchez *je* → *aimer* → *pas* → *jouer*. La bande
    affiche « je n’aime pas jouer » (conjugaison, élision et négation automatiques).

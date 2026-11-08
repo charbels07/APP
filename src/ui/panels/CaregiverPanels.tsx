@@ -698,6 +698,7 @@ function SettingsPanel() {
 
   return (
     <Panel title={t.settings} onClose={() => app.setOverlay(null)} tone="edit">
+      <Btn icon="book" label={t.openGuide} onPress={() => app.setOverlay({ kind: 'guide' })} />
       <Section title={t.sCommunication}>
         <Text style={s.label}>{t.sCommLang}</Text>
         <Segmented value={st.lang} onChange={(v: Lang) => set((x) => void (x.lang = v))} options={LANGS.map((l) => ({ value: l, label: LANG_NAMES[l] }))} />

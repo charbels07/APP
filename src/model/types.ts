@@ -179,6 +179,8 @@ export interface Profile {
   demos: Demo[];
   /** One-time additions already applied to this profile (so a removed item is not added back). */
   migrations?: string[];
+  /** In-app guide: welcome card dismissed, chapters already read. */
+  guide?: { seen?: boolean; read?: string[] };
 }
 
 /** One recorded action of a demonstration. */

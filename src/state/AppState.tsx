@@ -25,7 +25,8 @@ export type Overlay =
   | { kind: 'picker'; title?: string; onPick: (conceptId: string) => void }
   | { kind: 'scheduleEditor'; id: string }
   | { kind: 'model' }
-  | { kind: 'newTla' };
+  | { kind: 'newTla' }
+  | { kind: 'guide' };
 
 /** Where a touched word sits, so a demonstration can replay the exact gesture. */
 export interface TapOrigin {

@@ -9,6 +9,7 @@ import { Icon } from './Icon';
 import { CaregiverOverlay } from './panels/CaregiverPanels';
 import { HelpPanel, KeyboardPanel, LangPanel, PinPanel, SearchPanel } from './panels/CommPanels';
 import { ModelPanel } from './panels/ModelPanel';
+import { GuidePanel, WelcomeCard } from './panels/GuidePanel';
 import { NewTlaPanel } from './panels/NewTlaPanel';
 import { BoardScreen } from './screens/BoardScreen';
 import { ScheduleScreen } from './screens/ScheduleScreen';
@@ -39,6 +40,8 @@ export function Root() {
       {overlay?.kind === 'pin' && <PinPanel />}
       {overlay?.kind === 'model' && <ModelPanel />}
       {overlay?.kind === 'newTla' && <NewTlaPanel />}
+      {overlay?.kind === 'guide' && <GuidePanel />}
+      {!overlay && !profile.guide?.seen && !editMode && !app.playing && !app.recording && <WelcomeCard />}
       <CaregiverOverlay />
     </View>
   );

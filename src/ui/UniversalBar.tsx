@@ -68,6 +68,7 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
     { key: 'search', icon: 'search', label: t.search, onPress: () => app.setOverlay({ kind: 'search' }), active: overlay?.kind === 'search' },
     { key: 'keyboard', icon: 'keyboard', label: t.keyboard, onPress: () => app.setOverlay({ kind: 'keyboard' }), active: overlay?.kind === 'keyboard' },
     { key: 'model', icon: 'pointer', label: t.model, onPress: () => app.setOverlay({ kind: 'model' }), active: overlay?.kind === 'model' || app.recording },
+    { key: 'guide', icon: 'book', label: t.guide, onPress: () => app.setOverlay({ kind: 'guide' }), active: overlay?.kind === 'guide' },
     { key: 'lang', icon: 'globe', label: t.language, onPress: () => app.setOverlay({ kind: 'lang' }), active: overlay?.kind === 'lang', badge: langCode },
     {
       key: 'lock',

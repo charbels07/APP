@@ -48,6 +48,7 @@ restricted environments.
 | `src/lib/appLinks.ts` | App pictograms (YouTube, WhatsApp, Spotify, Anghami…): links, trigger words, "which app does this sentence ask for". |
 | `src/lib/webPictures.ts`, `clipboardImage(.web).ts` | Pictures from the internet: Global Symbols pictogram sets and Openverse photos/drawings (with licence), paste an image, image link. |
 | `src/ui/DrawPad.tsx`, `VoiceButton.tsx`, `wiggle.ts` | Finger drawing pad (search by drawing), microphone button (dictation, search by voice), pictogram wiggle animation. |
+| `src/data/guide.ts`, `src/ui/panels/GuidePanel.tsx` | In-app guide content (FR/EN, quotes the real button names — a test checks them) and its panel / welcome card. |
 | `src/lib/parseSentence.ts` | Dictated sentence → board words (for animated modelling). |
 | `src/lib/boardOps.ts` | Move / swap cards, spread a card over empty slots. |
 | `src/lib/grammar.ts` | Sentence strip grammar: FR/EN conjugation, elision, negation, code-switching segments. |
@@ -95,6 +96,10 @@ pictograms wiggle when touched and while they are said (word by word when the se
 app after a 3-second countdown; a spoken sentence that mentions an app opens it (« je veux
 écouter de la musique » → Spotify, trigger words editable); WhatsApp starts without a link and
 tells the parents how to add it. Older saved profiles get the folder in its empty slot.
+
+Draft 0.5 adds: an in-app guide from A to Z (bar → *Guide*, and Settings), in two tracks —
+first steps for families and new users, and caregivers & professionals — with a “Try it” button
+per chapter that opens the place it describes; a welcome card offers it once on first launch.
 
 Not yet (later phases of the spec): accounts, multi-device sync, roles and
 companion app, AI generation from photos, on-device/server AI for TLAs on iPad, switch scanning / eye gaze,

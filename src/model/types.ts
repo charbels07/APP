@@ -155,6 +155,8 @@ export interface Settings {
   voiceKind: 'device' | 'f' | 'm';
   /** Child voice = the chosen voice, higher pitched (tablets have no real child voices). */
   voiceAge: 'adult' | 'child';
+  /** Seconds before the same pictogram can be pressed again (0 = no limit). */
+  repeatDelay: number;
 }
 
 export interface HelpConfig {

@@ -1,6 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { strings, type UiStrings } from '../i18n/ui';
+import { createRepeatGuard } from '../lib/repeatGuard';
 import { APPS_NEED_TAP, appLinkOf, findAppInSentence, isIncomplete, openAppUrl } from '../lib/appLinks';
 import { joinTokens, renderStrip, toSpeechPlan } from '../lib/grammar';
 import { audioOf, label } from '../lib/lexicon';
@@ -283,10 +284,15 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
     if (recordRef.current && !playingRef.current) recordRef.current.push(step);
   }, []);
 
+  /** Same pictogram pressed again too soon: ignored (Settings → delay between two presses). */
+  const repeatGuard = useRef(createRepeatGuard()).current;
+
   const touchConcept = useCallback(
     (conceptId: string, origin?: TapOrigin) => {
       const p = profileRef.current;
       const l = p.settings.lang;
+      // Replays and dictation press words on purpose: only the user's own presses are limited.
+      if (!playingRef.current && !repeatGuard(conceptId, (p.settings.repeatDelay ?? 0) * 1000)) return;
       record(origin ? { kind: 'tap', concept: conceptId, ...origin } : { kind: 'word', concept: conceptId });
       const item: StripItem = { key: newKey(), kind: 'concept', concept: conceptId, lang: l };
       if (p.settings.speakOnTap || !p.settings.addToStrip) {
@@ -305,7 +311,7 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
       // An app pictogram opens its app (not while a demonstration is recorded or replayed).
       if (!playingRef.current && !recordRef.current && appLinkOf(p, conceptId)) launchApp(conceptId);
     },
-    [editStrip, speakConcept, record, pulse, launchApp],
+    [editStrip, speakConcept, record, pulse, launchApp, repeatGuard],
   );
 
   const addText = useCallback(

@@ -256,6 +256,7 @@ export const DEFAULT_SETTINGS: Settings = {
   autoOpenApps: true,
   voiceKind: 'device',
   voiceAge: 'adult',
+  repeatDelay: 2,
 };
 
 export const DEFAULT_HELP: HelpConfig = {

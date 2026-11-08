@@ -776,6 +776,16 @@ function SettingsPanel() {
         <Toggle label={t.sAddToStrip} value={st.addToStrip} onChange={(v) => set((x) => void (x.addToStrip = v))} />
         <Toggle label={t.sGrammar} value={st.grammar} onChange={(v) => set((x) => void (x.grammar = v))} />
         <Toggle label={t.sQuickZone} value={st.quickZone} onChange={(v) => set((x) => void (x.quickZone = v))} />
+        <Text style={s.label}>{t.sRepeatDelay}</Text>
+        <Segmented
+          value={String(st.repeatDelay ?? 0)}
+          onChange={(v) => set((x) => void (x.repeatDelay = Number(v)))}
+          options={[
+            { value: '0', label: t.repeatOff },
+            ...[1, 2, 3, 5].map((n) => ({ value: String(n), label: `${n} s` })),
+          ]}
+        />
+        <Text style={s.note}>{t.sRepeatNote}</Text>
         <Toggle label={t.sWiggle} value={!!st.wiggle} onChange={(v) => set((x) => void (x.wiggle = v))} />
         <Toggle label={t.sAutoApps} value={st.autoOpenApps !== false} onChange={(v) => set((x) => void (x.autoOpenApps = v))} />
       </Section>

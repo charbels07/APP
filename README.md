@@ -111,6 +111,10 @@ Voice. The matching device voice is picked per language by name (`src/lib/voices
 voice is the chosen voice with a higher pitch (tablets have no real child voices); when a language
 has no voice of that kind, the default voice is pitched towards it and Settings says so.
 
+Draft 0.8 adds: a minimum delay between two presses on the same pictogram (Settings →
+Communication, 2 s by default, off / 1 / 2 / 3 / 5 s): repeated taps no longer fill the sentence
+with "pas pas pas"; other pictograms stay usable at once, replays and dictation are not limited.
+
 Not yet (later phases of the spec): accounts, multi-device sync, roles and
 companion app, AI generation from photos, on-device/server AI for TLAs on iPad, switch scanning / eye gaze,
 Arabic morphology, other dialects, opt-in usage statistics, version history.

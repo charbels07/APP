@@ -18,7 +18,7 @@ données). Chaque chapitre a un bouton *Essayer* qui ouvre l’endroit dont il p
 1. Ouvrir le lien : la carte *Bienvenue* s’affiche → *Ouvrir le guide* → lire *Premiers pas* et
    toucher *Essayer* sur 2 ou 3 chapitres.
 2. Toucher *je* → *vouloir* → *manger* → *Parler* : on doit entendre « je veux manger » (pas « vouloir »).
-3. *Langue* : deux choix séparés. *Langue des mots* → عربي (لبناني) : les mots sont aux mêmes places
+3. *Langue* : deux choix séparés. *Langue de communication* → عربي (لبناني) : les mots sont aux mêmes places
    ; *Langue de navigation* → العربية : menus, boutons et guide en arabe, mots inchangés. Essayer
    aussi « navigation en français, mots en libanais ». Revenir au français. (Les textes arabes de
    navigation sont en arabe standard simple : à faire relire.)

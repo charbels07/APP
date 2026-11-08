@@ -159,12 +159,12 @@ const BASE: BaseChapter[] = [
     title: { fr: 'Choisir les langues', en: 'Choosing languages' },
     steps: {
       fr: [
-        'Langue propose deux choix séparés : Langue des mots (ce que dit l’appareil et ce qui est écrit sur les cases) et Langue de navigation (menus, boutons, guide).',
+        'Langue propose deux choix séparés : Langue de communication (ce que dit l’appareil et ce qui est écrit sur les cases) et Langue de navigation (menus, boutons, guide).',
         'Par exemple : naviguer en français et parler en libanais, ou l’inverse. Les mots restent exactement à la même place dans toutes les langues.',
         'On peut mélanger les langues dans une même phrase : chaque mot est dit dans sa langue.',
       ],
       en: [
-        'Language offers two separate choices: Words language (what the device says and what is written on the cards) and Navigation language (menus, buttons, guide).',
+        'Language offers two separate choices: Communication language (what the device says and what is written on the cards) and Navigation language (menus, buttons, guide).',
         'For example: navigate in English and speak in Lebanese Arabic, or the other way round. Words stay exactly in the same place in every language.',
         'Languages can be mixed in one sentence: each word is said in its own language.',
       ],
@@ -565,7 +565,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   language: {
     title: 'اختيار اللغات',
     steps: [
-      'زر «اللغة» فيه خياران منفصلان: «لغة الكلمات» (ما يقوله الجهاز وما يُكتب على البطاقات) و«لغة التنقل» (القوائم والأزرار والدليل).',
+      'زر «اللغة» فيه خياران منفصلان: «لغة التواصل» (ما يقوله الجهاز وما يُكتب على البطاقات) و«لغة التنقل» (القوائم والأزرار والدليل).',
       'مثلاً: التنقل بالعربية والكلمات بالفرنسية، أو التنقل بالفرنسية والكلمات باللبنانية. تبقى الكلمات في المكان نفسه في كل اللغات.',
       'يمكن خلط اللغات في جملة واحدة: تُقال كل كلمة بلغتها.',
     ],

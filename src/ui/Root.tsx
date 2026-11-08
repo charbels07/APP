@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { QUICK_ZONE } from '../data/defaults';
@@ -68,6 +68,7 @@ export function Root() {
           <Btn small kind="primary" icon="pause" label={t.stopDemo} onPress={app.stopPlaying} />
         </View>
       )}
+      {app.appLaunch && <AppLaunchBanner />}
       {editMode && app.moveSource && (
         <View style={[styles.banner, styles.playBanner]}>
           <Icon name="target" size={22} color={C.accent} />
@@ -107,6 +108,44 @@ export function Root() {
         </View>
       )}
     </SafeAreaView>
+  );
+}
+
+/** "Opening YouTube… 3" with Cancel / Open now — or, for an app without a link, a notice for the parents. */
+function AppLaunchBanner() {
+  const app = useApp();
+  const { appLaunch, profile, lang, t } = app;
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 200);
+    return () => clearInterval(id);
+  }, []);
+  if (!appLaunch) return null;
+  const name = label(profile, appLaunch.concept, lang);
+  if (!appLaunch.at) {
+    return (
+      <View style={[styles.banner, styles.missingBanner]} accessibilityRole="alert">
+        <SymbolView symbol={symbolOf(profile, appLaunch.concept)} size={40} />
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={[styles.bannerText, { color: C.edit }]}>
+            {name} {t.appMissing}
+          </Text>
+          <Text style={styles.missingHint}>{t.appMissingHint}</Text>
+        </View>
+        <Btn small kind="primary" icon="check" label={t.close} onPress={app.cancelAppLaunch} />
+      </View>
+    );
+  }
+  const seconds = Math.max(1, Math.ceil((appLaunch.at - now) / 1000));
+  return (
+    <View style={[styles.banner, styles.playBanner]} accessibilityRole="alert">
+      <SymbolView symbol={symbolOf(profile, appLaunch.concept)} size={36} />
+      <Text style={[styles.bannerText, styles.captionText]} numberOfLines={1}>
+        {t.appOpening} {name}… {seconds}
+      </Text>
+      <Btn small label={t.cancel} onPress={app.cancelAppLaunch} />
+      <Btn small kind="primary" icon="external" label={t.openNow} onPress={app.openAppNow} />
+    </View>
   );
 }
 
@@ -165,6 +204,8 @@ const styles = StyleSheet.create({
   captionText: { color: C.accent, fontSize: 19 },
   recBanner: { backgroundColor: C.helpSoft, borderColor: '#F4B4AE' },
   playBanner: { backgroundColor: C.accentSoft, borderColor: '#A4C2FF' },
+  missingBanner: { backgroundColor: C.editSoft, borderColor: '#FEC84B', paddingVertical: 8 },
+  missingHint: { color: C.text, fontSize: 14 },
   recDot: { width: 14, height: 14, borderRadius: 7, backgroundColor: C.help },
   quick: { flexDirection: 'row', gap: 6 },
   quickBtn: {

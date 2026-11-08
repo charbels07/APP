@@ -35,6 +35,14 @@ export type SymbolRef =
 
 export type CellDisplay = 'both' | 'image' | 'text';
 
+/** A pictogram that opens another app (YouTube, WhatsApp, Spotify…). */
+export interface AppLink {
+  /** Web or app link; empty = not set up yet (the family is asked to add it). */
+  url: string;
+  /** Words that open the app when the spoken sentence mentions them (any language). */
+  triggers: string[];
+}
+
 export interface Concept {
   id: string;
   cls: WordClass;
@@ -46,6 +54,8 @@ export interface Concept {
   tags?: string[];
   /** Set for concepts created by the family / professional. */
   custom?: boolean;
+  /** This word opens an app. */
+  app?: AppLink;
 }
 
 /** User edits layered on top of a built-in concept (never mutates the default). */
@@ -56,6 +66,10 @@ export interface ConceptOverride {
   audio?: Partial<Record<Lang, string>>;
   display?: CellDisplay;
   cls?: WordClass;
+  /** App link set by the family; `false` turns a built-in app word back into a plain word. */
+  app?: AppLink | false;
+  /** Author and licence of a picture taken from the web. */
+  credit?: string;
 }
 
 export interface Cell {
@@ -130,8 +144,12 @@ export interface Settings {
   timer: { display: TimerDisplay[]; sound: boolean; haptic: boolean };
   /** Speed of demonstrations and dictation replays (1 = normal, higher = slower). */
   modelPace: number;
-  /** Let the app ask an AI for TLA proposals (only the topic text is sent). */
+  /** Let the app ask an AI for TLA proposals and to recognise drawings (only the topic or drawing is sent). */
   aiSuggestions: boolean;
+  /** Pictograms wiggle when touched and while they are being said. */
+  wiggle: boolean;
+  /** Open an app when the spoken sentence mentions it ("je veux écouter de la musique" → Spotify). */
+  autoOpenApps: boolean;
 }
 
 export interface HelpConfig {
@@ -159,6 +177,8 @@ export interface Profile {
   help: HelpConfig;
   /** Recorded demonstrations (modelling), replayed with an animated pointer. */
   demos: Demo[];
+  /** One-time additions already applied to this profile (so a removed item is not added back). */
+  migrations?: string[];
 }
 
 /** One recorded action of a demonstration. */

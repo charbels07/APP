@@ -45,6 +45,9 @@ restricted environments.
 | `src/data/situations.ts` | Situation library for new TLAs (~45 situations: words + ordered steps, e.g. « préparer un gâteau »). `mot#id` pins the pictogram for homonyms. **Placeholder content.** |
 | `src/lib/tlaPlanner.ts`, `aiPlanner(.web).ts` | TLA proposal: situation library → AI proposal (web demo only for now) → ARASAAC categories. |
 | `src/lib/pictoSearch.ts`, `pictoLibrary.ts` | Offline pictogram search and topic suggestions. |
+| `src/lib/appLinks.ts` | App pictograms (YouTube, WhatsApp, Spotify, Anghami…): links, trigger words, "which app does this sentence ask for". |
+| `src/lib/webPictures.ts`, `clipboardImage(.web).ts` | Pictures from the internet: Global Symbols pictogram sets and Openverse photos/drawings (with licence), paste an image, image link. |
+| `src/ui/DrawPad.tsx`, `VoiceButton.tsx`, `wiggle.ts` | Finger drawing pad (search by drawing), microphone button (dictation, search by voice), pictogram wiggle animation. |
 | `src/lib/parseSentence.ts` | Dictated sentence → board words (for animated modelling). |
 | `src/lib/boardOps.ts` | Move / swap cards, spread a card over empty slots. |
 | `src/lib/grammar.ts` | Sentence strip grammar: FR/EN conjugation, elision, negation, code-switching segments. |
@@ -82,6 +85,16 @@ demo for now, the iPad app will need a small server), and the steps can become a
 linked to the TLA with timers (oven: 30 min) · pictograms chosen by meaning, not just by
 keyword (« moule » is the cake tin, not the mussel; « où » is not « ou ») · during modelling,
 folders are pressed exactly like words (aim, press, name spoken, then the folder opens).
+
+Draft 0.4 adds: search by voice (« Dire le mot ») and by drawing (the drawing is recognised by
+AI — web demo only for now, like TLA proposals) · pictures from the internet for any word (free
+pictogram sets incl. Tawasol and Mulberry, CC photos and drawings for commercial use, paste an
+image copied anywhere, or an image link; the author and licence are kept) · setting to make
+pictograms wiggle when touched and while they are said (word by word when the sentence is read)
+· app pictograms in a new « applis » folder (YouTube, WhatsApp, Spotify, Anghami) that open the
+app after a 3-second countdown; a spoken sentence that mentions an app opens it (« je veux
+écouter de la musique » → Spotify, trigger words editable); WhatsApp starts without a link and
+tells the parents how to add it. Older saved profiles get the folder in its empty slot.
 
 Not yet (later phases of the spec): accounts, multi-device sync, roles and
 companion app, AI generation from photos, on-device/server AI for TLAs on iPad, switch scanning / eye gaze,

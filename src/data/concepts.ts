@@ -5,12 +5,13 @@
  *
  * Row format: [id, class, fr, en, ar, emoji, extra?]
  */
-import type { Concept, Lang, WordClass } from '../model/types';
+import type { AppLink, Concept, Lang, WordClass } from '../model/types';
 
 type Extra = {
   /** Feminine forms (user gender = f). */
   f?: Partial<Record<Lang, string>>;
   tags?: string[];
+  app?: AppLink;
 };
 type Row = [string, WordClass, string, string, string, string, Extra?];
 
@@ -289,6 +290,21 @@ const ROWS: Row[] = [
   ['f_chat', 'folder', 'discuter', 'chat', 'حكي', '💬', { tags: ['phrases'] }],
   ['f_time', 'folder', 'temps', 'time', 'وقت', '🕒'],
   ['f_mine', 'folder', 'mes mots', 'my words', 'كلماتي', '⭐'],
+  ['f_apps', 'folder', 'applis', 'apps', 'تطبيقات', '📱', { tags: ['applications', 'application'] }],
+
+  // ── Apps (open another app; links and trigger words editable by the family) ──
+  ['app_youtube', 'noun', 'YouTube', 'YouTube', 'يوتيوب', '▶️', {
+    app: { url: 'https://www.youtube.com/', triggers: ['youtube', 'vidéo', 'video', 'فيديو', 'dessin animé', 'cartoon'] },
+  }],
+  ['app_whatsapp', 'noun', 'WhatsApp', 'WhatsApp', 'واتساب', '💬', {
+    app: { url: '', triggers: ['whatsapp', 'appeler', 'call', 'téléphoner', 'phone', 'إتصل', 'تلفن'] },
+  }],
+  ['app_spotify', 'noun', 'Spotify', 'Spotify', 'سبوتيفاي', '🎧', {
+    app: { url: 'https://open.spotify.com/', triggers: ['spotify', 'musique', 'music', 'موسيقى', 'chanson', 'song', 'أغنية', 'غنية'] },
+  }],
+  ['app_anghami', 'noun', 'Anghami', 'Anghami', 'أنغامي', '🎶', {
+    app: { url: 'https://play.anghami.com/', triggers: ['anghami', 'أنغامي'] },
+  }],
 
   // ── Board / TLA / schedule titles ─────────────────────────
   ['b_core', 'noun', 'tableau principal', 'main board', 'اللوح الرئيسي', '🏠'],
@@ -302,6 +318,6 @@ const ROWS: Row[] = [
 export const BUILTIN_CONCEPTS: Record<string, Concept> = Object.fromEntries(
   ROWS.map(([id, cls, fr, en, ar, emoji, extra]) => [
     id,
-    { id, cls, labels: { fr, en, ar }, emoji, labelsF: extra?.f, tags: extra?.tags },
+    { id, cls, labels: { fr, en, ar }, emoji, labelsF: extra?.f, tags: extra?.tags, app: extra?.app },
   ]),
 );

@@ -3,7 +3,7 @@
  * later phase; the profile format is versioned so it can be migrated and synced.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createDefaultProfile, DEFAULT_SETTINGS } from '../data/defaults';
+import { APPS_FOLDER_SLOT, createDefaultProfile, DEFAULT_SETTINGS } from '../data/defaults';
 import type { Profile } from '../model/types';
 
 const KEY = 'caa.profile.v1';
@@ -39,6 +39,17 @@ export async function resetProfile(): Promise<Profile> {
 export function migrate(p: Partial<Profile>): Profile {
   const base = createDefaultProfile();
   const boards = { ...base.boards, ...(p.boards ?? {}) };
+  const migrations = [...(p.migrations ?? [])];
+  // Apps folder (round 5): placed only if its slot is still empty, never moving a word.
+  if (!migrations.includes('apps')) {
+    migrations.push('apps');
+    const core = boards.core;
+    if (core && !core.cells.some((c) => c?.folder === 'apps') && core.cells[APPS_FOLDER_SLOT] === null) {
+      const cells = [...core.cells];
+      cells[APPS_FOLDER_SLOT] = base.boards.core.cells[APPS_FOLDER_SLOT];
+      boards.core = { ...core, cells };
+    }
+  }
   return {
     ...base,
     ...p,
@@ -56,5 +67,6 @@ export function migrate(p: Partial<Profile>): Profile {
     customConcepts: p.customConcepts ?? {},
     schedules: p.schedules ?? base.schedules,
     demos: p.demos ?? [],
+    migrations,
   };
 }

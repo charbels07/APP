@@ -21,6 +21,7 @@ export function Panel({
   tone = 'default',
   headerRight,
   scroll = true,
+  scrollLocked,
 }: {
   title: string;
   onClose: () => void;
@@ -29,6 +30,8 @@ export function Panel({
   tone?: 'default' | 'help' | 'edit';
   headerRight?: React.ReactNode;
   scroll?: boolean;
+  /** Freeze scrolling (e.g. while a finger draws inside the panel). */
+  scrollLocked?: boolean;
 }) {
   const headerBg = tone === 'help' ? C.helpSoft : tone === 'edit' ? C.editSoft : C.surface;
   return (
@@ -45,7 +48,7 @@ export function Panel({
           </Pressable>
         </View>
         {scroll ? (
-          <ScrollView contentContainerStyle={styles.panelBody} keyboardShouldPersistTaps="handled">
+          <ScrollView contentContainerStyle={styles.panelBody} keyboardShouldPersistTaps="handled" scrollEnabled={!scrollLocked}>
             {children}
           </ScrollView>
         ) : (

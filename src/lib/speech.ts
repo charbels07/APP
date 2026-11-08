@@ -27,7 +27,10 @@ export function stopSpeech(): void {
   }
 }
 
-function speakOne(text: string, lang: Lang, settings: Settings): Promise<void> {
+/** Progress while speaking: segment index and character offset of the word being said. */
+export type SpeechProgress = (segment: number, charIndex: number) => void;
+
+function speakOne(text: string, lang: Lang, settings: Settings, onWord?: (charIndex: number) => void): Promise<void> {
   return new Promise((resolve) => {
     let settled = false;
     const done = () => {
@@ -43,6 +46,8 @@ function speakOne(text: string, lang: Lang, settings: Settings): Promise<void> {
       onDone: done,
       onStopped: done,
       onError: done,
+      // iOS / Android / browsers report each word as it starts (charIndex in `text`).
+      onBoundary: onWord ? (ev: unknown) => onWord((ev as { charIndex?: number })?.charIndex ?? 0) : undefined,
     });
     // Some browser engines never fire end events: don't block the queue forever.
     setTimeout(done, 2500 + text.length * 140);
@@ -68,13 +73,15 @@ function playOne(uri: string): Promise<void> {
   });
 }
 
-export async function speakSegments(segments: Segment[], settings: Settings): Promise<void> {
+export async function speakSegments(segments: Segment[], settings: Settings, onProgress?: SpeechProgress): Promise<void> {
   stopSpeech();
   const mine = generation;
-  for (const seg of segments) {
+  for (const [i, seg] of segments.entries()) {
     if (mine !== generation) return;
+    onProgress?.(i, 0);
     if (seg.kind === 'tts') {
-      if (seg.text.trim()) await speakOne(seg.text, seg.lang, settings);
+      if (seg.text.trim())
+        await speakOne(seg.text, seg.lang, settings, onProgress && ((c) => mine === generation && onProgress(i, c)));
     } else {
       const uri = await mediaUri(seg.media);
       if (uri && mine === generation) await playOne(uri);

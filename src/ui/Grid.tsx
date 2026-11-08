@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Platform, Pressable, ScrollView, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
+import { appLinkOf } from '../lib/appLinks';
 import { coveredSlots, moveCell } from '../lib/boardOps';
 import { display, isRtl, label, symbolOf, wordClass } from '../lib/lexicon';
 import type { Board, CellDisplay, SymbolRef, WordClass } from '../model/types';
@@ -7,6 +8,7 @@ import { useApp } from '../state/AppState';
 import { Icon } from './Icon';
 import { SymbolView } from './SymbolView';
 import { C, CLASS_COLORS, isDarkColor, tint } from './theme';
+import { useWiggle } from './wiggle';
 
 const GAP = 6;
 const MIN_CELL_W = 56;
@@ -14,7 +16,7 @@ const nativeDriver = Platform.OS !== 'web';
 
 export function Grid({ board }: { board: Board }) {
   const app = useApp();
-  const { profile, editMode, highlight, lang, pointer, moveSource } = app;
+  const { profile, editMode, highlight, lang, pointer, moveSource, wiggle } = app;
   const [size, setSize] = useState({ w: 0, h: 0 });
   const onLayout = (e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
@@ -131,6 +133,8 @@ export function Grid({ board }: { board: Board }) {
                 pointing={pointer?.board === board.id && pointer.index === index}
                 tapping={pointer?.board === board.id && pointer.index === index && !!pointer.tap}
                 moving={moveSource?.board === board.id && moveSource.index === index}
+                wiggleN={wiggle && wiggle.concept === cell.concept ? wiggle.n : 0}
+                isApp={!cell.folder && !!appLinkOf(profile, cell.concept)}
                 onPress={onCellPress}
                 onLongPress={onCellLongPress}
               />
@@ -207,6 +211,10 @@ interface CellProps {
   tapping?: boolean;
   /** Caregiver picked this card to move it. */
   moving: boolean;
+  /** Changes when the picture should wiggle (touched / being said). */
+  wiggleN?: number;
+  /** The card opens an app (small corner badge). */
+  isApp?: boolean;
   onPress: (index: number) => void;
   onLongPress?: (index: number) => void;
 }
@@ -263,6 +271,7 @@ export const CellView = React.memo(function CellView(p: CellProps) {
     pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.07] }),
     press.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 0.05, -0.06] }),
   );
+  const wiggleTransform = useWiggle(p.wiggleN);
   const handShift = press.interpolate({ inputRange: [0, 0.5, 1], outputRange: [30, 0, 4] });
   const lit = p.highlighted || p.pointing;
 
@@ -288,7 +297,16 @@ export const CellView = React.memo(function CellView(p: CellProps) {
         ]}
       >
         {p.isFolder && <View style={[styles.folderTab, { borderColor: colors.border }]} />}
-        {showImage && <SymbolView symbol={p.symbol} size={symbolSize} />}
+        {showImage && (
+          <Animated.View style={{ transform: wiggleTransform }}>
+            <SymbolView symbol={p.symbol} size={symbolSize} />
+          </Animated.View>
+        )}
+        {p.isApp && (
+          <View style={styles.appBadge} accessibilityElementsHidden>
+            <Icon name="external" size={14} color="#fff" strokeWidth={2.6} />
+          </View>
+        )}
         {showText && (
           <Text
             numberOfLines={2}
@@ -326,6 +344,17 @@ export const CellView = React.memo(function CellView(p: CellProps) {
 
 const styles = StyleSheet.create({
   slot: { alignItems: 'center', justifyContent: 'center' },
+  appBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: C.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   cell: {
     flex: 1,
     borderRadius: 10,

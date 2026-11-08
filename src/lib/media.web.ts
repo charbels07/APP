@@ -102,7 +102,7 @@ export async function deleteMedia(name: string): Promise<void> {
 
 export async function saveMediaBytes(bytes: Uint8Array, ext: string): Promise<string> {
   const name = newMediaName(ext);
-  const type = ext === 'webp' ? 'image/webp' : ext === 'png' ? 'image/png' : 'application/octet-stream';
+  const type = ext === 'webp' ? 'image/webp' : ext === 'png' ? 'image/png' : ext === 'jpg' ? 'image/jpeg' : 'application/octet-stream';
   await put(name, new Blob([bytes as Uint8Array<ArrayBuffer>], { type }));
   return name;
 }

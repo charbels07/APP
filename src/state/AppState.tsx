@@ -1,7 +1,8 @@
 import * as Haptics from 'expo-haptics';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { strings, type UiStrings } from '../i18n/ui';
-import { joinTokens, renderStrip, toSegments } from '../lib/grammar';
+import { appLinkOf, findAppInSentence, isIncomplete, openAppUrl } from '../lib/appLinks';
+import { joinTokens, renderStrip, toSpeechPlan } from '../lib/grammar';
 import { audioOf, label } from '../lib/lexicon';
 import { locate, type Location } from '../lib/search';
 import { beep, speakSegments, speakText, stopSpeech } from '../lib/speech';
@@ -45,6 +46,23 @@ export interface Highlight {
   index: number;
   /** Next hop once the user opens the highlighted folder. */
   then?: { board: string; index: number };
+}
+
+/** A pictogram being touched or said: cells showing this word (or this strip item) wiggle. */
+export interface Wiggle {
+  concept: string;
+  /** Strip item being said. */
+  key?: string;
+  /** Increases at each new wiggle. */
+  n: number;
+}
+
+/** An app about to open (countdown), or an app word whose link is missing (notice for the family). */
+export interface AppLaunch {
+  concept: string;
+  url: string;
+  /** When it opens (ms); undefined = link missing. */
+  at?: number;
 }
 
 export interface TimerState {
@@ -97,6 +115,14 @@ interface AppCtx {
   pointer: Slot | null;
   /** What the replay is doing right now ("Ouvre le dossier « activités »"). */
   demoCaption: { text: string; concept?: string } | null;
+
+  wiggle: Wiggle | null;
+  /** Wiggles this word's pictograms (if the setting is on). */
+  pulse: (concept: string, key?: string) => void;
+  appLaunch: AppLaunch | null;
+  launchApp: (conceptId: string) => void;
+  openAppNow: () => void;
+  cancelAppLaunch: () => void;
 
   /** Caregiver mode: card waiting to be moved. */
   moveSource: Slot | null;
@@ -180,15 +206,58 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
     });
   }, []);
 
+  // ── Wiggling pictograms (setting): when touched and while being said ──
+  const [wiggle, setWiggle] = useState<Wiggle | null>(null);
+  const wiggleSeq = useRef(0);
+  const pulse = useCallback((concept: string, key?: string, touched = false) => {
+    if (!profileRef.current.settings.wiggle) return;
+    setWiggle({ concept, key, n: ++wiggleSeq.current });
+    // Phones also buzz (iPads have no vibration motor: the wiggle is what they get).
+    if (touched) Haptics.selectionAsync().catch(() => {});
+  }, []);
+
+  // ── Apps (YouTube, WhatsApp…): short countdown so a mistaken touch can be cancelled ──
+  const [appLaunch, setAppLaunch] = useState<AppLaunch | null>(null);
+  const appLaunchRef = useRef(appLaunch);
+  appLaunchRef.current = appLaunch;
+  const launchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const cancelAppLaunch = useCallback(() => {
+    clearTimeout(launchTimer.current);
+    setAppLaunch(null);
+  }, []);
+  const openAppNow = useCallback(() => {
+    const a = appLaunchRef.current;
+    clearTimeout(launchTimer.current);
+    setAppLaunch(null);
+    if (a?.url) openAppUrl(a.url);
+  }, []);
+  const launchApp = useCallback((conceptId: string) => {
+    const link = appLinkOf(profileRef.current, conceptId);
+    clearTimeout(launchTimer.current);
+    if (!link) return;
+    if (isIncomplete(link)) {
+      setAppLaunch({ concept: conceptId, url: '' });
+      return;
+    }
+    const delay = 3000;
+    setAppLaunch({ concept: conceptId, url: link.url, at: Date.now() + delay });
+    launchTimer.current = setTimeout(() => {
+      setAppLaunch(null);
+      openAppUrl(link.url);
+    }, delay);
+  }, []);
+  useEffect(() => () => clearTimeout(launchTimer.current), []);
+
   const speakConcept = useCallback((conceptId: string) => {
     const p = profileRef.current;
     const l = p.settings.lang;
+    pulse(conceptId);
     const audio = audioOf(p, conceptId, l);
     speakSegments(
       audio ? [{ kind: 'audio', media: audio }] : [{ kind: 'tts', text: label(p, conceptId, l), lang: l }],
       p.settings,
     );
-  }, []);
+  }, [pulse]);
 
   // ── Demonstration recording ──
   const recordRef = useRef<DemoStep[] | null>(null);
@@ -216,8 +285,11 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
         stripRef.current = [...stripRef.current, item];
         editStrip((s) => [...s, item]);
       }
+      pulse(conceptId, item.key, true);
+      // An app pictogram opens its app (not while a demonstration is recorded or replayed).
+      if (!playingRef.current && !recordRef.current && appLinkOf(p, conceptId)) launchApp(conceptId);
     },
-    [editStrip, speakConcept, record],
+    [editStrip, speakConcept, record, pulse, launchApp],
   );
 
   const addText = useCallback(
@@ -236,8 +308,42 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
     const p = profileRef.current;
     const items = stripRef.current;
     record({ kind: 'speak' });
-    if (items.length) await speakSegments(toSegments(renderStrip(items, p)), p.settings);
-  }, [record]);
+    if (!items.length) return;
+    const { segments, marks } = toSpeechPlan(renderStrip(items, p));
+    // Follow along: wiggle each word as it is said. Engines that don't report word
+    // boundaries get an estimate from the text length; real boundaries replace it.
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const estimated = new Set<number>();
+    let real = false;
+    let last = -1;
+    const say = (token: number) => {
+      if (token === last) return;
+      last = token;
+      const it = items[token];
+      if (it) pulse(it.kind === 'concept' ? it.concept : '', it.key);
+    };
+    const follow = (seg: number, charIndex: number) => {
+      const m = marks[seg];
+      if (!m?.length) return;
+      if (charIndex > 0 && !real) {
+        real = true;
+        timers.forEach(clearTimeout);
+      }
+      say((m.filter((x) => x.start <= charIndex).pop() ?? m[0]).token);
+      if (!real && !estimated.has(seg)) {
+        estimated.add(seg);
+        const charsPerSecond = 14 * (p.settings.speechRate || 1);
+        for (const x of m.slice(1)) timers.push(setTimeout(() => !real && say(x.token), (x.start / charsPerSecond) * 1000));
+      }
+    };
+    await speakSegments(segments, p.settings, p.settings.wiggle ? follow : undefined);
+    timers.forEach(clearTimeout);
+    // « je veux écouter de la musique » → Spotify (unless the sentence changed meanwhile).
+    if (p.settings.autoOpenApps && !playingRef.current && !recordRef.current && stripRef.current === items) {
+      const app = findAppInSentence(profileRef.current, items);
+      if (app) launchApp(app);
+    }
+  }, [record, pulse, launchApp]);
 
   const deleteLast = useCallback(() => {
     record({ kind: 'delete' });
@@ -568,6 +674,12 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
       stopPlaying,
       pointer,
       demoCaption,
+      wiggle,
+      pulse,
+      appLaunch,
+      launchApp,
+      openAppNow,
+      cancelAppLaunch,
       moveSource,
       setMoveSource,
       highlight,
@@ -584,7 +696,8 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
       profile, update, replaceProfile, t, lang, view, path, tlaId, overlay, editMode, setEditMode, strip,
       stripState.history.length, touchConcept, addText, speakStrip, speakConcept, deleteLast, clearStrip, undo, goHome,
       openFolder, goBack, openTla, openSchedule, pressHelp, recording, startRecording, finishRecording,
-      playing, playSteps, stopPlaying, pointer, demoCaption, moveSource, highlight, showMeWhere, clearHighlight, timer,
+      playing, playSteps, stopPlaying, pointer, demoCaption, wiggle, pulse, appLaunch, launchApp, openAppNow, cancelAppLaunch,
+      moveSource, highlight, showMeWhere, clearHighlight, timer,
       startTimer, pauseTimer, resumeTimer, resetTimer, setTimerOpen,
     ],
   );

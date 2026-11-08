@@ -1,16 +1,18 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
+import { Animated, Pressable, ScrollView, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
 import { renderStrip } from '../lib/grammar';
 import { isRtl, symbolOf } from '../lib/lexicon';
 import { speakSegments } from '../lib/speech';
+import type { SymbolRef } from '../model/types';
 import { useApp } from '../state/AppState';
 import { Icon } from './Icon';
 import { SymbolView } from './SymbolView';
 import { C, radius } from './theme';
+import { useWiggle } from './wiggle';
 
 /** Persistent sentence strip (spec §10, COM-02). */
 export function SentenceStrip({ compact }: { compact: boolean }) {
-  const { strip, profile, lang, t, speakStrip, deleteLast, clearStrip, undo, canUndo } = useApp();
+  const { strip, profile, lang, t, speakStrip, deleteLast, clearStrip, undo, canUndo, wiggle, pulse } = useApp();
   const tokens = useMemo(() => renderStrip(strip, profile), [strip, profile]);
   // Base direction follows the first word of the sentence (Unicode "first strong" rule).
   const rtl = isRtl(strip.length ? strip[0].lang : lang);
@@ -41,16 +43,23 @@ export function SentenceStrip({ compact }: { compact: boolean }) {
             tokens.map((tok) => (
               <Pressable
                 key={tok.key}
-                onPress={() =>
+                onPress={() => {
+                  pulse(tok.concept ?? '', tok.key);
                   speakSegments(
                     tok.audio ? [{ kind: 'audio', media: tok.audio }] : [{ kind: 'tts', text: tok.text, lang: tok.lang }],
                     profile.settings,
-                  )
-                }
+                  );
+                }}
                 style={({ pressed }) => [styles.chip, pressed && { opacity: 0.6 }]}
                 accessibilityLabel={tok.text}
               >
-                {tok.concept ? <SymbolView symbol={symbolOf(profile, tok.concept)} size={chipSymbol} /> : null}
+                {tok.concept ? (
+                  <ChipSymbol
+                    symbol={symbolOf(profile, tok.concept)}
+                    size={chipSymbol}
+                    wiggleN={wiggle?.key === tok.key ? wiggle.n : 0}
+                  />
+                ) : null}
                 <Text
                   style={[styles.chipText, compact && { fontSize: 15 }, { writingDirection: isRtl(tok.lang) ? 'rtl' : 'ltr' }]}
                 >
@@ -76,6 +85,15 @@ export function SentenceStrip({ compact }: { compact: boolean }) {
         </Pressable>
       </View>
     </View>
+  );
+}
+
+function ChipSymbol({ symbol, size, wiggleN }: { symbol: SymbolRef; size: number; wiggleN: number }) {
+  const transform = useWiggle(wiggleN);
+  return (
+    <Animated.View style={{ transform }}>
+      <SymbolView symbol={symbol} size={size} />
+    </Animated.View>
   );
 }
 

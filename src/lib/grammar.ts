@@ -174,6 +174,42 @@ export function toSegments(tokens: Token[]): Segment[] {
 }
 
 /**
+ * Same segments as toSegments, plus where each word starts inside its segment,
+ * so the app can follow along while it speaks (wiggling the word being said).
+ * marks[i] lists the tokens of segment i with their character offset.
+ */
+export function toSpeechPlan(tokens: Token[]): { segments: Segment[]; marks: { token: number; start: number }[][] } {
+  const segments: Segment[] = [];
+  const marks: { token: number; start: number }[][] = [];
+  let buf: number[] = [];
+  const flush = () => {
+    if (!buf.length) return;
+    const own: { token: number; start: number }[] = [];
+    let text = '';
+    for (const k of buf) {
+      if (text) text += text.endsWith("'") ? '' : ' ';
+      own.push({ token: k, start: text.length });
+      text += tokens[k].text;
+    }
+    segments.push({ kind: 'tts', text, lang: tokens[buf[0]].lang });
+    marks.push(own);
+    buf = [];
+  };
+  tokens.forEach((t, k) => {
+    if (t.audio) {
+      flush();
+      segments.push({ kind: 'audio', media: t.audio });
+      marks.push([{ token: k, start: 0 }]);
+    } else {
+      if (buf.length && tokens[buf[0]].lang !== t.lang) flush();
+      buf.push(k);
+    }
+  });
+  flush();
+  return { segments, marks };
+}
+
+/**
  * Inflected verb forms → verb concept ("veux" → want), used to recognise
  * dictated sentences. Arabic is not covered yet (see note at the top).
  */

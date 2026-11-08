@@ -14,3 +14,7 @@
 - `npm run build:picto` rebuilds the offline pictogram library (`assets/picto/`, base64 text packs:
   some hosts refuse binary files) and `src/data/pictoLibrary.ts`. Set `PICTO_CACHE` to reuse downloads.
 - Speech recognition uses `expo-speech-recognition` (native module): test on a dev/EAS build, not Expo Go.
+- Pictures from the internet (`src/lib/webPictures.ts`): Global Symbols (labels match whole words only)
+  and Openverse (anonymous requests: `page_size` ≤ 20). The artifact demo has no network: paste works there.
+- App pictograms live in `src/data/concepts.ts` (`app: { url, triggers }`); new built-in folders are added
+  to saved profiles by a one-time migration in `src/lib/storage.ts` (only into an empty slot).

@@ -1,14 +1,17 @@
-import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { aiAvailable, askAiToReadDrawing, type DrawingGuess, type Stroke } from '../../lib/aiPlanner';
 import { isRtl, label, LANG_NAMES, symbolOf } from '../../lib/lexicon';
 import { search, type Location } from '../../lib/search';
 import { speakText } from '../../lib/speech';
 import { LANGS, type Lang } from '../../model/types';
 import { useApp } from '../../state/AppState';
 import { Btn, Panel } from '../common';
+import { DrawPad } from '../DrawPad';
 import { Icon } from '../Icon';
 import { SymbolView } from '../SymbolView';
 import { C, radius } from '../theme';
+import { VoiceButton } from '../VoiceButton';
 
 export function pathText(loc: Location, app: ReturnType<typeof useApp>): string {
   const { profile, lang, t } = app;
@@ -25,10 +28,27 @@ export function SearchPanel() {
   const app = useApp();
   const { profile, lang, t } = app;
   const [q, setQ] = useState('');
+  const [drawing, setDrawing] = useState(false);
+  const [penDown, setPenDown] = useState(false);
   const results = useMemo(() => search(profile, q), [profile, q]);
+  const wordOf = (g: DrawingGuess) => g[lang] || g.fr || g.en || g.ar || '';
 
   return (
-    <Panel title={t.search} onClose={() => app.setOverlay(null)}>
+    <Panel title={t.search} onClose={() => app.setOverlay(null)} scrollLocked={penDown}>
+      {/* Three ways in: type, say the word, or draw it. */}
+      <View style={styles.ways}>
+        <View style={{ flexGrow: 1, flexBasis: 200 }}>
+          <VoiceButton compact lang={lang} label={t.sayWord} onPartial={setQ} onFinal={setQ} />
+        </View>
+        <Btn
+          kind={drawing ? 'primary' : 'secondary'}
+          icon="pencil"
+          label={t.drawWord}
+          onPress={() => setDrawing((d) => !d)}
+          style={{ flexGrow: 1, flexBasis: 160, minHeight: 48 }}
+        />
+      </View>
+      {drawing && <DrawSearch onWord={setQ} wordOf={wordOf} onPen={setPenDown} />}
       <View style={styles.searchBox}>
         <Icon name="search" size={22} color={C.textMuted} />
         <TextInput
@@ -82,6 +102,87 @@ export function SearchPanel() {
         );
       })}
     </Panel>
+  );
+}
+
+/** Search by drawing: the drawing is recognised (AI), its guesses fill the search. */
+function DrawSearch({
+  onWord,
+  wordOf,
+  onPen,
+}: {
+  onWord: (w: string) => void;
+  wordOf: (g: DrawingGuess) => string;
+  onPen: (down: boolean) => void;
+}) {
+  const { t, profile } = useApp();
+  const [strokes, setStrokes] = useState<Stroke[]>([]);
+  const [size, setSize] = useState<[number, number]>([0, 0]);
+  const [state, setState] = useState<'idle' | 'thinking' | 'done' | 'failed' | 'unavailable' | 'off'>('idle');
+  const [guesses, setGuesses] = useState<DrawingGuess[]>([]);
+  const ctl = useRef<AbortController | null>(null);
+  useEffect(() => () => ctl.current?.abort(), []);
+
+  const find = async () => {
+    if (!profile.settings.aiSuggestions) return setState('off');
+    if (!(await aiAvailable())) return setState('unavailable');
+    ctl.current?.abort();
+    const c = new AbortController();
+    ctl.current = c;
+    setState('thinking');
+    const res = await askAiToReadDrawing(strokes, size[0], size[1], c.signal);
+    if (c.signal.aborted) return;
+    if (res === null) return setState('unavailable');
+    setGuesses(res);
+    setState(res.length ? 'done' : 'failed');
+    if (res.length) onWord(wordOf(res[0]));
+  };
+
+  return (
+    <View style={{ gap: 8 }}>
+      <Text style={styles.muted}>{t.drawHint}</Text>
+      <DrawPad strokes={strokes} onChange={setStrokes} onSize={(w, h) => setSize([w, h])} onPen={onPen} />
+      <View style={[styles.row, { flexWrap: 'wrap' }]}>
+        <Btn small icon="undo" label={t.undoStroke} disabled={!strokes.length} onPress={() => setStrokes((s) => s.slice(0, -1))} />
+        <Btn
+          small
+          kind="danger"
+          icon="trash"
+          label={t.clearDrawing}
+          disabled={!strokes.length}
+          onPress={() => {
+            setStrokes([]);
+            setGuesses([]);
+            setState('idle');
+          }}
+        />
+        <Btn
+          kind="primary"
+          icon="search"
+          label={t.findDrawing}
+          disabled={!strokes.length || state === 'thinking'}
+          onPress={find}
+          style={{ flexGrow: 1 }}
+        />
+      </View>
+      {state === 'thinking' && (
+        <View style={[styles.row, { alignItems: 'center' }]}>
+          <ActivityIndicator color={C.accent} />
+          <Text style={styles.muted}>{t.drawThinking}</Text>
+        </View>
+      )}
+      {state === 'done' && (
+        <View style={[styles.row, { flexWrap: 'wrap', alignItems: 'center' }]}>
+          <Text style={styles.resultLabel}>{t.drawGuesses}</Text>
+          {guesses.map((g, i) => (
+            <Btn key={i} small kind={i === 0 ? 'primary' : 'secondary'} label={wordOf(g)} onPress={() => onWord(wordOf(g))} />
+          ))}
+        </View>
+      )}
+      {state === 'failed' && <Text style={styles.warn}>{t.drawFailed}</Text>}
+      {state === 'unavailable' && <Text style={styles.warn}>{t.drawUnavailable}</Text>}
+      {state === 'off' && <Text style={styles.warn}>{t.drawAiOff}</Text>}
+    </View>
   );
 }
 
@@ -234,6 +335,8 @@ export function PinPanel() {
 }
 
 const styles = StyleSheet.create({
+  ways: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  warn: { fontSize: 14, backgroundColor: C.editSoft, color: C.edit, padding: 10, borderRadius: radius.md },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',

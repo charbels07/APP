@@ -16,10 +16,12 @@ export function newMediaName(ext: string): string {
   return `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
 }
 
-/** Copies a temporary file (camera, picker, recorder) into the media store. */
+/** Copies a temporary file (camera, picker, recorder) — or downloads a web picture — into the media store. */
 export async function saveMedia(sourceUri: string, ext: string): Promise<string> {
   const name = newMediaName(ext);
-  await new File(sourceUri).copy(new File(dir(), name));
+  const dest = new File(dir(), name);
+  if (/^https?:/i.test(sourceUri)) await File.downloadFileAsync(sourceUri, dest);
+  else await new File(sourceUri).copy(dest);
   return name;
 }
 

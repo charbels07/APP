@@ -41,7 +41,19 @@ Idéalement sur iPad, en paysage. Code accompagnant : **1234**.
    « activités » », « Touche « ballon » »), puis la phrase est lue. Les **dossiers sont appuyés
    exactement comme les mots** (la main vise, appuie, le nom du dossier est dit, puis il s’ouvre).
    On peut aussi **enregistrer une démonstration** (touchez les mots) et la **rejouer**.
-10. **Mode accompagnant** :
+10. **Chercher** (loupe) : tapez le mot, ou touchez **Dire le mot** (micro), ou **Dessiner** :
+    dessinez l’objet (ou écrivez le mot) avec le doigt puis *Trouver* — l’application propose
+    « Je pense que c’est : ballon, soleil… » et montre où est le mot. (La reconnaissance des
+    dessins passe par l’IA : dans la démo en ligne pour l’instant.)
+11. **Applis** (nouveau dossier sur le tableau principal) : YouTube, WhatsApp, Spotify, Anghami.
+    Toucher l’appli l’ouvre après un compte à rebours de 3 secondes (*Annuler* possible). Si
+    l’enfant dit une phrase qui en parle (« je veux écouter de la musique » puis *Parler*), l’appli
+    s’ouvre aussi. WhatsApp n’a pas de lien au départ : l’enfant voit un message pour les parents
+    (ajouter https://wa.me/ suivi du numéro). Dans la démo, les applis s’ouvrent dans un onglet.
+12. **Réglages** : *Faire vibrer les pictogrammes* (le pictogramme bouge quand on le touche et
+    pendant qu’il est dit, mot par mot pour une phrase) ; *Ouvrir l’application citée dans une
+    phrase* (activé par défaut).
+13. **Mode accompagnant** :
     - *TLA* → *Nouveau TLA* → tapez un sujet (ex. « préparer un gâteau ») → *Proposer des mots* :
       l’application reconnaît la situation (≈ 45 situations : cuisine, routines, fêtes, sorties,
       santé, école, transports, jeux…) et propose **les mots de l’activité** (farine, œufs, sucre,
@@ -50,6 +62,13 @@ Idéalement sur iPad, en paysage. Code accompagnant : **1234**.
       ligne ; sur l’iPad il faudra un petit serveur). Touchez un mot ou une étape pour le retirer,
       ajoutez-en, puis créez. Option : *Créer aussi le planning de ces étapes* (relié au TLA, avec
       minuteur, ex. four 30 min).
+    - Image d’un mot : *Pictogrammes* (ARASAAC hors ligne), *Photo* (galerie ou appareil photo) ou
+      *Internet* : pictogrammes d’autres banques gratuites (Tawasol en arabe, Mulberry, Sclera…),
+      photos et dessins libres, *Coller l’image* copiée sur un site, ou le lien d’une image. L’auteur
+      et la licence s’affichent sous l’image. (Dans la démo en ligne, la page n’a pas accès à
+      Internet : utilisez *Coller l’image*.)
+    - Sur une case : section *Application* pour transformer n’importe quel mot en lien vers une appli
+      (YouTube Kids, Netflix…) et choisir les mots qui l’ouvrent dans une phrase.
     - Nouveau mot (case vide → *Créer un nouveau mot*) : le pictogramme ARASAAC est choisi
       automatiquement parmi toute la bibliothèque ARASAAC (≈ 13 900 pictogrammes, hors ligne ;
       les pluriels sont compris : « bulles de savon » trouve « bulle de savon »).

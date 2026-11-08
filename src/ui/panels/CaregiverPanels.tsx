@@ -3,8 +3,9 @@ import { Image, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'r
 import { BUILTIN_CONCEPTS } from '../../data/concepts';
 import { CLASS_NAMES, CLASS_ORDER, CLASS_COLORS, C, radius } from '../theme';
 import { allConceptIds, display, getConcept, isRtl, label, LANG_NAMES, symbolOf, wordClass } from '../../lib/lexicon';
-import { deleteMedia, saveMedia } from '../../lib/media';
-import { pickPhoto, searchArasaac, type ArasaacHit } from '../../lib/photos';
+import { deleteMedia } from '../../lib/media';
+import { pickPhoto } from '../../lib/photos';
+import { APP_PRESETS, appLinkOf, isIncomplete, openAppUrl } from '../../lib/appLinks';
 import { exportJson, exportPdf, printDocument } from '../../lib/platform';
 import { boardCells, buildPrintHtml, conceptCell, type PrintOptions } from '../../lib/printHtml';
 import { canSpan } from '../../lib/boardOps';
@@ -12,12 +13,13 @@ import { pictoToMedia } from '../../lib/pictoLibrary';
 import { search } from '../../lib/search';
 import { listVoices } from '../../lib/speech';
 import { resetProfile } from '../../lib/storage';
-import { LANGS, type CellDisplay, type Lang, type Profile, type WordClass } from '../../model/types';
+import { LANGS, type AppLink, type CellDisplay, type Lang, type Profile, type WordClass } from '../../model/types';
 import { useApp } from '../../state/AppState';
 import { Btn, Field, Panel, Section, Segmented, Toggle } from '../common';
 import { PictoSearch } from '../PictoPicker';
+import { WebPicturePicker } from '../WebPictures';
 import { PrintPreview } from '../PrintPreview';
-import { arasaacUrl, SymbolView } from '../SymbolView';
+import { SymbolView, useMediaUri } from '../SymbolView';
 import { scheduleTitle } from '../screens/ScheduleScreen';
 import { Recorder } from './Recorder';
 
@@ -212,46 +214,26 @@ function ConceptEditorBody({ conceptId }: { conceptId: string }) {
   const { profile, t, lang } = app;
   const [audioLang, setAudioLang] = useState<Lang>(lang);
   const [emoji, setEmoji] = useState('');
-  const [query, setQuery] = useState(() => label(profile, conceptId, 'fr'));
-  const [hits, setHits] = useState<ArasaacHit[] | null>(null);
-  const [netError, setNetError] = useState(false);
+  const [source, setSource] = useState<PictureSource>('pictos');
   const cls = wordClass(profile, conceptId);
+  const credit = profile.overrides[conceptId]?.credit;
   const sym = symbolOf(profile, conceptId);
   const audio = profile.overrides[conceptId]?.audio?.[audioLang];
 
-  const setSymbol = (symbol: Profile['overrides'][string]['symbol']) =>
+  const setSymbol = (symbol: Profile['overrides'][string]['symbol'], credit?: string) =>
     app.update((d) => {
       const o = (d.overrides[conceptId] ??= {});
       const old = o.symbol;
       if (old?.kind === 'media' && (!symbol || symbol.kind !== 'media' || symbol.name !== old.name)) deleteMedia(old.name);
       if (symbol) o.symbol = symbol;
       else delete o.symbol;
+      if (credit) o.credit = credit;
+      else delete o.credit;
     });
 
   const photo = async (source: 'library' | 'camera') => {
     const name = await pickPhoto(source);
     if (name) setSymbol({ kind: 'media', name });
-  };
-
-  const runSearch = async () => {
-    setNetError(false);
-    try {
-      setHits(await searchArasaac(query, profile.settings.uiLang));
-    } catch {
-      setHits([]);
-      setNetError(true);
-    }
-  };
-
-  const chooseArasaac = async (id: number) => {
-    try {
-      // Store a local copy so the word keeps working offline.
-      const name = await saveMedia(arasaacUrl(id), 'png');
-      setSymbol({ kind: 'media', name });
-    } catch {
-      setSymbol({ kind: 'arasaac', id });
-    }
-    setHits(null);
   };
 
   return (
@@ -269,39 +251,45 @@ function ConceptEditorBody({ conceptId }: { conceptId: string }) {
       </View>
 
       <Section title={t.symbol}>
-        <View style={s.wrapRow}>
-          <Btn small icon="image" label={t.photoLibrary} onPress={() => photo('library')} />
-          <Btn small icon="camera" label={t.takePhoto} onPress={() => photo('camera')} />
-          <Btn small icon="undo" label={t.resetSymbol} onPress={() => setSymbol(undefined)} />
-        </View>
-        <Text style={s.label}>{t.pictoLibrary}</Text>
-        <PictoSearch
-          initialQuery={label(profile, conceptId, profile.settings.uiLang === 'en' ? 'en' : 'fr')}
-          lang={profile.settings.uiLang}
-          onPick={async (id) => {
-            const name = await pictoToMedia(id);
-            if (name) setSymbol({ kind: 'media', name });
-          }}
-        />
-        <View style={s.row}>
-          <TextInput value={query} onChangeText={setQuery} onSubmitEditing={runSearch} placeholder={t.pictoSearchOnline} style={[s.input, { flex: 1 }]} />
-          <Btn small icon="search" label={t.pictoSearchOnline} onPress={runSearch} />
-        </View>
-        {netError && <Text style={s.note}>{t.arasaacOffline}</Text>}
-        {hits && (
-          <View style={s.hits}>
-            {hits.map((h) => (
-              <Pressable key={h.id} onPress={() => chooseArasaac(h.id)} style={({ pressed }) => [s.hit, pressed && { opacity: 0.6 }]} accessibilityLabel={h.keyword}>
-                <Image source={{ uri: arasaacUrl(h.id) }} style={{ width: 64, height: 64 }} resizeMode="contain" />
-              </Pressable>
-            ))}
+        {credit ? (
+          <Text style={s.note}>
+            {t.webCredit} : {credit}
+          </Text>
+        ) : null}
+        <PictureSources value={source} onChange={setSource} />
+        {source === 'pictos' && (
+          <>
+            <Text style={s.label}>{t.pictoLibrary}</Text>
+            <PictoSearch
+              initialQuery={label(profile, conceptId, profile.settings.uiLang === 'en' ? 'en' : 'fr')}
+              lang={profile.settings.uiLang}
+              onPick={async (id) => {
+                const name = await pictoToMedia(id);
+                if (name) setSymbol({ kind: 'media', name });
+              }}
+            />
+          </>
+        )}
+        {source === 'photo' && (
+          <View style={s.wrapRow}>
+            <Btn small icon="image" label={t.photoLibrary} onPress={() => photo('library')} />
+            <Btn small icon="camera" label={t.takePhoto} onPress={() => photo('camera')} />
           </View>
         )}
+        {source === 'web' && (
+          <WebPicturePicker
+            initialQuery={label(profile, conceptId, profile.settings.uiLang === 'en' ? 'en' : 'fr')}
+            onPicked={(name, credit) => setSymbol({ kind: 'media', name }, credit)}
+          />
+        )}
         <View style={s.row}>
+          <Btn small icon="undo" label={t.resetSymbol} onPress={() => setSymbol(undefined)} />
           <TextInput value={emoji} onChangeText={setEmoji} placeholder={t.emojiPlaceholder} style={[s.input, { width: 110 }]} maxLength={8} />
           <Btn small label={t.emoji} disabled={!emoji.trim()} onPress={() => setSymbol({ kind: 'emoji', value: emoji.trim() })} />
         </View>
       </Section>
+
+      <AppLinkEditor conceptId={conceptId} />
 
       <Section title={t.displayMode}>
         <Segmented
@@ -348,6 +336,98 @@ function ConceptEditorBody({ conceptId }: { conceptId: string }) {
   );
 }
 
+type PictureSource = 'pictos' | 'photo' | 'web';
+
+/** Where a word's picture comes from: offline pictograms, a photo, or the internet. */
+function PictureSources({ value, onChange }: { value: PictureSource; onChange: (v: PictureSource) => void }) {
+  const { t } = useApp();
+  return (
+    <Segmented
+      value={value}
+      onChange={onChange}
+      options={[
+        { value: 'pictos', label: t.srcPictos },
+        { value: 'photo', label: t.srcPhoto },
+        { value: 'web', label: t.srcWeb },
+      ]}
+    />
+  );
+}
+
+/** Turns a word into an app link (YouTube, WhatsApp…), with the words that open it from a sentence. */
+function AppLinkEditor({ conceptId }: { conceptId: string }) {
+  const app = useApp();
+  const { profile, t } = app;
+  const link = appLinkOf(profile, conceptId);
+  const [url, setUrl] = useState(link?.url ?? '');
+  const [triggers, setTriggers] = useState((link?.triggers ?? []).join(', '));
+
+  const save = (next: AppLink | false) =>
+    app.update((d) => {
+      const o = (d.overrides[conceptId] ??= {});
+      if (next === false && !getConcept(d, conceptId)?.app) delete o.app;
+      else o.app = next;
+    });
+
+  // Typing is saved after a short pause.
+  useEffect(() => {
+    if (!link) return;
+    const next: AppLink = { url: url.trim(), triggers: triggers.split(',').map((x) => x.trim()).filter(Boolean) };
+    if (next.url === link.url && next.triggers.join('|') === link.triggers.join('|')) return;
+    const id = setTimeout(() => save(next), 300);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url, triggers]);
+
+  const turnOn = (on: boolean) => {
+    if (!on) return save(false);
+    const next = getConcept(profile, conceptId)?.app ?? { url: '', triggers: [label(profile, conceptId, 'fr')] };
+    setUrl(next.url);
+    setTriggers(next.triggers.join(', '));
+    save(next);
+  };
+
+  const draft = { url, triggers: [] };
+  const whatsapp = /wa\.me|whatsapp/i.test(url) || /whatsapp/i.test(label(profile, conceptId, 'en'));
+  return (
+    <Section title={t.appSection}>
+      <Toggle label={t.appToggle} value={!!link} onChange={turnOn} />
+      {link && (
+        <>
+          <View style={s.wrapRow}>
+            {APP_PRESETS.map((p) => (
+              <Btn key={p.name} small label={p.name} onPress={() => setUrl(p.url)} />
+            ))}
+          </View>
+          <Field
+            label={t.appUrl}
+            value={url}
+            onChangeText={setUrl}
+            placeholder="https://…"
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="url"
+          />
+          {whatsapp && <Text style={s.note}>{t.appWhatsappHint}</Text>}
+          {isIncomplete(draft) && <Text style={s.warnBox}>{t.appEmptyWarning}</Text>}
+          <Field label={t.appTriggers} value={triggers} onChangeText={setTriggers} autoCapitalize="none" />
+          <Btn small icon="external" label={t.appTest} disabled={isIncomplete(draft)} onPress={() => openAppUrl(url)} />
+        </>
+      )}
+    </Section>
+  );
+}
+
+/** Thumbnail of a picture already saved for a word being created. */
+function MediaThumb({ name, size }: { name: string; size: number }) {
+  const uri = useMediaUri(name);
+  return uri ? (
+    <Image source={{ uri }} style={{ width: size, height: size, borderRadius: 8 }} resizeMode="cover" />
+  ) : (
+    <View style={{ width: size, height: size, borderRadius: 8, backgroundColor: '#E4E7EC' }} />
+  );
+}
+
 // ── Word picker (and new word creation) ──
 
 function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) => void }) {
@@ -374,6 +454,13 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
   const [picto, setPicto] = useState<number | undefined>();
   const [pictoTouched, setPictoTouched] = useState(false);
   const [busy, setBusy] = useState(false);
+  // …or a photo / a picture from the internet chosen instead.
+  const [source, setSource] = useState<PictureSource>('pictos');
+  const [ownPicture, setOwnPicture] = useState<{ name: string; credit?: string } | null>(null);
+  const chooseOwn = (name: string, credit?: string) => {
+    if (ownPicture) deleteMedia(ownPicture.name);
+    setOwnPicture({ name, credit });
+  };
   const pictoQuery = draft.fr || draft.en || draft.ar;
 
   const create = async () => {
@@ -381,7 +468,8 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
     const name = draft.fr || draft.en || draft.ar;
     if (!name) return;
     setBusy(true);
-    const media = picto !== undefined ? await pictoToMedia(picto).catch(() => undefined) : undefined;
+    const media =
+      ownPicture?.name ?? (picto !== undefined ? await pictoToMedia(picto).catch(() => undefined) : undefined);
     app.update((d) => {
       d.customConcepts[id] = {
         id,
@@ -390,7 +478,7 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
         emoji: draft.emoji || '⭐',
         custom: true,
       };
-      if (media) d.overrides[id] = { symbol: { kind: 'media', name: media } };
+      if (media) d.overrides[id] = { symbol: { kind: 'media', name: media }, credit: ownPicture?.credit };
     });
     setBusy(false);
     onPick(id);
@@ -429,7 +517,33 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
               </Pressable>
             ))}
           </View>
-          {pictoQuery ? (
+          <PictureSources value={source} onChange={setSource} />
+          {ownPicture && (
+            <View style={s.row}>
+              <MediaThumb name={ownPicture.name} size={64} />
+              <Text style={[s.note, { flex: 1 }]}>
+                {t.pictureChosen}
+                {ownPicture.credit ? ` — ${ownPicture.credit}` : ''}
+              </Text>
+              <Btn
+                small
+                icon="x"
+                accessibilityLabel={t.remove}
+                onPress={() => {
+                  deleteMedia(ownPicture.name);
+                  setOwnPicture(null);
+                }}
+              />
+            </View>
+          )}
+          {source === 'photo' && (
+            <View style={s.wrapRow}>
+              <Btn small icon="image" label={t.photoLibrary} onPress={async () => { const n = await pickPhoto('library'); if (n) chooseOwn(n); }} />
+              <Btn small icon="camera" label={t.takePhoto} onPress={async () => { const n = await pickPhoto('camera'); if (n) chooseOwn(n); }} />
+            </View>
+          )}
+          {source === 'web' && <WebPicturePicker initialQuery={pictoQuery} onPicked={chooseOwn} />}
+          {source === 'pictos' && !ownPicture && pictoQuery ? (
             <View style={{ gap: 6 }}>
               <Text style={s.note}>{t.suggestedPicto}</Text>
               <PictoSearch
@@ -616,6 +730,8 @@ function SettingsPanel() {
         <Toggle label={t.sAddToStrip} value={st.addToStrip} onChange={(v) => set((x) => void (x.addToStrip = v))} />
         <Toggle label={t.sGrammar} value={st.grammar} onChange={(v) => set((x) => void (x.grammar = v))} />
         <Toggle label={t.sQuickZone} value={st.quickZone} onChange={(v) => set((x) => void (x.quickZone = v))} />
+        <Toggle label={t.sWiggle} value={!!st.wiggle} onChange={(v) => set((x) => void (x.wiggle = v))} />
+        <Toggle label={t.sAutoApps} value={st.autoOpenApps !== false} onChange={(v) => set((x) => void (x.autoOpenApps = v))} />
       </Section>
 
       <Section title={t.sBar}>
@@ -820,6 +936,7 @@ function PrintPanel() {
 }
 
 const s = StyleSheet.create({
+  warnBox: { fontSize: 13, backgroundColor: C.editSoft, color: C.edit, padding: 10, borderRadius: radius.md },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   wrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   note: { fontSize: 13, color: C.textMuted },

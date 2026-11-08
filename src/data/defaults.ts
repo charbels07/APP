@@ -75,7 +75,7 @@ const CORE: Board = {
       folder('f_body', 'body'),
       folder('f_activities', 'activities'),
     ],
-    [folder('f_chat', 'chat'), folder('f_time', 'time'), folder('f_mine', 'mine'), null, null, null, null],
+    [folder('f_chat', 'chat'), folder('f_time', 'time'), folder('f_mine', 'mine'), folder('f_apps', 'apps'), null, null, null],
   ]),
 };
 
@@ -128,7 +128,11 @@ const FOLDERS: Board[] = [
     'today', 'yesterday', 'tomorrow', 'now', 'first', 'then', 'before', 'after', 'later', 'morning', 'evening', 'night',
   ]),
   folderBoard('mine', 'f_mine', 3, 4, []),
+  folderBoard('apps', 'f_apps', 2, 4, ['app_youtube', 'app_whatsapp', 'app_spotify', 'app_anghami']),
 ];
+
+/** Where the apps folder sits on the core board (an empty slot: nothing else moves). */
+export const APPS_FOLDER_SLOT = 3 * 12 + 11;
 
 /** TLAs share a fixed block of core words in the two left columns (TLA-01, TLA-02). */
 export const TLA_CORE: string[][] = [
@@ -248,6 +252,8 @@ export const DEFAULT_SETTINGS: Settings = {
   timer: { display: ['circle', 'digits'], sound: true, haptic: true },
   modelPace: 1,
   aiSuggestions: true,
+  wiggle: false,
+  autoOpenApps: true,
 };
 
 export const DEFAULT_HELP: HelpConfig = {
@@ -274,5 +280,6 @@ export function createDefaultProfile(): Profile {
     customConcepts: {},
     help: structuredClone(DEFAULT_HELP),
     demos: [],
+    migrations: ['apps'],
   };
 }

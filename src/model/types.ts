@@ -151,6 +151,10 @@ export interface Settings {
   wiggle: boolean;
   /** Open an app when the spoken sentence mentions it ("je veux écouter de la musique" → Spotify). */
   autoOpenApps: boolean;
+  /** Synthetic voice: the device's default, a woman's or a man's (picked per language, see lib/voices). */
+  voiceKind: 'device' | 'f' | 'm';
+  /** Child voice = the chosen voice, higher pitched (tablets have no real child voices). */
+  voiceAge: 'adult' | 'child';
 }
 
 export interface HelpConfig {

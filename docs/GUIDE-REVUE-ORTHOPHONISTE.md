@@ -33,7 +33,9 @@ données). Chaque chapitre a un bouton *Essayer* qui ouvre l’endroit dont il p
    les parents. Puis *je* → *vouloir* → *musique* (dossier *activités*) → *Parler* → *Ouvrir Spotify*.
 7. *Planning* : *Fait*, *D’abord / Ensuite* ; *Minuteur* d’1 minute.
 8. *Accompagnant* (1234) → *Réglages* → *Faire vibrer les pictogrammes* → *Terminer* → toucher
-   des mots puis *Parler* : chaque image bouge quand elle est dite.
+   des mots puis *Parler* : chaque image bouge quand elle est dite. Dans *Réglages → Voix* :
+   *Type de voix* (féminine / masculine) et *Âge de la voix* (adulte / enfant), puis *Écouter*
+   pour chaque langue.
 9. *Accompagnant* → *TLA* → *Nouveau TLA* → « préparer un gâteau » → *Proposer des mots* :
    ingrédients, ustensiles et étapes ; créer avec le planning.
 10. *Accompagnant* → toucher une case → *Internet* → *Coller l’image* (copiée sur un site) ;

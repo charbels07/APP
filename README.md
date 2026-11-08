@@ -106,6 +106,11 @@ from the words' language, both from the bar's *Language* button: French, English
 navigation × French, English or Lebanese Arabic words. Arabic navigation (simple Modern Standard
 Arabic, to be reviewed) mirrors the menus right to left; boards are never mirrored (motor plan).
 
+Draft 0.7 adds: voice type (device / female / male) and voice age (adult / child) in Settings →
+Voice. The matching device voice is picked per language by name (`src/lib/voices.ts`); a child
+voice is the chosen voice with a higher pitch (tablets have no real child voices); when a language
+has no voice of that kind, the default voice is pitched towards it and Settings says so.
+
 Not yet (later phases of the spec): accounts, multi-device sync, roles and
 companion app, AI generation from photos, on-device/server AI for TLAs on iPad, switch scanning / eye gaze,
 Arabic morphology, other dialects, opt-in usage statistics, version history.

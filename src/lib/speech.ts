@@ -8,6 +8,7 @@ import { Platform } from 'react-native';
 import type { Lang, Settings } from '../model/types';
 import type { Segment } from './grammar';
 import { speechTag } from './lexicon';
+import { chooseVoice, voiceGender, type VoiceChoice, type VoiceGender, type VoiceInfo } from './voices';
 import { mediaUri } from './media';
 
 let generation = 0;
@@ -31,6 +32,9 @@ export function stopSpeech(): void {
 export type SpeechProgress = (segment: number, charIndex: number) => void;
 
 function speakOne(text: string, lang: Lang, settings: Settings, onWord?: (charIndex: number) => void): Promise<void> {
+  // Until the device's voices are known, the pitch already follows the chosen kind and age.
+  const choice =
+    plan[lang] ?? chooseVoice([], lang, speechTag(lang), settings.voiceKind ?? 'device', settings.voiceAge ?? 'adult', settings.voices[lang]);
   return new Promise((resolve) => {
     let settled = false;
     const done = () => {
@@ -42,7 +46,8 @@ function speakOne(text: string, lang: Lang, settings: Settings, onWord?: (charIn
     Speech.speak(text, {
       language: speechTag(lang),
       rate: settings.speechRate,
-      voice: settings.voices[lang],
+      voice: choice.id,
+      pitch: choice.pitch,
       onDone: done,
       onStopped: done,
       onError: done,
@@ -99,16 +104,38 @@ export async function playMedia(name: string): Promise<void> {
   if (uri) await playOne(uri);
 }
 
-export async function listVoices(lang: Lang): Promise<{ id: string; name: string }[]> {
-  try {
-    const prefix = speechTag(lang).slice(0, 2);
-    const voices = await Speech.getAvailableVoicesAsync();
-    return voices
-      .filter((v) => v.language?.toLowerCase().startsWith(prefix))
-      .map((v) => ({ id: v.identifier, name: `${v.name} (${v.language})` }));
-  } catch {
-    return [];
-  }
+let voiceList: Promise<VoiceInfo[]> | null = null;
+/** The device's voices (browsers may never announce any: give up after 3 s). */
+function deviceVoices(): Promise<VoiceInfo[]> {
+  voiceList ??= Promise.race([
+    Speech.getAvailableVoicesAsync()
+      .then((vs) => vs.map((v) => ({ id: v.identifier, name: v.name, language: v.language ?? '', quality: String(v.quality ?? '') })))
+      .catch(() => [] as VoiceInfo[]),
+    new Promise<VoiceInfo[]>((r) => setTimeout(() => r([]), 3000)),
+  ]).then((vs) => {
+    if (!vs.length) voiceList = null; // try again next time (voices can arrive late)
+    return vs;
+  });
+  return voiceList;
+}
+
+/** Voice and pitch used for each language, from Settings → Voice (woman / man, adult / child). */
+let plan: Partial<Record<Lang, VoiceChoice>> = {};
+
+export async function prepareVoices(settings: Settings): Promise<Record<Lang, VoiceChoice>> {
+  const voices = await deviceVoices();
+  const next = {} as Record<Lang, VoiceChoice>;
+  for (const l of ['fr', 'en', 'ar'] as Lang[])
+    next[l] = chooseVoice(voices, l, speechTag(l), settings.voiceKind ?? 'device', settings.voiceAge ?? 'adult', settings.voices[l]);
+  plan = next;
+  return next;
+}
+
+export async function listVoices(lang: Lang): Promise<{ id: string; name: string; gender?: VoiceGender }[]> {
+  const prefix = speechTag(lang).slice(0, 2);
+  return (await deviceVoices())
+    .filter((v) => v.language.toLowerCase().startsWith(prefix))
+    .map((v) => ({ id: v.id, name: `${v.name} (${v.language})`, gender: voiceGender(v) }));
 }
 
 /** Short beep (web only; on devices the timer uses speech + haptics). */

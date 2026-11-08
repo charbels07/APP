@@ -11,7 +11,8 @@ import { boardCells, buildPrintHtml, conceptCell, type PrintOptions } from '../.
 import { canSpan } from '../../lib/boardOps';
 import { pictoToMedia } from '../../lib/pictoLibrary';
 import { search } from '../../lib/search';
-import { listVoices } from '../../lib/speech';
+import { listVoices, prepareVoices, speakText } from '../../lib/speech';
+import type { VoiceChoice } from '../../lib/voices';
 import { resetProfile } from '../../lib/storage';
 import { UI_LANG_NAMES } from '../../i18n/ui';
 import { LANGS, type AppLink, type CellDisplay, type Lang, type Profile, type UiLang, type WordClass } from '../../model/types';
@@ -334,6 +335,43 @@ function ConceptEditorBody({ conceptId }: { conceptId: string }) {
         </View>
       </Section>
     </>
+  );
+}
+
+/** Which device voice each language uses now, with a button to hear it. */
+function VoicesUsed() {
+  const { profile, t } = useApp();
+  const st = profile.settings;
+  const [plan, setPlan] = useState<Record<Lang, VoiceChoice> | null>(null);
+  const key = JSON.stringify([st.voiceKind, st.voiceAge, st.voices]);
+  useEffect(() => {
+    let alive = true;
+    prepareVoices(st).then((p) => alive && setPlan(p));
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  return (
+    <View style={{ gap: 6 }}>
+      <Text style={s.label}>{t.voiceUsed}</Text>
+      {LANGS.map((l) => {
+        const c = plan?.[l];
+        return (
+          <View key={l} style={s.row}>
+            {/* Separate lines: an Arabic language name must not turn the French line right-to-left. */}
+            <View style={{ flex: 1 }}>
+              <Text style={s.classText}>{LANG_NAMES[l]}</Text>
+              <Text style={s.note}>
+                {c?.name ?? t.voiceDefaultUsed}
+                {c && !c.exact ? ` — ${t.voiceApprox}` : ''}
+              </Text>
+            </View>
+            <Btn small icon="volume" label={t.play} onPress={() => speakText(t.voiceSample[l], l, st)} />
+          </View>
+        );
+      })}
+    </View>
   );
 }
 
@@ -690,7 +728,7 @@ function SettingsPanel() {
   const st = profile.settings;
   const set = (fn: (s: Profile['settings']) => void) => app.update((d) => fn(d.settings));
   const [voiceLang, setVoiceLang] = useState<Lang>(st.lang);
-  const [voices, setVoices] = useState<{ id: string; name: string }[]>([]);
+  const [voices, setVoices] = useState<Awaited<ReturnType<typeof listVoices>>>([]);
   const [confirmReset, setConfirmReset] = useState(false);
   const [pin, setPin] = useState(st.pin);
   useEffect(() => {
@@ -756,6 +794,34 @@ function SettingsPanel() {
           <Btn small icon="minus" accessibilityLabel="-" onPress={() => set((x) => void (x.speechRate = Math.max(0.5, +(x.speechRate - 0.1).toFixed(1))))} />
           <Btn small icon="plus" accessibilityLabel="+" onPress={() => set((x) => void (x.speechRate = Math.min(1.6, +(x.speechRate + 0.1).toFixed(1))))} />
         </View>
+        <Text style={s.label}>{t.sVoiceKind}</Text>
+        <Segmented
+          value={st.voiceKind ?? 'device'}
+          onChange={(v: Profile['settings']['voiceKind']) =>
+            // A new kind of voice replaces any precise voice chosen before.
+            set((x) => {
+              x.voiceKind = v;
+              x.voices = {};
+            })
+          }
+          options={[
+            { value: 'device', label: t.voiceDevice },
+            { value: 'f', label: t.voiceFemale },
+            { value: 'm', label: t.voiceMale },
+          ]}
+        />
+        <Text style={s.label}>{t.sVoiceAge}</Text>
+        <Segmented
+          value={st.voiceAge ?? 'adult'}
+          onChange={(v: Profile['settings']['voiceAge']) => set((x) => void (x.voiceAge = v))}
+          options={[
+            { value: 'adult', label: t.voiceAdult },
+            { value: 'child', label: t.voiceChild },
+          ]}
+        />
+        {st.voiceAge === 'child' && <Text style={s.note}>{t.voiceChildNote}</Text>}
+        <VoicesUsed />
+        <Text style={s.label}>{t.voicePrecise}</Text>
         <Text style={s.label}>{t.sVoiceFor}</Text>
         <Segmented value={voiceLang} onChange={setVoiceLang} options={LANGS.map((l) => ({ value: l, label: LANG_NAMES[l] }))} />
         <View style={s.wrapRow}>
@@ -766,7 +832,13 @@ function SettingsPanel() {
             onPress={() => set((x) => void delete x.voices[voiceLang])}
           />
           {voices.slice(0, 12).map((v) => (
-            <Btn key={v.id} small kind={st.voices[voiceLang] === v.id ? 'primary' : 'secondary'} label={v.name} onPress={() => set((x) => void (x.voices[voiceLang] = v.id))} />
+            <Btn
+              key={v.id}
+              small
+              kind={st.voices[voiceLang] === v.id ? 'primary' : 'secondary'}
+              label={v.gender ? `${v.name} · ${v.gender === 'f' ? t.voiceFemale : t.voiceMale}` : v.name}
+              onPress={() => set((x) => void (x.voices[voiceLang] = v.id))}
+            />
           ))}
         </View>
       </Section>

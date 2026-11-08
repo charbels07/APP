@@ -254,6 +254,8 @@ export const DEFAULT_SETTINGS: Settings = {
   aiSuggestions: true,
   wiggle: false,
   autoOpenApps: true,
+  voiceKind: 'device',
+  voiceAge: 'adult',
 };
 
 export const DEFAULT_HELP: HelpConfig = {

@@ -449,12 +449,12 @@ const BASE: BaseChapter[] = [
       fr: [
         'Communication : prononcer chaque mot, ajouter à la phrase, grammaire automatique (à couper pour travailler une forme), accords au féminin, zone rapide (oui, non, stop, attends…), faire vibrer les pictogrammes, ouvrir l’appli citée dans une phrase.',
         'Barre universelle : masquer TLA, Planning ou Minuteur si l’enfant n’en a pas besoin (CAA et Aide restent toujours).',
-        'Voix : vitesse et voix par langue. Bouton Aide : le message dit en premier, les informations utiles.',
+        'Voix : féminine ou masculine, adulte ou enfant (Type de voix, Âge de la voix), vitesse, ou une voix précise par langue. Bouton Aide : le message dit en premier, les informations utiles.',
       ],
       en: [
         'Communication: say each word, add to sentence, automatic grammar (turn off to practise a form), feminine agreement, quick zone (yes, no, stop, wait…), wiggling pictograms, open the app mentioned in a sentence.',
         'Universal bar: hide Boards, Schedule or Timer if the child doesn’t need them (AAC and Help always stay).',
-        'Voice: speed and voice per language. Help button: the first message said, the useful information.',
+        'Voice: female or male, adult or child (Voice type, Voice age), speed, or a specific voice per language. Help button: the first message said, the useful information.',
       ],
     },
     action: 'settings',
@@ -688,7 +688,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
     steps: [
       'التواصل: نطق كل كلمة، إضافة الكلمات إلى الجملة، القواعد التلقائية (أوقفها للتدرّب على صيغة)، التأنيث، المنطقة السريعة (نعم، لا، توقف، انتظر…)، اهتزاز الرموز، فتح التطبيق المذكور في جملة.',
       'الشريط الدائم: إخفاء «اللوحات» أو «الجدول» أو «المؤقت» إذا لم يحتجها الطفل («التواصل» و«مساعدة» يبقيان دائماً).',
-      'الصوت: السرعة والصوت لكل لغة. زر المساعدة: الرسالة الأولى التي تُقال، والمعلومات المفيدة.',
+      'الصوت: أنثوي أو ذكوري، بالغ أو طفل («نوع الصوت»، «عمر الصوت»)، السرعة، أو صوت محدد لكل لغة. زر المساعدة: الرسالة الأولى التي تُقال، والمعلومات المفيدة.',
     ],
   },
   linkApp: {

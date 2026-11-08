@@ -5,7 +5,7 @@ import { APPS_NEED_TAP, appLinkOf, findAppInSentence, isIncomplete, openAppUrl }
 import { joinTokens, renderStrip, toSpeechPlan } from '../lib/grammar';
 import { audioOf, label } from '../lib/lexicon';
 import { locate, type Location } from '../lib/search';
-import { beep, speakSegments, speakText, stopSpeech } from '../lib/speech';
+import { beep, prepareVoices, speakSegments, speakText, stopSpeech } from '../lib/speech';
 import { loadProfile, saveProfile } from '../lib/storage';
 import type { DemoStep, Lang, Profile, StripItem } from '../model/types';
 
@@ -183,6 +183,13 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
 
   const lang = profile.settings.lang;
   const t = strings(profile.settings.uiLang);
+
+  // Pick the device voice for each language (woman / man, adult / child) when those settings change.
+  const { voiceKind, voiceAge, voices } = profile.settings;
+  const voicesKey = JSON.stringify(voices);
+  useEffect(() => {
+    prepareVoices(profileRef.current.settings);
+  }, [voiceKind, voiceAge, voicesKey]);
 
   const [view, setView] = useState<View>('board');
   /** Latest navigation, readable from async replays without stale closures. */

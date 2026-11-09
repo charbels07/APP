@@ -186,5 +186,7 @@ d('real server (Supabase): a family, a therapist, a teacher, a stranger and a ta
   it('deleting the parent account removes the child profile for everyone', async () => {
     await rita.deleteAccount();
     expect(await sarah.listProfiles()).toEqual([]);
+    // The login itself is gone too.
+    await expectCode(person('rita-again').signIn({ email: mail('rita'), password: `Test-${run}-pw` }), 'wrong_credentials');
   });
 });

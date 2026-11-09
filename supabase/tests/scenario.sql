@@ -37,9 +37,12 @@ set role authenticated;
 
 -- Rita creates Adam's profile and invites Sarah (no account yet).
 select set_config('request.jwt.claim.sub', :'rita', false);
-insert into profiles (owner_id, name, age, data) values (:'rita', 'Adam', 6,
-  '{"boards":{"core":{"cells":[{"concept":"i"},{"concept":"want"}]},"food":{"cells":[null]}},"settings":{}}');
-insert into test.ids select 'adam', id::text from profiles where name = 'Adam';
+-- Like the app: the new row is asked back in the same step ("returning").
+with created as (
+  insert into profiles (owner_id, name, age, data) values (:'rita', 'Adam', 6,
+    '{"boards":{"core":{"cells":[{"concept":"i"},{"concept":"want"}]},"food":{"cells":[null]}},"settings":{}}')
+  returning id)
+insert into test.ids select 'adam', id::text from created;
 select test.ok((select count(*) = 1 from list_profiles() where access = 'owner'), 'parent sees her child as owner');
 insert into test.ids select 'inv', (invite((select v::uuid from test.ids where k = 'adam'), 'Sarah@Clinic.fr', 'Sarah', 'therapist', 2,
   '{"createMaterials":true,"proposeVocabulary":true}')).id::text;

@@ -13,8 +13,10 @@ export const RIGHT: TextStyle = { textAlign: 'right', writingDirection: 'rtl' };
 /** Text that follows the navigation direction (right-aligned in Arabic). */
 export function T({ style, children, ...rest }: React.ComponentProps<typeof Text> & { style?: StyleProp<TextStyle> }) {
   const rtl = useSession().uiLang === 'ar';
+  // Centred texts stay centred in Arabic; the others read from the right.
+  const centred = StyleSheet.flatten(style)?.textAlign === 'center';
   return (
-    <Text style={[st.text, style, rtl && RIGHT]} {...rest}>
+    <Text style={[st.text, style, rtl && (centred ? { writingDirection: 'rtl' } : RIGHT)]} {...rest}>
       {children}
     </Text>
   );

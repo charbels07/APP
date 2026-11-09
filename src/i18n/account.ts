@@ -5,9 +5,8 @@ import type { UiLang } from '../model/types';
 export const APP_NAME = 'CAA';
 
 const fr = {
-  welcomeTitle: 'Bienvenue',
-  welcomeLine:
-    'Un tableau de communication pour que chaque enfant puisse dire ce qu’il veut — en français, en anglais et en arabe libanais — et qui grandit avec lui.',
+  welcomeTitle: 'Le pouvoir de communiquer',
+  welcomeLine: 'Chaque voix compte, et chaque mot ouvre un monde de communication, de liens et de possibilités.',
   welcomePoints: [
     'Des mots toujours à la même place, pour apprendre vite.',
     'La famille et les professionnels travaillent ensemble.',
@@ -121,9 +120,8 @@ const fr = {
 type Dict = typeof fr;
 
 const en: Dict = {
-  welcomeTitle: 'Welcome',
-  welcomeLine:
-    'A communication board so every child can say what they want — in French, English and Lebanese Arabic — that grows with them.',
+  welcomeTitle: 'Empower Communication',
+  welcomeLine: 'Every voice matters, and every word opens a world of communication, connection and possibilities.',
   welcomePoints: [
     'Words always in the same place, so they are learnt fast.',
     'Family and professionals work together.',
@@ -235,9 +233,8 @@ const en: Dict = {
 };
 
 const ar: Dict = {
-  welcomeTitle: 'أهلاً وسهلاً',
-  welcomeLine:
-    'لوحة تواصل تسمح لكل طفل أن يقول ما يريد — بالفرنسية والإنكليزية واللبنانية — وتكبر معه.',
+  welcomeTitle: 'تمكين التواصل',
+  welcomeLine: 'كل صوت مهم، وكل كلمة تفتح عالماً من التواصل والتقارب والإمكانيات.',
   welcomePoints: ['الكلمات دائماً في المكان نفسه ليتعلّمها بسرعة.', 'العائلة والمختصّون يعملون معاً.', 'يعمل من دون إنترنت.'],
   continue: 'متابعة',
   back: 'رجوع',

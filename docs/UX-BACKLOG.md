@@ -409,6 +409,76 @@ communication materials and collaborating with families.
   tour to discover how you can use the app to support communication."*
 - The guide is shown, with the option to skip it (**Maybe Later**: go straight to the workspace).
 
+### Collaboration, from the professional's side
+
+Same principle as the parent side (section 6): **one communication profile, several authorised
+partners, different permissions**, for continuity between home, school, therapy and community,
+without touching the user's autonomy, established vocabulary organisation or privacy.
+
+**Collaborations screen:** My Connections (AAC users and families) · Pending Invitations
+(received from parents / profile owners) · Sent Requests · My Proposals (vocabulary,
+configuration and materials awaiting approval) · Shared Resources (shared with me / by me) ·
+Recent Activity (invitations, approvals, revisions, access changes).
+
+**Connecting with an AAC user**
+- *A — invitation from the parent:* the parent chooses "Invite Professional", enters the email or
+  picks an existing verified professional account, sets the permissions → the professional is
+  notified, accepts or declines → once accepted, the profile appears in their workspace with the
+  granted permissions.
+- *B — request from the professional:* "Connect an AAC User" → enter a **secure invitation code**
+  given by the family (or send a request through an authorised invitation mechanism) → the parent
+  sees the professional's **verified identity and requested permissions**, then approves or
+  declines → once approved, the profile appears in the workspace.
+- Never any access without explicit authorisation.
+
+**Permission levels** (same three levels as the parent side; changeable or revocable by the
+profile owner at any time)
+- *Level 1 — View & Use:* the existing board, modelling, approved vocabulary and materials, TLA,
+  schedules and shared resources; print / export when authorised. No changes to the profile.
+- *Level 2 — Contribute & Suggest:* prepare vocabulary, create or adapt TLA, schedules and
+  supports, suggest symbol / vocabulary / configuration changes, all **sent for approval**,
+  never applied automatically.
+- *Level 3 — Authorised Editing:* edit designated parts directly (assigned TLA, designated
+  schedules, vocabulary within authorised categories, selected accessibility settings). Core
+  vocabulary positions need extra safeguards and explicit authorisation.
+
+**Sharing materials** (TLA, schedules, First–Then, timers and routines, vocabulary additions,
+personal pictograms and photos, modelling supports): open the resource → **Share** → choose the AAC
+user or collaborator → share for **viewing**, **editing**, or **proposed inclusion in the
+profile** → the recipient is notified → pending until accepted when approval is required. Generic
+resources are reusable across users; personalised ones are not shared across profiles without
+authorisation and removal of unnecessary personal information.
+
+**Suggesting changes** (new word, photo or pictogram change, pronunciation, new category, TLA for
+school or therapy, grid or access settings): select the item → prepare the change → **preview of
+the change and its impact** on the existing system → optional short explanation → **Send for
+Approval** → the parent is notified → approve, decline or request a revision → approved changes
+sync to authorised devices → recorded in the configuration history, reversible when possible.
+A proposal never automatically reorganises core vocabulary.
+
+**Several professionals** (speech therapist, occupational therapist, psychomotor therapist,
+behaviour analyst, teacher, special educator) and the parent all work on the same profile with
+different permissions. Conflicting proposals on the same element are flagged for an authorised
+decision, never silently overwritten.
+
+**Notifications:** invitations received / accepted / declined, materials shared, proposals,
+approvals and rejections, revision requests, permission changes, revoked access, sync problems on
+shared resources. **Activity history** of configuration actions (who proposed or changed what,
+and when), never a record of the user's private conversations.
+
+**Privacy and security:** verification gives no automatic access; access needs the authorisation
+of the AAC user or their representative; individual permissions; no private messages by default;
+no access after revocation; sensitive resources and personal photos only to authorised
+recipients; traceable changes; communication works offline; revoking blocks future server access
+but cannot erase what was already downloaded or printed.
+
+**Expected outcome:** connect securely; access the profile within permissions; prepare and share
+personalised resources; suggest changes without disrupting the system; work with other
+professionals on the same user; follow the status of shares and proposals; keep one coherent
+system across home, school and therapy. **Core principle:** collaboration improves consistency
+while preserving the AAC user's ownership, autonomy, privacy and access to their communication
+system.
+
 ## 8. Back-office — **LATER** (the product owner will specify it)
 
 An admin back-office is planned, with "a lot of data" in it (details to come). It will at least

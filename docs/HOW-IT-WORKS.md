@@ -33,7 +33,7 @@ This file grows as each feature is built. Each line says **what** was made, **ho
 | Security in the database | **Row-level security** (SQL rules on each table): the database itself checks, for every row, "is this person on this child's team?", so even a modified app cannot read another family's data. |
 | Safe actions | Sensitive actions (save a profile, accept an invitation, approve a request…) are **SQL functions** run inside the database: they check the permission, the version number (to avoid overwriting someone's newer work) and the core-word rule in one step. |
 | Files | `…_storage.sql` (SQL) creates two private folders in Supabase Storage: diplomas (only their owner) and a child's photos (only the child's team). |
-| Logins | Supabase Auth handles passwords (stored scrambled, never readable), 6-digit email/SMS codes, Google and Apple; the app talks to it through `supabase-js`, the official TypeScript library. |
+| Logins | Supabase Auth handles passwords (stored scrambled, never readable), one-time codes by e-mail or SMS, Google and Apple; the app talks to it through `supabase-js`, the official TypeScript library. |
 | Real server client | `src/backend/supabase.ts` (TypeScript) translates between the app and the database (names, dates, error codes) and calls the safe SQL functions. |
 | Security test | `npm run test:db` (a **bash** script) starts a throw-away PostgreSQL on this computer, creates the tables, and plays a story (parent, therapist, teacher, stranger, tablet) checking 34 times that everyone sees and changes only what they should. |
 | App tests | `npm test` runs **Jest** (TypeScript tests) on the logic: permissions, changes, the demo server with several people. |
@@ -51,7 +51,7 @@ This file grows as each feature is built. Each line says **what** was made, **ho
 | Welcome page | `src/ui/start/Welcome.tsx` (React Native): logo drawn in **SVG** (shapes described with code), one sentence, three points, *Continue*. |
 | Board preview | The real board is shown with a sample profile and an "on change" that does nothing: everything can be tried, nothing is saved. |
 | Parent or professional | `RoleChoice.tsx`: two big cards; the choice is saved with the account and decides the journey. |
-| Sign-in | `AuthScreen.tsx`: Apple and Google buttons (drawn following each company's rules), e-mail or phone + password. Supabase Auth checks the password and sends the 6-digit code; the demo server shows the code on screen instead. Forgotten password = code + new password. |
+| Sign-in | `AuthScreen.tsx`: Apple and Google buttons (drawn following each company's rules), e-mail or phone + password. Supabase Auth checks the password and e-mails the code (sent through the app's own Gmail account, with our template in `supabase/email-templates/`); the demo server shows the code on screen instead. Forgotten password = code + new password. |
 | Tablet linked with a code | `PairScreen.tsx`: the 6-digit code from the parent's device links the tablet with a nameless account limited to that child (the database rule from Phase 1). |
 | Offline is not "signed out" | When the internet is down, the real-server code answers "offline" instead of "nobody is signed in", so the board stays. |
 | Languages of the menus | Each person chooses their own navigation language (FR / EN / عربي at the top). It is kept with their account, not in the child's profile, so a therapist in French and a parent in Arabic can share the same child. Arabic menus read right to left. |
@@ -123,8 +123,10 @@ This file grows as each feature is built. Each line says **what** was made, **ho
   sync, but a photo added on the parent's phone does not yet appear on the child's tablet. The
   private storage folder for it exists (`profile-media`); copying the files is the next step.
 - **Google, Apple and phone sign-in** need settings in Supabase (Google OAuth client, Apple
-  Developer account, an SMS provider). E-mail sign-in works now. Before launch, connect a real
-  e-mail service (Supabase's free sender only sends a few e-mails per hour, to your own team).
+  Developer account, an SMS provider). E-mail sign-in works now: codes are sent through the app's
+  Gmail account (tested: the e-mail arrived in the inbox and its code confirmed the account).
+  Gmail limits how many e-mails can be sent per day; a domain and an e-mail service are better
+  once many families sign up.
 - **Notifications** are in-app only (no phone push yet), and their text is written in French by the
   server.
 - **Observations & outcomes** in the professional's per-child page: not built (needs your

@@ -12,8 +12,17 @@ everything works on one device. Follow these steps to switch to the real server.
 
 ## 2. Turn on the sign-in methods (Authentication → Providers)
 
-- **Email:** on. In *Email Templates → Confirm signup* and *Reset password*, use the code
-  `{{ .Token }}` in the message: the app asks for a 6-digit code, not a link.
+- **Email:** on, with **Confirm email** on. The app asks for the code sent by e-mail (6 or 8
+  digits, see *Email OTP Length*), not a link.
+- **Sending e-mails (custom SMTP):** Supabase's own sender only reaches your team and won't let you
+  edit the templates. *Authentication → Emails → Set up SMTP* with a Gmail account made for the
+  app: 2-Step Verification on, then an **app password** (Google Account → Security → App
+  passwords); host `smtp.gmail.com`, port `465`, username and sender = that Gmail address,
+  password = the app password (never commit it). Later, a domain and an e-mail service (Resend,
+  Brevo…) deliver better than Gmail.
+- **Templates:** *Emails → Templates → Source*: paste `email-templates/confirm-signup.html` into
+  *Confirm signup* and `email-templates/reset-password.html` into *Reset password*
+  (`{{ .Token }}` is where Supabase writes the code).
 - **Phone:** on, with an SMS provider (Twilio or MessageBird account; SMS are paid).
 - **Google:** create an OAuth client in Google Cloud Console and paste its ID and secret.
 - **Apple:** needs the Apple Developer account (Sign in with Apple service ID and key).

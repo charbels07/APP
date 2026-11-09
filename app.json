@@ -47,7 +47,8 @@
         }
       ],
       "expo-sharing",
-      "expo-asset"
+      "expo-asset",
+      "expo-web-browser"
     ]
   }
 }

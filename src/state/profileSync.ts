@@ -12,7 +12,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Backend } from '../backend/Backend';
 import { BackendError } from '../backend/Backend';
 import type { ChildRecord } from '../backend/types';
-import { applyOps, diffProfiles } from '../lib/profileDiff';
+import { applyOps, diffProfiles, type Op } from '../lib/profileDiff';
 import { migrate } from '../lib/storage';
 import type { Profile } from '../model/types';
 
@@ -62,6 +62,12 @@ export class ProfileSync {
   onRemote?: (p: Profile) => void;
   /** Called when some of our changes collided with someone else's (theirs kept). */
   onConflict?: (count: number) => void;
+  /** Called after our changes reached the server (for the change history). */
+  onSaved?: (ops: Op[], reason?: string) => void;
+  /** Why the next changes are made ("Proposal …", "Undo …"): goes into the history. */
+  reason?: string;
+  /** Last time this device was in step with the server. */
+  lastSyncedAt?: number;
 
   private constructor(readonly id: string, private api: Backend, copy: LocalCopy, readonly pushDelay: number) {
     this.copy = copy;
@@ -154,8 +160,13 @@ export class ProfileSync {
       throw e;
     }
     if (r.ok) {
+      const ops = diffProfiles(this.copy.base, sent);
+      const reason = this.reason;
+      this.reason = undefined;
+      this.lastSyncedAt = Date.now();
       // Changes made while saving stay "dirty" and go with the next save.
       this.copy = { ...this.copy, version: r.version, base: clone(sent), dirty: this.copy.data !== sent };
+      if (ops.length) this.onSaved?.(ops, reason);
       await this.writeNow();
       if (this.copy.dirty) return this.doPush();
       return this.setState('saved');
@@ -182,6 +193,7 @@ export class ProfileSync {
         await this.writeNow();
         this.onRemote?.(data);
       }
+      this.lastSyncedAt = Date.now();
       if (this.state === 'offline') this.setState('saved');
     } catch (e) {
       if (isOffline(e)) this.setState('offline');

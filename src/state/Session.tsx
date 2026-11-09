@@ -27,6 +27,7 @@ export type Stage =
   | { name: 'role' }
   | { name: 'auth'; mode: 'signUp' | 'signIn' | 'forgot'; role: Role }
   | { name: 'pair' }
+  | { name: 'invitations' }
   | { name: 'onboarding' }
   | { name: 'board'; profileId: string }
   | { name: 'pro' };
@@ -59,6 +60,8 @@ interface SessionCtx {
   /** After signing in, signing up or linking a tablet: go to the right place. */
   enter: (opts?: { profileId?: string }) => Promise<void>;
   signOut: () => Promise<void>;
+  /** Reads the account again (after changing the name, for example). */
+  refreshAccount: () => Promise<void>;
   updatePrefs: (p: Partial<AccountPrefs>) => Promise<void>;
   openProfile: (id: string) => void;
   /** The device keeps a copy of this child's profile (forgotten at sign-out). */
@@ -122,7 +125,10 @@ export function SessionProvider({ children, api = backend() }: { children: React
       try {
         const list = await api.listProfiles();
         const active = list.find((p) => p.id === a.prefs.activeProfileId) ?? list[0];
-        setStage(active ? { name: 'board', profileId: active.id } : { name: 'onboarding' });
+        if (active) return setStage({ name: 'board', profileId: active.id });
+        // Invited before having a child of their own (grandparent, nanny…): the invitations first.
+        const { received } = await api.myInvitations().catch(() => ({ received: [] as { status: string }[] }));
+        setStage(received.some((i) => i.status === 'pending') ? { name: 'invitations' } : { name: 'onboarding' });
       } catch (e) {
         // Without internet: the child that was open last time, from this device's copy.
         if (e instanceof BackendError && e.code === 'offline' && a.prefs.activeProfileId) {
@@ -185,6 +191,14 @@ export function SessionProvider({ children, api = backend() }: { children: React
     setStage({ name: 'welcome' });
   }, [api, saveDevice]);
 
+  const refreshAccount = useCallback(async () => {
+    const a = await api.currentAccount().catch(() => null);
+    if (a) {
+      setAccount(a);
+      saveDevice({ account: a });
+    }
+  }, [api, saveDevice]);
+
   const updatePrefs = useCallback(
     async (p: Partial<AccountPrefs>) => {
       setAccount((a) => (a ? { ...a, prefs: { ...a.prefs, ...p } } : a));
@@ -236,11 +250,12 @@ export function SessionProvider({ children, api = backend() }: { children: React
       offline,
       enter,
       signOut,
+      refreshAccount,
       updatePrefs,
       openProfile,
       rememberLocal,
     }),
-    [api, stage, account, uiLang, setUiLang, device?.deviceId, offline, enter, signOut, updatePrefs, openProfile, rememberLocal],
+    [api, stage, account, uiLang, setUiLang, device?.deviceId, offline, enter, signOut, refreshAccount, updatePrefs, openProfile, rememberLocal],
   );
 
   return (

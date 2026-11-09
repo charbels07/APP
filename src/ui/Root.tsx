@@ -8,6 +8,7 @@ import { useApp } from '../state/AppState';
 import { Btn } from './common';
 import { Icon } from './Icon';
 import { CaregiverOverlay } from './panels/CaregiverPanels';
+import { SettingsScreen } from './settings/SettingsScreen';
 import { HelpPanel, KeyboardPanel, LangPanel, PinPanel, SearchPanel } from './panels/CommPanels';
 import { ModelPanel } from './panels/ModelPanel';
 import { GuidePanel, WelcomeCard } from './panels/GuidePanel';
@@ -43,6 +44,7 @@ export function Root({ banner }: { banner?: React.ReactNode } = {}) {
       {overlay?.kind === 'model' && <ModelPanel />}
       {overlay?.kind === 'newTla' && <NewTlaPanel />}
       {overlay?.kind === 'guide' && <GuidePanel />}
+      {overlay?.kind === 'settings' && <SettingsScreen />}
       {!banner && !overlay && !profile.guide?.seen && !editMode && !app.playing && !app.recording && <WelcomeCard />}
       <CaregiverOverlay />
     </View>

@@ -808,7 +808,7 @@ export class LocalBackend implements Backend {
         id: uid('u'),
         role: 'parent',
         displayName: device.name,
-        provider: 'email',
+        provider: 'device',
         verified: true,
         createdAt: Date.now(),
         prefs: { ...clone(DEFAULT_PREFS), activeProfileId: pairing.profileId },

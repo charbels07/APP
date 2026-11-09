@@ -30,8 +30,8 @@ export interface Op {
   after: unknown;
 }
 
-/** Settings that are personal to a device or secret: never part of a change set. */
-const PRIVATE_SETTINGS = new Set(['pin']);
+/** Settings that are personal (each person's menu language) or secret: never part of a change set. */
+const PRIVATE_SETTINGS = new Set(['pin', 'uiLang']);
 
 /** JSON with sorted keys, so two equal objects always compare equal. */
 export function stable(v: unknown): string {

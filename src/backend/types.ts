@@ -10,7 +10,8 @@ import type { Op } from '../lib/profileDiff';
 import type { AccessLevel, CollaboratorRole, PermissionSet } from '../lib/permissions';
 
 export type Role = 'parent' | 'pro';
-export type AuthProvider = 'email' | 'phone' | 'google' | 'apple';
+/** 'device': a tablet linked with a pairing code (no email, no password). */
+export type AuthProvider = 'email' | 'phone' | 'google' | 'apple' | 'device';
 
 export interface AccountPrefs {
   uiLang?: UiLang;

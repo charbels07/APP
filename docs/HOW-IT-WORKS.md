@@ -73,3 +73,19 @@ This file grows as each feature is built. Each line says **what** was made, **ho
 | Tailored guide | `src/data/guideTailored.ts` writes a "Your board" chapter from the child's real settings and opens it on the new board. |
 | Sync | `src/state/profileSync.ts`: the board works from the copy on the tablet; changes are sent a moment later; if someone else saved in between, both changes are merged (tested with Jest). |
 
+## Phase 4 — Settings in three pages: Board, Team, Account
+
+| Feature | How it was built |
+|---|---|
+| Three pages | `src/ui/settings/SettingsScreen.tsx` (React Native): tabs *Tableau / Équipe / Compte*; the Team tab shows how many things wait for the parent. In the preview only *Tableau* exists. |
+| The child's team | `TeamTab.tsx` asks the server (through the `Backend` contract) for members, invitations, proposals and history, and shows who can do what. |
+| Inviting | Name, optional e-mail, role, level (1 Use / 2 Contribute / 3 Edit) and each permission are chosen **before** the invitation exists. The server makes an 8-character code; the parent shares it (phone's share sheet or copy). Only the person who accepts with their own account gets access. |
+| Joining | `InvitationsScreen.tsx`: invitations sent to your e-mail appear after sign-up; or type the code. |
+| Professionals asking to join | The family code for professionals: a request appears in the Team tab, the parent sets the rights, then accepts or declines. |
+| Changing or removing someone | Role, level, permissions, an end date (1 week, 1 month, 3 months); *Remove access* cuts server access at once (the database rule from Phase 1). |
+| Proposals | Before / after list with pictures, written in the reader's language (`src/lib/describeOps.ts`). A change touching core words needs an extra confirmation. Approve applies it; *Ask for a change* and *Decline* send a note back. |
+| History with undo | Every change that reaches the server is recorded by the sync engine (who, when, what — never what the child said). *Undo* applies the opposite change; if part of it was changed again since, only the rest is undone. |
+| Account | Name, sign-in method, password change, sign out; children (open, add another child); devices and sync (this device's state, last sync, last online backup, other devices, remove a lost device, link a new tablet with a 6-digit code); privacy statements and export; delete the child's profile or the account after typing a confirmation word; menu language and notification types; guide and version. |
+| Subscription | Shown as "later": billing is deferred, and the child's communication will never be blocked by it. |
+| A removed device | When a parent removes a tablet, the next time it opens it is signed out. |
+

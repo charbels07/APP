@@ -1,12 +1,14 @@
 /** Shows the screen of the current step of the journey (see src/state/Session.tsx). */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, AppState as RNAppState, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, AppState as RNAppState, Platform, StyleSheet, Text, View } from 'react-native';
 import { BackendError } from '../backend/Backend';
 import { createDefaultProfile } from '../data/defaults';
 import { errorText } from '../i18n/account';
+import { invertOps } from '../lib/profileDiff';
 import type { Profile } from '../model/types';
 import { AppProvider, useApp } from '../state/AppState';
+import { BoardContext, type MyAccess } from '../state/BoardContext';
 import { ProfileSync } from '../state/profileSync';
 import { useSession } from '../state/Session';
 import { Btn } from './common';
@@ -15,6 +17,7 @@ import { Onboarding } from './onboarding/Onboarding';
 import { ProHome } from './pro/ProHome';
 import { Root } from './Root';
 import { AuthScreen } from './start/AuthScreen';
+import { InvitationsScreen } from './start/InvitationsScreen';
 import { PairScreen } from './start/PairScreen';
 import { RoleChoice } from './start/RoleChoice';
 import { StartLayout, T } from './start/StartLayout';
@@ -48,6 +51,8 @@ function Current() {
       return <AuthScreen key={`${stage.mode}-${stage.role}`} mode={stage.mode} role={stage.role} />;
     case 'pair':
       return <PairScreen />;
+    case 'invitations':
+      return <InvitationsScreen />;
     case 'onboarding':
       return <Onboarding />;
     case 'board':
@@ -93,6 +98,7 @@ function BoardStage({ profileId }: { profileId: string }) {
   const [sync, setSync] = useState<ProfileSync | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [note, setNote] = useState<string | null>(null);
+  const [access, setAccess] = useState<MyAccess | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -103,7 +109,19 @@ function BoardStage({ profileId }: { profileId: string }) {
         opened = sy;
         rememberLocal(profileId);
         sy.onConflict = () => setNote(s.conflictNote);
+        // Every change that reaches the server goes into the change history (with undo).
+        sy.onSaved = (ops, reason) => {
+          void api.addHistory({ profileId, summary: reason ?? '', ops, inverse: invertOps(ops) }).catch(() => {});
+          void api.reportSync(profileId, sess.deviceId, { synced: true, backedUp: true, pendingChanges: 0 }).catch(() => {});
+        };
         setSync(sy);
+        void api.myAccess(profileId).then((a) => alive && setAccess(a)).catch(() => {});
+        // This device appears in "Devices and sync"; a removed device is signed out.
+        void api
+          .registerDevice(profileId, { id: sess.deviceId, name: deviceName(), kind: 'companion', platform: Platform.OS })
+          .catch((e) => {
+            if (e instanceof BackendError && e.code === 'device_revoked') void sess.signOut();
+          });
       },
       (e) => alive && setError(e),
     );
@@ -155,18 +173,28 @@ function BoardStage({ profileId }: { profileId: string }) {
     );
   }
   if (!sync) return <Splash />;
+  const manager = !!access && (access.owner || !!access.perms.manager);
   return (
-    <AppProvider initial={sync.copy.data} onChange={sync.change} uiLang={uiLang} setUiLang={setUiLang} subscribe={subscribe}>
-      <Root />
-      <OpenGuideOnStart />
-      {note && (
-        <View style={styles.toast} accessibilityRole="alert">
-          <Icon name="users" size={20} color={C.edit} />
-          <T style={{ flex: 1, color: C.edit, fontWeight: '600' }}>{note}</T>
-        </View>
-      )}
-    </AppProvider>
+    <BoardContext.Provider value={{ profileId, childName: sync.copy.name, sync, access, manager }}>
+      <AppProvider initial={sync.copy.data} onChange={sync.change} uiLang={uiLang} setUiLang={setUiLang} subscribe={subscribe}>
+        <Root />
+        <OpenGuideOnStart />
+        {note && (
+          <View style={styles.toast} accessibilityRole="alert">
+            <Icon name="users" size={20} color={C.edit} />
+            <T style={{ flex: 1, color: C.edit, fontWeight: '600' }}>{note}</T>
+          </View>
+        )}
+      </AppProvider>
+    </BoardContext.Provider>
   );
+}
+
+/** A readable name for this device in "Devices and sync". */
+function deviceName(): string {
+  if (Platform.OS === 'ios') return (Platform as { isPad?: boolean }).isPad ? 'iPad' : 'iPhone';
+  if (Platform.OS === 'android') return 'Android';
+  return 'Web';
 }
 
 /** End of the set-up journey: the guide (tailored to the choices) opens on the new board. */

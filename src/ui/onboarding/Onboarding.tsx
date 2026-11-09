@@ -37,7 +37,7 @@ import { useSession } from '../../state/Session';
 import { Btn, Field, Segmented } from '../common';
 import { Icon } from '../Icon';
 import { Root } from '../Root';
-import { ErrorText, StartLayout, T, st, useRtl } from '../start/StartLayout';
+import { ErrorText, LinkBtn, StartLayout, T, st, useRtl } from '../start/StartLayout';
 import { SymbolView } from '../SymbolView';
 import { C, CLASS_COLORS, radius } from '../theme';
 
@@ -132,6 +132,7 @@ export function Onboarding() {
       </View>
       {resumed && <T style={{ color: C.textMuted, fontSize: 14 }}>{o.resumeNote}</T>}
       {stepId === 'child' && <ChildStep o={o} a={a} set={set} />}
+      {stepId === 'child' && <LinkBtn label={sess.s.haveCode} onPress={() => sess.go({ name: 'invitations' })} />}
       {stepId === 'langs' && <LangStep o={o} a={a} set={set} />}
       {stepId === 'voice' && <VoiceStep o={o} a={a} set={set} />}
       {stepId === 'comm' && <CommStep o={o} a={a} set={set} />}

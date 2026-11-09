@@ -29,8 +29,6 @@ import { Recorder } from './Recorder';
 export function CaregiverOverlay() {
   const { overlay } = useApp();
   switch (overlay?.kind) {
-    case 'settings':
-      return <SettingsPanel />;
     case 'print':
       return <PrintPanel />;
     case 'editor':
@@ -723,7 +721,8 @@ function ScheduleEditor({ id }: { id: string }) {
 
 // ── Settings ──
 
-function SettingsPanel() {
+/** The child's AAC settings (first page of Settings; the others are Team and Account). */
+export function BoardSettingsBody() {
   const app = useApp();
   const { profile, t } = app;
   const o = onboardingStrings(profile.settings.uiLang);
@@ -738,7 +737,7 @@ function SettingsPanel() {
   }, [voiceLang]);
 
   return (
-    <Panel title={t.settings} onClose={() => app.setOverlay(null)} tone="edit">
+    <>
       <Btn icon="book" label={t.openGuide} onPress={() => app.setOverlay({ kind: 'guide' })} />
       <Section title={t.sCommunication}>
         <Text style={s.label}>{t.sCommLang}</Text>
@@ -960,7 +959,7 @@ function SettingsPanel() {
         <Text style={s.note}>{t.aboutText}</Text>
         <Text style={s.note}>{t.attribution}</Text>
       </Section>
-    </Panel>
+    </>
   );
 }
 

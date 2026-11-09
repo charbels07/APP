@@ -243,14 +243,14 @@ export class SupabaseBackend implements Backend {
       row = await data<Row>(this.sb.from('accounts').update({ role: pending }).eq('id', u.id).select().single());
     }
     if (pending) await AsyncStorage.removeItem(PENDING_ROLE);
-    const provider = (u.app_metadata?.provider as Account['provider']) ?? (u.email ? 'email' : 'phone');
+    const provider = u.is_anonymous ? 'device' : ((u.app_metadata?.provider as Account['provider']) ?? (u.email ? 'email' : 'phone'));
     return {
       id: u.id,
       role: (row?.role as Role) ?? 'parent',
       displayName: row?.display_name ?? '',
       email: u.email ?? undefined,
       phone: u.phone || undefined,
-      provider: provider === 'google' || provider === 'apple' || provider === 'phone' ? provider : 'email',
+      provider: provider === 'google' || provider === 'apple' || provider === 'phone' || provider === 'device' ? provider : 'email',
       verified: !!(u.email_confirmed_at || u.phone_confirmed_at),
       createdAt: ms(u.created_at) ?? 0,
       prefs: { ...DEFAULT_PREFS, ...(row?.prefs ?? {}) },

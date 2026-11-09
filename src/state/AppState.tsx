@@ -182,21 +182,25 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
   );
   const profileRef = useRef(profile);
   profileRef.current = profile;
+  /** The child's profile as saved (without the person's menu language mixed in). */
+  const storedRef = useRef(stored);
+  storedRef.current = stored;
 
   const update = useCallback((recipe: (draft: Profile) => void) => {
-    const draft = structuredClone(profileRef.current);
+    const draft = structuredClone(storedRef.current);
     recipe(draft);
-    profileRef.current = draft;
+    storedRef.current = draft;
     setProfile(draft);
     onChangeRef.current(draft);
   }, []);
   const replaceProfile = useCallback((p: Profile) => {
-    profileRef.current = p;
-    setProfile(p);
-    onChangeRef.current(p);
+    const next = { ...p, settings: { ...p.settings, uiLang: storedRef.current.settings.uiLang } };
+    storedRef.current = next;
+    setProfile(next);
+    onChangeRef.current(next);
   }, []);
   useEffect(() => subscribe?.((p) => {
-    profileRef.current = p;
+    storedRef.current = p;
     setProfile(p);
   }), [subscribe]);
 

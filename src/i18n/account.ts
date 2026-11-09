@@ -22,8 +22,8 @@ const fr = {
   previewNext: 'Créer mon compte',
 
   roleTitle: 'Qui êtes-vous ?',
-  roleParent: 'Parent ou proche',
-  roleParentText: 'Je prépare le tableau de mon enfant (ou d’un proche) et je l’utilise avec lui.',
+  roleParent: 'Parent ou aidant',
+  roleParentText: 'Je prépare le tableau de mon enfant (ou d’un enfant dont je m’occupe) et je l’utilise avec lui.',
   rolePro: 'Professionnel',
   roleProText: 'Orthophoniste, enseignant, éducateur… J’accompagne une ou plusieurs personnes et leurs familles.',
   roleProNote: 'Les professionnels dont l’identité est vérifiée utilisent l’application gratuitement.',
@@ -137,8 +137,8 @@ const en: Dict = {
   previewNext: 'Create my account',
 
   roleTitle: 'Who are you?',
-  roleParent: 'Parent or relative',
-  roleParentText: 'I set up the board for my child (or a relative) and use it with them.',
+  roleParent: 'Parent or caregiver',
+  roleParentText: 'I set up the board for my child (or a child I care for) and use it with them.',
   rolePro: 'Professional',
   roleProText: 'Speech therapist, teacher, educator… I support one or more people and their families.',
   roleProNote: 'Professionals whose identity is verified use the app for free.',
@@ -246,8 +246,8 @@ const ar: Dict = {
   previewNext: 'إنشاء حسابي',
 
   roleTitle: 'من أنت؟',
-  roleParent: 'أحد الوالدين أو قريب',
-  roleParentText: 'أُحضّر لوحة طفلي (أو أحد أقاربي) وأستعملها معه.',
+  roleParent: 'أحد الوالدين أو مقدّم رعاية',
+  roleParentText: 'أُحضّر لوحة طفلي (أو طفل أهتمّ به) وأستعملها معه.',
   rolePro: 'مختصّ',
   roleProText: 'معالج نطق، معلّم، مربٍّ… أرافق شخصاً أو أكثر مع عائلاتهم.',
   roleProNote: 'يستعمل المختصّون الذين تمّ التحقق من هويتهم التطبيق مجاناً.',

@@ -313,3 +313,10 @@ Privacy & Data · Preferences.
 3. When a subscription expires: essential communication stays available (recommended) / grace
    period then an essential mode.
 4. One parent, several children: yes, independent profiles (recommended) / one profile per account.
+
+## 8. Back-office — **LATER** (the product owner will specify it)
+
+An admin back-office is planned, with "a lot of data" in it (details to come). It will at least
+handle professional verification (review documents, set the status). Any statistics shown there
+must follow the privacy principles above: no message content, and anonymous operational figures
+kept separate from individual communication data.

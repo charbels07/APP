@@ -17,6 +17,31 @@ and a technical plan must be agreed before building.
 3. **Choose the profile type: professional or parent** (the two may become different versions of
    the app).
 
+## 1b. Professionals: verification (free access once verified)
+
+The first steps are the same as for parents (welcome, preview, sign up / sign in). After choosing
+**professional**, the person verifies their identity and practice. **Verified professionals get
+access without paying.** Four-step flow with a progress bar (1/4 … 4/4) and Back / Continue:
+
+1. **Tell us about your professional practice**
+   - Full legal name
+   - Country of professional registration or practice
+   - Profession (list, e.g. *Speech-language therapist / Orthophoniste*)
+   - Organisation / workplace (optional). Note shown: workplace affiliation can help verify an
+     applicant but is not sufficient evidence of a professional qualification.
+2. **Professional licence or certificate:** securely submit evidence of a professional credential
+   or a university diploma.
+3. *(Step 3 not detailed yet: identity check, to be confirmed with the product owner.)*
+4. **Verification status**, one of:
+   - **Pending review:** "Application under review. You may explore the demonstration workspace
+     while your credentials are being reviewed."
+   - **Verified**
+   - **More information needed**
+   - **Not approved**
+
+This needs a back-office: someone reviews the documents and sets the status. Uploaded diplomas and
+IDs are sensitive personal data (secure storage, retention period, deletion once verified).
+
 ## 2. Sign up / sign in (parents)
 
 - Methods: **Google**, **Apple**, **email + password**, **phone number + password**.

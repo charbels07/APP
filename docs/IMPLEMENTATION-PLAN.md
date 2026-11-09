@@ -28,7 +28,7 @@ Simple explanations for the family: `docs/HOW-IT-WORKS.md`.
 - **App stages** (`src/state/Session.tsx`): welcome → preview → role → sign-in → (parent: child
   profile → set-up → try the board → guide → app) / (pro: verification → workspace + tour).
 
-## Phases
+## Phases (all six done — see `docs/HOW-IT-WORKS.md` for what each part does)
 
 1. Backend foundation: types, interface, local + Supabase backends, SQL schema + RLS, diff engine,
    permissions.

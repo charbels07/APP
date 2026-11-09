@@ -460,6 +460,29 @@ const BASE: BaseChapter[] = [
     action: 'settings',
   },
   {
+    id: 'team',
+    track: 'pro',
+    icon: 'users',
+    title: { fr: 'L’équipe de l’enfant', en: 'The child’s team' },
+    steps: {
+      fr: [
+        'Réglages (mode accompagnant) → Équipe : les personnes qui ont accès, leur rôle et ce qu’elles peuvent faire.',
+        'Inviter quelqu’un : nom, rôle, niveau (Utiliser, Contribuer, Modifier directement) et droits, puis donnez le code. Un professionnel peut aussi demander à rejoindre avec le code pour les professionnels : vous choisissez ses droits avant d’accepter.',
+        'Propositions : chaque changement proposé s’affiche avant / après ; approuvez, demandez une modification ou refusez. Changer la place d’un mot de base demande une confirmation.',
+        'Historique : qui a changé quoi et quand (jamais ce que l’enfant a dit), avec Annuler.',
+        'Compte → Appareils : relier une tablette avec un code à 6 chiffres, ou retirer un appareil perdu.',
+      ],
+      en: [
+        'Settings (caregiver mode) → Team: the people who have access, their role and what they can do.',
+        'Invite someone: name, role, level (Use, Contribute, Edit directly) and rights, then give the code. A professional can also ask to join with the code for professionals: you choose their rights before accepting.',
+        'Proposals: each suggested change shows before / after; approve, ask for a change or decline. Moving a core word asks for confirmation.',
+        'History: who changed what and when (never what the child said), with Undo.',
+        'Account → Devices: link a tablet with a 6-digit code, or remove a lost device.',
+      ],
+    },
+    action: 'settings',
+  },
+  {
     id: 'linkApp',
     track: 'pro',
     icon: 'external',
@@ -506,12 +529,12 @@ const BASE: BaseChapter[] = [
     title: { fr: 'Données et confidentialité', en: 'Data and privacy' },
     steps: {
       fr: [
-        'Tout reste sur l’appareil. Les phrases de l’enfant ne sont jamais enregistrées ni envoyées.',
+        'Le profil de l’enfant (mots, tableaux, réglages) est gardé sur l’appareil et, avec un compte, sur le serveur en Europe, pour l’équipe que vous choisissez. Les phrases de l’enfant ne sont jamais enregistrées ni envoyées. Les photos restent sur l’appareil qui les a prises.',
         'L’IA (propositions de TLA, dessins) ne reçoit que le sujet ou le dessin ; elle se coupe dans Réglages → Données.',
         'Exporter le profil (sauvegarde) avant de changer d’appareil ; Réinitialiser le profil repart de zéro.',
       ],
       en: [
-        'Everything stays on the device. The child’s sentences are never stored or sent.',
+        'The child’s profile (words, boards, settings) is kept on the device and, with an account, on the server in Europe, for the team you choose. The child’s sentences are never stored or sent. Photos stay on the device that took them.',
         'The AI (board suggestions, drawings) only receives the topic or the drawing; it can be turned off in Settings → Data.',
         'Export profile (backup) before changing device; Reset profile starts from scratch.',
       ],
@@ -691,6 +714,16 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
       'الصوت: أنثوي أو ذكوري، بالغ أو طفل («نوع الصوت»، «عمر الصوت»)، السرعة، أو صوت محدد لكل لغة. زر المساعدة: الرسالة الأولى التي تُقال، والمعلومات المفيدة.',
     ],
   },
+  team: {
+    title: 'فريق الطفل',
+    steps: [
+      'الإعدادات (وضع المرافق) ← الفريق: الأشخاص الذين لديهم صلاحية، دورهم وما يمكنهم فعله.',
+      'دعوة شخص: الاسم، الدور، المستوى (استعمال، مساهمة، تعديل مباشر) والصلاحيات، ثم أعطِ الرمز. يمكن لمختصّ أيضاً أن يطلب الانضمام برمز المختصّين: تختار صلاحياته قبل القبول.',
+      'الاقتراحات: يظهر كل تغيير مقترح قبل / بعد؛ وافق، أو اطلب تعديلاً، أو ارفض. تغيير مكان كلمة أساسية يحتاج إلى تأكيد.',
+      'السجل: من غيّر ماذا ومتى (أبداً ما قاله الطفل)، مع «تراجع».',
+      'الحساب ← الأجهزة: ربط جهاز لوحي برمز من 6 أرقام، أو سحب جهاز مفقود.',
+    ],
+  },
   linkApp: {
     title: 'ربط تطبيق',
     steps: [
@@ -711,7 +744,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   privacy: {
     title: 'البيانات والخصوصية',
     steps: [
-      'يبقى كل شيء على الجهاز. لا تُحفظ جمل الطفل ولا تُرسل أبداً.',
+      'يُحفظ ملف الطفل (الكلمات، اللوحات، الإعدادات) على الجهاز، ومع الحساب على الخادم في أوروبا، للفريق الذي تختاره. لا تُحفظ جمل الطفل ولا تُرسل أبداً. تبقى الصور على الجهاز الذي التقطها.',
       'الذكاء الاصطناعي (اقتراحات اللوحات، الرسومات) لا يتلقى إلا الموضوع أو الرسم، ويمكن إيقافه في الإعدادات ← البيانات.',
       '«تصدير الملف الشخصي (نسخة احتياطية)» قبل تغيير الجهاز؛ «إعادة ضبط الملف الشخصي» يبدأ من الصفر.',
     ],

@@ -1,7 +1,8 @@
 # UX backlog — accounts, onboarding, collaboration (from the product owner)
 
-Collected from the family's requirements, in the order they were given. **Nothing here is built
-yet.** Items marked **DEFERRED** wait for an explicit go from the product owner.
+Collected from the family's requirements, in the order they were given. **Status (November 2026):
+built**, except the items marked **DEFERRED** / **LATER** and the gaps listed at the end of
+`docs/HOW-IT-WORKS.md`. Items marked **DEFERRED** wait for an explicit go from the product owner.
 
 Most of this needs a **backend** (accounts, verification codes, Google/Apple sign-in, sync,
 collaboration, subscriptions). Until now the app is local-first with no server: an order of work

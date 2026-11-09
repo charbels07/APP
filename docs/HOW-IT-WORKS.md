@@ -105,3 +105,33 @@ This file grows as each feature is built. Each line says **what** was made, **ho
 | Account & licence | Verified status ("free access"), connected users, credentials, account details, preferences; billing stays for later. |
 | Tested | A browser walkthrough plays the whole story: a parent creates a child, a therapist signs up, verifies, connects with the family code, the parent accepts, the therapist drafts a new TLA and sends it, the parent reviews and approves, and the TLA appears on the child's board. |
 
+## How everything is checked
+
+| Check | What it does |
+|---|---|
+| `npm run typecheck` | TypeScript reads the whole code and refuses mistakes such as a missing field or a wrong type. |
+| `npm test` | 93 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide. |
+| `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger and a tablet; 35+ checks. |
+| `npm run test:live` | The same story on the real Supabase project, through the app's own code (needs "Confirm email" off while it runs). |
+| Browser walkthroughs | Playwright drives the web version like a person: the parent journey, the team (invite, undo, join with a code), the professional journey (verification, tour, request, draft, proposal, approval), and the Arabic screens. |
+
+## Not done yet (honest list)
+
+- **Billing** (deferred) and the **back-office** (later): the professional verification decision is
+  simulated in the demo; on the real server someone must set it until the back-office exists.
+- **Photos and recorded sounds stay on the device that made them**: words, boards and settings
+  sync, but a photo added on the parent's phone does not yet appear on the child's tablet. The
+  private storage folder for it exists (`profile-media`); copying the files is the next step.
+- **Google, Apple and phone sign-in** need settings in Supabase (Google OAuth client, Apple
+  Developer account, an SMS provider). E-mail sign-in works now. Before launch, connect a real
+  e-mail service (Supabase's free sender only sends a few e-mails per hour, to your own team).
+- **Notifications** are in-app only (no phone push yet), and their text is written in French by the
+  server.
+- **Observations & outcomes** in the professional's per-child page: not built (needs your
+  specification; it is sensitive data).
+- **Switch access and eye gaze**: not available (the set-up says so).
+- **Arabic texts** are a first version: to be reviewed by a native speaker.
+- The newest server calls (devices, history undo, invitation codes, revisions, materials) are in
+  the live test but have not run on the real project yet: it needs "Confirm email" off for a few
+  minutes.
+

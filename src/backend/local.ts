@@ -83,6 +83,37 @@ const emptyDb = (): DB => ({
 });
 
 let seq = 0;
+/**
+ * Device storage, with a memory fallback: if the browser refuses storage (private window,
+ * sandboxed page), the demo keeps working for the session instead of failing.
+ */
+const memory = new Map<string, string>();
+const store = {
+  async get(k: string): Promise<string | null> {
+    try {
+      return (await AsyncStorage.getItem(k)) ?? memory.get(k) ?? null;
+    } catch {
+      return memory.get(k) ?? null;
+    }
+  },
+  async set(k: string, v: string): Promise<void> {
+    memory.set(k, v);
+    try {
+      await AsyncStorage.setItem(k, v);
+    } catch {
+      /* memory only */
+    }
+  },
+  async remove(k: string): Promise<void> {
+    memory.delete(k);
+    try {
+      await AsyncStorage.removeItem(k);
+    } catch {
+      /* memory only */
+    }
+  },
+};
+
 export const uid = (prefix = '') => `${prefix}${Date.now().toString(36)}${(seq++).toString(36)}${Math.random().toString(36).slice(2, 7)}`;
 const digits = (n: number) => Array.from({ length: n }, () => Math.floor(Math.random() * 10)).join('');
 /** Codes people type: no 0/O or 1/I. */
@@ -114,12 +145,12 @@ export class LocalBackend implements Backend {
   /** Read-modify-write of the whole database, one call at a time. */
   private tx<T>(fn: (db: DB, me: StoredAccount | null) => T | Promise<T>): Promise<T> {
     const run = async () => {
-      const raw = await AsyncStorage.getItem(DB_KEY);
+      const raw = await store.get(DB_KEY);
       const db: DB = raw ? { ...emptyDb(), ...JSON.parse(raw) } : emptyDb();
-      const sid = (await AsyncStorage.getItem(SESSION_KEY)) ?? '';
+      const sid = (await store.get(SESSION_KEY)) ?? '';
       const me = db.accounts[sid] ?? null;
       const out = await fn(db, me);
-      await AsyncStorage.setItem(DB_KEY, JSON.stringify(db));
+      await store.set(DB_KEY, JSON.stringify(db));
       return out;
     };
     const p = this.queue.then(run, run);
@@ -238,7 +269,7 @@ export class LocalBackend implements Backend {
       LocalBackend.attachInvitations(db, a);
       return a;
     });
-    await AsyncStorage.setItem(SESSION_KEY, acc.id);
+    await store.set(SESSION_KEY, acc.id);
     return LocalBackend.public(acc);
   }
 
@@ -252,7 +283,7 @@ export class LocalBackend implements Backend {
     const acc = await this.tx((db) => LocalBackend.findAccount(db, input) ?? null);
     if (!acc?.hash || (await sha256(acc.salt + input.password)) !== acc.hash) throw new BackendError('wrong_credentials');
     if (!acc.verified) throw new BackendError('not_verified');
-    await AsyncStorage.setItem(SESSION_KEY, acc.id);
+    await store.set(SESSION_KEY, acc.id);
     return LocalBackend.public(acc);
   }
 
@@ -277,12 +308,12 @@ export class LocalBackend implements Backend {
       }
       return a;
     });
-    await AsyncStorage.setItem(SESSION_KEY, acc.id);
+    await store.set(SESSION_KEY, acc.id);
     return LocalBackend.public(acc);
   }
 
   async signOut(): Promise<void> {
-    await AsyncStorage.removeItem(SESSION_KEY);
+    await store.remove(SESSION_KEY);
   }
 
   async requestPasswordReset(target: { email?: string; phone?: string }): Promise<CodeSent> {
@@ -346,7 +377,7 @@ export class LocalBackend implements Backend {
       delete db.verifications[me.id];
       delete db.accounts[me.id];
     });
-    await AsyncStorage.removeItem(SESSION_KEY);
+    await store.remove(SESSION_KEY);
   }
 
   // ── Profiles ──
@@ -829,7 +860,7 @@ export class LocalBackend implements Backend {
       db.devices.push({ ...device, profileId: pairing.profileId, userId: acc.id, kind: full ? 'primary' : 'secondary', pendingChanges: 0, revoked: false, createdAt: Date.now() });
       return { id: acc.id, profileId: pairing.profileId };
     });
-    await AsyncStorage.setItem(SESSION_KEY, deviceAccount.id);
+    await store.set(SESSION_KEY, deviceAccount.id);
     return deviceAccount.profileId;
   }
 

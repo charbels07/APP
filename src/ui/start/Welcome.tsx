@@ -1,7 +1,6 @@
 /** First screen: what the app is, the language, and the ways in. */
 import React from 'react';
 import { View } from 'react-native';
-import { APP_NAME } from '../../i18n/account';
 import { useSession } from '../../state/Session';
 import { Btn } from '../common';
 import { Icon } from '../Icon';
@@ -15,10 +14,9 @@ export function Welcome() {
     <StartLayout>
       <View style={{ alignItems: 'center', gap: 10 }}>
         <Logo size={88} />
-        <T style={[st.title, { textAlign: 'center', fontSize: 34 }]} accessibilityRole="header">
-          {APP_NAME}
+        <T style={[st.title, { textAlign: 'center', fontSize: 32, lineHeight: 38 }]} accessibilityRole="header">
+          {s.welcomeTitle}
         </T>
-        <T style={[st.title, { textAlign: 'center', fontSize: 22, color: C.textMuted }]}>{s.welcomeTitle}</T>
       </View>
       <T style={{ fontSize: 18, lineHeight: 26, textAlign: 'center' }}>{s.welcomeLine}</T>
       <View style={{ gap: 10 }}>

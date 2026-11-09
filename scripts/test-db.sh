@@ -16,6 +16,6 @@ P="psql -h $DIR -p 5439 -U postgres -v ON_ERROR_STOP=1 -q"
 $P -c "create database aac"
 $P -d aac -f supabase/tests/auth_stub.sql -f supabase/tests/storage_stub.sql
 for f in supabase/migrations/*.sql; do $P -d aac -f "$f"; done
-$P -d aac -f supabase/tests/scenario.sql 2>&1 | grep -E "ok —|PASSED"
+$P -d aac -f supabase/tests/scenario.sql 2>&1 | grep -E "ok —|PASSED|ERROR"
 $P -d aac -c "delete from profiles; delete from auth.users;"
-$P -d aac -f supabase/tests/storage_scenario.sql 2>&1 | grep -E "ok —|PASSED"
+$P -d aac -f supabase/tests/storage_scenario.sql 2>&1 | grep -E "ok —|PASSED|ERROR"

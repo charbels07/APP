@@ -47,6 +47,8 @@ export interface SignUpInput {
 export interface CodeSent {
   sentTo: string;
   demoCode?: string;
+  /** No code needed: the server confirmed the account at once and it is signed in. */
+  signedIn?: boolean;
 }
 
 export interface Backend {

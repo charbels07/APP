@@ -192,10 +192,16 @@ export class SupabaseBackend implements Backend {
   readonly kind = 'supabase' as const;
   private sb: SupabaseClient;
 
-  constructor(url: string, anonKey: string) {
+  /**
+   * `storageKey`: where the login is kept on the device (tests use one per person).
+   * `fetch`: how requests reach the internet (tests running outside the app bring their own).
+   */
+  constructor(url: string, anonKey: string, opts: { storageKey?: string; fetch?: typeof fetch } = {}) {
     this.sb = createClient(url, anonKey, {
+      ...(opts.fetch ? { global: { fetch: opts.fetch } } : {}),
       auth: {
         storage: AsyncStorage,
+        ...(opts.storageKey ? { storageKey: opts.storageKey } : {}),
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: Platform.OS === 'web',
@@ -247,13 +253,15 @@ export class SupabaseBackend implements Backend {
     const email = normEmail(input.email);
     const phone = normPhone(input.phone);
     const options = { data: { role: input.role, display_name: input.displayName.trim() } };
-    const { error } = email
+    if (!email && !phone) throw new BackendError('missing_contact');
+    const { data: d, error } = email
       ? await this.sb.auth.signUp({ email, password: input.password, options })
-      : phone
-        ? await this.sb.auth.signUp({ phone, password: input.password, options })
-        : { error: { message: 'missing_contact' } };
+      : await this.sb.auth.signUp({ phone: phone!, password: input.password, options });
     if (error) fail(error);
-    return { sentTo: (email ?? phone)! };
+    // An address already in use comes back without identities (Supabase hides it on purpose).
+    if (d.user && !d.user.identities?.length) throw new BackendError('account_exists');
+    // "Confirm email" turned off in Supabase: signed in at once, no code to type.
+    return { sentTo: (email ?? phone)!, signedIn: !!d.session };
   }
 
   async verifyCode(target: { email?: string; phone?: string }, code: string): Promise<Account> {

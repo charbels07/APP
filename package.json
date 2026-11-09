@@ -49,14 +49,16 @@
     "export:web": "expo export -p web",
     "fetch:arasaac": "NODE_USE_ENV_PROXY=1 node --experimental-strip-types scripts/fetch-arasaac.ts",
     "build:picto": "NODE_USE_ENV_PROXY=1 node --experimental-strip-types scripts/build-picto-library.ts",
-    "test:db": "bash scripts/test-db.sh"
+    "test:db": "bash scripts/test-db.sh",
+    "test:live": "jest --testPathIgnorePatterns=/node_modules/ --testPathPatterns=live/ --forceExit --runInBand"
   },
   "private": true,
   "jest": {
     "preset": "jest-expo",
     "testPathIgnorePatterns": [
       "/node_modules/",
-      "/dist/"
+      "/dist/",
+      "/live/"
     ],
     "setupFiles": [
       "<rootDir>/jest.setup.js"

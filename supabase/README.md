@@ -38,6 +38,19 @@ each person can do. **Never** put the "service_role" key in the app.
 (a parent, a therapist, a teacher, a stranger, a tablet) to check that everyone sees and changes
 only what they are allowed to.
 
+## 5. Test the real project (optional)
+
+`npm run test:live` plays the same story against the project named in `.env`, through the
+app's own code, with short-lived test accounts that delete themselves at the end. While it runs,
+turn **off** *Authentication → Sign In / Providers → Email → Confirm email* (test addresses cannot
+receive codes; the test refuses to start otherwise, so no email is ever sent to them), then turn it
+back **on**. Anonymous sign-ins must be on.
+
+## Adding a database change later
+
+Never edit a migration that already ran on the project: add a new file in `supabase/migrations/`
+(named with the date) and run only that new file in the SQL Editor.
+
 ## What is where
 
 | Table | Contents |

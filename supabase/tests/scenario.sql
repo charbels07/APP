@@ -111,10 +111,16 @@ reset role;
 insert into auth.users (id) values (:'tablet');
 set role authenticated;
 select set_config('request.jwt.claim.sub', :'tablet', false);
+select set_config('request.jwt.claims', '{"is_anonymous": true}', false);
 select test.expect_error('select redeem_pairing_code(''000000x'', ''d1'', ''x'', ''ios'')', 'code_invalid');
 select redeem_pairing_code((select v from test.ids where k = 'pair'), 'school-1', 'Tablette école', 'ios');
 select test.ok((select level = 1 and role = 'device' from access_of((select v::uuid from test.ids where k = 'adam'))), 'tablet linked with use-only access');
 select test.expect_error(format('select save_profile(%L, ''{}'', 3)', (select v from test.ids where k = 'adam')), 'forbidden');
+-- A nameless tablet account cannot start anything of its own.
+select test.expect_error(format('insert into profiles (owner_id, name, data) values (%L, ''x'', ''{}'')', :'tablet'), 'forbidden');
+select test.expect_error(format('insert into resources (owner_id, kind, title, data) values (%L, ''cards'', ''x'', ''{}'')', :'tablet'), 'forbidden');
+select test.ok(true, 'a tablet cannot create a profile or a resource of its own');
+select set_config('request.jwt.claims', '', false);
 select set_config('request.jwt.claim.sub', :'rita', false);
 select revoke_device((select v::uuid from test.ids where k = 'adam'), 'school-1');
 select set_config('request.jwt.claim.sub', :'tablet', false);

@@ -42,3 +42,6 @@ yarn-error.*
 
 # tests
 coverage/
+
+# secrets for the real server (see supabase/README.md)
+.env

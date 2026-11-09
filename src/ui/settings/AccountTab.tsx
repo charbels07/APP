@@ -55,7 +55,7 @@ function Msg({ ok, text }: { ok?: boolean; text: string | null }) {
   return <Text style={{ color: ok ? C.success : C.help, fontWeight: '600' }}>{text}</Text>;
 }
 
-function MyAccount({ x }: { x: SettingsStrings }) {
+export function MyAccount({ x }: { x: SettingsStrings }) {
   const sess = useSession();
   const { api, account, s } = sess;
   const [name, setName] = useState(account?.displayName ?? '');
@@ -316,7 +316,7 @@ function Privacy({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
   );
 }
 
-function Preferences({ x }: { x: SettingsStrings }) {
+export function Preferences({ x }: { x: SettingsStrings }) {
   const { uiLang, setUiLang, account, updatePrefs } = useSession();
   const n = account?.prefs.notifications ?? { invitations: true, proposals: true, sync: true, billing: true };
   return (
@@ -338,5 +338,40 @@ function Help({ x }: { x: SettingsStrings }) {
       <Btn small icon="book" label={x.openGuide} onPress={() => app.setOverlay({ kind: 'guide' })} />
       <Note text={`${x.version} ${Constants.expoConfig?.version ?? ''}`} />
     </Section>
+  );
+}
+
+/** Account deletion on its own (professional account page). */
+export function DeleteAccount({ x }: { x: SettingsStrings }) {
+  const sess = useSession();
+  const [open, setOpen] = useState(false);
+  const [word, setWord] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  return (
+    <View style={{ gap: 8 }}>
+      <Btn small kind="danger" icon="trash" label={x.deleteAccount} onPress={() => setOpen(true)} />
+      {open && (
+        <View style={ss.card}>
+          <Note text={x.deleteAccountNote} />
+          <TextInput value={word} onChangeText={setWord} autoCapitalize="none" style={input} accessibilityLabel={x.deleteWord} placeholder={x.deleteWord} placeholderTextColor="#C0C6CF" />
+          <Msg text={error} />
+          <Btn
+            small
+            kind="danger"
+            icon="trash"
+            label={x.deleteForever}
+            disabled={word.trim().toLocaleLowerCase() !== x.deleteWord.toLocaleLowerCase()}
+            onPress={async () => {
+              try {
+                await sess.api.deleteAccount();
+                await sess.signOut();
+              } catch (e) {
+                setError(errorText(sess.s, e));
+              }
+            }}
+          />
+        </View>
+      )}
+    </View>
   );
 }

@@ -15,7 +15,8 @@ import { BackendError } from '../../backend/Backend';
 import { SupabaseBackend } from '../../backend/supabase';
 import { createDefaultProfile } from '../../data/defaults';
 import { preset } from '../../lib/permissions';
-import { diffProfiles } from '../../lib/profileDiff';
+import { diffProfiles, invertOps } from '../../lib/profileDiff';
+import { emptyResource, newResourceId } from '../../lib/resources';
 
 function readEnv(): Record<string, string> {
   const file = path.join(__dirname, '../../../.env');
@@ -181,6 +182,45 @@ d('real server (Supabase): a family, a therapist, a teacher, a stranger and a ta
     });
     expect((await sarah.submitVerification()).status).toBe('pending');
     await expectCode(sarah.saveVerification({ fullName: 'X', country: 'France', profession: 'slp', documents: [] }), 'verification_locked');
+  });
+
+  it('devices report their sync; the change history can be undone', async () => {
+    await rita.registerDevice(profileId, { id: `ipad-${run}`, name: 'iPad', kind: 'companion', platform: 'ios' });
+    await rita.reportSync(profileId, `ipad-${run}`, { synced: true, backedUp: true, pendingChanges: 0 });
+    expect((await rita.listDevices(profileId)).find((d) => d.id === `ipad-${run}`)?.lastSyncedAt).toBeTruthy();
+    const ops = [{ path: ['setting', 'quickZone'] as ['setting', string], before: false, after: true }];
+    const h = await rita.addHistory({ profileId, summary: '', ops, inverse: invertOps(ops) });
+    expect((await rita.listHistory(profileId)).some((x) => x.id === h.id)).toBe(true);
+    await rita.markUndone(h.id);
+    expect((await rita.listHistory(profileId)).find((x) => x.id === h.id)?.undoneAt).toBeTruthy();
+  });
+
+  it('a family member joins with an invitation code; an unused invitation can be cancelled', async () => {
+    const inv = await rita.invite(profileId, { name: 'Mamie', role: 'family', ...preset('family') });
+    await eve.acceptInvitationCode(inv.code.toLowerCase());
+    expect(await eve.myAccess(profileId)).toMatchObject({ role: 'family', level: 1 });
+    const other = await rita.invite(profileId, { name: 'Nounou', role: 'caregiver', ...preset('caregiver') });
+    await rita.cancelInvitation(other.id);
+    await expectCode(marc.acceptInvitationCode(other.code), 'code_invalid');
+  });
+
+  it('a proposal sent back for revision is updated by its author', async () => {
+    const rec = await sarah.getProfile(profileId);
+    const ops = [{ path: ['setting', 'speechRate'] as ['setting', string], before: rec.data.settings.speechRate, after: 0.8 }];
+    const prop = await sarah.createProposal(profileId, { title: 'Voix plus lente', ops, baseVersion: rec.version });
+    await rita.setProposalStatus(prop.id, 'revision', 'Un peu moins lent ?');
+    const again = await sarah.updateProposal(prop.id, { ops: [{ ...ops[0], after: 0.9 }], baseVersion: rec.version });
+    expect(again.status).toBe('pending');
+  });
+
+  it('a professional keeps materials, shares one with a colleague, then deletes it', async () => {
+    const id = newResourceId();
+    await sarah.saveResource({ id, kind: 'tla', title: 'Dentiste', data: emptyResource('tla') });
+    expect((await sarah.listResources()).mine.map((r) => r.title)).toContain('Dentiste');
+    await sarah.shareResource(id, { email: mail('marc'), mode: 'view' });
+    expect((await marc.listResources()).sharedWithMe.map((r) => r.id)).toContain(id);
+    await sarah.deleteResource(id);
+    expect((await marc.listResources()).sharedWithMe.map((r) => r.id)).not.toContain(id);
   });
 
   it('deleting the parent account removes the child profile for everyone', async () => {

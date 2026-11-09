@@ -89,3 +89,19 @@ This file grows as each feature is built. Each line says **what** was made, **ho
 | Subscription | Shown as "later": billing is deferred, and the child's communication will never be blocked by it. |
 | A removed device | When a parent removes a tablet, the next time it opens it is signed out. |
 
+## Phase 5 — The professional side
+
+| Feature | How it was built |
+|---|---|
+| Verification in 4 steps | `src/ui/pro/Verification.tsx` (React Native): practice → licence or diploma → identity document → status, with a progress bar. Files are picked with `expo-document-picker` and stored in the private Supabase Storage folder `verification-docs` (only their owner and the review team can read them). The status is set by the review team (back-office, later); the demo has buttons to simulate it. |
+| Workspace | `src/ui/pro/Workspace.tsx`: a side menu (or a top bar on phones) with Dashboard, My AAC users, Create materials, My library, Collaborations, Learning center, Account & licence. |
+| Interactive tour | First visit: "Welcome to your Professional Workspace!" with *Launch the guide* or *Maybe later*. The tour moves through each section with *Skip* / *Next*; it is remembered in the account preferences and can be replayed with *Help*. One-time tips appear in three sections. |
+| Connecting to a child | The professional types the family's code, picks a role and the rights they ask for, and sends a request; or accepts an invitation. No child is visible before the family agrees (enforced by the database). |
+| Working on a child's board | `SandboxBoard.tsx`: the professional opens the child's real board, but every change stays in a **draft**. *Send for approval* compares the draft with the child's profile (`profileDiff.ts`) and sorts each change with the family's rules (`permissions.ts`): applied directly (editing rights), sent as a proposal, or not allowed. Core-word positions always go through the family. |
+| Revisions | When the family asks for a change, *Resume* reopens the draft with the proposal; sending again updates the same proposal. |
+| Materials | `src/lib/resources.ts` (TypeScript, tested): a material is a small piece of a profile. A TLA or schedule is made in a "sandbox" profile with the normal editors, then taken back out. First–Then, timers and picture cards (from words or photos, printable) have small forms. |
+| Library | My templates (no child's data), Shared with me, and each child's materials; duplicate, personalise for a child (a copy, the template stays unchanged), share with a colleague or a child's team (view / edit), propose to a child's profile (the family decides), export, delete. |
+| Learning center | Opens a demonstration board (nothing saved) directly on a tutorial: search ("Show me where"), the guide, modelling, a new TLA, access settings, languages. |
+| Account & licence | Verified status ("free access"), connected users, credentials, account details, preferences; billing stays for later. |
+| Tested | A browser walkthrough plays the whole story: a parent creates a child, a therapist signs up, verifies, connects with the family code, the parent accepts, the therapist drafts a new TLA and sends it, the parent reviews and approves, and the TLA appears on the child's board. |
+

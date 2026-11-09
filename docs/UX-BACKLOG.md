@@ -399,6 +399,16 @@ security, devices, data controls, and billing if applicable (**billing DEFERRED*
 7. Professionals can work without any connected child (generic resources, learning).
 8. Works for private practice, schools, clinics and multidisciplinary services.
 
+### Interactive guide to the professional workspace
+
+The first time a professional opens their workspace, a short, interactive and optional guided
+tour introduces the main features: navigating the workspace, managing AAC users, creating
+communication materials and collaborating with families.
+
+- Welcome message on first login: *"Welcome to your Professional Workspace! Let's take a quick
+  tour to discover how you can use the app to support communication."*
+- The guide is shown, with the option to skip it (**Maybe Later**: go straight to the workspace).
+
 ## 8. Back-office — **LATER** (the product owner will specify it)
 
 An admin back-office is planned, with "a lot of data" in it (details to come). It will at least

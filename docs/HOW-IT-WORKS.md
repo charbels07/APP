@@ -112,7 +112,7 @@ This file grows as each feature is built. Each line says **what** was made, **ho
 | `npm run typecheck` | TypeScript reads the whole code and refuses mistakes such as a missing field or a wrong type. |
 | `npm test` | 93 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide. |
 | `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger and a tablet; 35+ checks. |
-| `npm run test:live` | The same story on the real Supabase project, through the app's own code (needs "Confirm email" off while it runs). |
+| `npm run test:live` | The same story on the real Supabase project, through the app's own code: 13 steps, including devices, history undo, invitation codes, revisions and materials (needs "Confirm email" off while it runs). Last run: all 13 passed. |
 | Browser walkthroughs | Playwright drives the web version like a person: the parent journey, the team (invite, undo, join with a code), the professional journey (verification, tour, request, draft, proposal, approval), and the Arabic screens. |
 
 ## Not done yet (honest list)
@@ -131,7 +131,4 @@ This file grows as each feature is built. Each line says **what** was made, **ho
   specification; it is sensitive data).
 - **Switch access and eye gaze**: not available (the set-up says so).
 - **Arabic texts** are a first version: to be reviewed by a native speaker.
-- The newest server calls (devices, history undo, invitation codes, revisions, materials) are in
-  the live test but have not run on the real project yet: it needs "Confirm email" off for a few
-  minutes.
 

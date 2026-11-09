@@ -17,10 +17,12 @@ export const RESOURCE_KINDS: ResourceKind[] = ['tla', 'schedule', 'firstThen', '
 /** A new material's id (the real server expects a UUID). */
 export function newResourceId(): string {
   try {
-    return randomUUID();
+    const id = randomUUID();
+    if (typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return id;
   } catch {
-    return 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, () => Math.floor(Math.random() * 16).toString(16));
+    /* not available here: built below */
   }
+  return 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, () => Math.floor(Math.random() * 16).toString(16));
 }
 
 /** Kinds edited in a sandbox board; the others have a small form. */

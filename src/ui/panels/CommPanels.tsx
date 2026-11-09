@@ -273,7 +273,8 @@ export function LangPanel() {
     <Panel title={t.language} onClose={() => app.setOverlay(null)} maxWidth={560}>
       <Section title={t.wordsLang}>
         <Text style={styles.muted}>{t.wordsLangNote}</Text>
-        {LANGS.map((l) => (
+        {/* The child's languages first; the others stay reachable below. */}
+        {(st.langs?.length ? st.langs : LANGS).map((l) => (
           <LangChoice
             key={l}
             label={LANG_NAMES[l]}
@@ -281,6 +282,16 @@ export function LangPanel() {
             onPress={() => app.update((d) => void (d.settings.lang = l))}
           />
         ))}
+        {st.langs?.length && st.langs.length < LANGS.length ? (
+          <>
+            <Text style={styles.muted}>{t.otherLangs}</Text>
+            <View style={[styles.row, { flexWrap: 'wrap' }]}>
+              {LANGS.filter((l) => !st.langs.includes(l)).map((l) => (
+                <LangChoice key={l} compact label={LANG_NAMES[l]} active={st.lang === l} onPress={() => app.update((d) => void (d.settings.lang = l))} />
+              ))}
+            </View>
+          </>
+        ) : null}
         <Text style={styles.muted}>{t.langNote}</Text>
       </Section>
       <Section title={t.navLang}>
@@ -292,7 +303,7 @@ export function LangPanel() {
               compact
               label={UI_LANG_NAMES[l]}
               active={st.uiLang === l}
-              onPress={() => app.update((d) => void (d.settings.uiLang = l))}
+              onPress={() => app.setUiLang(l)}
             />
           ))}
         </View>

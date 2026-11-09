@@ -21,7 +21,8 @@ import { C, radius } from './theme';
 import { TimerCard } from './TimerCard';
 import { UniversalBar } from './UniversalBar';
 
-export function Root() {
+/** `banner`: shown above the sentence strip (e.g. the preview's "nothing is saved"). */
+export function Root({ banner }: { banner?: React.ReactNode } = {}) {
   const { width, height } = useWindowDimensions();
   const app = useApp();
   const { view, overlay, editMode, t, profile } = app;
@@ -42,7 +43,7 @@ export function Root() {
       {overlay?.kind === 'model' && <ModelPanel />}
       {overlay?.kind === 'newTla' && <NewTlaPanel />}
       {overlay?.kind === 'guide' && <GuidePanel />}
-      {!overlay && !profile.guide?.seen && !editMode && !app.playing && !app.recording && <WelcomeCard />}
+      {!banner && !overlay && !profile.guide?.seen && !editMode && !app.playing && !app.recording && <WelcomeCard />}
       <CaregiverOverlay />
     </View>
   );
@@ -92,6 +93,7 @@ export function Root() {
           <Btn small kind="primary" icon="check" label={t.exit} onPress={() => app.setEditMode(false)} />
         </View>
       )}
+      {banner}
       <SentenceStrip compact={compact} />
       {profile.settings.quickZone && <QuickZone />}
       {content}

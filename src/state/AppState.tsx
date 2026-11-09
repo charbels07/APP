@@ -7,8 +7,7 @@ import { joinTokens, renderStrip, toSpeechPlan } from '../lib/grammar';
 import { audioOf, label } from '../lib/lexicon';
 import { locate, type Location } from '../lib/search';
 import { beep, prepareVoices, speakSegments, speakText, stopSpeech } from '../lib/speech';
-import { loadProfile, saveProfile } from '../lib/storage';
-import type { DemoStep, Lang, Profile, StripItem } from '../model/types';
+import type { DemoStep, Lang, Profile, StripItem, UiLang } from '../model/types';
 
 export type View = 'board' | 'tla' | 'schedule';
 
@@ -78,9 +77,14 @@ export interface TimerState {
 }
 
 interface AppCtx {
+  /** The child's profile (settings.uiLang is the language of the person using the app). */
   profile: Profile;
   update: (recipe: (draft: Profile) => void) => void;
   replaceProfile: (p: Profile) => void;
+  /** Navigation language of the person (kept with their account, not in the child's profile). */
+  setUiLang: (l: UiLang) => void;
+  /** Preview before signing up: nothing is saved. */
+  preview: boolean;
   t: UiStrings;
   lang: Lang;
 
@@ -155,35 +159,49 @@ export function useApp(): AppCtx {
 let keySeq = 0;
 const newKey = () => `k${Date.now().toString(36)}${(keySeq++).toString(36)}`;
 
-export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [profile, setProfile] = useState<Profile | null>(null);
-  useEffect(() => {
-    loadProfile().then(setProfile);
-  }, []);
-  if (!profile) return null;
-  return <Loaded initial={profile}>{children}</Loaded>;
+export interface AppProviderProps {
+  initial: Profile;
+  /** Every change of the profile (saved on the device and sent to the server by the caller). */
+  onChange: (p: Profile) => void;
+  uiLang: UiLang;
+  setUiLang: (l: UiLang) => void;
+  /** Lets the caller replace the profile when someone else changed it. */
+  subscribe?: (apply: (p: Profile) => void) => () => void;
+  preview?: boolean;
+  children: React.ReactNode;
 }
 
-function Loaded({ initial, children }: { initial: Profile; children: React.ReactNode }) {
-  const [profile, setProfile] = useState<Profile>(initial);
+export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, preview = false, children }: AppProviderProps) {
+  const [stored, setProfile] = useState<Profile>(initial);
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+  // Everything reads the profile with the person's navigation language in it.
+  const profile = useMemo(
+    () => (stored.settings.uiLang === uiLang ? stored : { ...stored, settings: { ...stored.settings, uiLang } }),
+    [stored, uiLang],
+  );
   const profileRef = useRef(profile);
   profileRef.current = profile;
 
   const update = useCallback((recipe: (draft: Profile) => void) => {
-    setProfile((prev) => {
-      const draft = structuredClone(prev);
-      recipe(draft);
-      saveProfile(draft);
-      return draft;
-    });
+    const draft = structuredClone(profileRef.current);
+    recipe(draft);
+    profileRef.current = draft;
+    setProfile(draft);
+    onChangeRef.current(draft);
   }, []);
   const replaceProfile = useCallback((p: Profile) => {
-    saveProfile(p);
+    profileRef.current = p;
     setProfile(p);
+    onChangeRef.current(p);
   }, []);
+  useEffect(() => subscribe?.((p) => {
+    profileRef.current = p;
+    setProfile(p);
+  }), [subscribe]);
 
   const lang = profile.settings.lang;
-  const t = strings(profile.settings.uiLang);
+  const t = strings(uiLang);
 
   // Pick the device voice for each language (woman / man, adult / child) when those settings change.
   const { voiceKind, voiceAge, voices } = profile.settings;
@@ -224,7 +242,7 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
     if (!profileRef.current.settings.wiggle) return;
     setWiggle({ concept, key, n: ++wiggleSeq.current });
     // Phones also buzz (iPads have no vibration motor: the wiggle is what they get).
-    if (touched) Haptics.selectionAsync().catch(() => {});
+    if (touched && profileRef.current.settings.haptics !== false) Haptics.selectionAsync().catch(() => {});
   }, []);
 
   // ── Apps (YouTube, WhatsApp…): short countdown so a mistaken touch can be cancelled ──
@@ -664,6 +682,8 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
       profile,
       update,
       replaceProfile,
+      setUiLang,
+      preview,
       t,
       lang,
       view,
@@ -715,7 +735,7 @@ function Loaded({ initial, children }: { initial: Profile; children: React.React
       setTimerOpen,
     }),
     [
-      profile, update, replaceProfile, t, lang, view, path, tlaId, overlay, editMode, setEditMode, strip,
+      profile, update, replaceProfile, setUiLang, preview, t, lang, view, path, tlaId, overlay, editMode, setEditMode, strip,
       stripState.history.length, touchConcept, addText, speakStrip, speakConcept, deleteLast, clearStrip, undo, goHome,
       openFolder, goBack, openTla, openSchedule, pressHelp, recording, startRecording, finishRecording,
       playing, playSteps, stopPlaying, pointer, demoCaption, wiggle, pulse, appLaunch, launchApp, openAppNow, cancelAppLaunch,

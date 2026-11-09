@@ -1,3 +1,5 @@
+import { createDefaultProfile } from '../../data/defaults';
+import { onboardingStrings } from '../../i18n/onboarding';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Image, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { BUILTIN_CONCEPTS } from '../../data/concepts';
@@ -13,7 +15,6 @@ import { pictoToMedia } from '../../lib/pictoLibrary';
 import { search } from '../../lib/search';
 import { listVoices, prepareVoices, speakText } from '../../lib/speech';
 import type { VoiceChoice } from '../../lib/voices';
-import { resetProfile } from '../../lib/storage';
 import { UI_LANG_NAMES } from '../../i18n/ui';
 import { LANGS, type AppLink, type CellDisplay, type Lang, type Profile, type UiLang, type WordClass } from '../../model/types';
 import { useApp } from '../../state/AppState';
@@ -725,6 +726,7 @@ function ScheduleEditor({ id }: { id: string }) {
 function SettingsPanel() {
   const app = useApp();
   const { profile, t } = app;
+  const o = onboardingStrings(profile.settings.uiLang);
   const st = profile.settings;
   const set = (fn: (s: Profile['settings']) => void) => app.update((d) => fn(d.settings));
   const [voiceLang, setVoiceLang] = useState<Lang>(st.lang);
@@ -744,7 +746,7 @@ function SettingsPanel() {
         <Text style={s.label}>{t.sInterface}</Text>
         <Segmented
           value={st.uiLang}
-          onChange={(v: UiLang) => set((x) => void (x.uiLang = v))}
+          onChange={(v: UiLang) => app.setUiLang(v)}
           options={(['fr', 'en', 'ar'] as UiLang[]).map((l) => ({ value: l, label: UI_LANG_NAMES[l] }))}
         />
         <Text style={s.label}>{t.sGender}</Text>
@@ -788,6 +790,67 @@ function SettingsPanel() {
         <Text style={s.note}>{t.sRepeatNote}</Text>
         <Toggle label={t.sWiggle} value={!!st.wiggle} onChange={(v) => set((x) => void (x.wiggle = v))} />
         <Toggle label={t.sAutoApps} value={st.autoOpenApps !== false} onChange={(v) => set((x) => void (x.autoOpenApps = v))} />
+      </Section>
+
+      <Section title={o.presentationAccess}>
+        <Text style={s.label}>{o.langTitle}</Text>
+        <View style={s.wrapRow}>
+          {LANGS.map((l) => {
+            const on = (st.langs ?? [st.lang]).includes(l);
+            return (
+              <Btn
+                key={l}
+                small
+                kind={on ? 'primary' : 'secondary'}
+                icon={on ? 'check' : undefined}
+                label={LANG_NAMES[l]}
+                onPress={() =>
+                  set((x) => {
+                    const cur = x.langs?.length ? x.langs : [x.lang];
+                    const next = on ? cur.filter((y) => y !== l) : [...cur, l];
+                    if (!next.length) return;
+                    x.langs = next;
+                    if (!next.includes(x.lang)) x.lang = next[0];
+                  })
+                }
+              />
+            );
+          })}
+        </View>
+        <Text style={s.label}>{o.visualTitle}</Text>
+        <Segmented
+          value={st.visual ?? 'standard'}
+          onChange={(v: Profile['settings']['visual']) => set((x) => void (x.visual = v))}
+          options={(['standard', 'large', 'contrast'] as const).map((v) => ({ value: v, label: o.visual[v] }))}
+        />
+        <Text style={s.label}>{o.pictoSize}</Text>
+        <Segmented
+          value={st.pictoSize ?? 'normal'}
+          onChange={(v: Profile['settings']['pictoSize']) => set((x) => void (x.pictoSize = v))}
+          options={[
+            { value: 'normal', label: o.pictoNormal },
+            { value: 'large', label: o.pictoLarge },
+          ]}
+        />
+        <Text style={s.label}>{o.accessTitle}</Text>
+        <Segmented
+          value={st.access ?? 'release'}
+          onChange={(v: Profile['settings']['access']) => set((x) => void (x.access = v))}
+          options={(['release', 'press', 'hold'] as const).map((v) => ({ value: v, label: o.access[v] }))}
+        />
+        <Text style={s.note}>{o.accessNotes[st.access ?? 'release']}</Text>
+        {st.access === 'hold' && (
+          <>
+            <Text style={s.label}>{o.holdTime}</Text>
+            <Segmented
+              value={st.holdTime ?? 1}
+              onChange={(v: number) => set((x) => void (x.holdTime = v))}
+              options={[0.5, 1, 1.5, 2].map((v) => ({ value: v, label: `${v} s` }))}
+            />
+          </>
+        )}
+        <Toggle label={o.reduceMotionToggle} value={!!st.reduceMotion} onChange={(v) => set((x) => void (x.reduceMotion = v))} />
+        <Toggle label={o.hapticsToggle} value={st.haptics !== false} onChange={(v) => set((x) => void (x.haptics = v))} />
       </Section>
 
       <Section title={t.sBar}>
@@ -886,7 +949,7 @@ function SettingsPanel() {
             label={confirmReset ? t.sResetConfirm : t.sReset}
             onPress={async () => {
               if (!confirmReset) return setConfirmReset(true);
-              app.replaceProfile(await resetProfile());
+              app.replaceProfile(createDefaultProfile());
               app.setEditMode(false);
             }}
           />

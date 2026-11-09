@@ -44,6 +44,9 @@ const ms = (iso?: string | null) => (iso ? Date.parse(iso) : undefined);
 const iso = (t?: number | null) => (t ? new Date(t).toISOString() : null);
 const PENDING_ROLE = 'caa.pendingRole';
 
+const isNetworkError = (e: { name?: string; message?: string; status?: number }) =>
+  e.name === 'AuthRetryableFetchError' || e.status === 0 || /network|fetch|timed? ?out/i.test(e.message ?? '');
+
 /** Database / auth error → the app's short codes. */
 function fail(error: { message?: string } | null | undefined): never {
   const m = error?.message ?? 'unknown';
@@ -53,7 +56,10 @@ function fail(error: { message?: string } | null | undefined): never {
   if (/token has expired|otp.*expired/i.test(m)) throw new BackendError('code_expired', m);
   if (/token.*invalid|invalid.*otp/i.test(m)) throw new BackendError('code_invalid', m);
   if (/already registered|already exists/i.test(m)) throw new BackendError('account_exists', m);
-  if (/password should be/i.test(m)) throw new BackendError('weak_password', m);
+  if (/password should be|weak password/i.test(m)) throw new BackendError('weak_password', m);
+  if (/rate limit|too many/i.test(m)) throw new BackendError('too_many', m);
+  if (/provider is not enabled|unsupported provider/i.test(m)) throw new BackendError('provider_off', m);
+  if (/signups not allowed|anonymous sign-ins are disabled/i.test(m)) throw new BackendError('signup_off', m);
   if (/network|fetch/i.test(m)) throw new BackendError('offline', m);
   throw new BackendError(m.split(/\s/)[0], m);
 }
@@ -219,7 +225,15 @@ export class SupabaseBackend implements Backend {
   // ── Accounts ──
 
   async currentAccount(): Promise<Account | null> {
-    const { data: d } = await this.sb.auth.getUser();
+    // No internet is not "signed out": the app then keeps working from the device copy.
+    const { data: s, error: se } = await this.sb.auth.getSession();
+    if (se && isNetworkError(se)) throw new BackendError('offline', se.message);
+    if (!s.session) return null;
+    const { data: d, error } = await this.sb.auth.getUser();
+    if (error) {
+      if (isNetworkError(error)) throw new BackendError('offline', error.message);
+      return null;
+    }
     const u = d.user;
     if (!u) return null;
     let row = await data<Row | null>(this.sb.from('accounts').select('*').eq('id', u.id).maybeSingle());

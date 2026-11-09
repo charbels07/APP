@@ -135,6 +135,11 @@ export function Grid({ board }: { board: Board }) {
                 moving={moveSource?.board === board.id && moveSource.index === index}
                 wiggleN={wiggle && wiggle.concept === cell.concept ? wiggle.n : 0}
                 isApp={!cell.folder && !!appLinkOf(profile, cell.concept)}
+                look={profile.settings.visual}
+                bigPicto={profile.settings.pictoSize === 'large'}
+                still={profile.settings.reduceMotion}
+                access={editMode ? 'release' : profile.settings.access}
+                holdMs={Math.round((profile.settings.holdTime || 1) * 1000)}
                 onPress={onCellPress}
                 onLongPress={onCellLongPress}
               />
@@ -215,31 +220,48 @@ interface CellProps {
   wiggleN?: number;
   /** The card opens an app (small corner badge). */
   isApp?: boolean;
+  /** Visual presentation chosen for the child. */
+  look?: 'standard' | 'large' | 'contrast';
+  /** Larger picture, smaller label. */
+  bigPicto?: boolean;
+  /** Fewer animations. */
+  still?: boolean;
+  /** Select when the finger lifts, as soon as it touches, or after holding `holdMs`. */
+  access?: 'release' | 'press' | 'hold';
+  holdMs?: number;
   onPress: (index: number) => void;
   onLongPress?: (index: number) => void;
 }
 
 export const CellView = React.memo(function CellView(p: CellProps) {
   const colors = CLASS_COLORS[p.cls];
-  const bg = p.intensity === undefined ? colors.bg : tint(colors.border, p.intensity);
+  const contrast = p.look === 'contrast';
+  // High contrast: dark card, bright border in the word-class colour, white text.
+  const bg = contrast ? '#101418' : p.intensity === undefined ? colors.bg : tint(colors.border, p.intensity);
   const textColor = isDarkColor(bg) ? '#FFFFFF' : C.text;
   const showImage = p.display !== 'text';
   const showText = p.display !== 'image';
   // Shrink the label so the longest word fits on one line (never break inside a word).
   const longest = Math.max(1, ...p.text.split(/\s+/).map((w) => w.length));
+  const textScale = (p.look === 'large' ? 1.25 : 1) * (p.bigPicto ? 0.82 : 1);
   const fontSize = Math.max(
     9,
-    Math.min(22, Math.round(Math.min(p.width / 6.4, p.height / 6)), Math.floor((p.width - 8) / (longest * 0.6))),
+    Math.min(
+      p.look === 'large' ? 27 : 22,
+      Math.round(Math.min(p.width / 6.4, p.height / 6) * textScale),
+      Math.floor((p.width - 8) / (longest * 0.6)),
+    ),
   );
   const symbolSize = Math.max(
     18,
-    Math.min(p.width - 14, showText ? p.height - fontSize * 1.9 - 8 : p.height - 14) * (p.isFolder ? 0.86 : 0.92),
+    Math.min(p.width - (p.bigPicto ? 8 : 14), showText ? p.height - fontSize * (p.bigPicto ? 1.6 : 1.9) - 8 : p.height - 14) *
+      (p.isFolder ? 0.86 : p.bigPicto ? 1 : 0.92),
   );
 
   // "Show me where" highlight: gentle pulse.
   const pulse = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    if (!p.highlighted) {
+    if (!p.highlighted || p.still) {
       pulse.stopAnimation();
       pulse.setValue(0);
       return;
@@ -252,7 +274,7 @@ export const CellView = React.memo(function CellView(p: CellProps) {
     );
     anim.start();
     return () => anim.stop();
-  }, [p.highlighted, pulse]);
+  }, [p.highlighted, p.still, pulse]);
 
   // Demonstration: the hand comes in, then presses the card.
   const press = useRef(new Animated.Value(0)).current;
@@ -271,16 +293,17 @@ export const CellView = React.memo(function CellView(p: CellProps) {
     pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.07] }),
     press.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 0.05, -0.06] }),
   );
-  const wiggleTransform = useWiggle(p.wiggleN);
+  const wiggleTransform = useWiggle(p.still ? 0 : p.wiggleN);
   const handShift = press.interpolate({ inputRange: [0, 0.5, 1], outputRange: [30, 0, 4] });
   const lit = p.highlighted || p.pointing;
 
   return (
     <Animated.View style={{ width: p.width, height: p.height, transform: [{ scale }], zIndex: lit ? 5 : 0 }}>
       <Pressable
-        onPress={() => p.onPress(p.index)}
-        onLongPress={p.onLongPress ? () => p.onLongPress!(p.index) : undefined}
-        delayLongPress={600}
+        onPress={!p.access || p.access === 'release' ? () => p.onPress(p.index) : undefined}
+        onPressIn={p.access === 'press' ? () => p.onPress(p.index) : undefined}
+        onLongPress={p.access === 'hold' ? () => p.onPress(p.index) : p.onLongPress ? () => p.onLongPress!(p.index) : undefined}
+        delayLongPress={p.access === 'hold' ? p.holdMs ?? 1000 : 600}
         accessibilityRole="button"
         accessibilityLabel={p.text}
         style={({ pressed }) => [
@@ -288,7 +311,7 @@ export const CellView = React.memo(function CellView(p: CellProps) {
           {
             backgroundColor: bg,
             borderColor: lit ? C.highlight : p.moving ? C.accent : colors.border,
-            borderWidth: lit || p.moving ? 4 : p.isFolder ? 2.5 : 2,
+            borderWidth: lit || p.moving || contrast ? 4 : p.isFolder ? 2.5 : 2,
             borderStyle: p.moving ? 'dashed' : 'solid',
             opacity: p.dimmed ? 0.35 : 1,
           },
@@ -318,7 +341,7 @@ export const CellView = React.memo(function CellView(p: CellProps) {
                 fontSize: p.display === 'text' ? fontSize * 1.4 : fontSize,
                 writingDirection: p.rtl ? 'rtl' : 'ltr',
               },
-              p.isFolder && { fontWeight: '800' },
+              (p.isFolder || p.look === 'large' || contrast) && { fontWeight: '800' },
             ]}
           >
             {p.text}

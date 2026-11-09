@@ -33,6 +33,7 @@ const fr = {
   addToSentence: 'Ajouter à la phrase',
   // language
   langNote: 'Les mots gardent la même place dans toutes les langues.',
+  otherLangs: 'Autres langues :',
   // help
   helpTitle: 'Aide',
   helpMore: 'Informations utiles',
@@ -361,6 +362,7 @@ const en: Dict = {
   typeHere: 'Type here…',
   addToSentence: 'Add to sentence',
   langNote: 'Words keep the same position in every language.',
+  otherLangs: 'Other languages:',
   helpTitle: 'Help',
   helpMore: 'Useful information',
   helpHowI: 'How I communicate',
@@ -677,6 +679,7 @@ const ar: Dict = {
   typeHere: 'اكتب هنا…',
   addToSentence: 'أضف إلى الجملة',
   langNote: 'تبقى الكلمات في المكان نفسه في كل اللغات.',
+  otherLangs: 'لغات أخرى:',
   helpTitle: 'مساعدة',
   helpMore: 'معلومات مفيدة',
   helpHowI: 'كيف أتواصل',

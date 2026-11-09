@@ -257,6 +257,13 @@ export const DEFAULT_SETTINGS: Settings = {
   voiceKind: 'device',
   voiceAge: 'adult',
   repeatDelay: 2,
+  langs: ['fr'],
+  visual: 'standard',
+  pictoSize: 'normal',
+  reduceMotion: false,
+  haptics: true,
+  access: 'release',
+  holdTime: 1,
 };
 
 export const DEFAULT_HELP: HelpConfig = {

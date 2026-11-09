@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -10,7 +10,7 @@ import {
   type TextInputProps,
   type ViewStyle,
 } from 'react-native';
-import { useApp } from '../state/AppState';
+import { NavLangContext } from '../state/Session';
 import { Icon, type IconName } from './Icon';
 import { C, radius } from './theme';
 
@@ -19,7 +19,7 @@ import { C, radius } from './theme';
  * The boards are never mirrored: word positions are the child's motor plan.
  */
 export function useNavRtl(): boolean {
-  return useApp().profile.settings.uiLang === 'ar';
+  return useContext(NavLangContext) === 'ar';
 }
 const RIGHT = { textAlign: 'right' as const, writingDirection: 'rtl' as const };
 
@@ -147,8 +147,9 @@ export function Segmented<T extends string | number>({
   value: T;
   onChange: (v: T) => void;
 }) {
+  const rtl = useNavRtl();
   return (
-    <View style={styles.segmented}>
+    <View style={[styles.segmented, rtl && { flexDirection: 'row-reverse' }]}>
       {options.map((o) => {
         const active = o.value === value;
         return (
@@ -183,7 +184,12 @@ export function Field(props: TextInputProps & { label?: string }) {
   return (
     <View style={{ gap: 4 }}>
       {label ? <Text style={[styles.fieldLabel, rtl && RIGHT]}>{label}</Text> : null}
-      <TextInput placeholderTextColor="#98A2B3" style={[styles.input, rtl && { textAlign: 'right' }, style]} {...rest} />
+      <TextInput
+        placeholderTextColor="#98A2B3"
+        style={[styles.input, rtl && { textAlign: 'right' }, style]}
+        accessibilityLabel={rest.accessibilityLabel ?? label}
+        {...rest}
+      />
     </View>
   );
 }

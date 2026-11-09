@@ -1,38 +1,27 @@
 /**
- * Local persistence of the profile (offline-first, spec §32). Cloud sync is a
- * later phase; the profile format is versioned so it can be migrated and synced.
+ * Profile format upgrades, and the board saved by older versions of the app.
+ * Each child's profile is now kept per child (src/state/profileSync.ts).
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { APPS_FOLDER_SLOT, createDefaultProfile, DEFAULT_SETTINGS } from '../data/defaults';
 import type { Profile } from '../model/types';
 
-const KEY = 'caa.profile.v1';
+/** Where the app kept its one profile before accounts existed. */
+const LEGACY_KEY = 'caa.profile.v1';
 
-export async function loadProfile(): Promise<Profile> {
+/** The board made on this device before accounts (offered when creating the first child). */
+export async function loadLegacyProfile(): Promise<Profile | null> {
   try {
-    const raw = await AsyncStorage.getItem(KEY);
+    const raw = await AsyncStorage.getItem(LEGACY_KEY);
     if (raw) return migrate(JSON.parse(raw));
   } catch {
-    /* storage unavailable or corrupted: start from defaults */
+    /* storage unavailable or corrupted */
   }
-  return createDefaultProfile();
+  return null;
 }
 
-let timer: ReturnType<typeof setTimeout> | undefined;
-export function saveProfile(profile: Profile): void {
-  clearTimeout(timer);
-  timer = setTimeout(() => {
-    AsyncStorage.setItem(KEY, JSON.stringify(profile)).catch(() => {});
-  }, 300);
-}
-
-export async function resetProfile(): Promise<Profile> {
-  try {
-    await AsyncStorage.removeItem(KEY);
-  } catch {
-    /* ignore */
-  }
-  return createDefaultProfile();
+export async function forgetLegacyProfile(): Promise<void> {
+  await AsyncStorage.removeItem(LEGACY_KEY).catch(() => {});
 }
 
 /** Fills in anything added to the defaults since the profile was saved. */
@@ -56,6 +45,7 @@ export function migrate(p: Partial<Profile>): Profile {
     version: 1,
     settings: {
       ...DEFAULT_SETTINGS,
+      langs: [p.settings?.lang ?? DEFAULT_SETTINGS.lang],
       ...(p.settings ?? {}),
       bar: { ...DEFAULT_SETTINGS.bar, ...(p.settings?.bar ?? {}) },
       timer: { ...DEFAULT_SETTINGS.timer, ...(p.settings?.timer ?? {}) },

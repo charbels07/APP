@@ -157,6 +157,22 @@ export interface Settings {
   voiceAge: 'adult' | 'child';
   /** Seconds before the same pictogram can be pressed again (0 = no limit). */
   repeatDelay: number;
+  /** Languages the child communicates in (the first is the main one); `lang` is the one in use. */
+  langs: Lang[];
+  /** Standard, larger text and buttons, or high contrast (dark cards, bright borders). */
+  visual: 'standard' | 'large' | 'contrast';
+  /** Picture size inside the cards: normal, or larger (with a smaller label). */
+  pictoSize: 'normal' | 'large';
+  /** Fewer animations (no pulsing highlights, no wiggling). */
+  reduceMotion: boolean;
+  /** Small vibration when a pictogram is touched (phones; iPads have no vibration motor). */
+  haptics: boolean;
+  /**
+   * How the child selects a pictogram: when the finger lifts (standard), as soon as it touches
+   * (for children who slide), or by holding it (`holdTime` seconds: avoids accidental touches).
+   */
+  access: 'release' | 'press' | 'hold';
+  holdTime: number;
 }
 
 export interface HelpConfig {
@@ -187,7 +203,14 @@ export interface Profile {
   /** One-time additions already applied to this profile (so a removed item is not added back). */
   migrations?: string[];
   /** In-app guide: welcome card dismissed, chapters already read. */
-  guide?: { seen?: boolean; read?: string[] };
+  guide?: {
+    seen?: boolean;
+    read?: string[];
+    /** Open the guide when the board first appears (end of the set-up journey). */
+    openOnStart?: boolean;
+    /** From the set-up questions: the guide starts with what matters for this child. */
+    tailored?: { newToAac: boolean; speech?: string };
+  };
 }
 
 /** One recorded action of a demonstration. */

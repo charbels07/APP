@@ -42,3 +42,34 @@ This file grows as each feature is built. Each line says **what** was made, **ho
 | Live test | `npm run test:live` (TypeScript, **Jest**) uses the app's real connection code against the real Supabase project: a parent, a therapist, a teacher, a stranger and a tablet play the whole story on the internet, then their test accounts delete themselves. It found one real bug (creating a profile was refused), now fixed by a 4th SQL file. |
 | Database changes | Each change to the database is a new numbered SQL file in `supabase/migrations/` ("migration"). Files already run on the project are never edited, so every copy of the database can be rebuilt in the same order. |
 
+## Phase 2 — Before the board: welcome, preview, who are you, sign-in
+
+| Feature | How it was built |
+|---|---|
+| The journey | `src/state/Session.tsx` (TypeScript + **React context**, a shared box every screen can read) remembers who is signed in and which step they are on: welcome → preview → parent/pro → sign-in → board. `src/ui/Stages.tsx` shows the screen of the current step. |
+| Remembered on the tablet | The interface language, the last account and the open child are kept in **AsyncStorage** (a small storage space inside the app), so a tablet without Wi-Fi still opens the child's board. |
+| Welcome page | `src/ui/start/Welcome.tsx` (React Native): logo drawn in **SVG** (shapes described with code), one sentence, three points, *Continue*. |
+| Board preview | The real board is shown with a sample profile and an "on change" that does nothing: everything can be tried, nothing is saved. |
+| Parent or professional | `RoleChoice.tsx`: two big cards; the choice is saved with the account and decides the journey. |
+| Sign-in | `AuthScreen.tsx`: Apple and Google buttons (drawn following each company's rules), e-mail or phone + password. Supabase Auth checks the password and sends the 6-digit code; the demo server shows the code on screen instead. Forgotten password = code + new password. |
+| Tablet linked with a code | `PairScreen.tsx`: the 6-digit code from the parent's device links the tablet with a nameless account limited to that child (the database rule from Phase 1). |
+| Offline is not "signed out" | When the internet is down, the real-server code answers "offline" instead of "nobody is signed in", so the board stays. |
+| Languages of the menus | Each person chooses their own navigation language (FR / EN / عربي at the top). It is kept with their account, not in the child's profile, so a therapist in French and a parent in Arabic can share the same child. Arabic menus read right to left. |
+| Errors in plain words | Server error codes (wrong password, expired code, no internet…) are turned into one sentence in the person's language (`src/i18n/account.ts`). |
+
+## Phase 3 — The child's profile and the set-up journey
+
+| Feature | How it was built |
+|---|---|
+| Questionnaire | `src/ui/onboarding/Onboarding.tsx` (React Native): 12 steps with a progress bar. Answers are saved on the tablet after each step, so closing the app does not lose them. |
+| First board adapted to the child | `src/lib/onboarding.ts` (TypeScript, tested with Jest) turns the answers into settings. "Communication today" chooses how many words are shown first (about 25, 60 or 81): hidden words keep their place, so nothing ever moves when more are shown. |
+| Languages and voice | Several communication languages (the first is the main one); female / male, adult / child voice with a *Listen* button (the device's text-to-speech). |
+| Favourite activities | Chosen from pictures, or typed: a typed activity gets a pictogram from the offline ARASAAC library when one matches. They go in the « mes mots » folder, in free slots only. |
+| Presentation | Standard, larger text, or high contrast (dark cards, bright borders), drawn by the card component (`Grid.tsx`). |
+| Sounds and animation | Standard, or reduced (no wiggle, no vibration, silent timer; the voice stays). |
+| Starting vocabulary | Our core vocabulary, the board already on this tablet (from before accounts), a sibling's board, or a profile file. |
+| Access method | Select when the finger lifts, as soon as it touches, or by holding it (0.5–2 s) — handled by the touch events of each card. |
+| Try the board | The full app with the chosen settings; *Finish* creates the child's profile on the server. |
+| Tailored guide | `src/data/guideTailored.ts` writes a "Your board" chapter from the child's real settings and opens it on the new board. |
+| Sync | `src/state/profileSync.ts`: the board works from the copy on the tablet; changes are sent a moment later; if someone else saved in between, both changes are merged (tested with Jest). |
+

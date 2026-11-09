@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { GUIDE, GUIDE_TRACK_INTRO, type GuideAction, type GuideChapter, type GuideTrack } from '../../data/guide';
+import { tailoredChapter } from '../../data/guideTailored';
 import { locate } from '../../lib/search';
 import type { DemoStep } from '../../model/types';
 import { useApp } from '../../state/AppState';
@@ -20,9 +21,11 @@ export function GuidePanel() {
   const { t, profile, editMode } = app;
   const ui = profile.settings.uiLang;
   const [track, setTrack] = useState<GuideTrack>(editMode ? 'pro' : 'start');
-  const [open, setOpen] = useState<string | null>(null);
+  // After the set-up journey: "Your board" first (written from this child's settings), open.
+  const mine = tailoredChapter(profile);
+  const [open, setOpen] = useState<string | null>(mine && !profile.guide?.read?.includes(mine.id) ? mine.id : null);
   const read = profile.guide?.read ?? [];
-  const chapters = GUIDE.filter((c) => c.track === track);
+  const chapters = [...(mine && track === 'start' ? [mine] : []), ...GUIDE.filter((c) => c.track === track)];
   const readHere = chapters.filter((c) => read.includes(c.id)).length;
 
   // Opening the guide counts as having seen the welcome card.

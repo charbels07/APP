@@ -52,6 +52,9 @@ export interface Answers {
   access: 'release' | 'press' | 'hold';
   holdTime: number;
   repeatDelay: number;
+  /** Optional plans next to the day plan. */
+  planWeek: boolean;
+  planMonth: boolean;
 }
 
 export function emptyAnswers(lang: Lang): Answers {
@@ -72,6 +75,8 @@ export function emptyAnswers(lang: Lang): Answers {
     access: 'release',
     holdTime: 1,
     repeatDelay: 2,
+    planWeek: false,
+    planMonth: false,
   };
 }
 
@@ -128,6 +133,7 @@ export function applyAnswers(base: Profile, a: Answers, custom: { id: string; la
   st.access = a.access;
   st.holdTime = a.holdTime;
   st.repeatDelay = a.repeatDelay;
+  st.plans = { week: !!a.planWeek, month: !!a.planMonth };
 
   for (const c of custom) {
     p.customConcepts[c.id] = {

@@ -3,7 +3,8 @@
  * « pizza » ajouté dans « nourriture », Réglage modifié : vitesse de la voix…
  * Labels of the old values come from the profile before the change, new ones from after.
  */
-import type { Lang, Profile, UiLang } from '../model/types';
+import { dayLabel, parseYmd, WEEKDAYS } from '../data/calendar';
+import type { Lang, MonthEvent, Profile, UiLang } from '../model/types';
 import type { IconName } from '../ui/Icon';
 import { areaOf } from './permissions';
 import { getConcept, label } from './lexicon';
@@ -40,6 +41,9 @@ const W = {
     setting: (n: string) => `Réglage modifié : ${n}`,
     firstThen: 'D’abord / Ensuite modifié',
     help: 'Bouton Aide modifié',
+    weekDay: (d: string) => `Planning de la semaine : ${d} modifié`,
+    eventNew: (w: string, d: string) => `Planning du mois : « ${w} » le ${d}`,
+    eventGone: (w: string, d: string) => `Planning du mois : « ${w} » du ${d} retiré`,
   },
   en: {
     added: (w: string, b: string) => `“${w}” added to “${b}”`,
@@ -61,6 +65,9 @@ const W = {
     setting: (n: string) => `Setting changed: ${n}`,
     firstThen: 'First / Then changed',
     help: 'Help button changed',
+    weekDay: (d: string) => `Week plan: ${d} changed`,
+    eventNew: (w: string, d: string) => `Month plan: “${w}” on ${d}`,
+    eventGone: (w: string, d: string) => `Month plan: “${w}” on ${d} removed`,
   },
   ar: {
     added: (w: string, b: string) => `أُضيفت «${w}» إلى «${b}»`,
@@ -82,6 +89,9 @@ const W = {
     setting: (n: string) => `تعديل إعداد: ${n}`,
     firstThen: 'تعديل أولاً / ثم',
     help: 'تعديل زر المساعدة',
+    weekDay: (d: string) => `جدول الأسبوع: تعديل ${d}`,
+    eventNew: (w: string, d: string) => `جدول الشهر: «${w}» في ${d}`,
+    eventGone: (w: string, d: string) => `جدول الشهر: إزالة «${w}» في ${d}`,
   },
 };
 
@@ -111,6 +121,7 @@ const SETTING_NAMES: Record<string, Record<UiLang, string>> = {
   addToStrip: { fr: 'ajouter à la phrase', en: 'add to sentence', ar: 'الإضافة إلى الجملة' },
   timer: { fr: 'minuteur', en: 'timer', ar: 'المؤقت' },
   autoOpenApps: { fr: 'ouverture des applis', en: 'opening apps', ar: 'فتح التطبيقات' },
+  plans: { fr: 'plannings de la semaine et du mois', en: 'week and month plans', ar: 'جداول الأسبوع والشهر' },
 };
 
 export function describeOps(ops: Op[], before: Profile, ui: UiLang, lang: Lang): ChangeItem[] {
@@ -162,6 +173,16 @@ export function describeOps(ops: Op[], before: Profile, ui: UiLang, lang: Lang):
     if (kind === 'setting') {
       const k = op.path[1] as string;
       return { icon: 'settings', text: w.setting(SETTING_NAMES[k]?.[ui] ?? k), core };
+    }
+    if (kind === 'weekDay') return { icon: 'calendar', text: w.weekDay(WEEKDAYS[ui][Number(op.path[1])] ?? ''), core };
+    if (kind === 'monthEvent') {
+      const eb = op.before as MonthEvent | undefined;
+      const ea = op.after as MonthEvent | undefined;
+      const e = ea ?? eb;
+      const date = e ? dayLabel(parseYmd(e.date), ui) : '';
+      return ea
+        ? { icon: 'calendar', text: w.eventNew(wordA(ea.concept), date), after: ea.concept, core }
+        : { icon: 'calendar', text: w.eventGone(wordB(eb?.concept), date), before: eb?.concept, core };
     }
     if (kind === 'tlaOrder') return { icon: 'list', text: w.tlaOrder, core };
     if (kind === 'activeSchedule') return { icon: 'calendar', text: w.activeSchedule, core };

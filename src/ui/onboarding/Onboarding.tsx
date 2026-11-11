@@ -41,7 +41,7 @@ import { ErrorText, LinkBtn, StartLayout, T, st, useRtl } from '../start/StartLa
 import { SymbolView } from '../SymbolView';
 import { C, CLASS_COLORS, radius } from '../theme';
 
-const STEPS = ['child', 'langs', 'voice', 'comm', 'activities', 'visual', 'feedback', 'review', 'vocab', 'layout', 'access', 'try'] as const;
+const STEPS = ['child', 'langs', 'voice', 'comm', 'activities', 'visual', 'feedback', 'review', 'vocab', 'layout', 'access', 'plans', 'try'] as const;
 type StepId = (typeof STEPS)[number];
 const SETUP_FROM = STEPS.indexOf('vocab');
 const LANG_LABEL: Record<Lang, string> = { fr: 'Français', en: 'English', ar: 'عربي (لبناني)' };
@@ -180,6 +180,7 @@ export function Onboarding() {
       )}
       {stepId === 'layout' && <LayoutStep o={o} a={a} set={set} />}
       {stepId === 'access' && <AccessStep o={o} a={a} set={set} />}
+      {stepId === 'plans' && <PlansStep o={o} a={a} set={set} />}
       <ErrorText text={error} />
       <View style={[s.footer, useRtlRow()]}>
         <Btn label={o.back} onPress={back} style={{ flex: 1 }} />
@@ -628,6 +629,18 @@ function AccessStep({ o, a, set }: StepProps) {
       <T style={s.label}>{o.repeatDelay}</T>
       <Segmented<number> value={a.repeatDelay} onChange={(repeatDelay) => set({ repeatDelay })} options={[0, 1, 2, 3, 5].map((v) => ({ value: v, label: `${v} ${o.sec}` }))} />
       <T style={{ color: C.textMuted, fontSize: 14 }}>{o.accessLater}</T>
+    </>
+  );
+}
+
+function PlansStep({ o, a, set }: StepProps) {
+  return (
+    <>
+      <Title text={o.plansTitle} intro={o.plansIntro} />
+      <Option multi label={o.planDay} note={o.planDayNote} selected onPress={() => {}} />
+      <Option multi label={o.planWeek} note={o.planWeekNote} selected={!!a.planWeek} onPress={() => set({ planWeek: !a.planWeek })} />
+      <Option multi label={o.planMonth} note={o.planMonthNote} selected={!!a.planMonth} onPress={() => set({ planMonth: !a.planMonth })} />
+      <T style={{ color: C.textMuted, fontSize: 14 }}>{o.plansLater}</T>
     </>
   );
 }

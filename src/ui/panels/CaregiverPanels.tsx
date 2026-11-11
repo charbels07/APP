@@ -824,6 +824,21 @@ export function BoardSettingsBody() {
         </Section>
       )}
 
+      <Section title={o.plansTitle}>
+        <Toggle
+          label={o.planWeek}
+          note={o.planWeekNote}
+          value={!!st.plans?.week}
+          onChange={(v) => set((x) => void (x.plans = { ...(x.plans ?? { week: false, month: false }), week: v }))}
+        />
+        <Toggle
+          label={o.planMonth}
+          note={o.planMonthNote}
+          value={!!st.plans?.month}
+          onChange={(v) => set((x) => void (x.plans = { ...(x.plans ?? { week: false, month: false }), month: v }))}
+        />
+      </Section>
+
       <Section title={o.presentationAccess}>
         <Text style={s.label}>{o.langTitle}</Text>
         <View style={s.wrapRow}>

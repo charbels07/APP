@@ -49,6 +49,7 @@ export function migrate(p: Partial<Profile>): Profile {
       ...(p.settings ?? {}),
       bar: { ...DEFAULT_SETTINGS.bar, ...(p.settings?.bar ?? {}) },
       timer: { ...DEFAULT_SETTINGS.timer, ...(p.settings?.timer ?? {}) },
+      plans: { ...DEFAULT_SETTINGS.plans, ...(p.settings?.plans ?? {}) },
     },
     boards,
     tlaOrder: (p.tlaOrder ?? base.tlaOrder).filter((id) => boards[id]),
@@ -57,6 +58,8 @@ export function migrate(p: Partial<Profile>): Profile {
     customConcepts: p.customConcepts ?? {},
     schedules: p.schedules ?? base.schedules,
     demos: p.demos ?? [],
+    weekPlan: p.weekPlan ?? {},
+    monthPlan: p.monthPlan ?? {},
     migrations,
   };
 }

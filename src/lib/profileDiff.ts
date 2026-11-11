@@ -20,7 +20,11 @@ export type OpPath =
   | ['activeSchedule']
   | ['setting', string]
   | ['firstThen']
-  | ['help'];
+  | ['help']
+  /** Week plan: one weekday ('0' = Monday). */
+  | ['weekDay', string]
+  /** Month plan: one event. */
+  | ['monthEvent', string];
 
 export interface Op {
   path: OpPath;
@@ -86,6 +90,8 @@ export function diffProfiles(base: Profile, draft: Profile): Op[] {
   }
   if (!same(base.firstThen, draft.firstThen)) ops.push({ path: ['firstThen'], before: clone(base.firstThen), after: clone(draft.firstThen) });
   if (!same(base.help, draft.help)) ops.push({ path: ['help'], before: clone(base.help), after: clone(draft.help) });
+  keyedDiff((id) => ['weekDay', id], base.weekPlan ?? {}, draft.weekPlan ?? {}, ops);
+  keyedDiff((id) => ['monthEvent', id], base.monthPlan ?? {}, draft.monthPlan ?? {}, ops);
   return ops;
 }
 
@@ -111,6 +117,10 @@ export function getAt(p: Profile, path: OpPath): unknown {
       return p.firstThen;
     case 'help':
       return p.help;
+    case 'weekDay':
+      return p.weekPlan?.[path[1]];
+    case 'monthEvent':
+      return p.monthPlan?.[path[1]];
   }
 }
 
@@ -157,6 +167,16 @@ export function setAt(p: Profile, path: OpPath, value: unknown): void {
       return;
     case 'help':
       if (v !== undefined) p.help = v as Profile['help'];
+      return;
+    case 'weekDay':
+      p.weekPlan ??= {};
+      if (v === undefined) delete p.weekPlan[path[1]];
+      else p.weekPlan[path[1]] = v as NonNullable<Profile['weekPlan']>[string];
+      return;
+    case 'monthEvent':
+      p.monthPlan ??= {};
+      if (v === undefined) delete p.monthPlan[path[1]];
+      else p.monthPlan[path[1]] = v as NonNullable<Profile['monthPlan']>[string];
       return;
   }
 }

@@ -264,6 +264,7 @@ export const DEFAULT_SETTINGS: Settings = {
   haptics: true,
   access: 'release',
   holdTime: 1,
+  plans: { week: false, month: false },
 };
 
 export const DEFAULT_HELP: HelpConfig = {
@@ -290,6 +291,8 @@ export function createDefaultProfile(): Profile {
     customConcepts: {},
     help: structuredClone(DEFAULT_HELP),
     demos: [],
+    weekPlan: {},
+    monthPlan: {},
     migrations: ['apps'],
   };
 }

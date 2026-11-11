@@ -173,6 +173,22 @@ export interface Settings {
    */
   access: 'release' | 'press' | 'hold';
   holdTime: number;
+  /** Optional plans shown in Planning, next to the day plan (chosen at set-up or in Settings). */
+  plans: { week: boolean; month: boolean };
+}
+
+/** A picture in the week plan (for one weekday). */
+export interface PlanItem {
+  id: string;
+  concept: string;
+}
+
+/** An event of the month plan (birthday, holiday, doctor…). */
+export interface MonthEvent {
+  id: string;
+  /** YYYY-MM-DD */
+  date: string;
+  concept: string;
 }
 
 export interface HelpConfig {
@@ -200,6 +216,10 @@ export interface Profile {
   help: HelpConfig;
   /** Recorded demonstrations (modelling), replayed with an animated pointer. */
   demos: Demo[];
+  /** Week plan: pictures per weekday, '0' = Monday … '6' = Sunday. */
+  weekPlan?: Record<string, PlanItem[]>;
+  /** Month plan: events by id. */
+  monthPlan?: Record<string, MonthEvent>;
   /** One-time additions already applied to this profile (so a removed item is not added back). */
   migrations?: string[];
   /** In-app guide: welcome card dismissed, chapters already read. */

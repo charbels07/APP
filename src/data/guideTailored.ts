@@ -53,9 +53,9 @@ export function tailoredChapter(p: Profile): GuideChapter | null {
   );
   if ((st.langs?.length ?? 1) > 1) {
     lines.push({
-      fr: `Langues de l’enfant : ${langs}. Le bouton Langue de la barre change de langue ; les mots restent au même endroit.`,
-      en: `The child’s languages: ${langs}. The Language button on the bar switches language; words stay in the same place.`,
-      ar: `لغات الطفل: ${langs}. زر اللغة في الشريط يغيّر اللغة؛ تبقى الكلمات في المكان نفسه.`,
+      fr: `Langues de l’enfant : ${langs}. On change de langue dans les Réglages (mode accompagnant) ; les mots restent au même endroit.`,
+      en: `The child’s languages: ${langs}. The language is changed in Settings (caregiver mode); words stay in the same place.`,
+      ar: `لغات الطفل: ${langs}. تُغيَّر اللغة من الإعدادات (وضع المرافق)؛ تبقى الكلمات في المكان نفسه.`,
     });
   }
   if (favourites) {

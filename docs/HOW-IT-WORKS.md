@@ -171,6 +171,7 @@ is not involved. `sharp` is only a development tool (it is not shipped in the ap
 | Settings always in three pages | `src/ui/settings/SettingsScreen.tsx` (React Native): Board, Team and Account are now shown in the preview too. Without an account, Team and Account say what they will hold and offer *Create my account*. |
 | Language button removed from the bar | The globe button was taken out of `src/ui/UniversalBar.tsx`. Languages are chosen in Settings (caregiver mode): *Communication language* and *Navigation language*. Consequence: the child can no longer change language alone. |
 | Keyboard → pictograms | `src/lib/typedWords.ts` (TypeScript, 8 Jest tests): each typed word becomes a card with a picture — the word of the child's boards when it exists (« veux » → vouloir, « brosse à dents » on one card, « l'école » → école), else a pictogram of the offline library, else no picture (little words such as « une »). The card keeps exactly what was typed and is said as written. The keyboard panel shows the cards before they are added. Words kept away from children (alcohol…) never get a picture. |
+| Guide brought up to date | `src/data/guide.ts` (TypeScript text in French, English and Arabic): two new chapters (*Where the pictograms come from*, *Professionals: proposing changes*) and updated ones (settings pages, languages in Settings, keyboard pictures, new-board options, week and month plans, picture sources, printing). A Jest test checks that the guide quotes the real names of the buttons, so it cannot drift silently. |
 | Phone width | On a narrow screen the *New board* button keeps only its « + » so the board tabs stay visible, and the caregiver banner no longer cuts its *Done* button. |
 
 ## How everything is checked
@@ -178,7 +179,7 @@ is not involved. `sharp` is only a development tool (it is not shipped in the ap
 | Check | What it does |
 |---|---|
 | `npm run typecheck` | TypeScript reads the whole code and refuses mistakes such as a missing field or a wrong type. |
-| `npm test` | 142 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences. |
+| `npm test` | 143 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences. |
 | `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger and a tablet; 35+ checks. |
 | `npm run test:live` | The same story on the real Supabase project, through the app's own code: 13 steps, including devices, history undo, invitation codes, revisions and materials (needs "Confirm email" off while it runs). Last run: all 13 passed. |
 | Browser walkthroughs | Playwright drives the web version like a person: the parent journey, the team (invite, undo, join with a code), the professional journey (verification, tour, request, draft, proposal, approval), and the Arabic screens. |

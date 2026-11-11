@@ -289,14 +289,14 @@ const BASE: BaseChapter[] = [
         'Accompagnant (cadenas), puis le code : 1234 au départ — changez-le dans Réglages → Sécurité.',
         'Le bandeau jaune indique qu’on peut modifier : toucher une case ouvre ses réglages ; pour un dossier, appui long.',
         'Réglages et Imprimer / PDF sont dans le bandeau. Terminer revient au mode enfant.',
-        'Tout est gardé sur l’appareil, même après l’avoir éteint.',
+        'Tout est gardé sur l’appareil, même après l’avoir éteint ; avec un compte, c’est aussi sauvegardé en ligne et les autres appareils de la famille se mettent à jour.',
         'Réglages → Tableau → Mode verrouillé : l’enfant ne peut plus ouvrir d’autres applis ni revenir en arrière ; pour l’empêcher de quitter l’application, activez aussi l’Accès guidé (iPad) ou l’épinglage d’écran (Android).',
       ],
       en: [
         'Caregiver (padlock), then the code: 1234 at first — change it in Settings → Security.',
         'The yellow banner means you can edit: touching a card opens its settings; for a folder, long press.',
         'Settings and Print / PDF are in the banner. Done goes back to child mode.',
-        'Everything is kept on the device, even after switching it off.',
+        'Everything is kept on the device, even after switching it off; with an account it is also saved online and the family’s other devices update themselves.',
         'Settings → Board → Child lock: the child can no longer open other apps or go back; to stop them leaving the app, also turn on Guided Access (iPad) or screen pinning (Android).',
       ],
     },
@@ -351,20 +351,43 @@ const BASE: BaseChapter[] = [
     steps: {
       fr: [
         'En mode accompagnant, touchez la case : libellés en français, anglais et libanais.',
-        'Image : Pictogrammes (bibliothèque hors ligne : Mulberry, OpenMoji…), Photo (galerie ou appareil photo), ou Internet (autres banques de pictogrammes, photos et dessins libres, Coller l’image, lien d’une image). L’auteur et la licence s’affichent.',
+        'Image : Pictogrammes (bibliothèque hors ligne d’environ 24 000 images ; cherchez en français, en anglais ou en arabe, et touchez le nom d’une banque — Mulberry, OpenMoji… — pour ne voir que la sienne), Photo (galerie ou appareil photo), ou Internet (pictogrammes Mulberry et OpenMoji en ligne, photos et dessins libres, Coller l’image, lien d’une image). La source et la licence sont gardées avec le mot.',
         'Voix enregistrée : enregistrez votre voix ou celle d’un proche, pour chaque langue — idéal pour le libanais.',
         'Catégorie (couleur) et Affichage de la case (image + texte, image seule, texte seul).',
         'Carte : taille, agrandir sur les cases vides voisines, intensité de la couleur pour attirer l’attention.',
       ],
       en: [
         'In caregiver mode, touch the card: labels in French, English and Lebanese Arabic.',
-        'Picture: Pictograms (offline library: Mulberry, OpenMoji…), Photo (library or camera), or Internet (other pictogram sets, free photos and drawings, Paste picture, picture link). Author and licence are shown.',
+        'Picture: Pictograms (offline library of about 24,000 pictures; search in French, English or Arabic, and touch a library’s name — Mulberry, OpenMoji… — to see only its pictures), Photo (library or camera), or Internet (Mulberry and OpenMoji pictograms online, free photos and drawings, Paste picture, picture link). The source and licence are kept with the word.',
         'Recorded voice: record your voice or a relative’s, for each language — ideal for Lebanese Arabic.',
         'Category (colour) and Cell display (picture + text, picture only, text only).',
         'Card: size, spread over empty neighbouring slots, colour strength to draw attention.',
       ],
     },
     action: 'caregiver',
+  },
+  {
+    id: 'pictos',
+    track: 'pro',
+    icon: 'shield',
+    title: { fr: 'D’où viennent les pictogrammes', en: 'Where the pictograms come from' },
+    steps: {
+      fr: [
+        'Les pictogrammes viennent de dix banques libres, utilisables sans frais : Mulberry (symboles de CAA) et OpenMoji d’abord, puis Fluent Emoji, Noto Emoji, Twemoji, Health Icons, Material Symbols, Phosphor, Lucide et Tabler. Environ 24 000 images, toutes dans l’application : pas besoin d’Internet.',
+        'Un même mot a souvent plusieurs dessins : choisissez celui que l’enfant comprend le mieux, et gardez-le.',
+        'Un astérisque (*) à côté d’un mot signale une « Traduction automatique : à vérifier » : regardez bien l’image avant de la choisir.',
+        'Réglages → À propos → Crédits et licences des pictogrammes : les auteurs, les licences et leurs textes. La liste se met à jour toute seule ; le même bouton est sur la page d’accueil.',
+        'Les logos de marques ne font pas partie de la bibliothèque ; les images d’alcool, de tabac ou d’armes ne sont jamais proposées automatiquement.',
+      ],
+      en: [
+        'The pictograms come from ten open libraries that are free to use: Mulberry (AAC symbols) and OpenMoji first, then Fluent Emoji, Noto Emoji, Twemoji, Health Icons, Material Symbols, Phosphor, Lucide and Tabler. About 24,000 pictures, all inside the app: no internet needed.',
+        'One word often has several drawings: choose the one the child understands best, and keep it.',
+        'An asterisk (*) next to a word means “Automatic translation: to check”: look at the picture carefully before choosing it.',
+        'Settings → About → Pictogram credits & licences: the authors, the licences and their texts. The list updates by itself; the same button is on the welcome page.',
+        'Brand logos are not part of the library; pictures of alcohol, tobacco or weapons are never suggested automatically.',
+      ],
+    },
+    action: 'settings',
   },
   {
     id: 'addWord',
@@ -398,12 +421,14 @@ const BASE: BaseChapter[] = [
         'L’application reconnaît environ 45 situations et propose les mots ET les étapes dans l’ordre. Sujet inconnu : Demander à l’IA (seul le sujet est envoyé).',
         'Touchez un mot ou une étape pour le retirer, ajoutez-en, puis Créer le TLA.',
         'Option « Créer aussi le planning de ces étapes » : le planning est relié au TLA, avec minuteurs (ex. four 30 min).',
+        'Autres façons : Créer un TLA vide (vous choisissez chaque mot) ; Créer à partir d’une photo (un menu, une boîte de jeu, des ingrédients : vérifiez les mots proposés avant de créer) ; Importer un fichier ou Partagés avec moi (un TLA qu’on vous a envoyé).',
       ],
       en: [
         'Boards → New board (caregiver mode) → type the topic (e.g. “baking a cake”) → Suggest words.',
         'The app recognises about 45 situations and suggests the words AND the steps in order. Unknown topic: Ask the AI (only the topic is sent).',
         'Touch a word or a step to remove it, add more, then Create board.',
         'Option “Also create a schedule of these steps”: the schedule is linked to the board, with timers (e.g. oven 30 min).',
+        'Other ways: Create an empty board (you choose every word); Create from a photo (a menu, a game box, ingredients: check the suggested words before creating); Import a file or Shared with me (a board someone sent you).',
       ],
     },
     action: 'newTla',
@@ -418,11 +443,13 @@ const BASE: BaseChapter[] = [
         'Planning → + (nouveau planning) ou Modifier le planning (mode accompagnant).',
         'Chaque étape : un pictogramme, un TLA lié et une durée de minuteur si besoin.',
         'D’abord / Ensuite : en mode accompagnant, touchez chaque case pour choisir l’image.',
+        'Semaine et Mois (à activer dans Réglages → Tableau → Plannings) : en mode accompagnant, + ajoute un pictogramme à un jour, toucher un pictogramme le retire.',
       ],
       en: [
         'Schedule → + (new schedule) or Edit schedule (caregiver mode).',
         'Each step: a pictogram, a linked activity board and a timer duration if needed.',
         'First / Then: in caregiver mode, touch each card to choose the picture.',
+        'Week and Month (turn them on in Settings → Board → Plans): in caregiver mode, + adds a picture to a day, touching a picture removes it.',
       ],
     },
     action: 'schedule',
@@ -453,14 +480,22 @@ const BASE: BaseChapter[] = [
     title: { fr: 'Les réglages utiles', en: 'Useful settings' },
     steps: {
       fr: [
+        'Les Réglages ont plusieurs pages : Tableau (les réglages de l’enfant, décrits ici), Équipe, Suivi (si la famille l’a choisi) et Compte. Sans compte, Équipe et Compte expliquent seulement ce qu’ils contiendront.',
+        'Langues : Langue de communication (ce que dit l’appareil, ce qui est écrit sur les cases) et Langue de navigation (menus, boutons, guide).',
         'Communication : prononcer chaque mot, ajouter à la phrase, grammaire automatique (à couper pour travailler une forme), accords au féminin, zone rapide (oui, non, stop, attends…), délai entre deux appuis sur le même pictogramme (2 s : fini les « pas pas pas »), faire vibrer les pictogrammes, ouvrir l’appli citée dans une phrase.',
+        'Images : Bibliothèque de symboles (Pictogrammes ou Emoji) et Afficher le texte sous les images. Présentation et accès : boutons et texte plus grands ou contraste élevé, taille des images, façon de sélectionner (toucher puis lever le doigt, dès que le doigt touche, ou garder le doigt appuyé avec une durée d’appui), moins d’animations, petite vibration au toucher.',
         'Barre universelle : masquer TLA, Planning ou Minuteur si l’enfant n’en a pas besoin (CAA et Aide restent toujours).',
         'Voix : féminine ou masculine, adulte ou enfant (Type de voix, Âge de la voix), vitesse, ou une voix précise par langue. Bouton Aide : le message dit en premier, les informations utiles.',
+        'Aussi : Plannings (semaine, mois), Mode verrouillé (enfant), Sécurité (le code accompagnant), Données (propositions par IA, Exporter le profil, Réinitialiser le profil) et À propos (crédits et licences des pictogrammes).',
       ],
       en: [
+        'Settings has several pages: Board (the child’s settings, described here), Team, Progress (if the family chose it) and Account. Without an account, Team and Account only explain what they will hold.',
+        'Languages: Communication language (what the device says, what is written on the cards) and Navigation language (menus, buttons, guide).',
         'Communication: say each word, add to sentence, automatic grammar (turn off to practise a form), feminine agreement, quick zone (yes, no, stop, wait…), delay between two presses on the same pictogram (2 s: no more “no no no”), wiggling pictograms, open the app mentioned in a sentence.',
+        'Pictures: Symbol library (Pictograms or Emoji) and Show text under images. Presentation and access: larger buttons and text or high contrast, picture size, access method (touch then lift the finger, as soon as the finger touches, or keep the finger pressed with a hold time), fewer animations, small vibration on touch.',
         'Universal bar: hide Boards, Schedule or Timer if the child doesn’t need them (AAC and Help always stay).',
         'Voice: female or male, adult or child (Voice type, Voice age), speed, or a specific voice per language. Help button: the first message said, the useful information.',
+        'Also: Plans (week, month), Child lock, Security (the caregiver code), Data (AI suggestions, Export profile, Reset profile) and About (pictogram credits and licences).',
       ],
     },
     action: 'settings',
@@ -487,6 +522,28 @@ const BASE: BaseChapter[] = [
       ],
     },
     action: 'settings',
+  },
+  {
+    id: 'proposals',
+    track: 'pro',
+    icon: 'briefcase',
+    title: { fr: 'Professionnels : proposer des changements', en: 'Professionals: proposing changes' },
+    steps: {
+      fr: [
+        'Depuis votre espace, Mes utilisateurs ouvre le tableau d’un enfant. Vos droits sont choisis par la famille : Utiliser, Contribuer ou Modifier directement.',
+        'Contribuer : vos changements vont dans un brouillon. Un bandeau indique combien sont prêts ; rien ne change pour l’enfant avant l’accord de la famille.',
+        'Envoyer pour approbation : donnez un titre à la proposition et, si vous voulez, la raison. La famille voit l’avant / après et approuve, demande une modification ou refuse.',
+        'Modifier directement : vos changements s’appliquent tout de suite et apparaissent dans l’historique. Utiliser : vous pouvez utiliser le tableau et modéliser, sans rien changer.',
+        'Créer des supports : préparez un TLA, un planning, un D’abord / Ensuite, un minuteur ou des cartes à imprimer, pour un enfant ou comme modèle réutilisable, et gardez-les dans Ma bibliothèque. Centre d’apprentissage : un tableau de démonstration pour s’exercer, où rien n’est enregistré.',
+      ],
+      en: [
+        'From your workspace, My AAC users opens a child’s board. Your rights are chosen by the family: Use, Contribute or Edit directly.',
+        'Contribute: your changes go into a draft. A banner says how many are ready; nothing changes for the child before the family agrees.',
+        'Send for approval: give the proposal a title and, if you like, the reason. The family sees before / after and approves, asks for a change or declines.',
+        'Edit directly: your changes apply at once and appear in the history. Use: you can use the board and model, without changing anything.',
+        'Create materials: prepare an activity board, a schedule, a First / Then, a timer or picture cards, for one child or as a reusable template, and keep them in My library. Learning center: a demonstration board to practise, where nothing is saved.',
+      ],
+    },
   },
   {
     id: 'linkApp',
@@ -517,12 +574,12 @@ const BASE: BaseChapter[] = [
     steps: {
       fr: [
         'Imprimer / PDF (mode accompagnant) : tableau affiché, dossiers, TLA, plannings, D’abord / Ensuite.',
-        'A4 ou A3, portrait ou paysage, noir et blanc, cartes à découper.',
+        'A4 ou A3, portrait ou paysage, noir et blanc, cartes à découper. Chaque page porte en bas la ligne de crédit des pictogrammes.',
         'Gardez toujours une version papier : batterie vide, piscine, plage…',
       ],
       en: [
         'Print / PDF (caregiver mode): current board, folders, activity boards, schedules, First / Then.',
-        'A4 or A3, portrait or landscape, black and white, cut-out cards.',
+        'A4 or A3, portrait or landscape, black and white, cut-out cards. Each page carries the pictogram credit line at the bottom.',
         'Always keep a paper version: flat battery, swimming pool, beach…',
       ],
     },
@@ -698,7 +755,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
       '«المرافق» (القفل)، ثم الرمز: 1234 في البداية — غيّره في الإعدادات ← الأمان.',
       'الشريط الأصفر يعني أنك تستطيع التعديل: لمس بطاقة يفتح إعداداتها؛ وللمجلد، ضغطة طويلة.',
       '«الإعدادات» و«طباعة / PDF» في الشريط الأصفر. «إنهاء» يعيد إلى وضع الطفل.',
-      'يُحفظ كل شيء على الجهاز، حتى بعد إطفائه.',
+      'يُحفظ كل شيء على الجهاز، حتى بعد إطفائه؛ ومع حساب يُحفظ أيضاً على الإنترنت وتتحدّث أجهزة العائلة الأخرى تلقائياً.',
       'الإعدادات ← اللوحة ← وضع القفل: لا يستطيع الطفل فتح تطبيقات أخرى ولا الرجوع؛ ولمنعه من الخروج من التطبيق، فعّل أيضاً «الوصول الموجَّه» (آيباد) أو «تثبيت الشاشة» (أندرويد).',
     ],
   },
@@ -723,10 +780,20 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
     title: 'تعديل كلمة',
     steps: [
       'في وضع المرافق، المس البطاقة: التسميات بالفرنسية والإنجليزية واللبنانية.',
-      'الصورة: «رموز» (مكتبة دون إنترنت: Mulberry و OpenMoji…)، «صورة» (المعرض أو الكاميرا)، أو «الإنترنت» (بنوك رموز أخرى، صور ورسومات حرة، «لصق الصورة»، رابط صورة). يظهر المؤلف والترخيص.',
+      'الصورة: «رموز» (مكتبة دون إنترنت فيها نحو 24 ألف صورة؛ ابحث بالفرنسية أو الإنجليزية أو العربية، والمس اسم مكتبة — Mulberry أو OpenMoji… — لترى صورها فقط)، «صورة» (المعرض أو الكاميرا)، أو «الإنترنت» (رموز Mulberry و OpenMoji على الإنترنت، صور ورسومات حرة، «لصق الصورة»، رابط صورة). يُحفظ المصدر والترخيص مع الكلمة.',
       '«صوت مسجّل»: سجّل صوتك أو صوت أحد الأقارب، لكل لغة — مثالي للّبنانية.',
       '«الفئة (اللون)» و«عرض الخانة» (صورة + نص، صورة فقط، نص فقط).',
       'البطاقة: الحجم، التوسّع على الخانات الفارغة المجاورة، شدّة اللون لجذب الانتباه.',
+    ],
+  },
+  pictos: {
+    title: 'من أين تأتي الرموز',
+    steps: [
+      'تأتي الرموز من عشر مكتبات مفتوحة يمكن استعمالها مجاناً: Mulberry (رموز للتواصل البديل) و OpenMoji أولاً، ثم Fluent Emoji و Noto Emoji و Twemoji و Health Icons و Material Symbols و Phosphor و Lucide و Tabler. نحو 24 ألف صورة، كلها داخل التطبيق: لا حاجة إلى الإنترنت.',
+      'للكلمة الواحدة غالباً عدة رسومات: اختر ما يفهمه الطفل أكثر، واحتفظ به.',
+      'النجمة (*) بجانب كلمة تعني «ترجمة آلية: للتحقق»: انظر إلى الصورة جيداً قبل اختيارها.',
+      'الإعدادات ← حول التطبيق ← «حقوق وتراخيص الرموز»: المؤلفون والتراخيص ونصوصها. تتحدّث القائمة تلقائياً؛ والزر نفسه موجود في صفحة الترحيب.',
+      'شعارات الشركات ليست ضمن المكتبة؛ وصور الكحول أو التبغ أو الأسلحة لا تُقترح تلقائياً أبداً.',
     ],
   },
   addWord: {
@@ -745,6 +812,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
       'يتعرّف التطبيق على نحو 45 موقفاً مكتوباً بالفرنسية أو الإنجليزية، ويقترح الكلمات والخطوات بالترتيب. موضوع غير معروف: «اسأل الذكاء الاصطناعي» (يُرسل الموضوع فقط).',
       'المس كلمة أو خطوة لإزالتها، أضف غيرها، ثم «إنشاء اللوحة».',
       'خيار «إنشاء جدول لهذه الخطوات أيضاً»: يرتبط الجدول باللوحة، مع مؤقتات (مثلاً الفرن 30 دقيقة).',
+      'طرق أخرى: «إنشاء لوحة فارغة» (تختار كل كلمة بنفسك)؛ «الإنشاء من صورة» (قائمة طعام، علبة لعبة، مكوّنات: تحقّق من الكلمات المقترحة قبل الإنشاء)؛ «استيراد ملف» أو «مُشارَكة معي» (لوحة أرسلها لك شخص).',
     ],
   },
   editSchedule: {
@@ -753,6 +821,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
       '«الجدول» ← + («جدول جديد») أو «تعديل الجدول» (وضع المرافق).',
       'كل خطوة: رمز، ولوحة مرتبطة، ومدة للمؤقت عند الحاجة.',
       '«أولاً / ثم»: في وضع المرافق، المس كل خانة لاختيار الصورة.',
+      'الأسبوع والشهر (فعّلهما من الإعدادات ← اللوحة ← الجداول): في وضع المرافق، + يضيف صورة إلى يوم، ولمس صورة يزيلها.',
     ],
   },
   model: {
@@ -766,9 +835,13 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   settings: {
     title: 'الإعدادات المفيدة',
     steps: [
+      'للإعدادات عدة صفحات: «اللوحة» (إعدادات الطفل، وهي المشروحة هنا)، «الفريق»، «المتابعة» (إذا اختارتها العائلة) و«الحساب». دون حساب، تشرح صفحتا «الفريق» و«الحساب» ما ستحتويانه فقط.',
+      'اللغات: «لغة التواصل» (ما يقوله الجهاز وما يُكتب على البطاقات) و«لغة التنقل» (القوائم والأزرار والدليل).',
       'التواصل: نطق كل كلمة، إضافة الكلمات إلى الجملة، القواعد التلقائية (أوقفها للتدرّب على صيغة)، التأنيث، المنطقة السريعة (نعم، لا، توقف، انتظر…)، المهلة بين ضغطتين على الرمز نفسه (ثانيتان)، اهتزاز الرموز، فتح التطبيق المذكور في جملة.',
+      'الصور: «مكتبة الرموز» (رموز أو إيموجي) و«إظهار النص تحت الصور». «العرض وطريقة الاختيار»: أزرار ونص أكبر أو تباين عالٍ، حجم الصور، طريقة الاختيار (المس ثم ارفع الإصبع، بمجرد أن يلمس الإصبع، أو إبقاء الإصبع مضغوطاً مع مدة الضغط)، حركة أقل، اهتزاز خفيف عند اللمس.',
       'الشريط الدائم: إخفاء «اللوحات» أو «الجدول» أو «المؤقت» إذا لم يحتجها الطفل («التواصل» و«مساعدة» يبقيان دائماً).',
       'الصوت: أنثوي أو ذكوري، بالغ أو طفل («نوع الصوت»، «عمر الصوت»)، السرعة، أو صوت محدد لكل لغة. زر المساعدة: الرسالة الأولى التي تُقال، والمعلومات المفيدة.',
+      'أيضاً: «الجداول» (الأسبوع، الشهر)، «وضع القفل (للطفل)»، «الأمان» (رمز المرافق)، «البيانات» (اقتراحات الذكاء الاصطناعي، تصدير الملف الشخصي، إعادة ضبط الملف الشخصي) و«حول التطبيق» (حقوق وتراخيص الرموز).',
     ],
   },
   team: {
@@ -779,6 +852,16 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
       'الاقتراحات: يظهر كل تغيير مقترح قبل / بعد؛ وافق، أو اطلب تعديلاً، أو ارفض. تغيير مكان كلمة أساسية يحتاج إلى تأكيد.',
       'السجل: من غيّر ماذا ومتى (أبداً ما قاله الطفل)، مع «تراجع».',
       'الحساب ← الأجهزة: ربط جهاز لوحي برمز من 6 أرقام، أو سحب جهاز مفقود.',
+    ],
+  },
+  proposals: {
+    title: 'للمختصين: اقتراح تغييرات',
+    steps: [
+      'من مساحتك، «المستخدمون» يفتح لوحة طفل. العائلة هي التي تختار صلاحياتك: «استعمال»، «مساهمة» أو «تعديل مباشر».',
+      '«مساهمة»: تذهب تغييراتك إلى مسودة. شريط يبيّن عدد التغييرات الجاهزة؛ لا يتغيّر شيء للطفل قبل موافقة العائلة.',
+      '«إرسال للموافقة»: أعطِ الاقتراح عنواناً، واذكر السبب إن شئت. ترى العائلة ما قبل وما بعد، فتوافق أو تطلب تعديلاً أو ترفض.',
+      '«تعديل مباشر»: تُطبَّق تغييراتك فوراً وتظهر في السجلّ. «استعمال»: يمكنك استعمال اللوحة والنمذجة دون تغيير أي شيء.',
+      '«إنشاء مواد»: حضّر لوحة نشاط أو جدولاً أو «أولاً / ثم» أو مؤقتاً أو بطاقات للطباعة، لطفل واحد أو كنموذج يُعاد استعماله، واحفظها في «مكتبتي». «مركز التعلّم»: لوحة تجريبية للتدرّب، لا يُحفظ فيها شيء.',
     ],
   },
   linkApp: {
@@ -794,7 +877,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
     title: 'طباعة نسخة ورقية',
     steps: [
       '«طباعة / PDF» (وضع المرافق): اللوحة المعروضة، المجلدات، اللوحات، الجداول، «أولاً / ثم».',
-      'A4 أو A3، عمودي أو أفقي، أبيض وأسود، بطاقات للقص.',
+      'A4 أو A3، عمودي أو أفقي، أبيض وأسود، بطاقات للقص. في أسفل كل صفحة سطر حقوق الرموز.',
       'احتفظ دائماً بنسخة ورقية: بطارية فارغة، مسبح، شاطئ…',
     ],
   },

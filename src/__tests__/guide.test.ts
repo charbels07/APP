@@ -1,6 +1,11 @@
 import { GUIDE, GUIDE_TRACK_INTRO } from '../data/guide';
 import { createDefaultProfile } from '../data/defaults';
 import { migrate } from '../lib/storage';
+import { dataStrings } from '../i18n/data';
+import { editStrings } from '../i18n/edit';
+import { onboardingStrings } from '../i18n/onboarding';
+import { proStrings } from '../i18n/pro';
+import { settingsStrings } from '../i18n/settings';
 import { strings } from '../i18n/ui';
 
 describe('in-app guide', () => {
@@ -26,6 +31,36 @@ describe('in-app guide', () => {
       for (const label of [t.speak, t.showMe, t.sayWord, t.drawWord, t.newTla, t.markDone, t.firstThen, t.recordDemo, t.saveDemo, t.moveCell, t.createWord, t.pasteImage, t.sExport, t.suggest])
         expect(text(lang)).toContain(label);
     }
+  });
+
+  it('describes the newer features with the names shown on screen', () => {
+    const text = (lang: 'fr' | 'en' | 'ar') => GUIDE.flatMap((c) => c.steps[lang]).join(' ');
+    for (const lang of ['fr', 'en', 'ar'] as const) {
+      const t = strings(lang);
+      const e = editStrings(lang);
+      const st = settingsStrings(lang);
+      const pro = proStrings(lang);
+      const ob = onboardingStrings(lang);
+      const quoted = [
+        // new board: empty, from a photo, imported
+        t.emptyTla, e.photoTitle, e.importFile, e.importShared,
+        // pictogram library
+        t.pictoToReview, t.sAbout, t.sSymbols, t.sShowLabels,
+        // languages now live in Settings; its pages
+        t.sCommLang, t.sInterface, st.tabTeam, st.tabAccount, dataStrings(lang).tab,
+        // presentation and access, plans, lock
+        ob.presentationAccess, ob.plansTitle, t.lockTitle,
+        // professionals
+        pro.nav.users, pro.nav.create, pro.nav.library, pro.nav.learn, pro.sendForApproval, st.levels[1], st.levels[2], st.levels[3],
+      ];
+      for (const label of quoted) expect(text(lang)).toContain(label);
+      // Removed things are no longer described.
+      expect(text(lang)).not.toMatch(/ARASAAC/i);
+    }
+    expect(GUIDE.map((c) => c.id)).toEqual(expect.arrayContaining(['pictos', 'proposals', 'keyboard', 'quickActions', 'progress', 'privacy']));
+    // The language button left the bar: the bar is listed without it.
+    expect(GUIDE.find((c) => c.id === 'screen')!.steps.en[0]).not.toContain('Language');
+    expect(GUIDE.find((c) => c.id === 'language')!.action).toBe('settings');
   });
 
   it('greets new and existing profiles once', () => {

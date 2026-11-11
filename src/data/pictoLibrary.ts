@@ -96,4 +96,5 @@ export const PICTO_PACKS: number[] = [
   require('../../assets/picto/p90.pack'),
   require('../../assets/picto/p91.pack'),
   require('../../assets/picto/p92.pack'),
+  require('../../assets/picto/p93.pack'),
 ];

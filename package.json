@@ -50,7 +50,8 @@
     "fetch:arasaac": "NODE_USE_ENV_PROXY=1 node --experimental-strip-types scripts/fetch-arasaac.ts",
     "build:picto": "NODE_USE_ENV_PROXY=1 node --experimental-strip-types scripts/build-picto-library.ts",
     "test:db": "bash scripts/test-db.sh",
-    "test:live": "jest --testPathIgnorePatterns=/node_modules/ --testPathPatterns=live/ --forceExit --runInBand"
+    "test:live": "jest --testPathIgnorePatterns=/node_modules/ --testPathPatterns=live/ --forceExit --runInBand",
+    "update:picto": "NODE_USE_ENV_PROXY=1 node --experimental-strip-types scripts/build-picto-library.ts --add-missing"
   },
   "private": true,
   "jest": {

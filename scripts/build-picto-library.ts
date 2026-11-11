@@ -3,6 +3,8 @@
  * a new word (search by French / English / Arabic keyword, works offline).
  *
  *   NODE_USE_ENV_PROXY=1 node --experimental-strip-types scripts/build-picto-library.ts
+ *   … --add-missing   keeps the existing packs and only adds pictograms ARASAAC published since
+ *                     (npm run update:picto): a few seconds instead of downloading everything.
  *
  * Requires ImageMagick (`convert`). Output:
  *   assets/picto/index.pidx      JSON: { packs, items: [id, pack, offset, length, fr[], en[], ar[], topics[], sensitive] }
@@ -77,28 +79,50 @@ async function main() {
     .sort((a, b) => sortKey(a).localeCompare(sortKey(b), 'fr') || a - b);
   console.log(`selected ${chosen.length} pictograms`);
 
+  // --add-missing: keep what is already built, add only the pictograms not in it yet.
+  const addMissing = process.argv.includes('--add-missing');
+  type Item = [number, number, number, number, string[], string[], string[], string[], number];
+  let items: Item[] = [];
+  let packs: string[] = [];
+  let todo = chosen;
+  if (addMissing) {
+    const old = JSON.parse(readFileSync(join(outDir, 'index.pidx'), 'utf8')) as { packs: string[]; items: Item[] };
+    items = old.items;
+    packs = old.packs;
+    const have = new Set(items.map((i) => i[0]));
+    todo = chosen.filter((id) => !have.has(id));
+    console.log(`${todo.length} pictograms to add`);
+    if (!todo.length) return;
+  }
+
   let done = 0;
-  await pool(chosen, 16, async (id) => {
+  const failed: number[] = [];
+  await pool(todo, 16, async (id) => {
     const webp = join(cache, 'webp', `${id}.webp`);
     if (!existsSync(webp)) {
       const png = join(cache, 'png', `${id}.png`);
       if (!existsSync(png)) {
-        const res = await fetch(`https://static.arasaac.org/pictograms/${id}/${id}_300.png`);
-        if (!res.ok) return;
+        // The static server misses a few pictograms: the API serves every one of them.
+        let res = await fetch(`https://static.arasaac.org/pictograms/${id}/${id}_300.png`);
+        if (!res.ok) res = await fetch(`https://api.arasaac.org/v1/pictograms/${id}?download=false&resolution=500`);
+        if (!res.ok) {
+          failed.push(id);
+          return;
+        }
         writeFileSync(png, Buffer.from(await res.arrayBuffer()));
       }
       await run('convert', [png, '-resize', `${SIZE}x${SIZE}`, '-quality', String(QUALITY), '-define', 'webp:method=4', webp]);
     }
-    if (++done % 500 === 0) console.log(`${done}/${chosen.length}`);
+    if (++done % 500 === 0) console.log(`${done}/${todo.length}`);
   });
+  if (failed.length) console.warn(`could not download: ${failed.join(', ')}`);
 
-  for (const f of readdirSync(outDir)) if (f.endsWith('.pack') || f.endsWith('.pidx')) unlinkSync(join(outDir, f));
-  const items: [number, number, number, number, string[], string[], string[], string[], number][] = [];
-  const packs: string[] = [];
-  for (let start = 0, pack = 0; start < chosen.length; start += PACK_SIZE, pack++) {
+  if (!addMissing) for (const f of readdirSync(outDir)) if (f.endsWith('.pack') || f.endsWith('.pidx')) unlinkSync(join(outDir, f));
+  const firstPack = packs.length;
+  for (let start = 0, pack = firstPack; start < todo.length; start += PACK_SIZE, pack++) {
     const parts: Buffer[] = [];
     let offset = 0;
-    for (const id of chosen.slice(start, start + PACK_SIZE)) {
+    for (const id of todo.slice(start, start + PACK_SIZE)) {
       const file = join(cache, 'webp', `${id}.webp`);
       if (!existsSync(file)) continue;
       const buf = readFileSync(file);

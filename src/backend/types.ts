@@ -244,3 +244,99 @@ export interface Resource {
 
 /** Result of saving a profile: either the new version, or the newer copy someone else saved. */
 export type SaveResult = { ok: true; version: number } | { ok: false; conflict: ChildRecord };
+
+// ── Communication data (Suivi), collected only with the family's consent ──
+
+/** One session: from the first touch to the last, ended by 5 minutes without any touch. */
+export interface UsageSession {
+  start: number;
+  end: number;
+  /** Time with interactions close together (gaps under 1 minute). */
+  activeMs: number;
+  selections: number;
+  utterances: number;
+}
+
+/** A sentence said by the child (language samples, 'language' consent only). */
+export interface UtteranceSample {
+  t: number;
+  /** Words in order: a word id (concept) or typed text. */
+  tokens: { c?: string; text?: string }[];
+}
+
+/** What one device recorded in one day, for one child. Never the content of conversations
+ *  unless the family chose 'language', and never while an adult models or edits. */
+export interface UsageDay {
+  day: string;
+  deviceId: string;
+  platform: string;
+  /** Consent level when recorded (the server removes anything beyond it). */
+  level: 'usage' | 'vocabulary' | 'language';
+  sessions: UsageSession[];
+  /** Selections per hour of the day (0–23, device's local time) and the time zone. */
+  hours: number[];
+  timeZone: string;
+  selections: number;
+  utterances: number;
+  /** Boards, folders, activity boards, planning, keyboard: how often opened and for how long. */
+  pages: Record<string, { opens: number; ms: number }>;
+  /** Selections by place: main board, folders, activity boards, quick zone, planning, keyboard. */
+  modes: Record<'core' | 'folder' | 'tla' | 'quick' | 'schedule' | 'keyboard', number>;
+  searches: number;
+  tlaCreated: number;
+  offlineMs: number;
+  errors: number;
+  /** Numbers without words, for anonymous statistics. */
+  stats: { distinctConcepts: number; len1: number; len2: number; len3plus: number; tokens: number };
+  /** 'vocabulary' and above: selections per word, words found with search. */
+  concepts?: Record<string, number>;
+  searched?: Record<string, number>;
+  /** 'language' only. */
+  samples?: UtteranceSample[];
+}
+
+export type CommFunction =
+  | 'request_object'
+  | 'request_action'
+  | 'request_help'
+  | 'request_break'
+  | 'request_info'
+  | 'refuse'
+  | 'preference'
+  | 'comment'
+  | 'share_info'
+  | 'answer'
+  | 'greet'
+  | 'attention'
+  | 'emotion'
+  | 'pain'
+  | 'opinion'
+  | 'narrate'
+  | 'repair'
+  | 'humour'
+  | 'self_determination';
+
+/** An adult's note about a communication moment (from a language sample or observed directly). */
+export interface Observation {
+  id: string;
+  profileId: string;
+  /** When it happened. */
+  at: number;
+  /** The language sample it describes (its time), if any. */
+  sampleT?: number;
+  /** What was said or done, in words. */
+  utterance?: string;
+  function?: CommFunction;
+  /** Situation: meal, school, play… */
+  context?: string;
+  /** Who was with the child: parent, therapist, teacher… */
+  partner?: string;
+  /** spontaneous / prompted / modelled */
+  autonomy?: 'spontaneous' | 'prompted' | 'modelled';
+  /** Understood, respected, answered… */
+  result?: string;
+  note?: string;
+  createdBy: string;
+  authorName: string;
+  createdAt: number;
+}

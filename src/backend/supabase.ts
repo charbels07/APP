@@ -19,6 +19,8 @@ import { BackendError, type Backend, type CodeSent, type SignUpInput } from './B
 import { normEmail, normPhone } from './local';
 import {
   DEFAULT_PREFS,
+  type Observation,
+  type UsageDay,
   type Account,
   type AccountPrefs,
   type ChildRecord,
@@ -164,6 +166,23 @@ const toVerification = (r: Row): Verification => ({
   submittedAt: ms(r.submitted_at),
   decidedAt: ms(r.decided_at),
 });
+const toObservation = (r: Row): Observation => ({
+  id: r.id,
+  profileId: r.profile_id,
+  at: ms(r.at) ?? 0,
+  sampleT: r.sample_t ?? undefined,
+  utterance: r.utterance ?? undefined,
+  function: r.function ?? undefined,
+  context: r.context ?? undefined,
+  partner: r.partner ?? undefined,
+  autonomy: r.autonomy ?? undefined,
+  result: r.result ?? undefined,
+  note: r.note ?? undefined,
+  createdBy: r.created_by ?? '',
+  authorName: r.author_name ?? '',
+  createdAt: ms(r.created_at) ?? 0,
+});
+
 const toNotice = (r: Row): Notice => ({
   id: r.id,
   userId: r.user_id,
@@ -610,6 +629,48 @@ export class SupabaseBackend implements Backend {
 
   async submitVerification(): Promise<Verification> {
     return toVerification(await data<Row>(this.sb.rpc('submit_verification')));
+  }
+
+  // ── Communication data (Suivi) ──
+
+  async saveUsageDay(profileId: string, d: UsageDay): Promise<void> {
+    // The database keeps only what the family's consent allows (save_usage_day).
+    await data(this.sb.rpc('save_usage_day', { p_id: profileId, p_dev: d.deviceId, p_day: d.day, p_data: d }));
+  }
+
+  async listUsage(profileId: string, fromDay: string): Promise<UsageDay[]> {
+    const rows = await data<Row[]>(this.sb.from('usage_days').select('data').eq('profile_id', profileId).gte('day', fromDay));
+    return rows.map((r) => r.data as UsageDay);
+  }
+
+  async listObservations(profileId: string): Promise<Observation[]> {
+    const rows = await data<Row[]>(this.sb.from('observations').select('*').eq('profile_id', profileId).order('at', { ascending: false }));
+    return rows.map(toObservation);
+  }
+
+  async saveObservation(o: Omit<Observation, 'id' | 'createdBy' | 'authorName' | 'createdAt'> & { id?: string }): Promise<Observation> {
+    const me = await this.me();
+    const row: Row = {
+      profile_id: o.profileId,
+      at: new Date(o.at).toISOString(),
+      sample_t: o.sampleT ?? null,
+      utterance: o.utterance ?? null,
+      function: o.function ?? null,
+      context: o.context ?? null,
+      partner: o.partner ?? null,
+      autonomy: o.autonomy ?? null,
+      result: o.result ?? null,
+      note: o.note ?? null,
+      updated_at: new Date().toISOString(),
+    };
+    const saved = o.id
+      ? await data<Row>(this.sb.from('observations').update(row).eq('id', o.id).select().single())
+      : await data<Row>(this.sb.from('observations').insert({ ...row, created_by: me.id, author_name: me.displayName }).select().single());
+    return toObservation(saved);
+  }
+
+  async deleteObservation(id: string): Promise<void> {
+    await data(this.sb.from('observations').delete().eq('id', id));
   }
 
   // ── Notifications ──

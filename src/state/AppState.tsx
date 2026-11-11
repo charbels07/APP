@@ -8,6 +8,7 @@ import { audioOf, label } from '../lib/lexicon';
 import { locate, type Location } from '../lib/search';
 import { beep, prepareVoices, speakSegments, speakText, stopSpeech } from '../lib/speech';
 import type { DemoStep, Lang, Profile, StripItem, UiLang } from '../model/types';
+import type { UsageEvent } from './usageTracker';
 
 export type View = 'board' | 'tla' | 'schedule';
 
@@ -174,10 +175,14 @@ export interface AppProviderProps {
   preview?: boolean;
   /** Child lock: other apps (YouTube…) don't open from a pictogram. */
   locked?: boolean;
+  /** Communication data (with the family's consent): touches, sentences, pages… */
+  onUsage?: (e: UsageEvent) => void;
   children: React.ReactNode;
 }
 
-export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, preview = false, locked = false, children }: AppProviderProps) {
+export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, preview = false, locked = false, onUsage, children }: AppProviderProps) {
+  const usageRef = useRef(onUsage);
+  usageRef.current = onUsage;
   const lockedRef = useRef(locked);
   lockedRef.current = locked;
   const [stored, setProfile] = useState<Profile>(initial);
@@ -315,6 +320,13 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
     if (recordRef.current && !playingRef.current) recordRef.current.push(step);
   }, []);
 
+  /** Only the child's own use is recorded: never while an adult edits, records or replays. */
+  const editModeRef = useRef(false);
+  const emit = useCallback((e: UsageEvent) => {
+    if (playingRef.current || recordRef.current || editModeRef.current) return;
+    usageRef.current?.(e);
+  }, []);
+
   /** Same pictogram pressed again too soon: ignored (Settings → delay between two presses). */
   const repeatGuard = useRef(createRepeatGuard()).current;
 
@@ -325,6 +337,12 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
       // Replays and dictation press words on purpose: only the user's own presses are limited.
       if (!playingRef.current && !repeatGuard(conceptId, (p.settings.repeatDelay ?? 0) * 1000)) return;
       record(origin ? { kind: 'tap', concept: conceptId, ...origin } : { kind: 'word', concept: conceptId });
+      const boardKind = origin ? p.boards[origin.board]?.kind : undefined;
+      emit({
+        type: 'select',
+        concept: conceptId,
+        mode: !origin ? 'quick' : origin.board === 'core' ? 'core' : boardKind === 'tla' ? 'tla' : 'folder',
+      });
       const item: StripItem = { key: newKey(), kind: 'concept', concept: conceptId, lang: l };
       if (p.settings.speakOnTap || !p.settings.addToStrip) {
         if (p.settings.addToStrip) {
@@ -342,7 +360,7 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
       // An app pictogram opens its app (not while a demonstration is recorded or replayed).
       if (!playingRef.current && !recordRef.current && appLinkOf(p, conceptId)) launchApp(conceptId);
     },
-    [editStrip, speakConcept, record, pulse, launchApp, repeatGuard],
+    [editStrip, speakConcept, record, pulse, launchApp, repeatGuard, emit],
   );
 
   const addText = useCallback(
@@ -350,11 +368,12 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
       const clean = text.trim();
       if (!clean) return;
       record({ kind: 'text', text: clean });
+      emit({ type: 'keyboard' });
       const item: StripItem = { key: newKey(), kind: 'text', text: clean, lang: profileRef.current.settings.lang };
       stripRef.current = [...stripRef.current, item];
       editStrip((s) => [...s, item]);
     },
-    [editStrip, record],
+    [editStrip, record, emit],
   );
 
   const speakStrip = useCallback(async () => {
@@ -362,6 +381,7 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
     const items = stripRef.current;
     record({ kind: 'speak' });
     if (!items.length) return;
+    emit({ type: 'speak', tokens: items.map((i) => (i.kind === 'concept' ? { c: i.concept } : { text: i.text })) });
     const { segments, marks } = toSpeechPlan(renderStrip(items, p));
     // Follow along: wiggle each word as it is said. Engines that don't report word
     // boundaries get an estimate from the text length; real boundaries replace it.
@@ -396,7 +416,7 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
       const app = findAppInSentence(profileRef.current, items);
       if (app) launchApp(app);
     }
-  }, [record, pulse, launchApp]);
+  }, [record, pulse, launchApp, emit]);
 
   const deleteLast = useCallback(() => {
     record({ kind: 'delete' });
@@ -606,6 +626,7 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
 
   const showMeWhere = useCallback(
     (loc: Location) => {
+      emit({ type: 'search', concept: profileRef.current.boards[loc.board]?.cells[loc.index]?.concept ?? undefined });
       setOverlay(null);
       if (loc.path[0] === 'core') {
         setView('board');
@@ -621,7 +642,7 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
         setHighlight({ board: loc.board, index: loc.index });
       }
     },
-    [openTla],
+    [openTla, emit],
   );
   const clearHighlight = useCallback(() => setHighlight(null), []);
 
@@ -631,6 +652,13 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
     const id = setTimeout(() => setHighlight(null), 12000);
     return () => clearTimeout(id);
   }, [highlight]);
+
+  editModeRef.current = editMode;
+  // Pages: which board, folder, activity board, planning or keyboard is on screen.
+  const pageId = overlay?.kind === 'keyboard' ? 'keyboard' : view === 'board' ? path[path.length - 1] : view === 'tla' ? tlaId ?? 'tla' : 'schedule';
+  useEffect(() => {
+    emit({ type: 'page', page: pageId });
+  }, [pageId, emit]);
 
   const setEditMode = useCallback((on: boolean) => {
     setEditModeState(on);

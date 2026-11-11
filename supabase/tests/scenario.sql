@@ -151,6 +151,29 @@ select test.ok((select count(*) = 1 from resources), 'shared resource now visibl
 update resources set title = 'hacked';
 select test.ok((select title = 'Dentiste' from resources), 'view-only share cannot edit');
 
+-- Communication data: only with the family's consent, seen only by those they allow.
+select set_config('request.jwt.claim.sub', :'rita', false);
+select test.expect_error(format('select save_usage_day(%L, ''ipad'', ''2026-11-11'', ''{"selections":3}'')', (select v from test.ids where k = 'adam')), 'forbidden');
+update profiles set data = jsonb_set(data, '{settings,dataCollection}', '"usage"') where id = (select v::uuid from test.ids where k = 'adam');
+select save_usage_day((select v::uuid from test.ids where k = 'adam'), 'ipad', '2026-11-11',
+  '{"selections":3,"concepts":{"want":2},"samples":[{"t":1}],"stats":{"distinctConcepts":1}}');
+select test.ok((select not (data ? 'concepts') and not (data ? 'samples') and data ->> 'level' = 'usage' from usage_days),
+  'only what the consent allows is kept (no words at "usage")');
+select set_config('request.jwt.claim.sub', :'sarah', false);
+select test.ok((select count(*) = 0 from usage_days), 'a therapist without "see the data" sees nothing');
+select test.expect_error(format('insert into observations (profile_id, created_by, at) values (%L, %L, now())', (select v from test.ids where k = 'adam'), :'sarah'),
+  'new row violates row-level security policy for table "observations"');
+select set_config('request.jwt.claim.sub', :'rita', false);
+select update_member((select v::uuid from test.ids where k = 'adam'), :'sarah', 3, '{"createMaterials":true,"proposeVocabulary":true,"viewData":true}', 'therapist', null, false);
+select set_config('request.jwt.claim.sub', :'sarah', false);
+select test.ok((select count(*) = 1 from usage_days), 'allowed therapist sees the data');
+insert into observations (profile_id, created_by, at, function, context) values ((select v::uuid from test.ids where k = 'adam'), :'sarah', now(), 'request_help', 'repas');
+select test.ok((select count(*) = 1 from observations), 'allowed therapist adds an observation');
+select set_config('request.jwt.claim.sub', :'eve', false);
+select test.ok((select count(*) = 0 from usage_days) and (select count(*) = 0 from observations), 'a stranger sees no data');
+select test.expect_error('select count(*) from research_usage', 'permission denied for view research_usage');
+select test.ok(true, 'the anonymous statistics are not reachable from the app');
+
 -- Deleting an account removes the child's profile it owns.
 select set_config('request.jwt.claim.sub', :'rita', false);
 select delete_account();

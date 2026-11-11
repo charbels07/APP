@@ -32,7 +32,7 @@ type View_ =
   | { k: 'request'; inv: Invitation };
 
 const INVITE_ROLES: CollaboratorRole[] = ['therapist', 'teacher', 'caregiver', 'family', 'other'];
-const PERMS: (keyof Omit<PermissionSet, 'manager'>)[] = ['createMaterials', 'proposeVocabulary', 'changeAccess', 'invite', 'manageDevices'];
+const PERMS: (keyof Omit<PermissionSet, 'manager'>)[] = ['createMaterials', 'proposeVocabulary', 'changeAccess', 'invite', 'manageDevices', 'viewData'];
 
 export function TeamTab({ board, onChanged }: { board: BoardCtx; onChanged: () => void }) {
   const { api, uiLang, account } = useSession();
@@ -281,10 +281,10 @@ export function PermissionEditor({
         options={([1, 2, 3] as AccessLevel[]).map((l) => ({ value: l, label: `${l} · ${x.levels[l]}` }))}
       />
       <Note text={x.levelNotes[level]} />
-      {level > 1 &&
-        PERMS.map((k) => (
-          <Toggle key={k} label={x.perms[k]} value={!!perms[k]} onChange={(v) => onChange({ role, level, perms: { ...perms, [k]: v } })} />
-        ))}
+      {/* Seeing the progress data does not need editing rights (a teacher can follow progress). */}
+      {PERMS.filter((k) => level > 1 || k === 'viewData').map((k) => (
+        <Toggle key={k} label={x.perms[k]} value={!!perms[k]} onChange={(v) => onChange({ role, level, perms: { ...perms, [k]: v } })} />
+      ))}
     </>
   );
 }

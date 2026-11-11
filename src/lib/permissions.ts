@@ -28,6 +28,8 @@ export interface PermissionSet {
   manageDevices: boolean;
   /** Acts as a parent / guardian (co-parent, or the child's own tablet at home). */
   manager: boolean;
+  /** Sees the communication data (Suivi), within what the parent chose to collect. */
+  viewData?: boolean;
 }
 
 const NONE: PermissionSet = {
@@ -39,10 +41,13 @@ const NONE: PermissionSet = {
   manager: false,
 };
 
+/** Settings only the family may change: what is collected about the child and who gets it. */
+const CONSENT_SETTINGS = new Set(['dataCollection', 'shareStats']);
+
 /** Suggested starting points; the parent narrows or widens them for each person. */
 export const ROLE_PRESETS: Record<CollaboratorRole, { level: AccessLevel; perms: PermissionSet }> = {
-  parent: { level: 3, perms: { createMaterials: true, proposeVocabulary: true, changeAccess: true, invite: true, manageDevices: true, manager: true } },
-  therapist: { level: 2, perms: { ...NONE, createMaterials: true, proposeVocabulary: true } },
+  parent: { level: 3, perms: { createMaterials: true, proposeVocabulary: true, changeAccess: true, invite: true, manageDevices: true, manager: true, viewData: true } },
+  therapist: { level: 2, perms: { ...NONE, createMaterials: true, proposeVocabulary: true, viewData: true } },
   teacher: { level: 1, perms: { ...NONE } },
   caregiver: { level: 1, perms: { ...NONE } },
   family: { level: 1, perms: { ...NONE } },
@@ -90,6 +95,11 @@ export function classifyOps(
   for (const op of ops) {
     if (access.owner || access.perms.manager) {
       out.direct.push(op);
+      continue;
+    }
+    // What is collected about the child, and sharing it, is the family's decision only.
+    if (op.path[0] === 'setting' && CONSENT_SETTINGS.has(op.path[1])) {
+      out.forbidden.push(op);
       continue;
     }
     const area = areaOf(op, base);

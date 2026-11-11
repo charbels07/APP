@@ -6,6 +6,7 @@
 import { createContext, useContext } from 'react';
 import type { AccessLevel, CollaboratorRole, PermissionSet } from '../lib/permissions';
 import type { ProfileSync } from './profileSync';
+import type { UsageTracker } from './usageTracker';
 
 export interface MyAccess {
   owner: boolean;
@@ -22,6 +23,8 @@ export interface BoardCtx {
   access: MyAccess | null;
   /** Owner, or allowed to manage the team. */
   manager: boolean;
+  /** Communication data recorder of this device (null until ready). */
+  tracker?: UsageTracker | null;
 }
 
 export const BoardContext = createContext<BoardCtx | null>(null);

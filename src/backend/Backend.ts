@@ -8,6 +8,8 @@ import type { Profile } from '../model/types';
 import type { Op } from '../lib/profileDiff';
 import type { AccessLevel, CollaboratorRole, PermissionSet } from '../lib/permissions';
 import type {
+  Observation,
+  UsageDay,
   Account,
   AccountPrefs,
   ChildRecord,
@@ -131,6 +133,15 @@ export interface Backend {
   submitVerification(): Promise<Verification>;
   /** Demo only (the real decision is made in the back-office). */
   demoSetVerificationStatus?(status: VerificationStatus, note?: string): Promise<void>;
+
+  // ── Communication data (Suivi), with the family's consent ──
+  /** Stores what this device recorded today (refused if the family turned collection off). */
+  saveUsageDay(profileId: string, data: UsageDay): Promise<void>;
+  /** Every device's days from `fromDay` (YYYY-MM-DD): family and people allowed to see the data. */
+  listUsage(profileId: string, fromDay: string): Promise<UsageDay[]>;
+  listObservations(profileId: string): Promise<Observation[]>;
+  saveObservation(o: Omit<Observation, 'id' | 'createdBy' | 'authorName' | 'createdAt'> & { id?: string }): Promise<Observation>;
+  deleteObservation(id: string): Promise<void>;
 
   // ── Notifications ──
   listNotices(): Promise<Notice[]>;

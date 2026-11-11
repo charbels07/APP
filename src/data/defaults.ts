@@ -265,6 +265,8 @@ export const DEFAULT_SETTINGS: Settings = {
   access: 'release',
   holdTime: 1,
   plans: { week: false, month: false },
+  dataCollection: 'off',
+  shareStats: 'none',
 };
 
 export const DEFAULT_HELP: HelpConfig = {

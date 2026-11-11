@@ -12,6 +12,7 @@ import type { Profile } from '../model/types';
 import { AppProvider, useApp } from '../state/AppState';
 import { BoardContext, type MyAccess } from '../state/BoardContext';
 import { ProfileSync } from '../state/profileSync';
+import { UsageTracker } from '../state/usageTracker';
 import { useSession } from '../state/Session';
 import { Btn } from './common';
 import { Icon } from './Icon';
@@ -101,10 +102,12 @@ function BoardStage({ profileId }: { profileId: string }) {
   const [error, setError] = useState<unknown>(null);
   const [note, setNote] = useState<string | null>(null);
   const [access, setAccess] = useState<MyAccess | null>(null);
+  const [tracker, setTracker] = useState<UsageTracker | null>(null);
 
   useEffect(() => {
     let alive = true;
     let opened: ProfileSync | null = null;
+    let usage: UsageTracker | null = null;
     ProfileSync.open(api, profileId).then(
       (sy) => {
         if (!alive) return;
@@ -117,6 +120,13 @@ function BoardStage({ profileId }: { profileId: string }) {
           void api.reportSync(profileId, sess.deviceId, { synced: true, backedUp: true, pendingChanges: 0 }).catch(() => {});
         };
         setSync(sy);
+        // Communication data, recorded only at the level the family chose (off by default).
+        void UsageTracker.open(api, profileId, sess.deviceId, `${Platform.OS} · ${deviceName()}`, () => sy.copy.data.settings.dataCollection ?? 'off').then((t) => {
+          if (!alive) return t.close();
+          usage = t;
+          sy.subscribe(() => t.setOnline(sy.state !== 'offline'));
+          setTracker(t);
+        });
         void api.myAccess(profileId).then((a) => alive && setAccess(a)).catch(() => {});
         // This device appears in "Devices and sync"; a removed device is signed out.
         void api
@@ -130,9 +140,28 @@ function BoardStage({ profileId }: { profileId: string }) {
     return () => {
       alive = false;
       void opened?.flush();
+      if (usage) {
+        void usage.flush();
+        usage.close();
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [api, profileId]);
+
+  // The board's changes: new activity boards are counted; turning collection off erases this device's data.
+  const onChange = useCallback(
+    (p: Profile) => {
+      if (!sync) return;
+      const before = sync.copy.data;
+      if (tracker) {
+        const added = p.tlaOrder.filter((id) => !before.tlaOrder.includes(id)).length;
+        for (let i = 0; i < added; i++) tracker.record({ type: 'tlaCreated' });
+        if (p.settings.dataCollection === 'off' && before.settings.dataCollection !== 'off') void tracker.forget();
+      }
+      sync.change(p);
+    },
+    [sync, tracker],
+  );
 
   // Someone else's changes: looked for every 30 s and when the app comes back to the front.
   useEffect(() => {
@@ -140,13 +169,16 @@ function BoardStage({ profileId }: { profileId: string }) {
     const id = setInterval(() => void sync.pull(), 30000);
     const sub = RNAppState.addEventListener('change', (st) => {
       if (st === 'active') void sync.pull();
-      else void sync.flush();
+      else {
+        void sync.flush();
+        void tracker?.flush();
+      }
     });
     return () => {
       clearInterval(id);
       sub.remove();
     };
-  }, [sync]);
+  }, [sync, tracker]);
 
   useEffect(() => {
     if (!note) return;
@@ -177,8 +209,16 @@ function BoardStage({ profileId }: { profileId: string }) {
   if (!sync) return <Splash />;
   const manager = !!access && (access.owner || !!access.perms.manager);
   return (
-    <BoardContext.Provider value={{ profileId, childName: sync.copy.name, sync, access, manager }}>
-      <AppProvider initial={sync.copy.data} onChange={sync.change} uiLang={uiLang} setUiLang={setUiLang} subscribe={subscribe} locked={sess.childLock}>
+    <BoardContext.Provider value={{ profileId, childName: sync.copy.name, sync, access, manager, tracker }}>
+      <AppProvider
+        initial={sync.copy.data}
+        onChange={onChange}
+        uiLang={uiLang}
+        setUiLang={setUiLang}
+        subscribe={subscribe}
+        locked={sess.childLock}
+        onUsage={tracker?.record}
+      >
         <Root />
         <OpenGuideOnStart />
         {sess.childLock && <LockEffects />}

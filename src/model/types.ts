@@ -175,6 +175,14 @@ export interface Settings {
   holdTime: number;
   /** Optional plans shown in Planning, next to the day plan (chosen at set-up or in Settings). */
   plans: { week: boolean; month: boolean };
+  /**
+   * What the app records about the child's communication (parent's choice, off by default):
+   * 'usage' = when and how much (no words), 'vocabulary' = + which words,
+   * 'language' = + the sentences said (language samples). Never while an adult models or edits.
+   */
+  dataCollection: 'off' | 'usage' | 'vocabulary' | 'language';
+  /** The family lets the app's team use anonymous statistics (no name, no words). */
+  shareStats: 'none' | 'anonymous';
 }
 
 /** A picture in the week plan (for one weekday). */

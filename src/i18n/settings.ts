@@ -50,6 +50,7 @@ const fr = {
     changeAccess: 'Changer la voix et l’accès',
     invite: 'Inviter d’autres personnes',
     manageDevices: 'Gérer les appareils et les droits',
+    viewData: 'Voir le suivi (données de communication)',
   } as Record<Perm, string>,
 
   inviteTitle: 'Inviter quelqu’un',
@@ -225,6 +226,7 @@ const en: Dict = {
     changeAccess: 'Change voice and access',
     invite: 'Invite other people',
     manageDevices: 'Manage devices and permissions',
+    viewData: 'See the progress data (communication data)',
   },
 
   inviteTitle: 'Invite someone',
@@ -396,6 +398,7 @@ const ar: Dict = {
     changeAccess: 'تغيير الصوت وطريقة الاختيار',
     invite: 'دعوة أشخاص آخرين',
     manageDevices: 'إدارة الأجهزة والصلاحيات',
+    viewData: 'رؤية المتابعة (بيانات التواصل)',
   },
 
   inviteTitle: 'دعوة شخص',

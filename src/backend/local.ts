@@ -12,9 +12,12 @@ import type { Profile } from '../model/types';
 import type { Op } from '../lib/profileDiff';
 import { type AccessLevel, type CollaboratorRole, type PermissionSet, preset } from '../lib/permissions';
 import { saveMedia } from '../lib/media';
+import { limitToConsent } from '../lib/usageConsent';
 import { BackendError, type Backend, type CodeSent, type SignUpInput } from './Backend';
 import {
   DEFAULT_PREFS,
+  type Observation,
+  type UsageDay,
   type Account,
   type AccountPrefs,
   type ChildRecord,
@@ -66,6 +69,8 @@ interface DB {
   verifications: Record<string, Verification>;
   notices: Notice[];
   resources: Resource[];
+  usage?: { profileId: string; data: UsageDay }[];
+  observations?: Observation[];
 }
 const emptyDb = (): DB => ({
   accounts: {},
@@ -374,6 +379,8 @@ export class LocalBackend implements Backend {
       db.devices = db.devices.filter((x) => keep(x) && x.userId !== me.id);
       db.notices = db.notices.filter((x) => x.userId !== me.id);
       db.resources = db.resources.filter((x) => x.ownerId !== me.id);
+      db.usage = (db.usage ?? []).filter((u) => !owned.has(u.profileId));
+      db.observations = (db.observations ?? []).filter((o) => !owned.has(o.profileId));
       delete db.verifications[me.id];
       delete db.accounts[me.id];
     });
@@ -451,6 +458,8 @@ export class LocalBackend implements Backend {
       db.proposals = db.proposals.filter(other);
       db.history = db.history.filter(other);
       db.devices = db.devices.filter(other);
+      db.usage = (db.usage ?? []).filter((u) => u.profileId !== id);
+      db.observations = (db.observations ?? []).filter(other);
     });
   }
 
@@ -904,6 +913,67 @@ export class LocalBackend implements Backend {
   }
 
   // ── Notifications ──
+
+  // ── Communication data (Suivi) ──
+
+  /** People who may see a child's data: the family, and those given "see the progress data". */
+  private static canViewData(db: DB, profileId: string, me: StoredAccount): boolean {
+    const a = LocalBackend.access(db, profileId, me.id);
+    return !!a && (a.owner || !!a.perms.manager || !!a.perms.viewData);
+  }
+
+  async saveUsageDay(profileId: string, data: UsageDay): Promise<void> {
+    await this.tx((db, m) => {
+      const me = LocalBackend.need(m);
+      LocalBackend.requireAccess(db, profileId, me);
+      const level = (db.profiles[profileId]?.data.settings as { dataCollection?: UsageDay['level'] | 'off' }).dataCollection ?? 'off';
+      const kept = limitToConsent(data, level);
+      if (!kept) throw new BackendError('forbidden');
+      db.usage = (db.usage ?? []).filter((u) => !(u.profileId === profileId && u.data.deviceId === data.deviceId && u.data.day === data.day));
+      db.usage.push({ profileId, data: kept });
+    });
+  }
+
+  async listUsage(profileId: string, fromDay: string): Promise<UsageDay[]> {
+    return this.tx((db, m) => {
+      if (!LocalBackend.canViewData(db, profileId, LocalBackend.need(m))) throw new BackendError('forbidden');
+      return clone((db.usage ?? []).filter((u) => u.profileId === profileId && u.data.day >= fromDay).map((u) => u.data));
+    });
+  }
+
+  async listObservations(profileId: string): Promise<Observation[]> {
+    return this.tx((db, m) => {
+      if (!LocalBackend.canViewData(db, profileId, LocalBackend.need(m))) throw new BackendError('forbidden');
+      return clone((db.observations ?? []).filter((o) => o.profileId === profileId).sort((a, b) => b.at - a.at));
+    });
+  }
+
+  async saveObservation(o: Omit<Observation, 'id' | 'createdBy' | 'authorName' | 'createdAt'> & { id?: string }): Promise<Observation> {
+    return this.tx((db, m) => {
+      const me = LocalBackend.need(m);
+      if (me.provider === 'device' || !LocalBackend.canViewData(db, o.profileId, me)) throw new BackendError('forbidden');
+      db.observations ??= [];
+      const old = o.id ? db.observations.find((x) => x.id === o.id && x.profileId === o.profileId) : undefined;
+      const next: Observation = {
+        ...(old ?? { createdBy: me.id, authorName: memberName(me), createdAt: Date.now() }),
+        ...clone(o),
+        id: old?.id ?? uid('o'),
+      } as Observation;
+      db.observations = db.observations.filter((x) => x.id !== next.id);
+      db.observations.push(next);
+      return clone(next);
+    });
+  }
+
+  async deleteObservation(id: string): Promise<void> {
+    await this.tx((db, m) => {
+      const me = LocalBackend.need(m);
+      const o = (db.observations ?? []).find((x) => x.id === id);
+      if (!o) return;
+      if (!LocalBackend.canViewData(db, o.profileId, me)) throw new BackendError('forbidden');
+      db.observations = (db.observations ?? []).filter((x) => x.id !== id);
+    });
+  }
 
   async listNotices(): Promise<Notice[]> {
     return this.tx((db, m) => {

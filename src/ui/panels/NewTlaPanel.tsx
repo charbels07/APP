@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native';
 import { ARASAAC_DEFAULTS } from '../../data/arasaacMap';
 import { TLA_CORE } from '../../data/defaults';
-import { aiAvailable, askAiForTla } from '../../lib/aiPlanner';
+import { editStrings } from '../../i18n/edit';
+import { aiAvailable, askAiForPhoto, askAiForTla } from '../../lib/aiPlanner';
+import { pickPhotoForAi, type AiPhoto } from '../../lib/photoForAi';
 import { allConceptIds, getConcept, label, symbolOf } from '../../lib/lexicon';
 import { pictoToMedia } from '../../lib/pictoLibrary';
 import type { PreparedIndex } from '../../lib/pictoSearch';
@@ -62,6 +64,36 @@ export function NewTlaPanel() {
   const [busy, setBusy] = useState(false);
   const aiCtl = useRef<AbortController | null>(null);
   const aiEnabled = aiOk && profile.settings.aiSuggestions !== false;
+  const e = editStrings(ui);
+  // Photo → activity board.
+  const [photo, setPhoto] = useState<AiPhoto | null>(null);
+  const [hint, setHint] = useState('');
+  const [photoMsg, setPhotoMsg] = useState<string | null>(null);
+  const [reading, setReading] = useState(false);
+
+  const fromPhoto = async (source: 'library' | 'camera') => {
+    if (!lib) return;
+    setPhotoMsg(null);
+    const p = await pickPhotoForAi(source).catch(() => null);
+    if (!p) return;
+    setPhoto(p);
+    setPlan(null);
+    setAdding(null);
+    aiCtl.current?.abort();
+    const ctl = new AbortController();
+    aiCtl.current = ctl;
+    setReading(true);
+    const ai = await askAiForPhoto(p, hint || topic, ctl.signal);
+    if (ctl.signal.aborted) return;
+    setReading(false);
+    if (!ai) return setPhotoMsg(e.photoFailed);
+    const title = ai.title?.[ui] || ai.title?.fr || hint.trim() || topic.trim();
+    if (!topic.trim() && title) setTopic(title);
+    const next = planFromAi(lib, title || 'photo', ui, ai);
+    if (!next.words.length) return setPhotoMsg(e.photoEmpty);
+    setMakeSchedule(false);
+    setPlan(next);
+  };
 
   useEffect(() => {
     aiAvailable().then(setAiOk);
@@ -221,6 +253,35 @@ export function NewTlaPanel() {
       </View>
       {lib === null && <Text style={styles.note}>{t.pictoLoading}</Text>}
 
+      {aiEnabled && (
+        <View style={styles.photoCard}>
+          <Text style={styles.photoTitle}>{e.photoTitle}</Text>
+          <Text style={styles.note}>{e.photoNote}</Text>
+          <Field label={e.photoHint} value={hint} onChangeText={setHint} />
+          <View style={styles.row}>
+            {photo && <Image source={{ uri: photo.uri }} style={styles.photo} accessibilityIgnoresInvertColors />}
+            <Btn icon="camera" label={photo ? e.photoAgain : e.takePhoto} disabled={!lib || reading} onPress={() => fromPhoto('camera')} />
+            <Btn icon="image" label={e.choosePhoto} disabled={!lib || reading} onPress={() => fromPhoto('library')} />
+          </View>
+          {reading && (
+            <View style={styles.thinking}>
+              <ActivityIndicator color={C.accent} />
+              <Text style={[styles.note, { flex: 1 }]}>{e.photoReading}</Text>
+              <Btn
+                small
+                label={t.cancel}
+                onPress={() => {
+                  aiCtl.current?.abort();
+                  setReading(false);
+                }}
+              />
+            </View>
+          )}
+          {photoMsg && <Text style={[styles.note, styles.warn]}>{photoMsg}</Text>}
+          <Text style={styles.note}>{e.photoPrivacy}</Text>
+        </View>
+      )}
+
       {thinking && (
         <View style={styles.thinking}>
           <ActivityIndicator color={C.accent} />
@@ -351,6 +412,9 @@ const styles = StyleSheet.create({
   },
   chipText: { fontSize: 13, fontWeight: '600', color: C.text },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  photoCard: { gap: 8, padding: 12, borderRadius: radius.md, borderWidth: 1, borderColor: C.border, backgroundColor: C.surfaceAlt },
+  photoTitle: { fontSize: 16, fontWeight: '700', color: C.text },
+  photo: { width: 64, height: 64, borderRadius: radius.sm, backgroundColor: C.surface },
   step: { alignItems: 'center' },
   stepNum: { fontSize: 13, fontWeight: '900', color: C.textMuted },
 });

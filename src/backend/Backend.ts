@@ -4,6 +4,7 @@
  *  - SupabaseBackend: the real online server (database, logins, file storage).
  * Screens only talk to this interface, so switching to the real server changes no screen.
  */
+import type { AiRequest } from '../../supabase/functions/_shared/aiPrompts';
 import type { Profile } from '../model/types';
 import type { Op } from '../lib/profileDiff';
 import type { AccessLevel, CollaboratorRole, PermissionSet } from '../lib/permissions';
@@ -144,6 +145,9 @@ export interface Backend {
   listObservations(profileId: string): Promise<Observation[]>;
   saveObservation(o: Omit<Observation, 'id' | 'createdBy' | 'authorName' | 'createdAt'> & { id?: string }): Promise<Observation>;
   deleteObservation(id: string): Promise<void>;
+  /** AI helper (server function "caa-ai", Claude): words for an activity board from a topic or a
+   *  photo, or what a drawing shows. Absent when no server is configured. */
+  askAi?(req: AiRequest, signal?: AbortSignal): Promise<unknown>;
   /** Demonstration only (local backend): fills the progress pages with an example. */
   demoSeedUsage?(profileId: string, label: (id: string) => string): Promise<void>;
 

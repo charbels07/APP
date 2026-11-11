@@ -179,6 +179,13 @@ select test.ok((select count(*) = 0 from usage_days) and (select count(*) = 0 fr
 select test.expect_error('select count(*) from research_usage', 'permission denied for view research_usage');
 select test.ok(true, 'the anonymous statistics are not reachable from the app');
 
+-- AI helper: a daily counter per account, nobody reads it from the app.
+select set_config('request.jwt.claim.sub', :'rita', false);
+select test.ok((select count_ai_call() = 1) and (select count_ai_call() = 2), 'AI calls are counted per account and per day');
+select set_config('request.jwt.claim.sub', :'sarah', false);
+select test.ok((select count_ai_call() = 1), 'each account has its own count');
+select test.ok((select count(*) = 0 from ai_calls), 'nobody reads the AI counters from the app');
+
 -- Deleting an account removes the child's profile it owns.
 select set_config('request.jwt.claim.sub', :'rita', false);
 select delete_account();

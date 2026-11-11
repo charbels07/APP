@@ -9,6 +9,7 @@
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import type { AiRequest } from '../../supabase/functions/_shared/aiPrompts';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
@@ -641,6 +642,12 @@ export class SupabaseBackend implements Backend {
   async listUsage(profileId: string, fromDay: string): Promise<UsageDay[]> {
     const rows = await data<Row[]>(this.sb.from('usage_days').select('data').eq('profile_id', profileId).gte('day', fromDay));
     return rows.map((r) => r.data as UsageDay);
+  }
+
+  async askAi(req: AiRequest, signal?: AbortSignal): Promise<unknown> {
+    const { data: out, error } = await this.sb.functions.invoke('caa-ai', { body: req, signal, timeout: 120000 });
+    if (error) throw new BackendError('offline', error.message);
+    return out;
   }
 
   async deleteUsage(profileId: string): Promise<void> {

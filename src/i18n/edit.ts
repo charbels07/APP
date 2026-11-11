@@ -67,6 +67,17 @@ const fr = {
   imported: (n: string) => `« ${n} » ajouté.`,
   add: 'Ajouter',
   from: (n: string) => `de ${n}`,
+  // Photo → activity board
+  photoTitle: 'Créer à partir d’une photo',
+  photoNote: 'Photographiez un menu, une boîte de jeu, des ingrédients… L’application reconnaît ce qu’il faut et propose les mots, avec ceux pour commenter, demander, refuser et dire ses préférences. Vous vérifiez et corrigez avant de créer.',
+  takePhoto: 'Prendre une photo',
+  choosePhoto: 'Choisir une photo',
+  photoHint: 'Ce que c’est (facultatif) : « menu du restaurant libanais »',
+  photoPrivacy: 'Photographiez l’objet, pas des personnes. La photo est envoyée une fois au service d’IA pour être lue, puis oubliée ; elle n’est pas gardée.',
+  photoReading: 'Lecture de la photo…',
+  photoFailed: 'La photo n’a pas pu être lue (connexion ?). Réessayez, ou écrivez le sujet ci-dessus.',
+  photoEmpty: 'Rien d’utilisable sur cette photo : essayez plus près, avec plus de lumière.',
+  photoAgain: 'Autre photo',
 };
 
 type Dict = typeof fr;
@@ -131,6 +142,16 @@ const en: Dict = {
   imported: (n: string) => `“${n}” added.`,
   add: 'Add',
   from: (n: string) => `from ${n}`,
+  photoTitle: 'Create from a photo',
+  photoNote: 'Take a photo of a menu, a game box, ingredients… The app recognises what is needed and suggests the words, with words to comment, ask, refuse and say what they prefer. You check and correct before creating.',
+  takePhoto: 'Take a photo',
+  choosePhoto: 'Choose a photo',
+  photoHint: 'What it is (optional): “Lebanese restaurant menu”',
+  photoPrivacy: 'Photograph the object, not people. The photo is sent once to the AI service to be read, then forgotten; it is not kept.',
+  photoReading: 'Reading the photo…',
+  photoFailed: 'The photo could not be read (connection?). Try again, or type the topic above.',
+  photoEmpty: 'Nothing usable on this photo: try closer, with more light.',
+  photoAgain: 'Another photo',
 };
 
 const ar: Dict = {
@@ -193,6 +214,16 @@ const ar: Dict = {
   imported: (n: string) => `أُضيفت «${n}».`,
   add: 'إضافة',
   from: (n: string) => `من ${n}`,
+  photoTitle: 'الإنشاء من صورة',
+  photoNote: 'صوّروا قائمة طعام، علبة لعبة، مكوّنات… يتعرّف التطبيق على ما يلزم ويقترح الكلمات، مع كلمات للتعليق والطلب والرفض والتعبير عن التفضيل. تتحقّقون وتصحّحون قبل الإنشاء.',
+  takePhoto: 'التقاط صورة',
+  choosePhoto: 'اختيار صورة',
+  photoHint: 'ما هي (اختياري): «قائمة مطعم لبناني»',
+  photoPrivacy: 'صوّروا الشيء لا الأشخاص. تُرسل الصورة مرة واحدة إلى خدمة الذكاء الاصطناعي لقراءتها ثم تُنسى؛ لا تُحفظ.',
+  photoReading: 'جارٍ قراءة الصورة…',
+  photoFailed: 'تعذّرت قراءة الصورة (الاتصال؟). أعيدوا المحاولة أو اكتبوا الموضوع أعلاه.',
+  photoEmpty: 'لا شيء قابل للاستعمال في هذه الصورة: جرّبوا عن قرب ومع ضوء أكثر.',
+  photoAgain: 'صورة أخرى',
 };
 
 const DICTS: Record<UiLang, Dict> = { fr, en, ar };

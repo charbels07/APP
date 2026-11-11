@@ -75,7 +75,9 @@ interface Rec {
 const libraries: Library[] = JSON.parse(readFileSync(join(root, 'pictograms/libraries.json'), 'utf8'));
 const read = (...p: string[]) => readFileSync(join(SRC, ...p), 'utf8');
 const json = (...p: string[]) => JSON.parse(read(...p));
-const uniq = (a: (string | undefined)[]) => [...new Set(a.map((x) => (x ?? '').trim()).filter(Boolean))];
+/** One library file has a damaged letter ("Le\uFFFDn"): repaired here, and anything else damaged is dropped. */
+const repair = (x: string) => x.replace(/le\uFFFDn/gi, (m) => (m[0] === 'L' ? 'León' : 'león'));
+const uniq = (a: (string | undefined)[]) => [...new Set(a.map((x) => repair(x ?? '').trim()).filter((x) => x && !x.includes('\uFFFD')))];
 const clean = (s: string) => s.replace(/[  ]/g, ' ').replace(/\s+/g, ' ').trim();
 
 // ── Words of the emoji: Unicode CLDR (names and keywords written per language) ──
@@ -121,7 +123,7 @@ function emojiRec(lib: string, file: string, stem: string, emoji: string, fallba
     lib,
     file,
     stem,
-    original: fallback.label ?? label,
+    original: repair(fallback.label ?? label),
     en: uniq([label, ...(en?.kw ?? []), ...(fallback.kw ?? [])]),
     fr: uniq([fr?.name, ...(fr?.kw ?? [])]),
     ar: uniq([ar?.name, ...(ar?.kw ?? [])]),

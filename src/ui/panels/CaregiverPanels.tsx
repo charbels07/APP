@@ -1,4 +1,7 @@
 import { createDefaultProfile } from '../../data/defaults';
+import { enterFullscreen, exitFullscreen } from '../../lib/childLock';
+import { useBoard } from '../../state/BoardContext';
+import { useSession } from '../../state/Session';
 import { ArasaacCredit } from '../ArasaacCredit';
 import { onboardingStrings } from '../../i18n/onboarding';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -732,6 +735,8 @@ function ScheduleEditor({ id }: { id: string }) {
 export function BoardSettingsBody() {
   const app = useApp();
   const { profile, t } = app;
+  const sess = useSession();
+  const board = useBoard();
   const o = onboardingStrings(profile.settings.uiLang);
   const st = profile.settings;
   const set = (fn: (s: Profile['settings']) => void) => app.update((d) => fn(d.settings));
@@ -797,6 +802,27 @@ export function BoardSettingsBody() {
         <Toggle label={t.sWiggle} value={!!st.wiggle} onChange={(v) => set((x) => void (x.wiggle = v))} />
         <Toggle label={t.sAutoApps} value={st.autoOpenApps !== false} onChange={(v) => set((x) => void (x.autoOpenApps = v))} />
       </Section>
+
+      {board && (
+        <Section title={t.lockTitle}>
+          <Toggle
+            label={t.lockToggle}
+            value={sess.childLock}
+            note={t.lockNote}
+            onChange={(on) => {
+              // Full screen must be asked inside the tap (browsers refuse it otherwise).
+              if (on) enterFullscreen();
+              else exitFullscreen();
+              sess.setChildLock(on);
+              if (on) app.setEditMode(false);
+            }}
+          />
+          <Text style={s.label}>{t.lockSystemTitle}</Text>
+          <Text style={s.note}>{Platform.OS === 'web' ? t.lockWeb : Platform.OS === 'android' ? t.lockAndroid : t.lockIpad}</Text>
+          {Platform.OS === 'web' && <Text style={s.note}>{t.lockIpad}</Text>}
+          {Platform.OS === 'web' && <Text style={s.note}>{t.lockAndroid}</Text>}
+        </Section>
+      )}
 
       <Section title={o.presentationAccess}>
         <Text style={s.label}>{o.langTitle}</Text>

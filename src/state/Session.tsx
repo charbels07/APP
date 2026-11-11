@@ -40,6 +40,8 @@ interface DevicePrefs {
   account?: Account;
   /** Children whose copy is kept on this device (removed at sign-out). */
   localProfiles?: string[];
+  /** Child lock on this device only (the parent's phone stays free). */
+  childLock?: boolean;
 }
 
 interface SessionCtx {
@@ -66,6 +68,9 @@ interface SessionCtx {
   openProfile: (id: string) => void;
   /** The device keeps a copy of this child's profile (forgotten at sign-out). */
   rememberLocal: (id: string) => void;
+  /** Child lock on this device (see src/lib/childLock). */
+  childLock: boolean;
+  setChildLock: (on: boolean) => void;
 }
 
 const Ctx = createContext<SessionCtx | null>(null);
@@ -236,6 +241,8 @@ export function SessionProvider({ children, api = backend() }: { children: React
     [saveDevice],
   );
 
+  const setChildLock = useCallback((on: boolean) => saveDevice({ childLock: on }), [saveDevice]);
+
   const value = useMemo<SessionCtx>(
     () => ({
       api,
@@ -254,8 +261,10 @@ export function SessionProvider({ children, api = backend() }: { children: React
       updatePrefs,
       openProfile,
       rememberLocal,
+      childLock: !!device?.childLock,
+      setChildLock,
     }),
-    [api, stage, account, uiLang, setUiLang, device?.deviceId, offline, enter, signOut, refreshAccount, updatePrefs, openProfile, rememberLocal],
+    [api, stage, account, uiLang, setUiLang, device?.deviceId, offline, enter, signOut, refreshAccount, updatePrefs, openProfile, rememberLocal, device?.childLock, setChildLock],
   );
 
   return (

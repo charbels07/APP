@@ -1,10 +1,12 @@
 /** Shows the screen of the current step of the journey (see src/state/Session.tsx). */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, AppState as RNAppState, Platform, StyleSheet, Text, View } from 'react-native';
 import { BackendError } from '../backend/Backend';
 import { createDefaultProfile } from '../data/defaults';
 import { errorText } from '../i18n/account';
+import { guardLeaving } from '../lib/childLock';
 import { invertOps } from '../lib/profileDiff';
 import type { Profile } from '../model/types';
 import { AppProvider, useApp } from '../state/AppState';
@@ -176,9 +178,10 @@ function BoardStage({ profileId }: { profileId: string }) {
   const manager = !!access && (access.owner || !!access.perms.manager);
   return (
     <BoardContext.Provider value={{ profileId, childName: sync.copy.name, sync, access, manager }}>
-      <AppProvider initial={sync.copy.data} onChange={sync.change} uiLang={uiLang} setUiLang={setUiLang} subscribe={subscribe}>
+      <AppProvider initial={sync.copy.data} onChange={sync.change} uiLang={uiLang} setUiLang={setUiLang} subscribe={subscribe} locked={sess.childLock}>
         <Root />
         <OpenGuideOnStart />
+        {sess.childLock && <LockEffects />}
         {note && (
           <View style={styles.toast} accessibilityRole="alert">
             <Icon name="users" size={20} color={C.edit} />
@@ -188,6 +191,19 @@ function BoardStage({ profileId }: { profileId: string }) {
       </AppProvider>
     </BoardContext.Provider>
   );
+}
+
+/** Child lock: back button ignored (Android), leaving the page asks first (web), screen stays on, no status bar. */
+function LockEffects() {
+  useEffect(() => {
+    const undo = guardLeaving();
+    activateKeepAwakeAsync('child-lock').catch(() => {});
+    return () => {
+      undo();
+      void deactivateKeepAwake('child-lock').catch(() => {});
+    };
+  }, []);
+  return <StatusBar hidden />;
 }
 
 /** A readable name for this device in "Devices and sync". */

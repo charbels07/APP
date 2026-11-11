@@ -172,10 +172,14 @@ export interface AppProviderProps {
   /** Lets the caller replace the profile when someone else changed it. */
   subscribe?: (apply: (p: Profile) => void) => () => void;
   preview?: boolean;
+  /** Child lock: other apps (YouTube…) don't open from a pictogram. */
+  locked?: boolean;
   children: React.ReactNode;
 }
 
-export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, preview = false, children }: AppProviderProps) {
+export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, preview = false, locked = false, children }: AppProviderProps) {
+  const lockedRef = useRef(locked);
+  lockedRef.current = locked;
   const [stored, setProfile] = useState<Profile>(initial);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
@@ -272,7 +276,8 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
   const launchApp = useCallback((conceptId: string) => {
     const link = appLinkOf(profileRef.current, conceptId);
     clearTimeout(launchTimer.current);
-    if (!link) return;
+    // Locked for the child: the word is said, but no other app opens.
+    if (!link || lockedRef.current) return;
     if (isIncomplete(link)) {
       setAppLaunch({ concept: conceptId, url: '' });
       return;

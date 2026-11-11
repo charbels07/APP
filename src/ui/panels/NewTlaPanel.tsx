@@ -12,6 +12,7 @@ import type { Board, Cell, Concept, Profile, Schedule, WordClass } from '../../m
 import { useApp } from '../../state/AppState';
 import { Btn, Field, Panel, Section, Toggle } from '../common';
 import { PictoSearch, PictoThumb, usePictoLibrary } from '../PictoPicker';
+import { ImportTla } from './EditMenus';
 import { SymbolView } from '../SymbolView';
 import { C, radius } from '../theme';
 
@@ -313,6 +314,7 @@ export function NewTlaPanel() {
         </>
       )}
       <Btn icon="grid" label={t.emptyTla} disabled={busy} onPress={() => create(null)} />
+      <ImportTla />
     </Panel>
   );
 }

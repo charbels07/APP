@@ -12,11 +12,13 @@ import { useWiggle } from './wiggle';
 
 const GAP = 6;
 const MIN_CELL_W = 56;
+/** Caregiver mode: a second tap within this time opens the card's menu. */
+const DOUBLE_TAP_MS = 320;
 const nativeDriver = Platform.OS !== 'web';
 
 export function Grid({ board }: { board: Board }) {
   const app = useApp();
-  const { profile, editMode, highlight, lang, pointer, moveSource, wiggle } = app;
+  const { profile, editMode, highlight, lang, pointer, moveSource, wiggle, selection } = app;
   const [size, setSize] = useState({ w: 0, h: 0 });
   const onLayout = (e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
@@ -25,22 +27,46 @@ export function Grid({ board }: { board: Board }) {
 
   const appRef = useRef(app);
   appRef.current = app;
+  const lastTap = useRef<{ index: number; at: number; timer: ReturnType<typeof setTimeout> } | null>(null);
+  useEffect(() => () => clearTimeout(lastTap.current?.timer), []);
   const onCellPress = useCallback(
     (index: number) => {
       const a = appRef.current;
       if (a.playing) return;
       const cell = a.profile.boards[board.id]?.cells[index];
       if (a.editMode) {
+        // Multi-selection: each tap adds or removes the card.
+        if (a.selection) {
+          if (!cell) return;
+          const cur = a.selection.board === board.id ? a.selection.indexes : [];
+          a.setSelection({ board: board.id, indexes: cur.includes(index) ? cur.filter((i) => i !== index) : [...cur, index] });
+          return;
+        }
         const src = a.moveSource;
         if (src && src.board === board.id) {
           if (src.index !== index) a.update((d) => moveCell(d.boards[board.id], src.index, index));
           a.setMoveSource(null);
           return;
         }
-        // Folders still open in caregiver mode (long-press edits them) so personal words can be added inside.
-        if (cell?.folder && a.profile.boards[cell.folder]) a.openFolder(cell.folder);
-        else if (cell) a.setOverlay({ kind: 'editor', board: board.id, index });
-        else
+        if (cell) {
+          // Double tap → the card's menu; a single tap keeps its usual action (a short wait tells them apart).
+          const prev = lastTap.current;
+          const now = Date.now();
+          clearTimeout(prev?.timer);
+          if (prev && prev.index === index && now - prev.at < DOUBLE_TAP_MS) {
+            lastTap.current = null;
+            a.setOverlay({ kind: 'cellMenu', board: board.id, index });
+            return;
+          }
+          const timer = setTimeout(() => {
+            lastTap.current = null;
+            const b = appRef.current;
+            // Folders still open in caregiver mode (long-press edits them) so personal words can be added inside.
+            if (cell.folder && b.profile.boards[cell.folder]) b.openFolder(cell.folder);
+            else b.setOverlay({ kind: 'editor', board: board.id, index });
+          }, DOUBLE_TAP_MS);
+          lastTap.current = { index, at: now, timer };
+        } else
           a.setOverlay({
             kind: 'picker',
             onPick: (conceptId) => {
@@ -67,9 +93,17 @@ export function Grid({ board }: { board: Board }) {
   const onCellLongPress = useCallback(
     (index: number) => {
       const a = appRef.current;
-      if (a.editMode && a.profile.boards[board.id]?.cells[index]) a.setOverlay({ kind: 'editor', board: board.id, index });
+      const cell = a.profile.boards[board.id]?.cells[index];
+      if (a.editMode) {
+        if (cell && !a.selection) a.setOverlay({ kind: 'editor', board: board.id, index });
+        return;
+      }
+      // Use mode: a long press on a folder shows its most requested words without opening it;
+      // on a word it simply says it (a slow touch still counts).
+      if (cell?.folder && a.profile.boards[cell.folder] && !a.playing && !a.recording) a.setOverlay({ kind: 'peek', folder: cell.folder });
+      else onCellPress(index);
     },
-    [board.id],
+    [board.id, onCellPress],
   );
 
   const covered = useMemo(() => coveredSlots(board), [board]);
@@ -133,6 +167,7 @@ export function Grid({ board }: { board: Board }) {
                 pointing={pointer?.board === board.id && pointer.index === index}
                 tapping={pointer?.board === board.id && pointer.index === index && !!pointer.tap}
                 moving={moveSource?.board === board.id && moveSource.index === index}
+                selected={editMode && selection ? selection.board === board.id && selection.indexes.includes(index) : undefined}
                 wiggleN={wiggle && wiggle.concept === cell.concept ? wiggle.n : 0}
                 isApp={!cell.folder && !!appLinkOf(profile, cell.concept)}
                 look={profile.settings.visual}
@@ -216,6 +251,8 @@ interface CellProps {
   tapping?: boolean;
   /** Caregiver picked this card to move it. */
   moving: boolean;
+  /** Part of the caregiver's multi-selection. */
+  selected?: boolean;
   /** Changes when the picture should wiggle (touched / being said). */
   wiggleN?: number;
   /** The card opens an app (small corner badge). */
@@ -306,12 +343,13 @@ export const CellView = React.memo(function CellView(p: CellProps) {
         delayLongPress={p.access === 'hold' ? p.holdMs ?? 1000 : 600}
         accessibilityRole="button"
         accessibilityLabel={p.text}
+        accessibilityState={p.selected !== undefined ? { selected: p.selected } : undefined}
         style={({ pressed }) => [
           styles.cell,
           {
             backgroundColor: bg,
-            borderColor: lit ? C.highlight : p.moving ? C.accent : colors.border,
-            borderWidth: lit || p.moving || contrast ? 4 : p.isFolder ? 2.5 : 2,
+            borderColor: lit ? C.highlight : p.moving || p.selected ? C.accent : colors.border,
+            borderWidth: lit || p.moving || p.selected || contrast ? 4 : p.isFolder ? 2.5 : 2,
             borderStyle: p.moving ? 'dashed' : 'solid',
             opacity: p.dimmed ? 0.35 : 1,
           },
@@ -320,6 +358,11 @@ export const CellView = React.memo(function CellView(p: CellProps) {
         ]}
       >
         {p.isFolder && <View style={[styles.folderTab, { borderColor: colors.border }]} />}
+        {p.selected && (
+          <View style={styles.selectedBadge} accessibilityElementsHidden>
+            <Icon name="check" size={16} color="#fff" strokeWidth={3} />
+          </View>
+        )}
         {showImage && (
           <Animated.View style={{ transform: wiggleTransform }}>
             <SymbolView symbol={p.symbol} size={symbolSize} />
@@ -367,6 +410,18 @@ export const CellView = React.memo(function CellView(p: CellProps) {
 
 const styles = StyleSheet.create({
   slot: { alignItems: 'center', justifyContent: 'center' },
+  selectedBadge: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: C.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
+  },
   appBadge: {
     position: 'absolute',
     top: 4,

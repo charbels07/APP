@@ -13,6 +13,8 @@ import { HelpPanel, KeyboardPanel, LangPanel, PinPanel, SearchPanel } from './pa
 import { ModelPanel } from './panels/ModelPanel';
 import { GuidePanel, WelcomeCard } from './panels/GuidePanel';
 import { NewTlaPanel } from './panels/NewTlaPanel';
+import { FolderPeek, SelectionBar, useCurrentBoard } from './panels/EditMenus';
+import { editStrings } from '../i18n/edit';
 import { BoardScreen } from './screens/BoardScreen';
 import { ScheduleScreen } from './screens/ScheduleScreen';
 import { TlaScreen } from './screens/TlaScreen';
@@ -28,6 +30,7 @@ export function Root({ banner }: { banner?: React.ReactNode } = {}) {
   const app = useApp();
   const { view, overlay, editMode, t, profile } = app;
   const landscape = width >= height && width >= 700;
+  const currentBoard = useCurrentBoard();
   const compact = width < 700 || height < 600;
 
   const content = (
@@ -44,6 +47,7 @@ export function Root({ banner }: { banner?: React.ReactNode } = {}) {
       {overlay?.kind === 'newTla' && <NewTlaPanel />}
       {overlay?.kind === 'guide' && <GuidePanel />}
       {overlay?.kind === 'settings' && <SettingsScreen />}
+      {overlay?.kind === 'peek' && <FolderPeek folder={overlay.folder} />}
       {!banner && !overlay && !profile.guide?.seen && !editMode && !app.playing && !app.recording && <WelcomeCard />}
       <CaregiverOverlay />
     </View>
@@ -86,14 +90,24 @@ export function Root({ banner }: { banner?: React.ReactNode } = {}) {
       )}
       {editMode && (
         <View style={styles.editBanner}>
-          <Text style={styles.editText} numberOfLines={1}>
+          <Text style={styles.editText} numberOfLines={2}>
             {t.editBanner}
           </Text>
+          {!app.selection && currentBoard && (
+            <Btn
+              small
+              icon="check"
+              label={compact ? undefined : editStrings(profile.settings.uiLang).select}
+              accessibilityLabel={editStrings(profile.settings.uiLang).selectSeveral}
+              onPress={() => app.setSelection({ board: currentBoard, indexes: [] })}
+            />
+          )}
           <Btn small icon="settings" label={compact ? undefined : t.settings} accessibilityLabel={t.settings} onPress={() => app.setOverlay({ kind: 'settings' })} />
           <Btn small icon="printer" label={compact ? undefined : t.print} accessibilityLabel={t.print} onPress={() => app.setOverlay({ kind: 'print' })} />
           <Btn small kind="primary" icon="check" label={t.exit} onPress={() => app.setEditMode(false)} />
         </View>
       )}
+      {editMode && app.selection && <SelectionBar />}
       {banner}
       <SentenceStrip compact={compact} />
       {profile.settings.quickZone && <QuickZone />}

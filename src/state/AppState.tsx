@@ -7,7 +7,7 @@ import { joinTokens, renderStrip, toSpeechPlan } from '../lib/grammar';
 import { audioOf, label } from '../lib/lexicon';
 import { locate, type Location } from '../lib/search';
 import { beep, prepareVoices, speakSegments, speakText, stopSpeech } from '../lib/speech';
-import type { DemoStep, Lang, Profile, StripItem, UiLang } from '../model/types';
+import type { Cell, DemoStep, Lang, Profile, StripItem, UiLang } from '../model/types';
 import type { UsageEvent } from './usageTracker';
 
 export type View = 'board' | 'tla' | 'schedule';
@@ -20,8 +20,19 @@ export type Overlay =
   | { kind: 'lang' }
   | { kind: 'pin' }
   | { kind: 'settings' }
-  | { kind: 'print' }
-  | { kind: 'editor'; board: string; index: number }
+  /** `cards`: print these words as picture cards (multi-selection). */
+  | { kind: 'print'; cards?: string[] }
+  /** `only`: just the picture or just the recorded pronunciation. */
+  | { kind: 'editor'; board: string; index: number; only?: 'image' | 'voice' }
+  /** Edit mode, double tap: actions on a card or on an activity board. */
+  | { kind: 'cellMenu'; board: string; index: number }
+  | { kind: 'tlaMenu'; id: string }
+  /** Share an activity board (send to someone, file). */
+  | { kind: 'shareTla'; id: string }
+  /** Multi-selection: choose the activity board the cards go to. */
+  | { kind: 'moveToTla' }
+  /** Use mode, long press on a folder: its most requested words, without opening it. */
+  | { kind: 'peek'; folder: string }
   | { kind: 'conceptEditor'; concept: string }
   | { kind: 'picker'; title?: string; onPick: (conceptId: string) => void }
   | { kind: 'scheduleEditor'; id: string }
@@ -138,6 +149,12 @@ interface AppCtx {
   /** Caregiver mode: card waiting to be moved. */
   moveSource: Slot | null;
   setMoveSource: (s: Slot | null) => void;
+  /** Caregiver mode: cards selected together (one board at a time); null = not selecting. */
+  selection: { board: string; indexes: number[] } | null;
+  setSelection: (s: { board: string; indexes: number[] } | null) => void;
+  /** Cards copied, waiting to be pasted into empty slots. */
+  clipboard: Cell[];
+  setClipboard: (c: Cell[]) => void;
 
   highlight: Highlight | null;
   showMeWhere: (loc: Location) => void;
@@ -623,6 +640,8 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
   );
 
   const [moveSource, setMoveSource] = useState<Slot | null>(null);
+  const [selection, setSelection] = useState<{ board: string; indexes: number[] } | null>(null);
+  const [clipboard, setClipboard] = useState<Cell[]>([]);
 
   const showMeWhere = useCallback(
     (loc: Location) => {
@@ -664,6 +683,7 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
     setEditModeState(on);
     setOverlay(null);
     setMoveSource(null);
+    setSelection(null);
   }, []);
 
   // ── Timer (keeps running while the user communicates) ──
@@ -776,6 +796,10 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
       cancelAppLaunch,
       moveSource,
       setMoveSource,
+      selection,
+      setSelection,
+      clipboard,
+      setClipboard,
       highlight,
       showMeWhere,
       clearHighlight,
@@ -792,7 +816,7 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
       stripState.history.length, touchConcept, addText, speakStrip, speakConcept, deleteLast, clearStrip, undo, goHome,
       openFolder, goBack, openTla, openSchedule, pressHelp, recording, startRecording, finishRecording,
       playing, playSteps, stopPlaying, pointer, demoCaption, wiggle, pulse, appLaunch, launchApp, openAppNow, cancelAppLaunch,
-      moveSource, highlight, showMeWhere, clearHighlight, timer,
+      moveSource, selection, clipboard, highlight, showMeWhere, clearHighlight, timer,
       startTimer, setTimerConcept, pauseTimer, resumeTimer, resetTimer, setTimerOpen,
     ],
   );

@@ -4,6 +4,7 @@ import { useBoard } from '../../state/BoardContext';
 import { useSession } from '../../state/Session';
 import { ArasaacCredit } from '../ArasaacCredit';
 import { onboardingStrings } from '../../i18n/onboarding';
+import { editStrings } from '../../i18n/edit';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Image, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { BUILTIN_CONCEPTS } from '../../data/concepts';
@@ -28,21 +29,34 @@ import { WebPicturePicker } from '../WebPictures';
 import { PrintPreview } from '../PrintPreview';
 import { SymbolView, useMediaUri } from '../SymbolView';
 import { scheduleTitle } from '../screens/ScheduleScreen';
+import { CellMenu, MoveToTlaPanel, ShareTlaPanel, TlaMenu } from './EditMenus';
 import { Recorder } from './Recorder';
 
 export function CaregiverOverlay() {
   const { overlay } = useApp();
   switch (overlay?.kind) {
     case 'print':
-      return <PrintPanel />;
+      return <PrintPanel cards={overlay.cards} />;
     case 'editor':
-      return <CellEditor board={overlay.board} index={overlay.index} />;
+      return overlay.only ? (
+        <PartEditor board={overlay.board} index={overlay.index} only={overlay.only} />
+      ) : (
+        <CellEditor board={overlay.board} index={overlay.index} />
+      );
     case 'conceptEditor':
       return <ConceptEditorPanel concept={overlay.concept} />;
     case 'picker':
       return <PickerPanel title={overlay.title} onPick={overlay.onPick} />;
     case 'scheduleEditor':
       return <ScheduleEditor id={overlay.id} />;
+    case 'cellMenu':
+      return <CellMenu board={overlay.board} index={overlay.index} />;
+    case 'tlaMenu':
+      return <TlaMenu id={overlay.id} />;
+    case 'shareTla':
+      return <ShareTlaPanel id={overlay.id} />;
+    case 'moveToTla':
+      return <MoveToTlaPanel />;
     default:
       return null;
   }
@@ -184,6 +198,23 @@ function CellEditor({ board, index }: { board: string; index: number }) {
   );
 }
 
+/** Double-tap menu → "Replace the picture" / "Record the pronunciation": just that part. */
+function PartEditor({ board, index, only }: { board: string; index: number; only: 'image' | 'voice' }) {
+  const app = useApp();
+  const cell = app.profile.boards[board]?.cells[index];
+  if (!cell) return null;
+  const e = editStrings(app.profile.settings.uiLang);
+  return (
+    <Panel title={only === 'image' ? e.replaceImage : e.recordVoice} onClose={() => app.setOverlay(null)} tone="edit">
+      <ConceptEditorBody conceptId={cell.concept} only={only} />
+      <View style={[s.row, { flexWrap: 'wrap' }]}>
+        <Btn icon="pencil" label={e.edit} onPress={() => app.setOverlay({ kind: 'editor', board, index })} style={{ flexGrow: 1 }} />
+        <Btn kind="primary" icon="check" label={app.t.close} onPress={() => app.setOverlay(null)} style={{ flexGrow: 1 }} />
+      </View>
+    </Panel>
+  );
+}
+
 function ConceptEditorPanel({ concept }: { concept: string }) {
   const app = useApp();
   return (
@@ -214,7 +245,7 @@ function LabelField({ conceptId, lang }: { conceptId: string; lang: Lang }) {
   );
 }
 
-function ConceptEditorBody({ conceptId }: { conceptId: string }) {
+function ConceptEditorBody({ conceptId, only }: { conceptId: string; only?: 'image' | 'voice' }) {
   const app = useApp();
   const { profile, t, lang } = app;
   const [audioLang, setAudioLang] = useState<Lang>(lang);
@@ -248,95 +279,105 @@ function ConceptEditorBody({ conceptId }: { conceptId: string }) {
           <SymbolView symbol={sym} size={84} />
           <Text style={s.previewText}>{label(profile, conceptId, lang)}</Text>
         </View>
-        <View style={{ flex: 1, gap: 8 }}>
-          {LANGS.map((l) => (
-            <LabelField key={l} conceptId={conceptId} lang={l} />
-          ))}
-        </View>
-      </View>
-
-      <Section title={t.symbol}>
-        {credit ? (
-          <Text style={s.note}>
-            {t.webCredit} : {credit}
-          </Text>
-        ) : null}
-        <PictureSources value={source} onChange={setSource} />
-        {source === 'pictos' && (
-          <>
-            <Text style={s.label}>{t.pictoLibrary}</Text>
-            <PictoSearch
-              initialQuery={label(profile, conceptId, profile.settings.uiLang)}
-              lang={profile.settings.uiLang}
-              onPick={async (id) => {
-                const name = await pictoToMedia(id);
-                if (name) setSymbol({ kind: 'media', name });
-              }}
-            />
-          </>
-        )}
-        {source === 'photo' && (
-          <View style={s.wrapRow}>
-            <Btn small icon="image" label={t.photoLibrary} onPress={() => photo('library')} />
-            <Btn small icon="camera" label={t.takePhoto} onPress={() => photo('camera')} />
+        {!only && (
+          <View style={{ flex: 1, gap: 8 }}>
+            {LANGS.map((l) => (
+              <LabelField key={l} conceptId={conceptId} lang={l} />
+            ))}
           </View>
         )}
-        {source === 'web' && (
-          <WebPicturePicker
-            initialQuery={label(profile, conceptId, profile.settings.uiLang)}
-            onPicked={(name, credit) => setSymbol({ kind: 'media', name }, credit)}
+      </View>
+
+      {only !== 'voice' && (
+        <Section title={t.symbol}>
+          {credit ? (
+            <Text style={s.note}>
+              {t.webCredit} : {credit}
+            </Text>
+          ) : null}
+          <PictureSources value={source} onChange={setSource} />
+          {source === 'pictos' && (
+            <>
+              <Text style={s.label}>{t.pictoLibrary}</Text>
+              <PictoSearch
+                initialQuery={label(profile, conceptId, profile.settings.uiLang)}
+                lang={profile.settings.uiLang}
+                onPick={async (id) => {
+                  const name = await pictoToMedia(id);
+                  if (name) setSymbol({ kind: 'media', name });
+                }}
+              />
+            </>
+          )}
+          {source === 'photo' && (
+            <View style={s.wrapRow}>
+              <Btn small icon="image" label={t.photoLibrary} onPress={() => photo('library')} />
+              <Btn small icon="camera" label={t.takePhoto} onPress={() => photo('camera')} />
+            </View>
+          )}
+          {source === 'web' && (
+            <WebPicturePicker
+              initialQuery={label(profile, conceptId, profile.settings.uiLang)}
+              onPicked={(name, credit) => setSymbol({ kind: 'media', name }, credit)}
+            />
+          )}
+          <View style={s.row}>
+            <Btn small icon="undo" label={t.resetSymbol} onPress={() => setSymbol(undefined)} />
+            <TextInput value={emoji} onChangeText={setEmoji} placeholder={t.emojiPlaceholder} style={[s.input, { width: 110 }]} maxLength={8} />
+            <Btn small label={t.emoji} disabled={!emoji.trim()} onPress={() => setSymbol({ kind: 'emoji', value: emoji.trim() })} />
+          </View>
+        </Section>
+      )}
+
+      {!only && <AppLinkEditor conceptId={conceptId} />}
+
+      {!only && (
+        <Section title={t.displayMode}>
+          <Segmented
+            value={display(profile, conceptId)}
+            onChange={(v: CellDisplay) => app.update((d) => void ((d.overrides[conceptId] ??= {}).display = v))}
+            options={[
+              { value: 'both', label: t.displayBoth },
+              { value: 'image', label: t.displayImage },
+              { value: 'text', label: t.displayText },
+            ]}
           />
-        )}
-        <View style={s.row}>
-          <Btn small icon="undo" label={t.resetSymbol} onPress={() => setSymbol(undefined)} />
-          <TextInput value={emoji} onChangeText={setEmoji} placeholder={t.emojiPlaceholder} style={[s.input, { width: 110 }]} maxLength={8} />
-          <Btn small label={t.emoji} disabled={!emoji.trim()} onPress={() => setSymbol({ kind: 'emoji', value: emoji.trim() })} />
-        </View>
-      </Section>
+        </Section>
+      )}
 
-      <AppLinkEditor conceptId={conceptId} />
+      {only !== 'image' && (
+        <Section title={`${t.voice} — ${LANG_NAMES[audioLang]}`}>
+          <Segmented value={audioLang} onChange={setAudioLang} options={LANGS.map((l) => ({ value: l, label: LANG_NAMES[l] }))} />
+          <Recorder
+            key={audioLang}
+            media={audio}
+            onChange={(name) =>
+              app.update((d) => {
+                const o = (d.overrides[conceptId] ??= {});
+                o.audio = { ...(o.audio ?? {}) };
+                if (name) o.audio[audioLang] = name;
+                else delete o.audio[audioLang];
+              })
+            }
+          />
+        </Section>
+      )}
 
-      <Section title={t.displayMode}>
-        <Segmented
-          value={display(profile, conceptId)}
-          onChange={(v: CellDisplay) => app.update((d) => void ((d.overrides[conceptId] ??= {}).display = v))}
-          options={[
-            { value: 'both', label: t.displayBoth },
-            { value: 'image', label: t.displayImage },
-            { value: 'text', label: t.displayText },
-          ]}
-        />
-      </Section>
-
-      <Section title={`${t.voice} — ${LANG_NAMES[audioLang]}`}>
-        <Segmented value={audioLang} onChange={setAudioLang} options={LANGS.map((l) => ({ value: l, label: LANG_NAMES[l] }))} />
-        <Recorder
-          key={audioLang}
-          media={audio}
-          onChange={(name) =>
-            app.update((d) => {
-              const o = (d.overrides[conceptId] ??= {});
-              o.audio = { ...(o.audio ?? {}) };
-              if (name) o.audio[audioLang] = name;
-              else delete o.audio[audioLang];
-            })
-          }
-        />
-      </Section>
-
-      <Section title={t.category}>
-        <View style={s.wrapRow}>
-          {CLASS_ORDER.filter((c) => c !== 'folder').map((c) => (
-            <Pressable
-              key={c}
-              onPress={() => app.update((d) => setClass(d, conceptId, c))}
-              style={[s.classChip, { backgroundColor: CLASS_COLORS[c].bg, borderColor: CLASS_COLORS[c].border }, cls === c && s.classActive]}
-            >
-              <Text style={s.classText}>{CLASS_NAMES[c][profile.settings.uiLang]}</Text>
-            </Pressable>
-          ))}
-        </View>
-      </Section>
+      {!only && (
+        <Section title={t.category}>
+          <View style={s.wrapRow}>
+            {CLASS_ORDER.filter((c) => c !== 'folder').map((c) => (
+              <Pressable
+                key={c}
+                onPress={() => app.update((d) => setClass(d, conceptId, c))}
+                style={[s.classChip, { backgroundColor: CLASS_COLORS[c].bg, borderColor: CLASS_COLORS[c].border }, cls === c && s.classActive]}
+              >
+                <Text style={s.classText}>{CLASS_NAMES[c][profile.settings.uiLang]}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </Section>
+      )}
     </>
   );
 }
@@ -1013,14 +1054,19 @@ export function BoardSettingsBody() {
 
 // ── Print / PDF ──
 
-type PrintTarget = { kind: 'board'; id: string } | { kind: 'schedule'; id: string } | { kind: 'firstThen' };
+type PrintTarget = { kind: 'board'; id: string } | { kind: 'schedule'; id: string } | { kind: 'firstThen' } | { kind: 'cards' };
 
-function PrintPanel() {
+/** `cards`: words chosen with the multi-selection, printed as picture cards. */
+function PrintPanel({ cards }: { cards?: string[] }) {
   const app = useApp();
   const { profile, t, lang, view, path, tlaId } = app;
   const currentBoard = view === 'tla' && tlaId ? tlaId : path[path.length - 1];
   const [target, setTarget] = useState<PrintTarget>(
-    view === 'schedule' && profile.activeSchedule ? { kind: 'schedule', id: profile.activeSchedule } : { kind: 'board', id: currentBoard },
+    cards?.length
+      ? { kind: 'cards' }
+      : view === 'schedule' && profile.activeSchedule
+        ? { kind: 'schedule', id: profile.activeSchedule }
+        : { kind: 'board', id: currentBoard },
   );
   const [o, setO] = useState<PrintOptions>({ paper: 'A4', landscape: true, blackWhite: false, labels: true, cutCards: false });
   const [html, setHtml] = useState('');
@@ -1030,7 +1076,11 @@ function PrintPanel() {
     let alive = true;
     (async () => {
       let doc = '';
-      if (target.kind === 'board') {
+      if (target.kind === 'cards' && cards?.length) {
+        const cells = await Promise.all(cards.map((c) => conceptCell(profile, c, lang)));
+        const cols = Math.max(1, Math.min(cells.length, o.landscape ? 4 : 3));
+        doc = buildPrintHtml(editStrings(profile.settings.uiLang).cardsTitle, Math.ceil(cells.length / cols), cols, cells, o, lang);
+      } else if (target.kind === 'board') {
         const b = profile.boards[target.id];
         if (b) doc = buildPrintHtml(label(profile, b.concept, lang), b.rows, b.cols, await boardCells(profile, b, lang), o, lang);
       } else if (target.kind === 'schedule') {
@@ -1055,7 +1105,7 @@ function PrintPanel() {
     return () => {
       alive = false;
     };
-  }, [target, o, profile, lang, t]);
+  }, [target, o, profile, lang, t, cards]);
 
   const run = async (fn: () => Promise<void>) => {
     setBusy(true);
@@ -1067,6 +1117,7 @@ function PrintPanel() {
   };
 
   const targets: { key: string; label: string; value: PrintTarget }[] = [
+    ...(cards?.length ? [{ key: 'cards', label: `${editStrings(profile.settings.uiLang).cardsTitle} (${cards.length})`, value: { kind: 'cards' as const } }] : []),
     {
       key: `b:${currentBoard}`,
       label: `${t.currentBoard} : ${label(profile, profile.boards[currentBoard]?.concept ?? 'f_mine', lang)}`,
@@ -1082,7 +1133,7 @@ function PrintPanel() {
     })),
     { key: 'ft', label: t.firstThen, value: { kind: 'firstThen' } },
   ];
-  const targetKey = target.kind === 'firstThen' ? 'ft' : `${target.kind === 'board' ? 'b' : 's'}:${target.id}`;
+  const targetKey = target.kind === 'firstThen' ? 'ft' : target.kind === 'cards' ? 'cards' : `${target.kind === 'board' ? 'b' : 's'}:${target.id}`;
 
   return (
     <Panel title={t.printTitle} onClose={() => app.setOverlay(null)} tone="edit" maxWidth={980}>

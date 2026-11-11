@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { isRtl, label, symbolOf } from '../../lib/lexicon';
 import { useApp } from '../../state/AppState';
@@ -13,6 +13,26 @@ export function TlaScreen() {
   const { profile, tlaId, lang, editMode, t } = app;
   const [confirmDelete, setConfirmDelete] = useState(false);
   const current = tlaId && profile.boards[tlaId] ? profile.boards[tlaId] : profile.boards[profile.tlaOrder[0]];
+  // Caregiver mode: a double tap on a tab opens the activity board's menu (edit, duplicate, share, print).
+  const lastTap = useRef<{ id: string; at: number; timer: ReturnType<typeof setTimeout> } | null>(null);
+  useEffect(() => () => clearTimeout(lastTap.current?.timer), []);
+  const pressTab = (id: string, concept: string, active: boolean) => {
+    if (!editMode) return app.openTla(id);
+    const prev = lastTap.current;
+    const now = Date.now();
+    clearTimeout(prev?.timer);
+    if (prev && prev.id === id && now - prev.at < 320) {
+      lastTap.current = null;
+      app.setOverlay({ kind: 'tlaMenu', id });
+      return;
+    }
+    if (!active) app.openTla(id);
+    const timer = setTimeout(() => {
+      lastTap.current = null;
+      if (active) app.setOverlay({ kind: 'conceptEditor', concept });
+    }, 320);
+    lastTap.current = { id, at: now, timer };
+  };
 
   const deleteTla = () => {
     if (!current) return;
@@ -43,7 +63,7 @@ export function TlaScreen() {
             return (
               <Pressable
                 key={id}
-                onPress={() => (active && editMode ? app.setOverlay({ kind: 'conceptEditor', concept: b.concept }) : app.openTla(id))}
+                onPress={() => pressTab(id, b.concept, active)}
                 style={({ pressed }) => [styles.tab, active && styles.tabActive, pressed && { opacity: 0.7 }]}
                 accessibilityRole="tab"
                 accessibilityState={{ selected: active }}
@@ -85,5 +105,5 @@ const styles = StyleSheet.create({
     borderColor: C.border,
   },
   tabActive: { borderColor: C.accent, backgroundColor: C.accentSoft },
-  tabText: { fontSize: 16, fontWeight: '700', color: C.text },
+  tabText: { fontSize: 16, fontWeight: '700', color: C.text, userSelect: 'none' },
 });

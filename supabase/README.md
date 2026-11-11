@@ -60,6 +60,27 @@ back **on**. Anonymous sign-ins must be on.
 Never edit a migration that already ran on the project: add a new file in `supabase/migrations/`
 (named with the date) and run only that new file in the SQL Editor.
 
+## 6. The AI helper (Photo → activity board, word suggestions)
+
+The app never holds the Anthropic key: a small server function asks Claude for it.
+
+1. Create an API key on console.anthropic.com (an organisation for the app, with a monthly spend
+   limit). Never paste it in the app, in `.env` or in a chat.
+2. Install the Supabase CLI, then from the project folder: `supabase link`, then
+   `supabase secrets set ANTHROPIC_API_KEY=…` (typed in your own terminal),
+   then `supabase functions deploy caa-ai`.
+3. Run the migration `…_ai_calls.sql` (daily limit: 40 calls per account; change `DAILY_LIMIT` in
+   `functions/caa-ai/index.ts`).
+
+Only the topic, the photo or the drawing is sent — never the child's name, words or sentences.
+
+## 7. Communication data (Suivi) for the app's team
+
+Run `…_usage_data.sql`. Families choose what is recorded (Settings → Suivi); professionals see it
+only with "See the progress data". For our own statistics, open **Table Editor → research_usage**
+(or `select * from research_usage` in the SQL Editor): anonymous daily numbers, only for families
+who agreed to share anonymous statistics. The app itself cannot read this view.
+
 ## What is where
 
 | Table | Contents |
@@ -74,6 +95,10 @@ Never edit a migration that already ran on the project: add a new file in `supab
 | `verifications` | professionals' verification requests (status set by the back-office) |
 | `notices` | in-app notifications |
 | `resources`, `resource_shares` | professionals' libraries and what they share |
+| `usage_days` | communication data, one row per child, device and day (only what the family allowed) |
+| `observations` | adults' notes on communication moments (function, context, partner, autonomy, result) |
+| `research_usage` (view) | anonymous daily numbers for the app's team, consenting families only |
+| `ai_calls` | how many AI requests each account made today (daily limit) |
 
 Storage buckets: `verification-docs` (diplomas, private to their owner) and `profile-media`
 (a child's photos and recordings, private to the child's team).

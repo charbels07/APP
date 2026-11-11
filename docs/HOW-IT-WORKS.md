@@ -126,12 +126,32 @@ needs that **written authorization**: the e-mail sent to ARASAAC should ask expl
 use, not only for the logo. If they refuse, the app can stay free, or use a symbol set licensed for
 commercial use.
 
+## Round 8 — Communication data (Suivi), quick gestures, Photo → activity board
+
+| Feature | How it was built |
+|---|---|
+| Consent first | A setting `dataCollection` in the child's profile: off (default) / use / use + words / use + words + sentences. Asked during set-up with nothing pre-chosen (no answer = off), changed in Settings → Suivi by the parent only (the permission check in `src/lib/permissions.ts` refuses it from anyone else). Anonymous statistics are a second, separate yes/no (`shareStats`, off by default). |
+| Recording | `src/state/usageTracker.ts` (TypeScript) receives small events from the board (word touched, sentence spoken, page opened, search, keyboard) and keeps one summary per day and per device: sessions (a new one after 5 minutes without a touch), active time, hours, pages, places, offline time, errors. Words are kept only at the "words" level, sentences only at the "sentences" level. Nothing is recorded while an adult edits the board or a demonstration plays. |
+| Storage | Days stay on the tablet (120 days, for offline viewing) and are sent once a minute to a new table `usage_days` (**SQL**, `…_usage_data.sql`). A database function `save_usage_day` removes anything the consent does not allow before saving, and refuses everything when the follow-up is off — so even a modified app cannot store more. |
+| Who sees it | Row-level security: the parent, a team manager, and members the parent gave "See the progress data" (`viewData`). Everyone else, including other professionals of the team, sees nothing (checked by `npm run test:db`). |
+| The four domains | `src/lib/analytics.ts` (TypeScript, 13 Jest tests) turns the days into: **use** (days, sessions per day/week, session length, active time, morning/midday/afternoon/evening/night, pages, activity boards opened/created, devices, breaks, offline time, errors), **vocabulary** (each word's count, different words, new words, words used on several days, core vs specific, word categories, words added for the child, searches), **language** (lengths 1/2/3+, mean length, combinations, meaning relations such as agent-action or action-object, structures, pronouns, verbs, negation, questions, connectors, telling), **functions** (the 19 functions of the specification, guessed from the sentence's words by simple rules, plus the adults' observations, which always win). |
+| Observations | A table `observations` (SQL): when, what the child said or did, function, context, partner, autonomy, result, note, author. Written by parents and allowed professionals (never from the child's tablet). Select several to export them as a spreadsheet file (**CSV**) or give them a common context. A recorded sentence can be annotated in one tap. |
+| The Suivi page | `src/ui/data/DataDashboard.tsx` (React Native): period 7 days / 30 days / 3 months, tabs Use / Vocabulary / Language / Functions / Observations. Charts are drawn with plain views (`src/ui/data/Charts.tsx`): number tiles, a column per day (tap to read a day, or switch to a table), bars with the value at the tip, a split bar for core / specific; one blue for single series, blue + orange for two, checked for colour-blind safety. *Export (CSV)* writes the whole period. Parents: Settings → Suivi; professionals: their workspace → the child → *See the progress data*. |
+| Us (the company) | A database **view** `research_usage` gives anonymous daily numbers (scrambled child id, age, sessions, active minutes, touches, sentence lengths, places, hours — no name, no words, no sentences) only for families who said yes to anonymous statistics. The app cannot read it; we open it in the Supabase dashboard (Table Editor or SQL Editor) until the back-office exists. |
+| Erasing | Turning the follow-up off erases what the tablet kept; *Erase the recorded data* deletes every day on the server (a database rule allows it only to the family or a manager). |
+| Double tap (caregiver mode) | `src/ui/Grid.tsx` waits 0.32 s after a tap: a second tap opens the card's menu (`src/ui/panels/EditMenus.tsx`): edit, replace the picture, record the pronunciation, add to favourites (the « mes mots » folder), duplicate, select several, delete. On an activity board tab: edit the title, duplicate, share, print. |
+| Sharing an activity board | Send it to someone with an account (it becomes a shared item in their library) or save it as a small file (**JSON**) to send by message; *New activity board → Import a file* (or *Shared with me*) adds it to another child without replacing anything. |
+| Multi-selection | A selection bar: copy / paste into empty slots, size 60/80/100 %, send to an activity board, print as picture cards, delete. Cards taken from the main board are copied, never moved (the motor plan stays). A full activity board or folder grows by one row (up to 8). Logic in `src/lib/cellActions.ts`, 6 Jest tests. |
+| Folder peek (use mode) | A long press on a folder shows its 6 most requested words (from this tablet's recorded days, if the family allows words), or its first words; touching one says it without opening the folder. A slow touch on a word now says it instead of doing nothing. |
+| Photo → activity board | *New activity board → Create from a photo*: the photo is made smaller and kept in memory only; Claude (Anthropic's AI) lists what it sees that is useful (e.g. a menu's dishes) plus words to act, comment, ask, refuse and say preferences. The proposal goes through the same screen as the topic suggestions: remove or add words, then *Create*. |
+| AI on phones and tablets | `supabase/functions/caa-ai` (TypeScript for **Deno**, a Supabase **Edge Function** — a small program that runs on Supabase's servers): it checks the person is signed in, counts their calls (40 a day, table `ai_calls`), sends only the topic, photo or drawing to Claude (model `claude-opus-5-5`, answers forced into the expected **JSON** shape), and returns the words. The Anthropic key is a Supabase secret, never inside the app. The prompts are shared with the browser demo (`supabase/functions/_shared/aiPrompts.ts`). |
+
 ## How everything is checked
 
 | Check | What it does |
 |---|---|
 | `npm run typecheck` | TypeScript reads the whole code and refuses mistakes such as a missing field or a wrong type. |
-| `npm test` | 93 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide. |
+| `npm test` | 120 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions. |
 | `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger and a tablet; 35+ checks. |
 | `npm run test:live` | The same story on the real Supabase project, through the app's own code: 13 steps, including devices, history undo, invitation codes, revisions and materials (needs "Confirm email" off while it runs). Last run: all 13 passed. |
 | Browser walkthroughs | Playwright drives the web version like a person: the parent journey, the team (invite, undo, join with a code), the professional journey (verification, tour, request, draft, proposal, approval), and the Arabic screens. |
@@ -150,8 +170,13 @@ commercial use.
   once many families sign up.
 - **Notifications** are in-app only (no phone push yet), and their text is written in French by the
   server.
-- **Observations & outcomes** in the professional's per-child page: not built (needs your
-  specification; it is sensitive data).
+- **Communication data on several devices**: each tablet records its own days; the Suivi page adds
+  them up. Days recorded while the follow-up was off are never recorded later.
+- **Function recognition** is a set of simple word rules: a guide for the speech therapist, to be
+  checked against observations, not an assessment.
+- **AI on devices** needs the `caa-ai` function deployed with an Anthropic key (see
+  `supabase/README.md`); until then the app uses the situation library. Search by drawing works in
+  the browser demo only for now.
 - **Switch access and eye gaze**: not available (the set-up says so).
 - **Arabic texts** are a first version: to be reviewed by a native speaker.
 

@@ -219,11 +219,13 @@ const BASE: BaseChapter[] = [
         'Planning montre la journée en images : Maintenant, Ensuite, puis toutes les étapes.',
         'Fait passe à l’étape suivante. Certaines étapes ouvrent leur TLA ou lancent un minuteur.',
         'D’abord / Ensuite : seulement deux images (« d’abord les devoirs, ensuite le parc »).',
+        'Semaine et Mois (si activés dans Réglages → Tableau → Plannings) : les activités de chaque jour, et un calendrier des événements. Toucher un jour dit son nom.',
       ],
       en: [
         'Schedule shows the day in pictures: Now, Next, then all the steps.',
         'Done moves to the next step. Some steps open their activity board or start a timer.',
         'First / Then: just two pictures (“first homework, then the park”).',
+        'Week and Month (if turned on in Settings → Board → Plans): each day’s activities, and a calendar of events. Touching a day says its name.',
       ],
     },
     action: 'schedule',
@@ -237,10 +239,12 @@ const BASE: BaseChapter[] = [
       fr: [
         'Minuteur : choisissez une durée ; le temps qui reste se voit en cercle, en barre ou en chiffres.',
         'Il continue pendant qu’on communique. À la fin : un son, une vibration (sur téléphone) et « C’est fini ! ».',
+        'Il se place au-dessus du tableau sans cacher de picto. À côté, le picto de ce que l’enfant attend (la piscine, le parc…) : il est dit à la fin.',
       ],
       en: [
         'Timer: choose a duration; the time left shows as a circle, a bar or digits.',
         'It keeps running while you communicate. At the end: a sound, a vibration (on phones) and “Time is up!”.',
+        'It sits above the board without hiding any picture. Next to it, the picture of what the child is waiting for (the pool, the park…): it is said at the end.',
       ],
     },
     action: 'timer',
@@ -286,12 +290,14 @@ const BASE: BaseChapter[] = [
         'Le bandeau jaune indique qu’on peut modifier : toucher une case ouvre ses réglages ; pour un dossier, appui long.',
         'Réglages et Imprimer / PDF sont dans le bandeau. Terminer revient au mode enfant.',
         'Tout est gardé sur l’appareil, même après l’avoir éteint.',
+        'Réglages → Tableau → Mode verrouillé : l’enfant ne peut plus ouvrir d’autres applis ni revenir en arrière ; pour l’empêcher de quitter l’application, activez aussi l’Accès guidé (iPad) ou l’épinglage d’écran (Android).',
       ],
       en: [
         'Caregiver (padlock), then the code: 1234 at first — change it in Settings → Security.',
         'The yellow banner means you can edit: touching a card opens its settings; for a folder, long press.',
         'Settings and Print / PDF are in the banner. Done goes back to child mode.',
         'Everything is kept on the device, even after switching it off.',
+        'Settings → Board → Child lock: the child can no longer open other apps or go back; to stop them leaving the app, also turn on Guided Access (iPad) or screen pinning (Android).',
       ],
     },
     action: 'caregiver',
@@ -615,6 +621,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
       '«الجدول» يعرض اليوم بالصور: «الآن»، «بعد ذلك»، ثم كل الخطوات.',
       '«تمّ» ينتقل إلى الخطوة التالية. بعض الخطوات تفتح لوحتها أو تشغّل مؤقتاً.',
       '«أولاً / ثم»: صورتان فقط («أولاً الفروض، ثم الحديقة»).',
+      '«الأسبوع» و«الشهر» (إذا فُعّلا في الإعدادات ← اللوحة ← الجداول): نشاطات كل يوم، ورزنامة المناسبات. لمس يوم يقول اسمه.',
     ],
   },
   timer: {
@@ -622,6 +629,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
     steps: [
       '«المؤقت»: اختر مدة؛ يظهر الوقت المتبقي على شكل دائرة أو شريط أو أرقام.',
       'يستمر أثناء التواصل. في النهاية: صوت، واهتزاز (على الهاتف)، و«خلص الوقت!».',
+      'يظهر فوق اللوحة من دون أن يخفي أي صورة. بجانبه صورة ما ينتظره الطفل (المسبح، الحديقة…): تُقال في النهاية.',
     ],
   },
   apps: {
@@ -643,6 +651,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
       'الشريط الأصفر يعني أنك تستطيع التعديل: لمس بطاقة يفتح إعداداتها؛ وللمجلد، ضغطة طويلة.',
       '«الإعدادات» و«طباعة / PDF» في الشريط الأصفر. «إنهاء» يعيد إلى وضع الطفل.',
       'يُحفظ كل شيء على الجهاز، حتى بعد إطفائه.',
+      'الإعدادات ← اللوحة ← وضع القفل: لا يستطيع الطفل فتح تطبيقات أخرى ولا الرجوع؛ ولمنعه من الخروج من التطبيق، فعّل أيضاً «الوصول الموجَّه» (آيباد) أو «تثبيت الشاشة» (أندرويد).',
     ],
   },
   principles: {

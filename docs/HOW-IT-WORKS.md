@@ -105,6 +105,27 @@ This file grows as each feature is built. Each line says **what** was made, **ho
 | Account & licence | Verified status ("free access"), connected users, credentials, account details, preferences; billing stays for later. |
 | Tested | A browser walkthrough plays the whole story: a parent creates a child, a therapist signs up, verifies, connects with the family code, the parent accepts, the therapist drafts a new TLA and sends it, the parent reviews and approves, and the TLA appears on the child's board. |
 
+## Round 7 — Lock mode, timer, week and month plans, ARASAAC
+
+| Feature | How it was built |
+|---|---|
+| Child lock | Settings → Board → Child lock, remembered **per device** (the parent's phone stays free). On the child's device: the Android back button is ignored (`BackHandler`), other apps no longer open from a picture, the screen stays on (`expo-keep-awake`), the status bar is hidden; in a browser the page goes full screen and asks before closing (`src/lib/childLock(.web).ts`). No app can block the iPad's Home gesture by itself: Apple reserves that for **Guided Access** (Android: **screen pinning**); the same section explains how to turn them on. |
+| Timer that hides nothing | The timer is now a strip above the board (`TimerCard.tsx`, placed in the page layout instead of floating on top): the board measures the space left and its cards get a little smaller. |
+| Picture of what the child waits for | The timer remembers a word (`timer.concept` in `AppState.tsx`), shown next to it; touching it says the word, and « C’est fini ! piscine » is said at the end. A schedule step's timer uses that step's picture. |
+| Week and month plans | `src/ui/screens/PlansViews.tsx` (React Native): seven columns Monday–Sunday, and a month calendar (`src/data/calendar.ts` builds the weeks; Lebanese month names in Arabic). They are optional (`settings.plans`), chosen at set-up or in Settings. They are stored in the child's profile and added to the change sets (`profileDiff.ts`: one change per weekday or per event), so they sync, merge, can be proposed by a professional, and appear in the history with undo — tested with Jest. |
+| Complete ARASAAC library | The offline library holds all 13,907 ARASAAC pictograms (two were missing: one the image server no longer served, one published this week). `npm run update:picto` adds new ones later without downloading everything again. |
+| ARASAAC logo | ARASAAC's official logo (rendered from their SVG; its lettering is white, so it sits on a dark badge as on their website) with their own credit sentence, on the welcome page, in settings, the guide, the professional workspace and on printouts (`src/ui/ArasaacCredit.tsx`). |
+
+### ARASAAC licence — to settle before selling
+
+ARASAAC's terms (arasaac.org/terms-of-use) publish the pictograms under **Creative Commons
+BY-NC-SA**, "authorizing their use for non-profit purposes", and add: "the use of these resources
+within any product or publication for commercial purposes is excluded" without written authorization
+of the copyright holders (Government of Aragón). A paid app (or a paid subscription) containing them
+needs that **written authorization**: the e-mail sent to ARASAAC should ask explicitly for commercial
+use, not only for the logo. If they refuse, the app can stay free, or use a symbol set licensed for
+commercial use.
+
 ## How everything is checked
 
 | Check | What it does |

@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     paddingRight: 6,
     paddingVertical: 5,
   },
-  editText: { flex: 1, color: C.edit, fontWeight: '800', fontSize: 15 },
+  editText: { flex: 1, minWidth: 0, color: C.edit, fontWeight: '800', fontSize: 15 },
   banner: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -650,7 +650,7 @@ function Learning({ p, onOpen }: { p: ProStrings; onOpen: (start?: Overlay | 'ed
     { id: 'modelling', icon: 'pointer', start: { kind: 'model' } },
     { id: 'tla', icon: 'plus', start: { kind: 'newTla' } },
     { id: 'access', icon: 'settings', start: 'edit' },
-    { id: 'languages', icon: 'globe', start: { kind: 'lang' } },
+    { id: 'languages', icon: 'globe', start: { kind: 'settings' } },
   ];
   return (
     <>

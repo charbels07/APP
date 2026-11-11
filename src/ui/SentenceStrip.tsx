@@ -3,7 +3,7 @@ import { Animated, Pressable, ScrollView, StyleSheet, Text, View, type ScrollVie
 import { renderStrip } from '../lib/grammar';
 import { isRtl, symbolOf } from '../lib/lexicon';
 import { speakSegments } from '../lib/speech';
-import type { SymbolRef } from '../model/types';
+import type { Profile, SymbolRef } from '../model/types';
 import { useApp } from '../state/AppState';
 import { Icon } from './Icon';
 import { SymbolView } from './SymbolView';
@@ -45,7 +45,7 @@ export function SentenceStrip({ compact }: { compact: boolean }) {
               <Pressable
                 key={tok.key}
                 onPress={() => {
-                  pulse(tok.concept ?? '', tok.key);
+                  pulse(tok.concept ?? tok.picture?.word ?? '', tok.key);
                   speakSegments(
                     tok.audio ? [{ kind: 'audio', media: tok.audio }] : [{ kind: 'tts', text: tok.text, lang: tok.lang }],
                     profile.settings,
@@ -54,9 +54,9 @@ export function SentenceStrip({ compact }: { compact: boolean }) {
                 style={({ pressed }) => [styles.chip, pressed && { opacity: 0.6 }]}
                 accessibilityLabel={tok.text}
               >
-                {tok.concept ? (
+                {tok.concept || tok.picture ? (
                   <ChipSymbol
-                    symbol={symbolOf(profile, tok.concept)}
+                    symbol={chipPicture(profile, tok)}
                     size={chipSymbol}
                     wiggleN={wiggle?.key === tok.key ? wiggle.n : 0}
                   />
@@ -87,6 +87,13 @@ export function SentenceStrip({ compact }: { compact: boolean }) {
       </View>
     </View>
   );
+}
+
+/** Picture of a card of the sentence: its word of the boards, or the library pictogram of a typed word. */
+export function chipPicture(profile: Profile, tok: { concept?: string; picture?: { word?: string; picto?: string } }): SymbolRef {
+  const word = tok.concept ?? tok.picture?.word;
+  if (word) return symbolOf(profile, word);
+  return { kind: 'picto', key: tok.picture?.picto ?? '' };
 }
 
 function ChipSymbol({ symbol, size, wiggleN }: { symbol: SymbolRef; size: number; wiggleN: number }) {

@@ -262,4 +262,6 @@ export interface Demo {
 /** An item in the sentence strip. */
 export type StripItem =
   | { key: string; kind: 'concept'; concept: string; lang: Lang }
-  | { key: string; kind: 'text'; text: string; lang: Lang };
+  /** Typed on the keyboard: said as written. `word` (a word of the boards) or `picto` (a library
+   *  pictogram, `library/file`) gives the picture shown with it. */
+  | { key: string; kind: 'text'; text: string; lang: Lang; word?: string; picto?: string };

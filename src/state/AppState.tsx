@@ -8,6 +8,7 @@ import { audioOf, label } from '../lib/lexicon';
 import { locate, type Location } from '../lib/search';
 import { beep, prepareVoices, speakSegments, speakText, stopSpeech } from '../lib/speech';
 import type { Cell, DemoStep, Lang, Profile, StripItem, UiLang } from '../model/types';
+import { typedChips, type TypedChip } from '../lib/typedWords';
 import type { UsageEvent } from './usageTracker';
 
 export type View = 'board' | 'tla' | 'schedule';
@@ -113,7 +114,8 @@ interface AppCtx {
   strip: StripItem[];
   canUndo: boolean;
   touchConcept: (conceptId: string, origin?: TapOrigin) => void;
-  addText: (text: string) => void;
+  /** Typed text → picture cards (`chips` from lib/typedWords when the caller has the pictogram library). */
+  addText: (text: string, chips?: TypedChip[]) => void;
   speakStrip: () => Promise<void>;
   speakConcept: (conceptId: string) => void;
   deleteLast: () => void;
@@ -381,14 +383,24 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
   );
 
   const addText = useCallback(
-    (text: string) => {
+    (text: string, chips?: TypedChip[]) => {
       const clean = text.trim();
       if (!clean) return;
       record({ kind: 'text', text: clean });
       emit({ type: 'keyboard' });
-      const item: StripItem = { key: newKey(), kind: 'text', text: clean, lang: profileRef.current.settings.lang };
-      stripRef.current = [...stripRef.current, item];
-      editStrip((s) => [...s, item]);
+      const lang = profileRef.current.settings.lang;
+      // One card per word, each with its picture when there is one; said exactly as typed.
+      const parts = chips?.length ? chips : typedChips(profileRef.current, clean, lang);
+      const items: StripItem[] = parts.map((c) => ({
+        key: newKey(),
+        kind: 'text',
+        text: c.text,
+        lang,
+        ...(c.word ? { word: c.word } : {}),
+        ...(c.picto ? { picto: c.picto } : {}),
+      }));
+      stripRef.current = [...stripRef.current, ...items];
+      editStrip((s) => [...s, ...items]);
     },
     [editStrip, record, emit],
   );
@@ -410,7 +422,7 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
       if (token === last) return;
       last = token;
       const it = items[token];
-      if (it) pulse(it.kind === 'concept' ? it.concept : '', it.key);
+      if (it) pulse(it.kind === 'concept' ? it.concept : (it.word ?? ''), it.key);
     };
     const follow = (seg: number, charIndex: number) => {
       const m = marks[seg];

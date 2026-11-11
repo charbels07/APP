@@ -4,11 +4,14 @@ import { aiAvailable, askAiToReadDrawing, type DrawingGuess, type Stroke } from 
 import { isRtl, label, LANG_NAMES, symbolOf } from '../../lib/lexicon';
 import { search, type Location } from '../../lib/search';
 import { speakText } from '../../lib/speech';
+import { typedChips } from '../../lib/typedWords';
 import { LANGS, type Lang, type UiLang } from '../../model/types';
 import { UI_LANG_NAMES } from '../../i18n/ui';
 import { useApp } from '../../state/AppState';
 import { Btn, Panel, Section } from '../common';
 import { DrawPad } from '../DrawPad';
+import { usePictoLibrary } from '../PictoPicker';
+import { chipPicture } from '../SentenceStrip';
 import { Icon } from '../Icon';
 import { SymbolView } from '../SymbolView';
 import { C, radius } from '../theme';
@@ -187,11 +190,16 @@ function DrawSearch({
   );
 }
 
-/** Keyboard always available for literate users (spec §10). */
+/**
+ * Keyboard always available for literate users (spec §10). What is typed goes into the sentence
+ * as picture cards: each word with the pictogram of the boards or of the offline library.
+ */
 export function KeyboardPanel() {
   const app = useApp();
   const { t, lang, profile } = app;
   const [text, setText] = useState('');
+  const lib = usePictoLibrary();
+  const chips = useMemo(() => typedChips(profile, text, lang, lib || null), [profile, text, lang, lib]);
   return (
     <Panel title={t.keyboard} onClose={() => app.setOverlay(null)}>
       <TextInput
@@ -203,20 +211,33 @@ export function KeyboardPanel() {
         placeholderTextColor="#98A2B3"
         style={[styles.keyboardInput, { textAlign: isRtl(lang) ? 'right' : 'left', writingDirection: isRtl(lang) ? 'rtl' : 'ltr' }]}
       />
+      {chips.length > 0 && (
+        <View style={{ gap: 6 }}>
+          <Text style={styles.typedNote}>{t.typedPreview}</Text>
+          <View style={[styles.typedRow, isRtl(lang) && { flexDirection: 'row-reverse' }]} accessibilityLabel={t.typedPreview}>
+            {chips.map((c, i) => (
+              <View key={`${i}-${c.text}`} style={styles.typedChip}>
+                {c.word || c.picto ? <SymbolView symbol={chipPicture(profile, { picture: c })} size={44} /> : null}
+                <Text style={[styles.typedText, { writingDirection: isRtl(lang) ? 'rtl' : 'ltr' }]}>{c.text}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
       <View style={[styles.row, { flexWrap: 'wrap' }]}>
-        <Btn kind="danger" icon="trash" label={t.clear} disabled={!text} onPress={() => setText('')} style={{ flexGrow: 1 }} />
-        <Btn kind="success" icon="volume" label={t.speak} disabled={!text.trim()} onPress={() => speakText(text, lang, profile.settings)} style={{ flex: 1 }} />
         <Btn
           kind="primary"
           icon="plus"
           label={t.addToSentence}
           disabled={!text.trim()}
           onPress={() => {
-            app.addText(text);
+            app.addText(text, chips);
             app.setOverlay(null);
           }}
-          style={{ flex: 1 }}
+          style={styles.keyboardMain}
         />
+        <Btn kind="success" icon="volume" label={t.speak} disabled={!text.trim()} onPress={() => speakText(text, lang, profile.settings)} style={styles.keyboardBtn} />
+        <Btn kind="danger" icon="trash" label={t.clear} disabled={!text} onPress={() => setText('')} style={styles.keyboardBtn} />
       </View>
     </Panel>
   );
@@ -402,6 +423,25 @@ const styles = StyleSheet.create({
   resultLabel: { fontSize: 19, fontWeight: '800', color: C.text },
   path: { fontSize: 13, color: C.accent, fontWeight: '600' },
   row: { flexDirection: 'row', gap: 10 },
+  /** One row on a tablet; on a phone the main button first, the two others under it. */
+  keyboardMain: { flexGrow: 2, flexBasis: 200 },
+  keyboardBtn: { flexGrow: 1, flexBasis: 110 },
+  typedNote: { fontSize: 13, color: C.textMuted },
+  typedRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  typedChip: {
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 2,
+    minWidth: 56,
+    minHeight: 44,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: C.border,
+    backgroundColor: C.surface,
+  },
+  typedText: { fontSize: 15, fontWeight: '700', color: C.text },
   keyboardInput: {
     minHeight: 120,
     fontSize: 24,

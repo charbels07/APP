@@ -20,7 +20,7 @@ données). Chaque chapitre a un bouton *Essayer* qui ouvre l’endroit dont il p
 2. Toucher *je* → *vouloir* → *manger* → *Parler* : on doit entendre « je veux manger » (pas « vouloir »).
    Toucher *pas* plusieurs fois très vite : il n’est ajouté qu’une fois (délai de 2 s entre deux appuis
    sur le même pictogramme, réglable dans *Réglages → Communication*).
-3. *Langue* : deux choix séparés. *Langue de communication* → عربي (لبناني) : les mots sont aux mêmes places
+3. *Réglages* (mode accompagnant) → langues : deux choix séparés. *Langue de communication* → عربي (لبناني) : les mots sont aux mêmes places
    ; *Langue de navigation* → العربية : menus, boutons et guide en arabe, mots inchangés. Essayer
    aussi « navigation en français, mots en libanais ». Revenir au français. (Les textes arabes de
    navigation sont en arabe standard simple : à faire relire.)
@@ -51,7 +51,7 @@ données). Chaque chapitre a un bouton *Essayer* qui ouvre l’endroit dont il p
 1. **Construire une phrase** : touchez *je* → *aimer* → *pas* → *jouer*. La bande
    affiche « je n’aime pas jouer » (conjugaison, élision et négation automatiques).
    Touchez **Parler**.
-2. **Changer de langue** : bouton *Langue* → *عربي (لبناني)*. Les mots restent
+2. **Changer de langue** : mode accompagnant → *Réglages* → *Langue de communication* → *عربي (لبناني)*. Les mots restent
    **exactement à la même place** (plan moteur stable). On peut mélanger les
    langues dans une même phrase.
 3. **Chercher un mot** : *Chercher* → tapez « pome » (avec la faute) →

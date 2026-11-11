@@ -68,13 +68,13 @@ const BASE: BaseChapter[] = [
     title: { fr: 'L’écran en un coup d’œil', en: 'The screen at a glance' },
     steps: {
       fr: [
-        'À gauche, la barre universelle, toujours au même endroit : CAA (accueil), TLA, Planning, Minuteur, le gros bouton rouge Aide, puis les outils Chercher, Clavier, Modèle, Langue, Guide et Accompagnant.',
+        'À gauche, la barre universelle, toujours au même endroit : CAA (accueil), TLA, Planning, Minuteur, le gros bouton rouge Aide, puis les outils Chercher, Clavier, Modèle, Guide et Accompagnant.',
         'En haut, la bande de phrase : chaque mot touché s’y ajoute.',
         'Au centre, la grille de mots. Chaque mot garde toujours sa place : c’est ce qui permet à l’enfant d’apprendre les gestes par cœur.',
         'Les couleurs indiquent le type de mot : jaune = personnes, vert = actions, bleu = descriptions, orange = objets, violet = questions, rose = mots sociaux, rouge = négation, gris = petits mots.',
       ],
       en: [
-        'On the left, the universal bar, always in the same place: AAC (home), Boards, Schedule, Timer, the big red Help button, then the tools Search, Keyboard, Model, Language, Guide and Caregiver.',
+        'On the left, the universal bar, always in the same place: AAC (home), Boards, Schedule, Timer, the big red Help button, then the tools Search, Keyboard, Model, Guide and Caregiver.',
         'At the top, the sentence strip: every word you touch is added to it.',
         'In the middle, the word grid. Each word always keeps its place: that is how the child learns the movements by heart.',
         'Colours show the kind of word: yellow = people, green = actions, blue = describing, orange = things, purple = questions, pink = social words, red = negation, grey = little words.',
@@ -159,17 +159,17 @@ const BASE: BaseChapter[] = [
     title: { fr: 'Choisir les langues', en: 'Choosing languages' },
     steps: {
       fr: [
-        'Langue propose deux choix séparés : Langue de communication (ce que dit l’appareil et ce qui est écrit sur les cases) et Langue de navigation (menus, boutons, guide).',
+        'Les langues se choisissent dans les Réglages (mode accompagnant), avec deux choix séparés : Langue de communication (ce que dit l’appareil et ce qui est écrit sur les cases) et Langue de navigation (menus, boutons, guide).',
         'Par exemple : naviguer en français et parler en libanais, ou l’inverse. Les mots restent exactement à la même place dans toutes les langues.',
         'On peut mélanger les langues dans une même phrase : chaque mot est dit dans sa langue.',
       ],
       en: [
-        'Language offers two separate choices: Communication language (what the device says and what is written on the cards) and Navigation language (menus, buttons, guide).',
+        'Languages are chosen in Settings (caregiver mode), with two separate choices: Communication language (what the device says and what is written on the cards) and Navigation language (menus, buttons, guide).',
         'For example: navigate in English and speak in Lebanese Arabic, or the other way round. Words stay exactly in the same place in every language.',
         'Languages can be mixed in one sentence: each word is said in its own language.',
       ],
     },
-    action: 'lang',
+    action: 'settings',
   },
   {
     id: 'help',
@@ -274,8 +274,8 @@ const BASE: BaseChapter[] = [
     icon: 'keyboard',
     title: { fr: 'Le clavier', en: 'The keyboard' },
     steps: {
-      fr: ['Pour ceux qui savent écrire : Clavier, écrivez, puis Parler ou Ajouter à la phrase.'],
-      en: ['For those who can write: Keyboard, type, then Speak or Add to sentence.'],
+      fr: ['Pour ceux qui savent écrire : Clavier, écrivez, puis Parler ou Ajouter à la phrase. Chaque mot écrit arrive dans la phrase avec son pictogramme (celui du tableau, sinon celui de la bibliothèque) et il est dit tel qu’il est écrit.'],
+      en: ['For those who can write: Keyboard, type, then Speak or Add to sentence. Each typed word goes into the sentence with its pictogram (the one of the board, else one from the library) and is said exactly as written.'],
     },
     action: 'keyboard',
   },
@@ -605,7 +605,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   screen: {
     title: 'الشاشة بلمحة',
     steps: [
-      'على اليسار، الشريط الدائم، دائماً في المكان نفسه: التواصل (الرئيسية)، اللوحات، الجدول، المؤقت، زر «مساعدة» الأحمر الكبير، ثم الأدوات: بحث، لوحة المفاتيح، نموذج، اللغة، الدليل، المرافق.',
+      'على اليسار، الشريط الدائم، دائماً في المكان نفسه: التواصل (الرئيسية)، اللوحات، الجدول، المؤقت، زر «مساعدة» الأحمر الكبير، ثم الأدوات: بحث، لوحة المفاتيح، نموذج، الدليل، المرافق.',
       'في الأعلى، شريط الجملة: تُضاف إليه كل كلمة تلمسها.',
       'في الوسط، شبكة الكلمات. تبقى كل كلمة دائماً في مكانها: هكذا يتعلّم الطفل الحركات عن ظهر قلب.',
       'تدلّ الألوان على نوع الكلمة: الأصفر = الأشخاص، الأخضر = الأفعال، الأزرق = الصفات، البرتقالي = الأشياء، البنفسجي = الأسئلة، الوردي = الكلمات الاجتماعية، الأحمر = النفي، الرمادي = الكلمات الصغيرة.',
@@ -642,7 +642,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   language: {
     title: 'اختيار اللغات',
     steps: [
-      'زر «اللغة» فيه خياران منفصلان: «لغة التواصل» (ما يقوله الجهاز وما يُكتب على البطاقات) و«لغة التنقل» (القوائم والأزرار والدليل).',
+      'تُختار اللغات في الإعدادات (وضع المرافق)، بخيارين منفصلين: «لغة التواصل» (ما يقوله الجهاز وما يُكتب على البطاقات) و«لغة التنقل» (القوائم والأزرار والدليل).',
       'مثلاً: التنقل بالعربية والكلمات بالفرنسية، أو التنقل بالفرنسية والكلمات باللبنانية. تبقى الكلمات في المكان نفسه في كل اللغات.',
       'يمكن خلط اللغات في جملة واحدة: تُقال كل كلمة بلغتها.',
     ],
@@ -690,7 +690,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   },
   keyboard: {
     title: 'لوحة المفاتيح',
-    steps: ['لمن يعرف الكتابة: «لوحة المفاتيح»، اكتب، ثم «تكلّم» أو «أضف إلى الجملة».'],
+    steps: ['لمن يعرف الكتابة: «لوحة المفاتيح»، اكتب، ثم «تكلّم» أو «أضف إلى الجملة». تدخل كل كلمة مكتوبة إلى الجملة مع رمزها (رمز اللوحة، وإلا رمز من المكتبة) وتُقال كما كُتبت.'],
   },
   caregiver: {
     title: 'وضع المرافق',

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { isRtl, label, symbolOf } from '../../lib/lexicon';
 import { useApp } from '../../state/AppState';
 import { Btn } from '../common';
@@ -12,6 +12,7 @@ export function TlaScreen() {
   const app = useApp();
   const { profile, tlaId, lang, editMode, t } = app;
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const narrow = useWindowDimensions().width < 500;
   const current = tlaId && profile.boards[tlaId] ? profile.boards[tlaId] : profile.boards[profile.tlaOrder[0]];
   // Caregiver mode: a double tap on a tab opens the activity board's menu (edit, duplicate, share, print).
   const lastTap = useRef<{ id: string; at: number; timer: ReturnType<typeof setTimeout> } | null>(null);
@@ -55,7 +56,7 @@ export function TlaScreen() {
   return (
     <View style={{ flex: 1, gap: 6 }}>
       <View style={styles.tabsRow}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flex: 1 }} contentContainerStyle={styles.tabs}>
           {profile.tlaOrder.map((id) => {
             const b = profile.boards[id];
             if (!b) return null;
@@ -78,7 +79,7 @@ export function TlaScreen() {
         </ScrollView>
         {editMode && (
           <View style={{ flexDirection: 'row', gap: 6 }}>
-            <Btn small icon="plus" label={t.newTla} onPress={() => app.setOverlay({ kind: 'newTla' })} />
+            <Btn small icon="plus" label={narrow ? undefined : t.newTla} accessibilityLabel={t.newTla} onPress={() => app.setOverlay({ kind: 'newTla' })} />
             {current && (
               <Btn small kind="danger" icon="trash" label={confirmDelete ? '?' : undefined} accessibilityLabel={t.deleteTla} onPress={deleteTla} />
             )}

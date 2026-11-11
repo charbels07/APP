@@ -37,7 +37,6 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
   const bar = profile.settings.bar;
   const timerLabel =
     timer.endAt || (timer.remainingMs > 0 && timer.remainingMs < timer.totalMs) ? formatTime(timer.remainingMs) : t.timer;
-  const langCode = profile.settings.lang === 'ar' ? 'ع' : profile.settings.lang.toUpperCase();
 
   const main: Item[] = [
     {
@@ -69,7 +68,6 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
     { key: 'keyboard', icon: 'keyboard', label: t.keyboard, onPress: () => app.setOverlay({ kind: 'keyboard' }), active: overlay?.kind === 'keyboard' },
     { key: 'model', icon: 'pointer', label: t.model, onPress: () => app.setOverlay({ kind: 'model' }), active: overlay?.kind === 'model' || app.recording },
     { key: 'guide', icon: 'book', label: t.guide, onPress: () => app.setOverlay({ kind: 'guide' }), active: overlay?.kind === 'guide' },
-    { key: 'lang', icon: 'globe', label: t.language, onPress: () => app.setOverlay({ kind: 'lang' }), active: overlay?.kind === 'lang', badge: langCode },
     {
       key: 'lock',
       icon: editMode ? 'unlock' : 'lock',

@@ -5,7 +5,8 @@
  *  - Account: my account, children, devices and sync, privacy, preferences;
  *  - Suivi: the communication data the family chose to record, and observations
  *    (owner, managers and members allowed to see the data).
- * In the preview and the set-up trial (no account yet) only the Board page exists.
+ * In the preview and the set-up trial (no account yet) the three pages are shown, but Team and
+ * Account only say what they will hold: they open once the account is created.
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -15,7 +16,7 @@ import { settingsStrings } from '../../i18n/settings';
 import { useApp } from '../../state/AppState';
 import { useBoard } from '../../state/BoardContext';
 import { useSession } from '../../state/Session';
-import { Panel, Segmented, useNavRtl } from '../common';
+import { Btn, Panel, Segmented, useNavRtl } from '../common';
 import { BoardSettingsBody } from '../panels/CaregiverPanels';
 import { DataDashboard } from '../data/DataDashboard';
 import { C } from '../theme';
@@ -27,12 +28,12 @@ type Tab = 'board' | 'team' | 'data' | 'account';
 export function SettingsScreen() {
   const app = useApp();
   const board = useBoard();
-  const { uiLang, account, api } = useSession();
+  const { uiLang, account, api, s, go } = useSession();
   const x = settingsStrings(uiLang);
   const [tab, setTab] = useState<Tab>('board');
   const isDevice = account?.provider === 'device';
   const seesData = !!board && !isDevice && (board.manager || !!board.access?.perms.viewData);
-  const tabs: Tab[] = board ? (isDevice ? ['board', 'account'] : ['board', 'team', ...(seesData ? (['data'] as Tab[]) : []), 'account']) : ['board'];
+  const tabs: Tab[] = board ? (isDevice ? ['board', 'account'] : ['board', 'team', ...(seesData ? (['data'] as Tab[]) : []), 'account']) : ['board', 'team', 'account'];
 
   // Things waiting for the parent: shown as a number on the Team page.
   const [waiting, setWaiting] = useState(0);
@@ -53,12 +54,15 @@ export function SettingsScreen() {
 
   return (
     <Panel title={app.t.settings} onClose={() => app.setOverlay(null)} tone="edit" maxWidth={820}>
-      {tabs.length > 1 ? (
-        <Segmented<Tab> value={tab} onChange={setTab} options={tabs.map((t) => ({ value: t, label: label(t) }))} />
-      ) : app.preview ? null : (
-        <Note text={x.previewOnly} />
-      )}
+      <Segmented<Tab> value={tab} onChange={setTab} options={tabs.map((t) => ({ value: t, label: label(t) }))} />
       {tab === 'board' && <BoardSettingsBody />}
+      {!board && tab !== 'board' && (
+        <View style={{ gap: 12 }}>
+          <Note text={tab === 'team' ? x.previewTeam : x.previewAccount} />
+          <Note text={x.previewOnly} />
+          {app.preview && <Btn kind="primary" icon="user" label={s.createAccount} onPress={() => go({ name: 'role' })} />}
+        </View>
+      )}
       {tab === 'team' && board && <TeamTab board={board} onChanged={refreshWaiting} />}
       {tab === 'data' && board && (
         <DataDashboard

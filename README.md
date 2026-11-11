@@ -68,7 +68,7 @@ Done: core board with stable positions and progressive reveal · Fitzgerald
 colour code · folders · sentence strip (speak all / per word, delete, clear with
 undo) · FR/EN grammar · instant language switch FR ↔ EN ↔ Lebanese Arabic with
 the same motor plan · code-switching inside one sentence · universal bar (CAA,
-TLA, Schedule, Timer, Help + search, keyboard, language, caregiver lock) ·
+TLA, Schedule, Timer, Help + search, keyboard, caregiver lock) ·
 search with typo tolerance, synonyms and "show me where" · keyboard · 4 TLAs ·
 2 schedules (now / next / done, linked TLA and timer) · First–Then · timer
 (circle / bar / digits, keeps running, sound + haptics) · 3-level Help button ·
@@ -106,7 +106,7 @@ first steps for families and new users, and caregivers & professionals — with 
 per chapter that opens the place it describes; a welcome card offers it once on first launch.
 
 Draft 0.6 adds: the navigation language (menus, buttons, messages, guide) is chosen separately
-from the words' language, both from the bar's *Language* button: French, English or Arabic
+from the words' language, both in Settings (the bar's *Language* button was removed): French, English or Arabic
 navigation × French, English or Lebanese Arabic words. Arabic navigation (simple Modern Standard
 Arabic, to be reviewed) mirrors the menus right to left; boards are never mirrored (motor plan).
 

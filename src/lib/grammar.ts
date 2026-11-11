@@ -76,12 +76,14 @@ export interface Token {
   concept?: string;
   /** Recorded audio to play instead of synthesis, if the surface form is unchanged. */
   audio?: string;
+  /** Typed text: the picture shown with it (a word of the boards, or a library pictogram). */
+  picture?: { word?: string; picto?: string };
 }
 
 export function renderStrip(items: StripItem[], profile: Profile): Token[] {
   const grammar = profile.settings.grammar;
   const tokens: Token[] = items.map((it) => {
-    if (it.kind === 'text') return { key: it.key, text: it.text, lang: it.lang };
+    if (it.kind === 'text') return { key: it.key, text: it.text, lang: it.lang, ...(it.word || it.picto ? { picture: { word: it.word, picto: it.picto } } : {}) };
     return {
       key: it.key,
       text: label(profile, it.concept, it.lang),

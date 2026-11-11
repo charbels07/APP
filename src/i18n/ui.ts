@@ -31,6 +31,7 @@ const fr = {
   // keyboard
   typeHere: 'Écrivez ici…',
   addToSentence: 'Ajouter à la phrase',
+  typedPreview: 'Dans la phrase, avec les pictogrammes trouvés :',
   // language
   langNote: 'Les mots gardent la même place dans toutes les langues.',
   otherLangs: 'Autres langues :',
@@ -383,6 +384,7 @@ const en: Dict = {
   notOnBoard: 'not placed on a board yet',
   typeHere: 'Type here…',
   addToSentence: 'Add to sentence',
+  typedPreview: 'In the sentence, with the pictograms found:',
   langNote: 'Words keep the same position in every language.',
   otherLangs: 'Other languages:',
   helpTitle: 'Help',
@@ -722,6 +724,7 @@ const ar: Dict = {
   notOnBoard: 'غير موضوعة على لوحة بعد',
   typeHere: 'اكتب هنا…',
   addToSentence: 'أضف إلى الجملة',
+  typedPreview: 'في الجملة، مع الرموز الموجودة:',
   langNote: 'تبقى الكلمات في المكان نفسه في كل اللغات.',
   otherLangs: 'لغات أخرى:',
   helpTitle: 'مساعدة',

@@ -2,13 +2,14 @@
 import React from 'react';
 import { View } from 'react-native';
 import { useSession } from '../../state/Session';
+import { ArasaacCredit } from '../ArasaacCredit';
 import { Btn } from '../common';
 import { Icon } from '../Icon';
 import { C } from '../theme';
 import { LinkBtn, Logo, StartLayout, T, st, useRtl } from './StartLayout';
 
 export function Welcome() {
-  const { s, go } = useSession();
+  const { s, go, uiLang } = useSession();
   const rtl = useRtl();
   return (
     <StartLayout>
@@ -34,6 +35,7 @@ export function Welcome() {
         <LinkBtn label={s.haveAccount} onPress={() => go({ name: 'auth', mode: 'signIn', role: 'parent' })} />
         <LinkBtn label={s.pairDevice} onPress={() => go({ name: 'pair' })} />
       </View>
+      <ArasaacCredit lang={uiLang} compact />
     </StartLayout>
   );
 }

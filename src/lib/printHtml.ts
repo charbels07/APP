@@ -4,6 +4,7 @@
  * is never included (PRN-07).
  */
 import { ARASAAC_IMAGES } from '../data/arasaacMap';
+import { ARASAAC_CREDIT } from '../data/arasaacCredit';
 import type { Board, Lang, Profile } from '../model/types';
 import { CLASS_COLORS } from '../ui/theme';
 import { isRtl, label, symbolOf, wordClass } from './lexicon';
@@ -103,6 +104,6 @@ ${o.cutCards ? '.cell { outline: 1px dashed #666; outline-offset: 2.5mm; }' : ''
 </style></head><body>
 <h1>${escape(title)}</h1>
 <div class="grid">${cellHtml}</div>
-<div class="foot">Pictogrammes : Sergio Palao — ARASAAC (arasaac.org) — CC BY-NC-SA — Gouvernement d’Aragon.</div>
+<div class="foot">${escape(ARASAAC_CREDIT[lang])}</div>
 </body></html>`;
 }

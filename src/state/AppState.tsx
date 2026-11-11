@@ -74,6 +74,8 @@ export interface TimerState {
   endAt: number | null;
   finished: boolean;
   open: boolean;
+  /** What the child is waiting for (a word shown next to the timer, said when time is up). */
+  concept?: string;
 }
 
 interface AppCtx {
@@ -141,7 +143,9 @@ interface AppCtx {
   clearHighlight: () => void;
 
   timer: TimerState;
-  startTimer: (minutes: number) => void;
+  /** `concept`: what the child waits for (undefined keeps the current one, null removes it). */
+  startTimer: (minutes: number, concept?: string | null) => void;
+  setTimerConcept: (concept: string | null) => void;
   pauseTimer: () => void;
   resumeTimer: () => void;
   resetTimer: () => void;
@@ -637,10 +641,18 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
     finished: false,
     open: false,
   });
-  const startTimer = useCallback((minutes: number) => {
+  const startTimer = useCallback((minutes: number, concept?: string | null) => {
     const ms = Math.max(1, Math.round(minutes * 60000));
-    setTimer({ totalMs: ms, remainingMs: ms, endAt: Date.now() + ms, finished: false, open: true });
+    setTimer((cur) => ({
+      totalMs: ms,
+      remainingMs: ms,
+      endAt: Date.now() + ms,
+      finished: false,
+      open: true,
+      concept: concept === undefined ? cur.concept : concept ?? undefined,
+    }));
   }, []);
+  const setTimerConcept = useCallback((concept: string | null) => setTimer((cur) => ({ ...cur, concept: concept ?? undefined })), []);
   const pauseTimer = useCallback(
     () => setTimer((s) => (s.endAt ? { ...s, remainingMs: Math.max(0, s.endAt - Date.now()), endAt: null } : s)),
     [],
@@ -672,7 +684,10 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
       const l = p.settings.lang;
       if (p.settings.timer.sound) {
         beep();
-        setTimeout(() => speakText(strings(p.settings.uiLang).timeUp[l], l, p.settings), 1100);
+        // « C’est fini ! piscine » : the word the child was waiting for, if one was chosen.
+        const waited = timerRef.current.concept;
+        const said = strings(p.settings.uiLang).timeUp[l] + (waited ? ` ${label(p, waited, l)}` : '');
+        setTimeout(() => speakText(said, l, p.settings), 1100);
       }
       if (p.settings.timer.haptic) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -733,6 +748,7 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
       clearHighlight,
       timer,
       startTimer,
+      setTimerConcept,
       pauseTimer,
       resumeTimer,
       resetTimer,
@@ -744,7 +760,7 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
       openFolder, goBack, openTla, openSchedule, pressHelp, recording, startRecording, finishRecording,
       playing, playSteps, stopPlaying, pointer, demoCaption, wiggle, pulse, appLaunch, launchApp, openAppNow, cancelAppLaunch,
       moveSource, highlight, showMeWhere, clearHighlight, timer,
-      startTimer, pauseTimer, resumeTimer, resetTimer, setTimerOpen,
+      startTimer, setTimerConcept, pauseTimer, resumeTimer, resetTimer, setTimerOpen,
     ],
   );
 

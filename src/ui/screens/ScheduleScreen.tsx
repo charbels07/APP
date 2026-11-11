@@ -183,7 +183,7 @@ function StepActions({ step, onDone }: { step: ScheduleStep; onDone: () => void 
         <Btn icon="grid" label={label(profile, profile.boards[step.tla].concept, lang)} onPress={() => app.openTla(step.tla)} />
       )}
       {step.timerMin ? (
-        <Btn icon="timer" label={`${step.timerMin} ${t.minutes}`} onPress={() => app.startTimer(step.timerMin!)} />
+        <Btn icon="timer" label={`${step.timerMin} ${t.minutes}`} onPress={() => app.startTimer(step.timerMin!, step.concept)} />
       ) : null}
     </View>
   );

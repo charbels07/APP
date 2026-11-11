@@ -35,7 +35,6 @@ export function Root({ banner }: { banner?: React.ReactNode } = {}) {
       {view === 'board' && <BoardScreen />}
       {view === 'tla' && <TlaScreen />}
       {view === 'schedule' && <ScheduleScreen />}
-      <TimerCard />
       {overlay?.kind === 'search' && <SearchPanel />}
       {overlay?.kind === 'keyboard' && <KeyboardPanel />}
       {overlay?.kind === 'help' && <HelpPanel />}
@@ -98,6 +97,8 @@ export function Root({ banner }: { banner?: React.ReactNode } = {}) {
       {banner}
       <SentenceStrip compact={compact} />
       {profile.settings.quickZone && <QuickZone />}
+      {/* Docked above the board: the board shrinks a little, nothing is covered. */}
+      <TimerCard />
       {content}
     </View>
   );

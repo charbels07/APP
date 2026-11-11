@@ -16,6 +16,7 @@ import { EDITED_ON_BOARD } from '../../lib/resources';
 import type { Overlay } from '../../state/AppState';
 import { useSession } from '../../state/Session';
 import { Btn, Field, Section, Segmented } from '../common';
+import { ArasaacCredit } from '../ArasaacCredit';
 import { Icon, type IconName } from '../Icon';
 import { DeleteAccount, MyAccount, Preferences } from '../settings/AccountTab';
 import { Note, ss } from '../settings/SettingsScreen';
@@ -613,6 +614,7 @@ function SharedList({ p }: { p: ProStrings }) {
 // ── Learning center ──
 
 function Learning({ p, onOpen }: { p: ProStrings; onOpen: (start?: Overlay | 'edit') => void }) {
+  const { uiLang } = useSession();
   const items: { id: string; icon: IconName; start?: Overlay | 'edit' }[] = [
     { id: 'demo', icon: 'grid' },
     { id: 'showMe', icon: 'search', start: { kind: 'search' } },
@@ -629,6 +631,7 @@ function Learning({ p, onOpen }: { p: ProStrings; onOpen: (start?: Overlay | 'ed
       {items.map((it) => (
         <Row key={it.id} icon={it.icon} title={p.learnItems[it.id]} sub={p.learnNotes[it.id]} onPress={() => onOpen(it.start)} />
       ))}
+      <ArasaacCredit lang={uiLang} />
     </>
   );
 }
@@ -662,6 +665,7 @@ function ProAccount({ p, verification, users, onVerify }: { p: ProStrings; verif
         <Note text={x.subscriptionLater} />
       </Section>
       <DeleteAccount x={x} />
+      <ArasaacCredit lang={uiLang} />
     </>
   );
 }

@@ -1,4 +1,5 @@
 import { createDefaultProfile } from '../../data/defaults';
+import { ArasaacCredit } from '../ArasaacCredit';
 import { onboardingStrings } from '../../i18n/onboarding';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Image, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -612,7 +613,13 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
       <TextInput autoFocus value={q} onChangeText={setQ} placeholder={t.searchPlaceholder} style={s.input} placeholderTextColor="#98A2B3" />
       <View style={s.pickGrid}>
         {ids.slice(0, 120).map((id) => (
-          <Pressable key={id} onPress={() => onPick(id)} style={({ pressed }) => [s.pickItem, pressed && { opacity: 0.6 }]}>
+          <Pressable
+            key={id}
+            onPress={() => onPick(id)}
+            style={({ pressed }) => [s.pickItem, pressed && { opacity: 0.6 }]}
+            accessibilityRole="button"
+            accessibilityLabel={label(profile, id, lang)}
+          >
             <SymbolView symbol={symbolOf(profile, id)} size={44} />
             <Text style={s.pickText} numberOfLines={2}>
               {label(profile, id, lang)}
@@ -957,7 +964,7 @@ export function BoardSettingsBody() {
 
       <Section title={t.sAbout}>
         <Text style={s.note}>{t.aboutText}</Text>
-        <Text style={s.note}>{t.attribution}</Text>
+        <ArasaacCredit lang={profile.settings.uiLang} />
       </Section>
     </>
   );

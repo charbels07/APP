@@ -77,14 +77,19 @@ export function TlaScreen() {
             );
           })}
         </ScrollView>
-        {editMode && (
-          <View style={{ flexDirection: 'row', gap: 6 }}>
-            <Btn small icon="plus" label={narrow ? undefined : t.newTla} accessibilityLabel={t.newTla} onPress={() => app.setOverlay({ kind: 'newTla' })} />
-            {current && (
-              <Btn small kind="danger" icon="trash" label={confirmDelete ? '?' : undefined} accessibilityLabel={t.deleteTla} onPress={deleteTla} />
-            )}
-          </View>
-        )}
+        {/* Always there, so a parent finds it; outside caregiver mode it first asks for the code. */}
+        <View style={{ flexDirection: 'row', gap: 6 }}>
+          <Btn
+            small
+            icon="plus"
+            label={narrow ? undefined : t.newTla}
+            accessibilityLabel={t.newTla}
+            onPress={() => app.setOverlay(editMode ? { kind: 'newTla' } : { kind: 'pin', then: { kind: 'newTla' } })}
+          />
+          {editMode && current && (
+            <Btn small kind="danger" icon="trash" label={confirmDelete ? '?' : undefined} accessibilityLabel={t.deleteTla} onPress={deleteTla} />
+          )}
+        </View>
       </View>
       {current ? <Grid board={current} /> : null}
     </View>

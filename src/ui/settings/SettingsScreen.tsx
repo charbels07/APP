@@ -5,7 +5,7 @@
  *  - Account: my account, children, devices and sync, privacy, preferences;
  *  - Suivi: the communication data the family chose to record, and observations
  *    (owner, managers and members allowed to see the data).
- * In the preview and the set-up trial (no account yet) the three pages are shown, but Team and
+ * In the preview and the set-up trial (no account yet) every page is shown, but Team, Suivi and
  * Account only say what they will hold: they open once the account is created.
  */
 import React, { useCallback, useEffect, useState } from 'react';
@@ -33,7 +33,7 @@ export function SettingsScreen() {
   const [tab, setTab] = useState<Tab>('board');
   const isDevice = account?.provider === 'device';
   const seesData = !!board && !isDevice && (board.manager || !!board.access?.perms.viewData);
-  const tabs: Tab[] = board ? (isDevice ? ['board', 'account'] : ['board', 'team', ...(seesData ? (['data'] as Tab[]) : []), 'account']) : ['board', 'team', 'account'];
+  const tabs: Tab[] = board ? (isDevice ? ['board', 'account'] : ['board', 'team', ...(seesData ? (['data'] as Tab[]) : []), 'account']) : ['board', 'team', 'data', 'account'];
 
   // Things waiting for the parent: shown as a number on the Team page.
   const [waiting, setWaiting] = useState(0);
@@ -58,7 +58,7 @@ export function SettingsScreen() {
       {tab === 'board' && <BoardSettingsBody />}
       {!board && tab !== 'board' && (
         <View style={{ gap: 12 }}>
-          <Note text={tab === 'team' ? x.previewTeam : x.previewAccount} />
+          <Note text={tab === 'team' ? x.previewTeam : tab === 'data' ? x.previewData : x.previewAccount} />
           <Note text={x.previewOnly} />
           {app.preview && <Btn kind="primary" icon="user" label={s.createAccount} onPress={() => go({ name: 'role' })} />}
         </View>

@@ -1,5 +1,13 @@
 import React, { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+  type LayoutChangeEvent,
+} from "react-native";
 import { isRtl, label, symbolOf } from "../../lib/lexicon";
 import type { Schedule, ScheduleStep } from "../../model/types";
 import { useApp } from "../../state/AppState";
@@ -19,6 +27,13 @@ export const scheduleTitle = (
 export function ScheduleScreen() {
   const app = useApp();
   const { profile, lang, t, editMode } = app;
+  // Phone width: a wider "now" card, small buttons, no arrow between the two cards.
+  const narrow = useWindowDimensions().width < 500;
+  // Height of the row of steps: its pictures take the room that is left.
+  const [seqH, setSeqH] = useState(0);
+  const stepSize = seqH
+    ? Math.round(Math.max(30, Math.min(64, seqH - 110)))
+    : 64;
   const [mode, setMode] = useState<"sequence" | "firstThen" | "week" | "month">(
     "sequence",
   );
@@ -179,8 +194,9 @@ export function ScheduleScreen() {
                 : firstId && app.speakConcept(firstId)
             }
             hint={editMode ? t.tapToChoose : undefined}
+            narrow={narrow}
           />
-          <Icon name="chevronRight" size={48} color={C.textMuted} />
+          {!narrow && <Icon name="chevronRight" size={48} color={C.textMuted} />}
           <BigCard
             heading={t.then}
             conceptId={thenId}
@@ -191,6 +207,7 @@ export function ScheduleScreen() {
                 : thenId && app.speakConcept(thenId)
             }
             hint={editMode ? t.tapToChoose : undefined}
+            narrow={narrow}
           />
           {editMode && profile.firstThen && (
             <Btn
@@ -202,18 +219,20 @@ export function ScheduleScreen() {
           )}
         </View>
       ) : (
-        <>
-          <View style={[styles.bigRow, { flex: 1.25 }]}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.dayPlan}>
+          <View style={[styles.bigRow, styles.bigRowMin, { flex: 1.25 }]}>
             {current ? (
               <BigCard
                 heading={t.now}
                 conceptId={current.concept}
                 tone="now"
                 onPress={() => app.speakConcept(current.concept)}
+                narrow={narrow}
                 actions={
                   <StepActions
                     step={current}
                     onDone={() => toggleDone(current.id)}
+                    compact={narrow}
                   />
                 }
               />
@@ -230,12 +249,15 @@ export function ScheduleScreen() {
             )}
             {current && (
               <>
-                <Icon name="chevronRight" size={40} color={C.textMuted} />
+                {!narrow && (
+                  <Icon name="chevronRight" size={40} color={C.textMuted} />
+                )}
                 <BigCard
                   heading={t.next}
                   conceptId={next?.concept}
                   tone="next"
                   onPress={() => next && app.speakConcept(next.concept)}
+                  narrow={narrow}
                 />
               </>
             )}
@@ -243,7 +265,10 @@ export function ScheduleScreen() {
           <ScrollView
             horizontal
             contentContainerStyle={styles.sequence}
-            style={{ flex: 1 }}
+            style={[{ flex: 1 }, styles.sequenceMin]}
+            onLayout={(e: LayoutChangeEvent) =>
+              setSeqH(e.nativeEvent.layout.height)
+            }
           >
             {steps.map((st, i) => {
               const isCurrent = i === currentIndex;
@@ -264,7 +289,7 @@ export function ScheduleScreen() {
                     <Text style={styles.stepNum}>{i + 1}</Text>
                     <SymbolView
                       symbol={symbolOf(profile, st.concept)}
-                      size={64}
+                      size={stepSize}
                     />
                     <Text
                       style={[
@@ -301,7 +326,7 @@ export function ScheduleScreen() {
               );
             })}
           </ScrollView>
-        </>
+        </ScrollView>
       )}
     </View>
   );
@@ -310,26 +335,47 @@ export function ScheduleScreen() {
 function StepActions({
   step,
   onDone,
+  compact = false,
 }: {
   step: ScheduleStep;
   onDone: () => void;
+  /** Phone width: small buttons, the linked board and the timer keep their icon only. */
+  compact?: boolean;
 }) {
   const app = useApp();
   const { t, profile, lang } = app;
   return (
     <View style={styles.actions}>
-      <Btn kind="success" icon="check" label={t.markDone} onPress={onDone} />
+      <Btn
+        kind="success"
+        icon="check"
+        small={compact}
+        label={t.markDone}
+        onPress={onDone}
+      />
       {step.tla && profile.boards[step.tla] && (
         <Btn
           icon="grid"
-          label={label(profile, profile.boards[step.tla].concept, lang)}
+          small={compact}
+          label={
+            compact
+              ? undefined
+              : label(profile, profile.boards[step.tla].concept, lang)
+          }
+          accessibilityLabel={label(
+            profile,
+            profile.boards[step.tla].concept,
+            lang,
+          )}
           onPress={() => app.openTla(step.tla)}
         />
       )}
       {step.timerMin ? (
         <Btn
           icon="timer"
-          label={`${step.timerMin} ${t.minutes}`}
+          small={compact}
+          label={compact ? undefined : `${step.timerMin} ${t.minutes}`}
+          accessibilityLabel={`${step.timerMin} ${t.minutes}`}
           onPress={() => app.startTimer(step.timerMin!, step.concept)}
         />
       ) : null}
@@ -344,6 +390,7 @@ function BigCard({
   onPress,
   actions,
   hint,
+  narrow = false,
 }: {
   heading: string;
   conceptId?: string;
@@ -351,33 +398,69 @@ function BigCard({
   onPress: () => void;
   actions?: React.ReactNode;
   hint?: string;
+  narrow?: boolean;
 }) {
   const { profile, lang } = useApp();
+  // The picture and the word take the room the card really has (it is small on a phone):
+  // nothing may spill out of the card or sit under the buttons.
+  const [box, setBox] = useState<{ w: number; h: number } | null>(null);
+  const onLayout = (e: LayoutChangeEvent) => {
+    const { width, height } = e.nativeEvent.layout;
+    setBox((b) =>
+      b && Math.abs(b.w - width) < 1 && Math.abs(b.h - height) < 1
+        ? b
+        : { w: width, h: height },
+    );
+  };
+  const text = conceptId ? label(profile, conceptId, lang) : "";
+  const max = tone === "now" ? 150 : 110;
+  const fontSize = box && (box.w < 200 || box.h < 170) ? 19 : 26;
+  const lineHeight = Math.round(fontSize * 1.25);
+  const lines = box && text.length * fontSize * 0.56 > box.w ? 2 : 1;
+  const size = box
+    ? Math.round(
+        Math.max(
+          36,
+          Math.min(max, box.w, box.h - lines * lineHeight - 8 - (hint ? 22 : 0)),
+        ),
+      )
+    : max;
   return (
-    <View style={[styles.big, tone === "now" ? styles.bigNow : styles.bigNext]}>
+    <View
+      style={[
+        styles.big,
+        tone === "now" ? styles.bigNow : styles.bigNext,
+        narrow && styles.bigNarrow,
+        narrow && tone === "next" && { flex: 0.6 },
+      ]}
+    >
       <Text
-        style={[styles.bigHeading, tone === "now" && { color: C.highlight }]}
+        style={[
+          styles.bigHeading,
+          narrow && { fontSize: 15 },
+          tone === "now" && { color: C.highlight },
+        ]}
       >
         {heading}
       </Text>
       <Pressable
         onPress={onPress}
         style={styles.bigBody}
+        onLayout={onLayout}
         accessibilityRole="button"
       >
         {conceptId ? (
           <>
-            <SymbolView
-              symbol={symbolOf(profile, conceptId)}
-              size={tone === "now" ? 150 : 110}
-            />
+            <SymbolView symbol={symbolOf(profile, conceptId)} size={size} />
             <Text
               style={[
                 styles.bigLabel,
+                { fontSize, lineHeight },
                 { writingDirection: isRtl(lang) ? "rtl" : "ltr" },
               ]}
+              numberOfLines={2}
             >
-              {label(profile, conceptId, lang)}
+              {text}
             </Text>
           </>
         ) : (
@@ -410,7 +493,11 @@ const styles = StyleSheet.create({
   },
   tabActive: { borderColor: C.accent, backgroundColor: C.accentSoft },
   tabText: { fontSize: 16, fontWeight: "700", color: C.text },
+  /** Day plan: fills the screen on a tablet, scrolls on a short screen (phone). */
+  dayPlan: { flexGrow: 1, gap: 8 },
   bigRow: { flex: 1, flexDirection: "row", alignItems: "stretch", gap: 10 },
+  bigRowMin: { minHeight: 250 },
+  sequenceMin: { minHeight: 160 },
   big: {
     flex: 1,
     borderRadius: radius.lg,
@@ -419,7 +506,9 @@ const styles = StyleSheet.create({
     padding: 12,
     alignItems: "center",
     gap: 8,
+    overflow: "hidden",
   },
+  bigNarrow: { padding: 8, gap: 6 },
   bigNow: { borderColor: C.highlight },
   bigNext: { borderColor: C.border, flex: 0.8 },
   bigHeading: {

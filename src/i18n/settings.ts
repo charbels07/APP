@@ -180,6 +180,7 @@ const fr = {
   unlink: 'Délier cette tablette',
   previewOnly: 'Ces pages s’ouvrent une fois le compte créé.',
   previewTeam: 'Équipe : invitez l’orthophoniste, l’enseignant ou la famille, choisissez ce que chacun peut voir et modifier, validez leurs propositions et consultez l’historique.',
+  previewData: 'Suivi : l’utilisation, le vocabulaire, le langage et les fonctions de communication de l’enfant, avec vos observations. Rien n’est enregistré tant que la famille ne l’a pas choisi ; les professionnels ne le voient que si la famille l’autorise.',
   previewAccount: 'Compte : votre compte, vos enfants, les appareils reliés, la confidentialité et vos préférences.',
 };
 
@@ -357,6 +358,7 @@ const en: Dict = {
   unlink: 'Unlink this tablet',
   previewOnly: 'These pages open once the account is created.',
   previewTeam: 'Team: invite the speech therapist, the teacher or the family, choose what each person can see and change, approve their proposals and read the history.',
+  previewData: 'Progress: the child’s use, vocabulary, language and communicative functions, with your observations. Nothing is recorded until the family chooses to; professionals see it only if the family allows it.',
   previewAccount: 'Account: your account, your children, the linked devices, privacy and your preferences.',
 };
 
@@ -532,6 +534,7 @@ const ar: Dict = {
   unlink: 'فكّ ربط هذا الجهاز',
   previewOnly: 'تُفتح هذه الصفحات بعد إنشاء الحساب.',
   previewTeam: 'الفريق: ادعُ أخصائي النطق أو المعلّم أو العائلة، واختر ما يمكن لكلّ شخص أن يراه ويعدّله، ووافق على اقتراحاتهم واطّلع على السجلّ.',
+  previewData: 'المتابعة: استعمال الطفل ومفرداته ولغته ووظائف التواصل، مع ملاحظاتك. لا يُسجَّل شيء قبل أن تختار العائلة ذلك؛ ولا يراه المختصون إلا بإذن العائلة.',
   previewAccount: 'الحساب: حسابك، أطفالك، الأجهزة المرتبطة، الخصوصية وتفضيلاتك.',
 };
 

@@ -360,8 +360,11 @@ export function PinPanel() {
     setError(false);
     setCode(next);
     if (next.length === 4) {
-      if (next === profile.settings.pin) app.setEditMode(true);
-      else {
+      if (next === profile.settings.pin) {
+        const then = app.overlay?.kind === 'pin' ? app.overlay.then : undefined;
+        app.setEditMode(true);
+        if (then) app.setOverlay(then);
+      } else {
         setError(true);
         setTimeout(() => setCode(''), 400);
       }

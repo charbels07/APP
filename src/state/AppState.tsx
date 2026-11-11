@@ -19,7 +19,8 @@ export type Overlay =
   | { kind: 'keyboard' }
   | { kind: 'help' }
   | { kind: 'lang' }
-  | { kind: 'pin' }
+  /** Caregiver code. `then`: what opens once the code is right (e.g. the new-board panel). */
+  | { kind: 'pin'; then?: { kind: 'newTla' } }
   | { kind: 'settings' }
   /** `cards`: print these words as picture cards (multi-selection). */
   | { kind: 'print'; cards?: string[] }

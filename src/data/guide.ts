@@ -417,14 +417,14 @@ const BASE: BaseChapter[] = [
     title: { fr: 'Créer un TLA', en: 'Creating an activity board' },
     steps: {
       fr: [
-        'TLA → Nouveau TLA (mode accompagnant) → tapez le sujet (ex. « préparer un gâteau ») → Proposer des mots.',
+        'TLA → Nouveau TLA (le code accompagnant est demandé si besoin) → tapez le sujet (ex. « préparer un gâteau ») → Proposer des mots.',
         'L’application reconnaît environ 45 situations et propose les mots ET les étapes dans l’ordre. Sujet inconnu : Demander à l’IA (seul le sujet est envoyé).',
         'Touchez un mot ou une étape pour le retirer, ajoutez-en, puis Créer le TLA.',
         'Option « Créer aussi le planning de ces étapes » : le planning est relié au TLA, avec minuteurs (ex. four 30 min).',
         'Autres façons : Créer un TLA vide (vous choisissez chaque mot) ; Créer à partir d’une photo (un menu, une boîte de jeu, des ingrédients : vérifiez les mots proposés avant de créer) ; Importer un fichier ou Partagés avec moi (un TLA qu’on vous a envoyé).',
       ],
       en: [
-        'Boards → New board (caregiver mode) → type the topic (e.g. “baking a cake”) → Suggest words.',
+        'Boards → New board (the caregiver code is asked if needed) → type the topic (e.g. “baking a cake”) → Suggest words.',
         'The app recognises about 45 situations and suggests the words AND the steps in order. Unknown topic: Ask the AI (only the topic is sent).',
         'Touch a word or a step to remove it, add more, then Create board.',
         'Option “Also create a schedule of these steps”: the schedule is linked to the board, with timers (e.g. oven 30 min).',
@@ -480,7 +480,7 @@ const BASE: BaseChapter[] = [
     title: { fr: 'Les réglages utiles', en: 'Useful settings' },
     steps: {
       fr: [
-        'Les Réglages ont plusieurs pages : Tableau (les réglages de l’enfant, décrits ici), Équipe, Suivi (si la famille l’a choisi) et Compte. Sans compte, Équipe et Compte expliquent seulement ce qu’ils contiendront.',
+        'Les Réglages ont plusieurs pages : Tableau (les réglages de l’enfant, décrits ici), Équipe, Suivi (si la famille l’a choisi) et Compte. Sans compte, Équipe, Suivi et Compte expliquent seulement ce qu’ils contiendront.',
         'Langues : Langue de communication (ce que dit l’appareil, ce qui est écrit sur les cases) et Langue de navigation (menus, boutons, guide).',
         'Communication : prononcer chaque mot, ajouter à la phrase, grammaire automatique (à couper pour travailler une forme), accords au féminin, zone rapide (oui, non, stop, attends…), délai entre deux appuis sur le même pictogramme (2 s : fini les « pas pas pas »), faire vibrer les pictogrammes, ouvrir l’appli citée dans une phrase.',
         'Images : Bibliothèque de symboles (Pictogrammes ou Emoji) et Afficher le texte sous les images. Présentation et accès : boutons et texte plus grands ou contraste élevé, taille des images, façon de sélectionner (toucher puis lever le doigt, dès que le doigt touche, ou garder le doigt appuyé avec une durée d’appui), moins d’animations, petite vibration au toucher.',
@@ -489,7 +489,7 @@ const BASE: BaseChapter[] = [
         'Aussi : Plannings (semaine, mois), Mode verrouillé (enfant), Sécurité (le code accompagnant), Données (propositions par IA, Exporter le profil, Réinitialiser le profil) et À propos (crédits et licences des pictogrammes).',
       ],
       en: [
-        'Settings has several pages: Board (the child’s settings, described here), Team, Progress (if the family chose it) and Account. Without an account, Team and Account only explain what they will hold.',
+        'Settings has several pages: Board (the child’s settings, described here), Team, Progress (if the family chose it) and Account. Without an account, Team, Progress and Account only explain what they will hold.',
         'Languages: Communication language (what the device says, what is written on the cards) and Navigation language (menus, buttons, guide).',
         'Communication: say each word, add to sentence, automatic grammar (turn off to practise a form), feminine agreement, quick zone (yes, no, stop, wait…), delay between two presses on the same pictogram (2 s: no more “no no no”), wiggling pictograms, open the app mentioned in a sentence.',
         'Pictures: Symbol library (Pictograms or Emoji) and Show text under images. Presentation and access: larger buttons and text or high contrast, picture size, access method (touch then lift the finger, as soon as the finger touches, or keep the finger pressed with a hold time), fewer animations, small vibration on touch.',
@@ -808,7 +808,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   newTla: {
     title: 'إنشاء لوحة',
     steps: [
-      '«اللوحات» ← «لوحة جديدة» (وضع المرافق) ← اكتب الموضوع (مثلاً «préparer un gâteau») ← «اقترح كلمات».',
+      '«اللوحات» ← «لوحة جديدة» (يُطلب رمز المرافق عند الحاجة) ← اكتب الموضوع (مثلاً «préparer un gâteau») ← «اقترح كلمات».',
       'يتعرّف التطبيق على نحو 45 موقفاً مكتوباً بالفرنسية أو الإنجليزية، ويقترح الكلمات والخطوات بالترتيب. موضوع غير معروف: «اسأل الذكاء الاصطناعي» (يُرسل الموضوع فقط).',
       'المس كلمة أو خطوة لإزالتها، أضف غيرها، ثم «إنشاء اللوحة».',
       'خيار «إنشاء جدول لهذه الخطوات أيضاً»: يرتبط الجدول باللوحة، مع مؤقتات (مثلاً الفرن 30 دقيقة).',
@@ -835,7 +835,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   settings: {
     title: 'الإعدادات المفيدة',
     steps: [
-      'للإعدادات عدة صفحات: «اللوحة» (إعدادات الطفل، وهي المشروحة هنا)، «الفريق»، «المتابعة» (إذا اختارتها العائلة) و«الحساب». دون حساب، تشرح صفحتا «الفريق» و«الحساب» ما ستحتويانه فقط.',
+      'للإعدادات عدة صفحات: «اللوحة» (إعدادات الطفل، وهي المشروحة هنا)، «الفريق»، «المتابعة» (إذا اختارتها العائلة) و«الحساب». دون حساب، تشرح صفحات «الفريق» و«المتابعة» و«الحساب» ما ستحتويه فقط.',
       'اللغات: «لغة التواصل» (ما يقوله الجهاز وما يُكتب على البطاقات) و«لغة التنقل» (القوائم والأزرار والدليل).',
       'التواصل: نطق كل كلمة، إضافة الكلمات إلى الجملة، القواعد التلقائية (أوقفها للتدرّب على صيغة)، التأنيث، المنطقة السريعة (نعم، لا، توقف، انتظر…)، المهلة بين ضغطتين على الرمز نفسه (ثانيتان)، اهتزاز الرموز، فتح التطبيق المذكور في جملة.',
       'الصور: «مكتبة الرموز» (رموز أو إيموجي) و«إظهار النص تحت الصور». «العرض وطريقة الاختيار»: أزرار ونص أكبر أو تباين عالٍ، حجم الصور، طريقة الاختيار (المس ثم ارفع الإصبع، بمجرد أن يلمس الإصبع، أو إبقاء الإصبع مضغوطاً مع مدة الضغط)، حركة أقل، اهتزاز خفيف عند اللمس.',

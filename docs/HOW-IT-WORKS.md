@@ -168,10 +168,12 @@ is not involved. `sharp` is only a development tool (it is not shipped in the ap
 
 | Feature | How it was built |
 |---|---|
-| Settings always in three pages | `src/ui/settings/SettingsScreen.tsx` (React Native): Board, Team and Account are now shown in the preview too. Without an account, Team and Account say what they will hold and offer *Create my account*. |
 | Language button removed from the bar | The globe button was taken out of `src/ui/UniversalBar.tsx`. Languages are chosen in Settings (caregiver mode): *Communication language* and *Navigation language*. Consequence: the child can no longer change language alone. |
 | Keyboard → pictograms | `src/lib/typedWords.ts` (TypeScript, 8 Jest tests): each typed word becomes a card with a picture — the word of the child's boards when it exists (« veux » → vouloir, « brosse à dents » on one card, « l'école » → école), else a pictogram of the offline library, else no picture (little words such as « une »). The card keeps exactly what was typed and is said as written. The keyboard panel shows the cards before they are added. Words kept away from children (alcohol…) never get a picture. |
 | Guide brought up to date | `src/data/guide.ts` (TypeScript text in French, English and Arabic): two new chapters (*Where the pictograms come from*, *Professionals: proposing changes*) and updated ones (settings pages, languages in Settings, keyboard pictures, new-board options, week and month plans, picture sources, printing). A Jest test checks that the guide quotes the real names of the buttons, so it cannot drift silently. |
+| New board always visible | The *New board* button of the boards page (`src/ui/screens/TlaScreen.tsx`) is now shown all the time. Outside caregiver mode it first asks for the caregiver code, then opens the creation panel (the code panel takes a `then` step, `src/state/AppState.tsx`). Before, it only appeared once caregiver mode was on. |
+| Schedule on a phone | `src/ui/screens/ScheduleScreen.tsx`: the *Now* and *Next* cards measure the room they have (React Native `onLayout`) and size the picture and the word to fit, so nothing overlaps; on a short screen the day plan scrolls instead of squeezing. |
+| Progress page in the preview | Settings shows Board, Team, Progress and Account even before an account exists; the last three explain what they will hold and offer *Create my account*. |
 | Phone width | On a narrow screen the *New board* button keeps only its « + » so the board tabs stay visible, and the caregiver banner no longer cuts its *Done* button. |
 
 ## How everything is checked

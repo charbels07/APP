@@ -1,4 +1,4 @@
-import { ARASAAC_DEFAULTS } from '../data/arasaacMap';
+import { SYMBOL_DEFAULTS } from '../data/symbolMap';
 import { BUILTIN_CONCEPTS } from '../data/concepts';
 import type { CellDisplay, Concept, Lang, Profile, SymbolRef, WordClass } from '../model/types';
 
@@ -40,7 +40,7 @@ export function display(profile: Profile, id: string): CellDisplay {
 const symbolCache = new Map<string, SymbolRef>();
 /** Returns a shared object per distinct symbol so memoised cells don't re-render. */
 function intern(s: SymbolRef): SymbolRef {
-  const key = s.kind === 'arasaac' ? `a${s.id}` : s.kind === 'emoji' ? `e${s.value}` : `m${s.name}`;
+  const key = s.kind === 'picto' ? `p${s.key}` : s.kind === 'emoji' ? `e${s.value}` : `m${s.name}`;
   let v = symbolCache.get(key);
   if (!v) symbolCache.set(key, (v = s));
   return v;
@@ -54,14 +54,14 @@ export function symbolOf(profile: Profile, id: string): SymbolRef {
 function rawSymbolOf(profile: Profile, id: string): SymbolRef {
   const override = profile.overrides[id]?.symbol;
   if (override) {
-    if (override.kind === 'arasaac' && profile.settings.symbolSet === 'emoji') {
+    if (override.kind === 'picto' && profile.settings.symbolSet === 'emoji') {
       return { kind: 'emoji', value: getConcept(profile, id)?.emoji ?? '⬜' };
     }
     return override;
   }
   const c = getConcept(profile, id);
-  if (profile.settings.symbolSet === 'arasaac' && ARASAAC_DEFAULTS[id]) {
-    return { kind: 'arasaac', id: ARASAAC_DEFAULTS[id] };
+  if (profile.settings.symbolSet !== 'emoji' && SYMBOL_DEFAULTS[id]) {
+    return { kind: 'picto', key: SYMBOL_DEFAULTS[id] };
   }
   return { kind: 'emoji', value: c?.emoji || '⬜' };
 }

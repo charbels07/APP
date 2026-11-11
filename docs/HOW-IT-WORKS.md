@@ -64,7 +64,7 @@ This file grows as each feature is built. Each line says **what** was made, **ho
 | Questionnaire | `src/ui/onboarding/Onboarding.tsx` (React Native): 12 steps with a progress bar. Answers are saved on the tablet after each step, so closing the app does not lose them. |
 | First board adapted to the child | `src/lib/onboarding.ts` (TypeScript, tested with Jest) turns the answers into settings. "Communication today" chooses how many words are shown first (about 25, 60 or 81): hidden words keep their place, so nothing ever moves when more are shown. |
 | Languages and voice | Several communication languages (the first is the main one); female / male, adult / child voice with a *Listen* button (the device's text-to-speech). |
-| Favourite activities | Chosen from pictures, or typed: a typed activity gets a pictogram from the offline ARASAAC library when one matches. They go in the « mes mots » folder, in free slots only. |
+| Favourite activities | Chosen from pictures, or typed: a typed activity gets a pictogram from the offline library when one matches. They go in the « mes mots » folder, in free slots only. |
 | Presentation | Standard, larger text, or high contrast (dark cards, bright borders), drawn by the card component (`Grid.tsx`). |
 | Sounds and animation | Standard, or reduced (no wiggle, no vibration, silent timer; the voice stays). |
 | Starting vocabulary | Our core vocabulary, the board already on this tablet (from before accounts), a sibling's board, or a profile file. |
@@ -105,7 +105,7 @@ This file grows as each feature is built. Each line says **what** was made, **ho
 | Account & licence | Verified status ("free access"), connected users, credentials, account details, preferences; billing stays for later. |
 | Tested | A browser walkthrough plays the whole story: a parent creates a child, a therapist signs up, verifies, connects with the family code, the parent accepts, the therapist drafts a new TLA and sends it, the parent reviews and approves, and the TLA appears on the child's board. |
 
-## Round 7 — Lock mode, timer, week and month plans, ARASAAC
+## Round 7 — Lock mode, timer, week and month plans
 
 | Feature | How it was built |
 |---|---|
@@ -113,18 +113,9 @@ This file grows as each feature is built. Each line says **what** was made, **ho
 | Timer that hides nothing | The timer is now a strip above the board (`TimerCard.tsx`, placed in the page layout instead of floating on top): the board measures the space left and its cards get a little smaller. |
 | Picture of what the child waits for | The timer remembers a word (`timer.concept` in `AppState.tsx`), shown next to it; touching it says the word, and « C’est fini ! piscine » is said at the end. A schedule step's timer uses that step's picture. |
 | Week and month plans | `src/ui/screens/PlansViews.tsx` (React Native): seven columns Monday–Sunday, and a month calendar (`src/data/calendar.ts` builds the weeks; Lebanese month names in Arabic). They are optional (`settings.plans`), chosen at set-up or in Settings. They are stored in the child's profile and added to the change sets (`profileDiff.ts`: one change per weekday or per event), so they sync, merge, can be proposed by a professional, and appear in the history with undo — tested with Jest. |
-| Complete ARASAAC library | The offline library holds all 13,907 ARASAAC pictograms (two were missing: one the image server no longer served, one published this week). `npm run update:picto` adds new ones later without downloading everything again. |
-| ARASAAC logo | ARASAAC's official logo (rendered from their SVG; its lettering is white, so it sits on a dark badge as on their website) with their own credit sentence, on the welcome page, in settings, the guide, the professional workspace and on printouts (`src/ui/ArasaacCredit.tsx`). |
 
-### ARASAAC licence — to settle before selling
-
-ARASAAC's terms (arasaac.org/terms-of-use) publish the pictograms under **Creative Commons
-BY-NC-SA**, "authorizing their use for non-profit purposes", and add: "the use of these resources
-within any product or publication for commercial purposes is excluded" without written authorization
-of the copyright holders (Government of Aragón). A paid app (or a paid subscription) containing them
-needs that **written authorization**: the e-mail sent to ARASAAC should ask explicitly for commercial
-use, not only for the logo. If they refuse, the app can stay free, or use a symbol set licensed for
-commercial use.
+*(This round also completed the ARASAAC library and added its logo. ARASAAC did not authorise
+commercial use, so both were removed in Round 9 below.)*
 
 ## Round 8 — Communication data (Suivi), quick gestures, Photo → activity board
 
@@ -147,12 +138,38 @@ commercial use.
 | Photo → activity board | *New activity board → Create from a photo*: the photo is made smaller and kept in memory only; Claude (Anthropic's AI) lists what it sees that is useful (e.g. a menu's dishes) plus words to act, comment, ask, refuse and say preferences. The proposal goes through the same screen as the topic suggestions: remove or add words, then *Create*. |
 | AI on phones and tablets | `supabase/functions/caa-ai` (TypeScript for **Deno**, a Supabase **Edge Function** — a small program that runs on Supabase's servers): it checks the person is signed in, counts their calls (40 a day, table `ai_calls`), sends only the topic, photo or drawing to Claude (model `claude-opus-5-5`, answers forced into the expected **JSON** shape), and returns the words. The Anthropic key is a Supabase secret, never inside the app. The prompts are shared with the browser demo (`supabase/functions/_shared/aiPrompts.ts`). |
 
+## Round 9 — A pictogram library that can be sold (no more ARASAAC)
+
+ARASAAC did not allow commercial use, so every ARASAAC pictogram was removed and replaced by ten
+open libraries whose licence allows a paid app. Full report: `docs/PICTOGRAM-LICENSES.md`.
+
+| Feature | How it was built |
+|---|---|
+| Licence check first | Before downloading anything, each library's licence was read at its official source (its own website or GitHub repository). Result: 10 libraries accepted, ARASAAC, Tawasol (its website contradicts itself), Sclera and others refused. Written in **Markdown** in `docs/PICTOGRAM-LICENSES.md`. |
+| The list of libraries | `pictograms/libraries.json` (**JSON**, a simple text list): name, author, website, exact version, licence, copyright line and attribution sentence of each library. Everything else is generated from this file. |
+| Downloading the originals | `scripts/fetch-pictogram-sources.sh` (**Bash**, a command-line script): downloads each library from its official source at a fixed version (npm packages and Git commits), into a folder next to the project. Originals are never changed. |
+| Building the library | `scripts/build-pictograms.ts` (**TypeScript**, run with Node.js on the computer, not in the app): reads the 10 libraries, turns each SVG drawing into a small 160-pixel **WebP** image with the **sharp** tool, and packs them in 161 text files. 24,128 pictograms, 61 MB (ARASAAC was 81 MB). Company logos and skin-tone duplicates are left out. |
+| One database | The same script writes `pictograms/database/pictograms.csv` (a spreadsheet file): one line per pictogram with its id, library, original file name, original label, concept, English / French / Arabic words, licence, author, links, attribution and whether it was modified (never). |
+| Same idea, several drawings | Each pictogram gets a **concept** (its English name, normalised). 3,525 concepts have several drawings, so a search shows the Mulberry symbol, the emoji and the line icons side by side. |
+| Three languages | Emoji words come from **Unicode CLDR** (Unicode's official word lists in French, English and Arabic). The app's own vocabulary and two word lists written for the project (`pictograms/translations/*.tsv`, tab-separated text) add French and Arabic to the other libraries. A word added automatically is marked "to review" (`*` in the app); an English word with several meanings is marked ambiguous instead of being translated blindly. |
+| Pictures of the built-in words | `scripts/build-default-symbols.ts` (TypeScript) chooses one picture for each of the app's 254 words: the Mulberry symbol with the same name, else a choice made by hand (`pictograms/default-overrides.json`), else the OpenMoji emoji. Stored as 256-pixel images in `assets/symbols/`, bundled in the app so the board works offline. |
+| In the app | A pictogram is now identified by a stable name such as `mulberry/apple` (`SymbolRef` in `src/model/types.ts`) instead of an ARASAAC number. `src/ui/SymbolView.tsx` (React Native) draws it; `src/lib/pictoSearch.ts` (TypeScript, tested) searches the three languages at once. |
+| Choosing a picture | `src/ui/PictoPicker.tsx` (React Native): search box, one chip per library to filter (All, Mulberry, OpenMoji…), and under each result the word found and the library it comes from. The source and licence are saved with the word. Everything works offline. |
+| Credits & licences page | `src/ui/PictoCredits.tsx` (React Native), opened from **Settings → About**, the welcome page, the guide and the professional workspace. It lists only the libraries really in the app, with author, website, licence and link, copyright line, attribution, "not modified", and the full licence text where the licence asks for it. The list is generated by the build script (`src/data/pictoLibraries.ts`), so it updates by itself when a library is added or removed. Available in French, English and Arabic. |
+| Printed boards | `src/lib/printHtml.ts` adds a short credit line at the bottom of every printed page. |
+| Pictures from the internet | The online search (`src/lib/webPictures.ts`) now only shows collections whose licence was verified (Mulberry, OpenMoji). |
+| Old boards | When an older profile is opened, `migrate` in `src/lib/storage.ts` sends words that pointed to an ARASAAC pictogram back to the app's own picture; photos and personal pictures are kept. |
+| Tested | 14 new Jest tests: only verified libraries and licences, no logo, the same symbol found with « manger », "eat" and « يأكل », the library filter, the "to review" marks, the credits list matching what is really in the app, licence texts present, old profiles converted. A browser walkthrough checked the board, the picker and the credits page (no request leaves the device). |
+
+Infrastructure: nothing new on the server. The whole library is inside the app (offline); Supabase
+is not involved. `sharp` is only a development tool (it is not shipped in the app).
+
 ## How everything is checked
 
 | Check | What it does |
 |---|---|
 | `npm run typecheck` | TypeScript reads the whole code and refuses mistakes such as a missing field or a wrong type. |
-| `npm test` | 120 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions. |
+| `npm test` | 134 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences. |
 | `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger and a tablet; 35+ checks. |
 | `npm run test:live` | The same story on the real Supabase project, through the app's own code: 13 steps, including devices, history undo, invitation codes, revisions and materials (needs "Confirm email" off while it runs). Last run: all 13 passed. |
 | Browser walkthroughs | Playwright drives the web version like a person: the parent journey, the team (invite, undo, join with a code), the professional journey (verification, tour, request, draft, proposal, approval), and the Arabic screens. |
@@ -180,4 +197,11 @@ commercial use.
   the browser demo only for now.
 - **Switch access and eye gaze**: not available (the set-up says so).
 - **Arabic texts** are a first version: to be reviewed by a native speaker.
+- **Pictogram words**: about 11,900 line icons (Material, Tabler, Lucide, Phosphor, Health Icons)
+  are found in English only; the French and Arabic words added by our lists are marked "to review"
+  and must be checked by the speech therapist and a native Arabic speaker.
+- **Pictogram licences**: the check was done from the published licences, not by a lawyer. Seven
+  points to show a lawyer are listed in `docs/PICTOGRAM-LICENSES.md` (app stores and CC BY-SA,
+  Tawasol's contradictory licence, trademarks…). **Tawasol** (Arabic symbols) can be added once
+  Mada confirms its licence in writing.
 

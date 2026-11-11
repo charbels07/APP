@@ -29,7 +29,8 @@ export type Gender = 'm' | 'f';
 
 /** How a symbol is drawn. */
 export type SymbolRef =
-  | { kind: 'arasaac'; id: number }
+  /** A pictogram of the open libraries, by its key (`library/name`): see src/data/symbolMap.ts. */
+  | { kind: 'picto'; key: string }
   | { kind: 'emoji'; value: string }
   /** A personal photo stored in the media store (see lib/media). */
   | { kind: 'media'; name: string };
@@ -127,7 +128,7 @@ export interface Settings {
   uiLang: UiLang;
   gender: Gender;
   revealLevel: 1 | 2 | 3;
-  symbolSet: 'arasaac' | 'emoji';
+  symbolSet: 'pictos' | 'emoji';
   showLabels: boolean;
   /** Speak each word when it is touched. */
   speakOnTap: boolean;

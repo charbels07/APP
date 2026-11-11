@@ -13,7 +13,7 @@ const PLAN_JSON = `{"title":{"fr":"","en":"","ar":""},"words":[{"fr":"farine","e
 "type" vaut "nom", "verbe", "adjectif" ou "social".`;
 
 export function tlaPrompt(topic: string): string {
-  return `Tu aides une orthophoniste à créer un tableau de langage assisté (TLA) pour un enfant qui communique avec la CAA (pictogrammes ARASAAC).
+  return `Tu aides une orthophoniste à créer un tableau de langage assisté (TLA) pour un enfant qui communique avec la CAA (pictogrammes).
 
 Situation : « ${topic.slice(0, 200)} »
 

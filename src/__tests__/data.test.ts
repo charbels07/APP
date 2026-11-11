@@ -1,4 +1,4 @@
-import { ARASAAC_DEFAULTS, ARASAAC_IMAGES } from '../data/arasaacMap';
+import { SYMBOL_DEFAULTS, SYMBOL_IMAGES } from '../data/symbolMap';
 import { BUILTIN_CONCEPTS } from '../data/concepts';
 import { createDefaultProfile, DEFAULT_HELP, QUICK_ZONE } from '../data/defaults';
 import { label } from '../lib/lexicon';
@@ -36,7 +36,7 @@ describe('starter content integrity', () => {
   });
 
   it('every default pictogram is bundled (works offline, OFF-01)', () => {
-    for (const id of Object.values(ARASAAC_DEFAULTS)) expect(ARASAAC_IMAGES[id]).toBeDefined();
+    for (const key of Object.values(SYMBOL_DEFAULTS)) expect(SYMBOL_IMAGES[key]).toBeDefined();
   });
 
   it('no core word appears twice on the core board', () => {

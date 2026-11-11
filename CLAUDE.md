@@ -9,14 +9,20 @@
 - Vocabulary is concept-based (`src/data/concepts.ts`); never move core cells
   (`src/data/defaults.ts`) when editing: positions are the user's motor plan.
 - Platform-specific code uses `.web.ts(x)` siblings (media store, printing, preview).
-- `npm run fetch:arasaac` regenerates `src/data/arasaacMap.ts` (needs access to
-  api.arasaac.org and static.arasaac.org).
-- `npm run build:picto` rebuilds the offline pictogram library (`assets/picto/`, base64 text packs:
-  some hosts refuse binary files) and `src/data/pictoLibrary.ts`. Set `PICTO_CACHE` to reuse downloads.
+- Pictograms: only libraries verified as free for commercial use (`docs/PICTOGRAM-LICENSES.md`,
+  `pictograms/libraries.json`). Never add ARASAAC or any NC / unclear-licence set. A pictogram is
+  identified by its stable key `library/file` (`SymbolRef` kind `picto`), not by a number.
+- `npm run fetch:picto` downloads the originals at pinned versions into `../picto-sources`
+  (`PICTO_SOURCES`); `npm run build:picto` rebuilds the library (`assets/picto/`, base64 text packs:
+  some hosts refuse binary files), `src/data/pictoLibrary.ts`, `src/data/pictoLibraries.ts` (credits
+  page) and `pictograms/database/`; `npm run build:symbols` rebuilds the built-in words' pictures
+  (`assets/symbols/`, `src/data/symbolMap.ts`; choices by hand in `pictograms/default-overrides.json`).
+- French/Arabic words for the icon libraries come from `pictograms/translations/*.tsv` and are
+  flagged "to review" (`*` in the picker); never present them as validated vocabulary.
 - Speech recognition uses `expo-speech-recognition` (native module): test on a dev/EAS build, not Expo Go.
 - Two languages: `settings.lang` (words: labels, speech) and `settings.uiLang` (navigation: `src/i18n/ui.ts`,
   `src/data/guide.ts`, FR/EN/AR). Arabic navigation mirrors menus via `useNavRtl()`; never mirror boards.
-- Pictures from the internet (`src/lib/webPictures.ts`): Global Symbols (labels match whole words only)
-  and Openverse (anonymous requests: `page_size` ≤ 20). The artifact demo has no network: paste works there.
+- Pictures from the internet (`src/lib/webPictures.ts`): Global Symbols (labels match whole words only;
+  only the sets in `VERIFIED_SETS`) and Openverse (anonymous requests: `page_size` ≤ 20). The artifact demo has no network: paste works there.
 - App pictograms live in `src/data/concepts.ts` (`app: { url, triggers }`); new built-in folders are added
   to saved profiles by a one-time migration in `src/lib/storage.ts` (only into an empty slot).

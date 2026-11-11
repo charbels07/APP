@@ -19,22 +19,28 @@ describe('situation library (TLA suggestions)', () => {
     expect(matchSituation('xyz')).toBeUndefined();
   });
 
-  (existsSync(indexFile) ? it : it.skip)('every word and step has an exact ARASAAC pictogram', () => {
+  (existsSync(indexFile) ? it : it.skip)('nearly every word and step has its pictogram, and every pinned pictogram exists', () => {
     const idx = prepareIndex(JSON.parse(readFileSync(indexFile, 'utf8')));
     const missing: string[] = [];
+    const badPins: string[] = [];
+    let total = 0;
     for (const s of SITUATIONS)
       for (const entry of [...s.words, ...(s.steps ?? [])]) {
         const w = typeof entry === 'string' ? entry : entry.w;
+        total++;
         if (w.includes('#')) {
-          // Pinned pictogram: it must exist in the library.
-          if (!idx.byId.has(Number(w.split('#')[1]))) missing.push(`${s.id}: ${w}`);
+          // Pinned pictogram (library/name): it must exist in the library.
+          if (!idx.byKey.has(w.slice(w.indexOf('#') + 1))) badPins.push(`${s.id}: ${w}`);
           continue;
         }
         const id = exactPicto(idx, w);
         const kws = id === undefined ? [] : idx.byId.get(id)![4].map(normalize);
         if (!kws.includes(normalize(w))) missing.push(`${s.id}: ${w}`);
       }
-    expect(missing).toEqual([]);
+    expect(badPins).toEqual([]);
+    // The open libraries have no drawing for a few words (« trapéziste », « emporte-pièces »…):
+    // those are simply left out of the suggestion.
+    expect(missing.length / total).toBeLessThan(0.08);
   });
 });
 
@@ -55,8 +61,10 @@ describe('situation library (TLA suggestions)', () => {
   it('pins the right meaning for homonyms (moule = cake tin, not the mussel)', () => {
     const plan = planFromLibrary(idx, 'préparer un gâteau', 'fr')!;
     const mould = plan.words.find((w) => w.labels?.fr === 'moule')!;
-    expect(idx.byId.get(mould.id)![5]).toContain('baking tin');
-    expect(resolveSituationWord(idx, 'casser#8984')).toEqual({ label: 'casser', id: 8984 });
+    expect(idx.byId.get(mould.id)![10]).toBe('mulberry/cake_tin');
+    expect(resolveSituationWord(idx, 'casser#mulberry/break_egg_,_to')).toEqual({ label: 'casser', id: idx.byKey.get('mulberry/break_egg_,_to') });
+    // A pin from an older version (a number) is ignored: the word is looked up by name.
+    expect(resolveSituationWord(idx, 'four#8984').id).toBe(exactPicto(idx, 'four'));
     // Accents decide: « où » is "where", not « ou » ("or").
     expect(idx.byId.get(exactPicto(idx, 'où')!)![5]).toContain('where');
   });
@@ -65,12 +73,12 @@ describe('situation library (TLA suggestions)', () => {
     const plan = planFromAi(idx, 'faire du pain', 'fr', {
       words: [
         { fr: 'farine', en: 'flour', ar: 'طحين', type: 'nom' },
-        { fr: 'pétrir', en: 'knead', ar: 'إعجن', type: 'verbe' },
+        { fr: 'mélanger', en: 'stir', ar: 'خلّط', type: 'verbe' },
         { fr: 'zzzz', en: 'zzzz' },
       ],
       steps: [{ fr: 'se laver les mains', en: 'wash hands', ar: 'إغسل إيديك' }],
     });
-    expect(plan.words.map((w) => w.labels?.ar)).toEqual(['طحين', 'إعجن']);
+    expect(plan.words.map((w) => w.labels?.ar)).toEqual(['طحين', 'خلّط']);
     expect(plan.words[1].cls).toBe('verb');
     expect(plan.steps).toHaveLength(1);
   });

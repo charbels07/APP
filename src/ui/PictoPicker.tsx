@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { searchArasaac } from '../lib/photos';
+import { PICTO_LIBRARIES } from '../data/pictoLibraries';
 import { loadPictoLibrary, pictoImageUri } from '../lib/pictoLibrary';
-import { searchPictos, type PreparedIndex } from '../lib/pictoSearch';
+import { libraryOf, PICTO_AMBIGUOUS, PICTO_AR_AUTO, PICTO_FR_AUTO, searchPictos, type PreparedIndex } from '../lib/pictoSearch';
 import type { Lang } from '../model/types';
 import { useApp } from '../state/AppState';
 import { Icon } from './Icon';
@@ -30,6 +30,7 @@ export const PictoThumb = React.memo(function PictoThumb({
   onPress,
   caption,
   removable,
+  wide,
 }: {
   id: number;
   size?: number;
@@ -37,6 +38,8 @@ export const PictoThumb = React.memo(function PictoThumb({
   onPress?: () => void;
   caption?: string;
   removable?: boolean;
+  /** Search results: room for the word and the library's name. */
+  wide?: boolean;
 }) {
   const [uri, setUri] = useState<string>();
   useEffect(() => {
@@ -51,10 +54,11 @@ export const PictoThumb = React.memo(function PictoThumb({
   return (
     <Pressable
       onPress={onPress}
-      accessibilityLabel={caption}
+      accessibilityRole="button"
+      accessibilityLabel={caption?.replace('\n', ', ')}
       style={({ pressed }) => [
         styles.thumb,
-        { width: size + 14 },
+        { width: wide ? Math.max(size + 14, 104) : size + 14 },
         selected && styles.selected,
         pressed && { opacity: 0.6 },
       ]}
@@ -67,8 +71,9 @@ export const PictoThumb = React.memo(function PictoThumb({
         </View>
       )}
       {caption ? (
-        <Text style={styles.caption} numberOfLines={2}>
-          {caption}
+        <Text style={styles.caption} numberOfLines={wide ? 3 : 2}>
+          {caption.split('\n')[0]}
+          {caption.includes('\n') ? <Text style={styles.source}>{`\n${caption.split('\n')[1]}`}</Text> : null}
         </Text>
       ) : null}
       {removable && (
@@ -85,7 +90,13 @@ export const PictoThumb = React.memo(function PictoThumb({
   );
 });
 
-/** Search box + results from the offline ARASAAC library. */
+const LIBRARY_NAMES: Record<string, string> = Object.fromEntries(PICTO_LIBRARIES.map((l) => [l.id, l.name]));
+
+/**
+ * Search box + results from the offline pictogram library: every library at once, or one of
+ * them. Each result shows the word found in the person's language and the library it comes from;
+ * a small mark warns when that word was translated automatically.
+ */
 export function PictoSearch({
   initialQuery,
   query: controlledQuery,
@@ -117,28 +128,24 @@ export function PictoSearch({
     return () => clearTimeout(id);
   }, [query]);
   const [ids, setIds] = useState<number[]>([]);
+  const [only, setOnly] = useState<string | undefined>();
+  const l = lang ?? app.profile.settings.uiLang;
   useEffect(() => {
     if (lib === null) return;
-    const l = lang ?? app.profile.settings.uiLang;
-    const local = lib ? searchPictos(lib, debounced, l, max) : [];
+    const local = lib ? searchPictos(lib, debounced, l, max, only) : [];
     setIds(local);
     onResults?.(local);
-    // Few offline results: also ask ARASAAC online (works on the device when connected).
-    if (local.length >= 6 || !debounced.trim()) return;
-    let alive = true;
-    searchArasaac(debounced, l)
-      .then((hits) => {
-        if (!alive) return;
-        const more = [...local, ...hits.map((h) => h.id).filter((id) => !local.includes(id))].slice(0, max);
-        setIds(more);
-        if (!local.length) onResults?.(more);
-      })
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lib, debounced, lang, max]);
+  }, [lib, debounced, l, max, only]);
+  const slot = l === 'fr' ? 4 : l === 'ar' ? 6 : 5;
+  const captionOf = (id: number) => {
+    const it = lib ? lib.byId.get(id) : undefined;
+    if (!it) return undefined;
+    const word = (it[slot] as string[])[0] ?? it[5][0];
+    const auto = (it[8] ?? 0) & ((l === 'fr' ? PICTO_FR_AUTO : l === 'ar' ? PICTO_AR_AUTO : 0) | PICTO_AMBIGUOUS);
+    return `${word}${auto ? ' *' : ''}\n${LIBRARY_NAMES[libraryOf(lib as PreparedIndex, id) ?? ''] ?? ''}`;
+  };
+  const anyAuto = !!lib && ids.some((id) => (lib.byId.get(id)?.[8] ?? 0) & ((l === 'fr' ? PICTO_FR_AUTO : l === 'ar' ? PICTO_AR_AUTO : 0) | PICTO_AMBIGUOUS));
 
   return (
     <View style={{ gap: 8 }}>
@@ -156,13 +163,29 @@ export function PictoSearch({
         </View>
       )}
       {lib === null && <Text style={styles.note}>{t.pictoLoading}</Text>}
-      {lib === false && <Text style={styles.note}>{t.arasaacOffline}</Text>}
+      {lib === false && <Text style={styles.note}>{t.pictoOffline}</Text>}
+      {showInput && lib && (
+        <View style={styles.libs} accessibilityRole="radiogroup">
+          {[undefined, ...(lib.raw.libs ?? [])].map((id) => (
+            <Pressable
+              key={id ?? 'all'}
+              onPress={() => setOnly(id)}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: only === id }}
+              style={[styles.lib, only === id && styles.libOn]}
+            >
+              <Text style={[styles.libText, only === id && { color: '#fff' }]}>{id ? LIBRARY_NAMES[id] ?? id : t.pictoAllLibraries}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
       {lib && debounced.trim() && !ids.length ? <Text style={styles.note}>{t.pictoNone}</Text> : null}
       <View style={styles.grid}>
         {ids.map((id) => (
-          <PictoThumb key={id} id={id} selected={id === selectedId} onPress={() => onPick(id)} />
+          <PictoThumb key={id} id={id} selected={id === selectedId} onPress={() => onPick(id)} caption={showInput ? captionOf(id) : undefined} wide={showInput} />
         ))}
       </View>
+      {showInput && anyAuto && <Text style={styles.note}>* {t.pictoToReview}</Text>}
     </View>
   );
 }
@@ -192,6 +215,11 @@ const styles = StyleSheet.create({
   },
   selected: { borderColor: C.success, borderWidth: 3, backgroundColor: C.successSoft },
   caption: { fontSize: 12, fontWeight: '600', color: C.text, textAlign: 'center' },
+  source: { fontSize: 10, fontWeight: '400', color: C.textMuted },
+  libs: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  lib: { paddingVertical: 5, paddingHorizontal: 10, borderRadius: 14, borderWidth: 1, borderColor: C.border, backgroundColor: C.surface },
+  libOn: { backgroundColor: C.accent, borderColor: C.accent },
+  libText: { fontSize: 12, fontWeight: '600', color: C.text },
   remove: {
     position: 'absolute',
     top: -6,

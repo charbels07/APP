@@ -67,7 +67,7 @@ données). Chaque chapitre a un bouton *Essayer* qui ouvre l’endroit dont il p
      leur case vide, rien ne bouge (progressive reveal).
    - *Réglages* → *Accords* → *Féminin* : « contente », « fatiguée », « تعبانة ».
    - Touchez une case pour la modifier : libellés FR/EN/AR, photo, pictogramme
-     ARASAAC, enregistrement de la voix (pour le libanais, les prénoms…).
+     de la bibliothèque, enregistrement de la voix (pour le libanais, les prénoms…).
    - Ouvrez *mes mots* et touchez une case vide pour créer un mot personnel.
    - *Imprimer / PDF* : TLA, plannings, D’abord/Ensuite, A4/A3, noir et blanc.
 
@@ -101,15 +101,16 @@ données). Chaque chapitre a un bouton *Essayer* qui ouvre l’endroit dont il p
       ligne ; sur l’iPad il faudra un petit serveur). Touchez un mot ou une étape pour le retirer,
       ajoutez-en, puis créez. Option : *Créer aussi le planning de ces étapes* (relié au TLA, avec
       minuteur, ex. four 30 min).
-    - Image d’un mot : *Pictogrammes* (ARASAAC hors ligne), *Photo* (galerie ou appareil photo) ou
-      *Internet* : pictogrammes d’autres banques gratuites (Tawasol en arabe, Mulberry, Sclera…),
+    - Image d’un mot : *Pictogrammes* (bibliothèque hors ligne : Mulberry, OpenMoji et huit autres banques
+      libres d’usage commercial ; un filtre choisit la banque), *Photo* (galerie ou appareil photo) ou
+      *Internet* : pictogrammes des banques dont la licence a été vérifiée (Mulberry, OpenMoji),
       photos et dessins libres, *Coller l’image* copiée sur un site, ou le lien d’une image. L’auteur
       et la licence s’affichent sous l’image. (Dans la démo en ligne, la page n’a pas accès à
       Internet : utilisez *Coller l’image*.)
     - Sur une case : section *Application* pour transformer n’importe quel mot en lien vers une appli
       (YouTube Kids, Netflix…) et choisir les mots qui l’ouvrent dans une phrase.
-    - Nouveau mot (case vide → *Créer un nouveau mot*) : le pictogramme ARASAAC est choisi
-      automatiquement parmi toute la bibliothèque ARASAAC (≈ 13 900 pictogrammes, hors ligne ;
+    - Nouveau mot (case vide → *Créer un nouveau mot*) : le pictogramme est choisi
+      automatiquement dans la bibliothèque (≈ 24 400 pictogrammes, hors ligne ;
       les pluriels sont compris : « bulles de savon » trouve « bulle de savon »).
     - Sur une case : *Taille de la carte*, *Agrandir sur les cases vides voisines*, *Intensité de la
       couleur*, et *Déplacer cette case* (puis touchez la nouvelle place).

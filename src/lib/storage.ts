@@ -39,6 +39,16 @@ export function migrate(p: Partial<Profile>): Profile {
       boards.core = { ...core, cells };
     }
   }
+  // ARASAAC is no longer in the app (licence): a word that pointed to one of its pictograms goes
+  // back to the app's own picture; pictures the family chose (photos, saved images) are kept.
+  const overrides = { ...(p.overrides ?? {}) };
+  for (const [id, o] of Object.entries(overrides)) {
+    if ((o.symbol as { kind?: string } | undefined)?.kind === 'arasaac') {
+      const { symbol: _old, ...rest } = o;
+      overrides[id] = rest;
+    }
+  }
+  const symbolSet = p.settings?.symbolSet === 'emoji' ? 'emoji' : 'pictos';
   return {
     ...base,
     ...p,
@@ -47,6 +57,7 @@ export function migrate(p: Partial<Profile>): Profile {
       ...DEFAULT_SETTINGS,
       langs: [p.settings?.lang ?? DEFAULT_SETTINGS.lang],
       ...(p.settings ?? {}),
+      symbolSet,
       bar: { ...DEFAULT_SETTINGS.bar, ...(p.settings?.bar ?? {}) },
       timer: { ...DEFAULT_SETTINGS.timer, ...(p.settings?.timer ?? {}) },
       plans: { ...DEFAULT_SETTINGS.plans, ...(p.settings?.plans ?? {}) },
@@ -54,7 +65,7 @@ export function migrate(p: Partial<Profile>): Profile {
     boards,
     tlaOrder: (p.tlaOrder ?? base.tlaOrder).filter((id) => boards[id]),
     help: { ...base.help, ...(p.help ?? {}) },
-    overrides: p.overrides ?? {},
+    overrides,
     customConcepts: p.customConcepts ?? {},
     schedules: p.schedules ?? base.schedules,
     demos: p.demos ?? [],

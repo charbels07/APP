@@ -351,14 +351,14 @@ const BASE: BaseChapter[] = [
     steps: {
       fr: [
         'En mode accompagnant, touchez la case : libellés en français, anglais et libanais.',
-        'Image : Pictogrammes (ARASAAC, hors ligne), Photo (galerie ou appareil photo), ou Internet (autres banques de pictogrammes, photos et dessins libres, Coller l’image, lien d’une image). L’auteur et la licence s’affichent.',
+        'Image : Pictogrammes (bibliothèque hors ligne : Mulberry, OpenMoji…), Photo (galerie ou appareil photo), ou Internet (autres banques de pictogrammes, photos et dessins libres, Coller l’image, lien d’une image). L’auteur et la licence s’affichent.',
         'Voix enregistrée : enregistrez votre voix ou celle d’un proche, pour chaque langue — idéal pour le libanais.',
         'Catégorie (couleur) et Affichage de la case (image + texte, image seule, texte seul).',
         'Carte : taille, agrandir sur les cases vides voisines, intensité de la couleur pour attirer l’attention.',
       ],
       en: [
         'In caregiver mode, touch the card: labels in French, English and Lebanese Arabic.',
-        'Picture: Pictograms (ARASAAC, offline), Photo (library or camera), or Internet (other pictogram sets, free photos and drawings, Paste picture, picture link). Author and licence are shown.',
+        'Picture: Pictograms (offline library: Mulberry, OpenMoji…), Photo (library or camera), or Internet (other pictogram sets, free photos and drawings, Paste picture, picture link). Author and licence are shown.',
         'Recorded voice: record your voice or a relative’s, for each language — ideal for Lebanese Arabic.',
         'Category (colour) and Cell display (picture + text, picture only, text only).',
         'Card: size, spread over empty neighbouring slots, colour strength to draw attention.',
@@ -723,7 +723,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
     title: 'تعديل كلمة',
     steps: [
       'في وضع المرافق، المس البطاقة: التسميات بالفرنسية والإنجليزية واللبنانية.',
-      'الصورة: «رموز» (ARASAAC دون إنترنت)، «صورة» (المعرض أو الكاميرا)، أو «الإنترنت» (بنوك رموز أخرى، صور ورسومات حرة، «لصق الصورة»، رابط صورة). يظهر المؤلف والترخيص.',
+      'الصورة: «رموز» (مكتبة دون إنترنت: Mulberry و OpenMoji…)، «صورة» (المعرض أو الكاميرا)، أو «الإنترنت» (بنوك رموز أخرى، صور ورسومات حرة، «لصق الصورة»، رابط صورة). يظهر المؤلف والترخيص.',
       '«صوت مسجّل»: سجّل صوتك أو صوت أحد الأقارب، لكل لغة — مثالي للّبنانية.',
       '«الفئة (اللون)» و«عرض الخانة» (صورة + نص، صورة فقط، نص فقط).',
       'البطاقة: الحجم، التوسّع على الخانات الفارغة المجاورة، شدّة اللون لجذب الانتباه.',

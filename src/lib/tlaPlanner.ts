@@ -2,7 +2,7 @@
  * Plans a TLA (and its steps) for a situation the family types (spec §20–21):
  *   1. the situation library (data/situations.ts) when the topic is recognised;
  *   2. otherwise an AI proposal, when available (see aiPlanner);
- *   3. otherwise suggestions from ARASAAC categories.
+ *   3. otherwise suggestions from the library's categories.
  * Everything stays a proposal: the family removes, adds and edits before creating.
  */
 import { SITUATIONS, type Situation } from '../data/situations';
@@ -11,9 +11,9 @@ import { exactPicto, keywordWords, searchPictos, suggestForTopic, type PreparedI
 import { normalize } from './search';
 
 export interface PlanItem {
-  /** ARASAAC pictogram id. */
+  /** Pictogram id in the offline library. */
   id: number;
-  /** Labels proposed by the AI (otherwise ARASAAC keywords are used). */
+  /** Labels proposed by the AI (otherwise the library's keywords are used). */
   labels?: Partial<Record<Lang, string>>;
   cls?: WordClass;
   timerMin?: number;
@@ -55,20 +55,20 @@ function dedupe(items: PlanItem[]): PlanItem[] {
 }
 
 /**
- * A situation word: « farine », or « moule#15459 » to pin the pictogram when the
- * keyword alone picks the wrong meaning (« moule » is also the mussel).
+ * A situation word: « farine », or « moule#mulberry/cake_tin » to pin the pictogram (by its key
+ * in the library) when the keyword alone picks the wrong meaning (« moule » is also the mussel).
  */
 export function resolveSituationWord(index: PreparedIndex, entry: string): { label: string; id?: number } {
-  const [label, pinned] = entry.split('#');
-  const pin = Number(pinned);
-  if (pinned && index.byId.has(pin)) return { label, id: pin };
-  return { label, id: exactPicto(index, label) };
+  const at = entry.indexOf('#');
+  const label = at < 0 ? entry : entry.slice(0, at);
+  const pinned = at < 0 ? undefined : index.byKey.get(entry.slice(at + 1));
+  return { label, id: pinned ?? exactPicto(index, label) };
 }
 
 export function planFromLibrary(index: PreparedIndex, topic: string, lang: Lang): TlaPlan | undefined {
   const s = matchSituation(topic);
   if (!s) return undefined;
-  // Keep the situation's own word as the French label ("fouet", even if ARASAAC files it under "batteur").
+  // Keep the situation's own word as the French label ("fouet", even if the library files it under "batteur").
   const words: PlanItem[] = [];
   for (const w of s.words) {
     const { label, id } = resolveSituationWord(index, w);

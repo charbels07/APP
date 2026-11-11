@@ -1,9 +1,12 @@
 /**
- * Offline ARASAAC library (≈9,000 pictograms bundled with the app): used to find a
- * picture when the family creates a word or a TLA, with or without internet.
+ * Offline pictogram library bundled with the app (about 24,000 pictograms from open libraries
+ * that are free for commercial use: Mulberry, OpenMoji, Fluent, Noto, Twemoji, Health Icons,
+ * Material Symbols, Phosphor, Lucide, Tabler — see docs/PICTOGRAM-LICENSES.md).
+ * Used to find a picture when the family creates a word or an activity board, with or without internet.
  */
+import { PICTO_LIBRARIES } from '../data/pictoLibraries';
 import { PICTO_INDEX, PICTO_PACKS } from '../data/pictoLibrary';
-import { saveMedia, saveMediaBytes } from './media';
+import { saveMediaBytes } from './media';
 import { prepareIndex, type PreparedIndex } from './pictoSearch';
 import { bytesToImageUri, readAssetText } from './platform';
 
@@ -63,19 +66,29 @@ async function bytesOf(id: number): Promise<Uint8Array | undefined> {
   return buf.slice(it[2], it[2] + it[3]);
 }
 
-/** ARASAAC's own server, for pictograms found online that aren't in the offline library. */
-export const remotePictoUrl = (id: number) => `https://static.arasaac.org/pictograms/${id}/${id}_300.png`;
-
 export async function pictoImageUri(id: number): Promise<string | undefined> {
   const bytes = await bytesOf(id);
-  return bytes ? bytesToImageUri(bytes, `p${id}`) : remotePictoUrl(id);
+  return bytes ? bytesToImageUri(bytes, `p${id}`) : undefined;
 }
 
-/** Copies a library pictogram into the media store so the word keeps it offline. */
+/** Same, by the pictogram's stable key (`library/name`). */
+export async function pictoImageUriByKey(key: string): Promise<string | undefined> {
+  const lib = await loadPictoLibrary();
+  const id = lib.byKey.get(key);
+  return id === undefined ? undefined : pictoImageUri(id);
+}
+
+/** Copies a library pictogram into the media store so the word keeps it. */
 export async function pictoToMedia(id: number): Promise<string | undefined> {
   const bytes = await bytesOf(id);
-  if (bytes) return saveMediaBytes(bytes, 'webp');
-  return saveMedia(remotePictoUrl(id), 'png');
+  return bytes ? saveMediaBytes(bytes, 'webp') : undefined;
+}
+
+/** Where a library pictogram comes from, kept with the word: "Mulberry Symbols — CC BY-SA 4.0". */
+export async function pictoCredit(id: number): Promise<string | undefined> {
+  const lib = await loadPictoLibrary();
+  const info = PICTO_LIBRARIES.find((l) => l.id === lib.raw.libs?.[lib.byId.get(id)?.[9] ?? -1]);
+  return info ? `${info.name} — ${info.license.split(' (')[0]}` : undefined;
 }
 
 export async function pictoLabels(id: number): Promise<{ fr?: string; en?: string; ar?: string }> {

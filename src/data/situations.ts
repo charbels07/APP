@@ -3,9 +3,9 @@
  *
  * Each situation lists what a child needs to take part in it: the objects, the
  * actions and a few comments — and, for activities, the steps in order (they
- * can become a schedule linked to the TLA). Words are French ARASAAC keywords;
- * « mot#id » pins the pictogram when the keyword alone picks another meaning
- * (« moule » is also the mussel, « dé » also "of", « marié » also the Virgin Mary);
+ * can become a schedule linked to the TLA). Words are French keywords of the pictogram library;
+ * « mot#bibliothèque/nom » pins the pictogram (its key in the library) when the keyword alone
+ * picks another meaning (« moule » is also the mussel, « dé » also "of");
  * `scripts/check-situations` style tests make sure each one has a pictogram.
  *
  * `triggers`: words that must ALL appear in the topic the family types. Stems of 5+
@@ -29,11 +29,11 @@ export const SITUATIONS: Situation[] = [
     triggers: [['gateau', 'prepar'], ['gateau', 'faire'], ['gateau', 'fais'], ['gateau', 'fait'], ['gateau', 'cuisin'], ['gateau', 'recette'], ['patisserie'], ['bake'], ['cake', 'make']],
     words: [
       'farine', 'œuf', 'sucre', 'beurre', 'lait', 'chocolat', 'levure', 'saladier', 'fouet', 'cuillère en bois',
-      'moule#15459', 'balance', 'four', 'mélanger', 'verser', 'casser#8984', 'peser', 'goûter#32340',
+      'moule#mulberry/cake_tin', 'balance', 'four', 'mélanger', 'verser', 'casser#mulberry/break_egg_,_to', 'peser', 'goûter#mulberry/taste_,_to',
     ],
     steps: [
-      'se laver les mains', 'tablier', 'peser', 'casser#8984', 'verser', 'mélanger', 'moule#15459',
-      { w: 'four', timer: 30 }, 'attendre', 'goûter#32340',
+      'se laver les mains', 'tablier', 'peser', 'casser#mulberry/break_egg_,_to', 'verser', 'mélanger', 'moule#mulberry/cake_tin',
+      { w: 'four', timer: 30 }, 'attendre', 'goûter#mulberry/taste_,_to',
     ],
   },
   {
@@ -43,31 +43,31 @@ export const SITUATIONS: Situation[] = [
       'farine', 'œuf', 'lait', 'sucre', 'beurre', 'saladier', 'fouet', 'louche', 'poêle', 'mélanger', 'verser',
       'retourner', 'chaud', 'confiture', 'chocolat', 'manger', 'délicieux', 'assiette',
     ],
-    steps: ['se laver les mains', 'casser#8984', 'verser', 'mélanger', 'poêle', 'retourner', 'assiette', 'manger'],
+    steps: ['se laver les mains', 'casser#mulberry/break_egg_,_to', 'verser', 'mélanger', 'poêle', 'retourner', 'assiette', 'manger'],
   },
   {
     id: 'pizza',
     triggers: [['pizza', 'prepar'], ['pizza', 'faire'], ['pizza', 'fais'], ['pizza', 'cuisin']],
     words: [
       'pâte', 'farine', 'tomate', 'fromage', 'jambon', 'champignon', 'olive', 'rouleau à pâtisserie', 'étaler',
-      'couper#39429', 'mettre', 'four', 'chaud', 'pizza', 'manger', 'délicieux',
+      'couper#mulberry/cut_,_to', 'mettre', 'four', 'chaud', 'pizza', 'manger', 'délicieux',
     ],
-    steps: ['se laver les mains', 'étaler', 'tomate', 'fromage', 'mettre', { w: 'four', timer: 15 }, 'couper#39429', 'manger'],
+    steps: ['se laver les mains', 'étaler', 'tomate', 'fromage', 'mettre', { w: 'four', timer: 15 }, 'couper#mulberry/cut_,_to', 'manger'],
   },
   {
     id: 'cuisiner',
     triggers: [['cuisin'], ['recette'], ['cook']],
     words: [
-      'tablier', 'saladier', 'cuillère', 'couteau', 'planche à découper', 'casserole', 'poêle', 'four', 'couper#5975',
+      'tablier', 'saladier', 'cuillère', 'couteau', 'planche à découper', 'casserole', 'poêle', 'four', 'couper#mulberry/cut_,_to',
       'mélanger', 'verser', 'éplucher', 'chaud', 'froid', 'délicieux', 'laver', 'aider',
     ],
-    steps: ['se laver les mains', 'tablier', 'couper#5975', 'mélanger', 'cuire', 'goûter#32340', 'laver'],
+    steps: ['se laver les mains', 'tablier', 'couper#mulberry/cut_,_to', 'mélanger', 'cuire', 'goûter#mulberry/taste_,_to', 'laver'],
   },
   {
     id: 'sandwich',
     triggers: [['sandwich'], ['tartine']],
-    words: ['pain', 'beurre', 'fromage', 'jambon', 'salade', 'tomate', 'couteau', 'étaler', 'couper#5975', 'assiette', 'manger', 'délicieux'],
-    steps: ['se laver les mains', 'pain', 'étaler', 'fromage', 'couper#5975', 'manger'],
+    words: ['pain', 'beurre', 'fromage', 'jambon', 'salade', 'tomate', 'couteau', 'étaler', 'couper#mulberry/cut_,_to', 'assiette', 'manger', 'délicieux'],
+    steps: ['se laver les mains', 'pain', 'étaler', 'fromage', 'couper#mulberry/cut_,_to', 'manger'],
   },
   {
     id: 'repas',
@@ -82,7 +82,7 @@ export const SITUATIONS: Situation[] = [
   {
     id: 'mains',
     triggers: [['main', 'laver'], ['main', 'lave'], ['hand', 'wash']],
-    words: ['robinet', 'eau', 'savon', 'mousse#36910', 'frotter', 'rincer', 'serviette', 'sécher', 'propre', 'sale', 'chaud', 'froid'],
+    words: ['robinet', 'eau', 'savon', 'mousse#mulberry/bubble_bath', 'frotter', 'rincer', 'serviette', 'sécher', 'propre', 'sale', 'chaud', 'froid'],
     steps: ['ouvrir le robinet', 'savon', 'frotter', 'rincer', 'fermer le robinet', 'sécher'],
   },
   {
@@ -95,7 +95,7 @@ export const SITUATIONS: Situation[] = [
     id: 'bain',
     triggers: [['bain'], ['douche'], ['bath'], ['shower']],
     words: [
-      'baignoire', 'douche', 'eau', 'savon', 'shampoing', 'éponge', 'serviette', 'jouet', 'mousse#36910', 'laver',
+      'baignoire', 'douche', 'eau', 'savon', 'shampoing', 'éponge', 'serviette', 'jouet', 'mousse#mulberry/bubble_bath', 'laver',
       'rincer', 'sécher', 'chaud', 'froid', 'yeux', 'sortir',
     ],
     steps: ['se déshabiller', 'baignoire', 'savon', 'shampoing', 'rincer', 'sortir', 'sécher', 'pyjama'],
@@ -103,8 +103,8 @@ export const SITUATIONS: Situation[] = [
   {
     id: 'toilettes',
     triggers: [['toilett'], ['pipi'], ['wc'], ['propret']],
-    words: ['toilettes', 'faire pipi', 'caca', 'papier toilette', 'tirer la chasse d\'eau', 'baisser#10142', 'remonter#10181', 'se laver les mains', 'savon', 'aide', 'fini', 'attendre'],
-    steps: ['baisser#10142', 'toilettes', 'papier toilette', 'tirer la chasse d\'eau', 'remonter#10181', 'se laver les mains'],
+    words: ['toilettes', 'faire pipi', 'caca', 'papier toilette', 'tirer la chasse d\'eau', 'baisser', 'remonter', 'se laver les mains', 'savon', 'aide', 'fini', 'attendre'],
+    steps: ['baisser', 'toilettes', 'papier toilette', 'tirer la chasse d\'eau', 'remonter', 'se laver les mains'],
   },
   {
     id: 'habillage',
@@ -119,15 +119,15 @@ export const SITUATIONS: Situation[] = [
     id: 'coucher',
     triggers: [['couch'], ['dodo'], ['dormir'], ['nuit'], ['bedtime'], ['sleep']],
     words: [
-      'lit', 'pyjama', 'dormir', 'histoire#2364', 'livre', 'peluche', 'oreiller', 'couverture', 'lumière', 'éteindre#8027',
-      'noir#8643', 'peur', 'câlin', 'bisou', 'bonne nuit', 'fatigué',
+      'lit', 'pyjama', 'dormir', 'histoire#mulberry/read_book_,_to', 'livre', 'peluche', 'oreiller', 'couverture', 'lumière', 'éteindre#mulberry/turn_off_,_to',
+      'noir#mulberry/black', 'peur', 'câlin', 'bisou', 'bonne nuit', 'fatigué',
     ],
-    steps: ['pyjama', 'se brosser les dents', 'toilettes', 'histoire#2364', 'câlin', 'éteindre#8027', 'dormir'],
+    steps: ['pyjama', 'se brosser les dents', 'toilettes', 'histoire#mulberry/read_book_,_to', 'câlin', 'éteindre#mulberry/turn_off_,_to', 'dormir'],
   },
   {
     id: 'matin',
     triggers: [['matin'], ['reveil'], ['morning']],
-    words: ['se réveiller', 'se lever#34525', 'toilettes', 's\'habiller', 'petit-déjeuner', 'lait', 'pain', 'jus', 'se brosser les dents', 'se coiffer', 'chaussures', 'sac à dos'],
+    words: ['se réveiller', 'se lever#mulberry/get_up_,_to', 'toilettes', 's\'habiller', 'petit-déjeuner', 'lait', 'pain', 'jus', 'se brosser les dents', 'se coiffer', 'chaussures', 'sac à dos'],
     steps: ['se réveiller', 'toilettes', 's\'habiller', 'petit-déjeuner', 'se brosser les dents', 'chaussures', 'sac à dos'],
   },
 
@@ -159,7 +159,7 @@ export const SITUATIONS: Situation[] = [
   {
     id: 'mariage',
     triggers: [['mariage'], ['noce'], ['wedding']],
-    words: ['mariée', 'mariés#8256', 'robe', 'costume', 'fleurs', 'gâteau de mariage', 'musique', 'danser', 'applaudir', 'bruyant', 'famille', 'photo', 'manger', 'beau'],
+    words: ['mariée', 'mariés#openmoji/1F492', 'robe', 'costume', 'fleurs', 'gâteau de mariage', 'musique', 'danser', 'applaudir', 'bruyant', 'famille', 'photo', 'manger', 'beau'],
   },
 
   // ── Outings ──────────────────────────────────────────────
@@ -176,7 +176,7 @@ export const SITUATIONS: Situation[] = [
     id: 'plage',
     triggers: [['plage'], ['mer'], ['beach'], ['sea']],
     words: [
-      'mer', 'sable', 'vague', 'seau#2725', 'pelle', 'château de sable', 'maillot de bain', 'serviette', 'parasol',
+      'mer', 'sable', 'vague', 'seau#mulberry/bucket', 'pelle', 'château de sable', 'maillot de bain', 'serviette', 'parasol',
       'crème solaire', 'nager', 'se baigner', 'coquillages', 'soleil', 'glace', 'lunettes de soleil',
     ],
   },
@@ -185,7 +185,7 @@ export const SITUATIONS: Situation[] = [
     triggers: [['parc'], ['aire', 'jeu'], ['jardin', 'public'], ['playground'], ['park']],
     words: [
       'balançoire', 'toboggan', 'bac à sable', 'ballon', 'vélo', 'trottinette', 'courir', 'sauter', 'grimper',
-      'glisser', 'pousser', 'mon tour', 'ami', 'jouer', 'en haut#5451', 'en bas',
+      'glisser', 'pousser', 'mon tour', 'ami', 'jouer', 'en haut#mulberry/up', 'en bas',
     ],
   },
   {
@@ -212,7 +212,7 @@ export const SITUATIONS: Situation[] = [
   {
     id: 'cinema',
     triggers: [['cinema'], ['film'], ['movie']],
-    words: ['film', 'écran', 'fauteuil', 'billet', 'pop-corn', 'boisson', 'noir#8643', 'bruyant', 'regarder', 'rire', 'peur', 'drôle', 'silence', 'toilettes', 'acheter', 'assis'],
+    words: ['film', 'écran', 'fauteuil', 'billet', 'pop-corn', 'boisson', 'noir#mulberry/black', 'bruyant', 'regarder', 'rire', 'peur', 'drôle', 'silence', 'toilettes', 'acheter', 'assis'],
   },
   {
     id: 'restaurant',
@@ -222,8 +222,8 @@ export const SITUATIONS: Situation[] = [
   {
     id: 'courses',
     triggers: [['course'], ['supermarche'], ['magasin'], ['shopping'], ['market']],
-    words: ['caddie', 'panier', 'acheter', 'payer', 'argent', 'caisse', 'fruits', 'légumes', 'pain', 'lait', 'viande', 'bonbon', 'biscuit', 'jus', 'sac#27616', 'liste'],
-    steps: ['liste', 'caddie', 'fruits', 'légumes', 'lait', 'caisse', 'payer', 'sac#27616'],
+    words: ['caddie', 'panier', 'acheter', 'payer', 'argent', 'caisse', 'fruits', 'légumes', 'pain', 'lait', 'viande', 'bonbon', 'biscuit', 'jus', 'sac#mulberry/sack', 'liste'],
+    steps: ['liste', 'caddie', 'fruits', 'légumes', 'lait', 'caisse', 'payer', 'sac#mulberry/sack'],
   },
   {
     id: 'coiffeur',
@@ -239,7 +239,7 @@ export const SITUATIONS: Situation[] = [
     triggers: [['medecin'], ['docteur'], ['pediatre'], ['doctor']],
     words: [
       'médecin', 'stéthoscope', 'thermomètre', 'fièvre', 'douleur', 'toux', 'ventre', 'tête', 'gorge', 'oreille',
-      'piqûre#5601', 'médicament', 'peur', 'attendre', 'salle d\'attente', 'pansement',
+      'piqûre#mulberry/syringe', 'médicament', 'peur', 'attendre', 'salle d\'attente', 'pansement',
     ],
     steps: ['salle d\'attente', 'attendre', 'médecin', 'stéthoscope', 'thermomètre', 'médicament', 'au revoir'],
   },
@@ -255,8 +255,8 @@ export const SITUATIONS: Situation[] = [
   {
     id: 'hopital',
     triggers: [['hopital'], ['prise', 'sang'], ['vaccin'], ['hospital']],
-    words: ['hôpital', 'infirmière', 'médecin', 'lit', 'piqûre#5601', 'pansement', 'bras', 'douleur', 'peur', 'attendre', 'courageux', 'récompense', 'maman', 'papa', 'fini'],
-    steps: ['salle d\'attente', 'attendre', 'infirmière', 'bras', 'piqûre#5601', 'pansement', 'récompense'],
+    words: ['hôpital', 'infirmière', 'médecin', 'lit', 'piqûre#mulberry/syringe', 'pansement', 'bras', 'douleur', 'peur', 'attendre', 'courageux', 'récompense', 'maman', 'papa', 'fini'],
+    steps: ['salle d\'attente', 'attendre', 'infirmière', 'bras', 'piqûre#mulberry/syringe', 'pansement', 'récompense'],
   },
   {
     id: 'ecole',
@@ -269,7 +269,7 @@ export const SITUATIONS: Situation[] = [
   {
     id: 'bibliotheque',
     triggers: [['bibliotheque'], ['library']],
-    words: ['livre', 'histoire#2364', 'lire', 'regarder', 'choisir', 'silence', 'chaise', 'table', 'bibliothécaire', 'rendre'],
+    words: ['livre', 'histoire#mulberry/read_book_,_to', 'lire', 'regarder', 'choisir', 'silence', 'chaise', 'table', 'bibliothécaire', 'rendre'],
   },
   {
     id: 'voiture',
@@ -279,8 +279,8 @@ export const SITUATIONS: Situation[] = [
   {
     id: 'bus',
     triggers: [['bus'], ['autobus']],
-    words: ['bus', 'arrêt de bus', 'ticket', 'chauffeur', 'monter#36595', 'descendre#36842', 's\'asseoir#2801', 'être debout', 'fenêtre', 'attendre', 'bouton', 'arriver'],
-    steps: ['arrêt de bus', 'attendre', 'monter#36595', 'ticket', 's\'asseoir#2801', 'bouton', 'descendre#36842'],
+    words: ['bus', 'arrêt de bus', 'ticket', 'chauffeur', 'monter#mulberry/climb_up_,_to', 'descendre#mulberry/climb_down_,_to', 's\'asseoir#mulberry/sit_,_to', 'être debout', 'fenêtre', 'attendre', 'bouton', 'arriver'],
+    steps: ['arrêt de bus', 'attendre', 'monter#mulberry/climb_up_,_to', 'ticket', 's\'asseoir#mulberry/sit_,_to', 'bouton', 'descendre#mulberry/climb_down_,_to'],
   },
   {
     id: 'avion',
@@ -302,38 +302,38 @@ export const SITUATIONS: Situation[] = [
   {
     id: 'pate_a_modeler',
     triggers: [['pate', 'modeler'], ['playdough'], ['plasticine']],
-    words: ['pâte à modeler', 'rouler', 'aplatir', 'couper#5975', 'emporte-pièces', 'boule#4603', 'serpent', 'rouge', 'bleu', 'jaune', 'mou', 'dur', 'mon tour', 'ranger'],
+    words: ['pâte à modeler', 'rouler', 'aplatir', 'couper#mulberry/cut_,_to', 'emporte-pièces', 'boule', 'serpent', 'rouge', 'bleu', 'jaune', 'mou', 'dur', 'mon tour', 'ranger'],
   },
   {
     id: 'construction',
     triggers: [['lego'], ['construction'], ['cube'], ['block']],
-    words: ['jeu de construction', 'blocs', 'cubes#9115', 'construire', 'tour', 'maison', 'en haut#5451', 'tomber#4582', 'encore', 'mettre', 'enlever', 'rouge', 'bleu', 'aide', 'mon tour', 'ranger', 'bravo'],
+    words: ['jeu de construction', 'blocs', 'cubes#mulberry/bricks', 'construire', 'tour', 'maison', 'en haut#mulberry/up', 'tomber#mulberry/fall_over_,_to', 'encore', 'mettre', 'enlever', 'rouge', 'bleu', 'aide', 'mon tour', 'ranger', 'bravo'],
   },
   {
     id: 'jeu_societe',
     triggers: [['jeu', 'societe'], ['board', 'game']],
-    words: ['jeux de société', 'dé#2731', 'lancer#6542', 'pion', 'cartes#3181', 'mon tour', 'gagner', 'perdre', 'attendre', 'avancer', 'reculer', 'tricher', 'encore', 'bravo', 'fini'],
+    words: ['jeux de société', 'dé#openmoji/1F3B2', 'lancer#openmoji/1F3B2', 'pion', 'cartes#mulberry/playing_cards', 'mon tour', 'gagner', 'perdre', 'attendre', 'avancer', 'reculer', 'tricher', 'encore', 'bravo', 'fini'],
   },
   {
-    id: 'histoire#2364',
+    id: 'histoire#mulberry/read_book_,_to',
     triggers: [['histoire'], ['lire', 'livre'], ['story']],
-    words: ['livre', 'histoire#2364', 'lire', 'page', 'tourner la page', 'dessin', 'regarder', 'qui', 'quoi', 'où#7764', 'encore', 'fini', 'drôle', 'peur', 'triste', 'content'],
+    words: ['livre', 'histoire#mulberry/read_book_,_to', 'lire', 'page', 'tourner la page', 'dessin', 'regarder', 'qui', 'quoi', 'où#mulberry/where', 'encore', 'fini', 'drôle', 'peur', 'triste', 'content'],
   },
   {
     id: 'musique',
     triggers: [['musique'], ['chant'], ['music']],
-    words: ['musique', 'chanter', 'danser', 'tambour', 'guitare', 'piano', 'xylophone', 'maracas', 'fort#36047', 'doucement#38050', 'écouter', 'applaudir', 'encore', 'stop'],
+    words: ['musique', 'chanter', 'danser', 'tambour', 'guitare', 'piano', 'xylophone', 'maracas', 'fort#mulberry/loud', 'doucement#mulberry/quiet', 'écouter', 'applaudir', 'encore', 'stop'],
   },
   {
     id: 'jardinage',
     triggers: [['jardin'], ['plant'], ['fleur'], ['garden']],
-    words: ['jardin', 'graine', 'terre', 'pot#3126', 'pelle', 'arrosoir', 'eau', 'fleur', 'plante', 'planter', 'arroser', 'pousser#7002', 'soleil', 'sale', 'gants', 'ver de terre'],
-    steps: ['gants', 'pot#3126', 'terre', 'graine', 'planter', 'arroser', 'soleil'],
+    words: ['jardin', 'graine', 'terre', 'pot#mulberry/plant', 'pelle', 'arrosoir', 'eau', 'fleur', 'plante', 'planter', 'arroser', 'pousser#mulberry/push_,_to', 'soleil', 'sale', 'gants', 'ver de terre'],
+    steps: ['gants', 'pot#mulberry/plant', 'terre', 'graine', 'planter', 'arroser', 'soleil'],
   },
   {
     id: 'neige',
     triggers: [['neige'], ['ski'], ['snow']],
-    words: ['neige', 'froid', 'bonnet', 'gants', 'écharpe', 'manteau', 'bottes', 'bonhomme de neige', 'boule de neige', 'luge', 'glisser', 'tomber#4582', 'jouer', 'chocolat chaud'],
+    words: ['neige', 'froid', 'bonnet', 'gants', 'écharpe', 'manteau', 'bottes', 'bonhomme de neige', 'boule de neige', 'luge', 'glisser', 'tomber#mulberry/fall_over_,_to', 'jouer', 'chocolat chaud'],
   },
   {
     id: 'pique_nique',

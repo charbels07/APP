@@ -18,7 +18,7 @@ import type { Profile } from '../../model/types';
 import type { Overlay } from '../../state/AppState';
 import { useSession } from '../../state/Session';
 import { Btn, Field, Section, Segmented } from '../common';
-import { ArasaacCredit } from '../ArasaacCredit';
+import { PictoCredit } from '../PictoCredits';
 import { DataDashboard } from '../data/DataDashboard';
 import { Icon, type IconName } from '../Icon';
 import { DeleteAccount, MyAccount, Preferences } from '../settings/AccountTab';
@@ -659,7 +659,7 @@ function Learning({ p, onOpen }: { p: ProStrings; onOpen: (start?: Overlay | 'ed
       {items.map((it) => (
         <Row key={it.id} icon={it.icon} title={p.learnItems[it.id]} sub={p.learnNotes[it.id]} onPress={() => onOpen(it.start)} />
       ))}
-      <ArasaacCredit lang={uiLang} />
+      <PictoCredit lang={uiLang} />
     </>
   );
 }
@@ -693,7 +693,7 @@ function ProAccount({ p, verification, users, onVerify }: { p: ProStrings; verif
         <Note text={x.subscriptionLater} />
       </Section>
       <DeleteAccount x={x} />
-      <ArasaacCredit lang={uiLang} />
+      <PictoCredit lang={uiLang} />
     </>
   );
 }

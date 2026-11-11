@@ -1,7 +1,7 @@
 /**
  * Pictures from the internet for a word (the family's choice, stored locally):
- *  - pictograms from Global Symbols (Tawasol, Mulberry, Sclera, OpenMoji…; ARASAAC is
- *    already offline in the app, so it is left out here);
+ *  - pictograms from Global Symbols, limited to the collections whose licence was checked at the
+ *    source and allows commercial use (Mulberry, OpenMoji): see docs/PICTOGRAM-LICENSES.md;
  *  - photos and drawings from Openverse, limited to licences that allow commercial use.
  * Both services are free, need no key and answer browsers (CORS).
  * Each result keeps its author and licence, shown under the word's picture.
@@ -24,7 +24,8 @@ export interface WebPicture {
 }
 
 const ISO3: Record<Lang, string> = { fr: 'fra', en: 'eng', ar: 'ara' };
-const ARASAAC_SET = 17;
+/** Global Symbols collections we may use (licence verified at the publisher, commercial use allowed). */
+export const VERIFIED_SETS = new Set(['mulberry', 'openmoji']);
 const hasArabic = (s: string) => /[؀-ۿ]/.test(s);
 
 /** The service answered with an error (as opposed to no internet at all). */
@@ -42,6 +43,7 @@ interface GsLabel {
 }
 interface GsSet {
   id: number;
+  slug?: string;
   name: string;
   licence?: { name?: string };
 }
@@ -50,7 +52,8 @@ let sets: Promise<Map<number, string>> | undefined;
 /** Names and licences of the symbol sets — fetched once and shared, so never cancelled with one search. */
 function symbolSetCredits(): Promise<Map<number, string>> {
   sets ??= getJson<GsSet[]>('https://globalsymbols.com/api/v1/symbolsets?per_page=300')
-    .then((list) => new Map(list.map((s) => [s.id, [s.name, s.licence?.name].filter(Boolean).join(' — ')])))
+    // Only the verified collections are kept: a picture from any other set is never shown.
+    .then((list) => new Map(list.filter((s) => s.slug && VERIFIED_SETS.has(s.slug)).map((s) => [s.id, [s.name, s.licence?.name].filter(Boolean).join(' — ')])))
     .catch(() => {
       sets = undefined;
       return new Map<number, string>();
@@ -95,14 +98,14 @@ function toPictures(labels: GsLabel[], credits: Map<number, string>): WebPicture
   for (const l of labels) {
     const p = l.picto;
     // React Native's Image cannot show SVG: keep PNG / JPEG only.
-    if (!p?.image_url || !/\.(png|jpe?g)$/i.test(p.image_url) || p.symbolset_id === ARASAAC_SET || seen.has(p.id)) continue;
+    if (!p?.image_url || !/\.(png|jpe?g)$/i.test(p.image_url) || !credits.has(p.symbolset_id) || seen.has(p.id)) continue;
     seen.add(p.id);
     out.push({
       key: `gs${p.id}`,
       thumb: p.image_url,
       full: p.image_url,
       title: l.text,
-      credit: credits.get(p.symbolset_id) || 'Global Symbols',
+      credit: credits.get(p.symbolset_id)!,
       ext: /\.png$/i.test(p.image_url) ? 'png' : 'jpg',
     });
   }

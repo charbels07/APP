@@ -38,6 +38,7 @@
     "@types/react": "~19.3.0",
     "jest": "^30.5.2",
     "jest-expo": "~58.0.14",
+    "sharp": "^0.35.5",
     "typescript": "~6.0.3"
   },
   "scripts": {
@@ -48,11 +49,11 @@
     "test": "jest",
     "typecheck": "tsc --noEmit",
     "export:web": "expo export -p web",
-    "fetch:arasaac": "NODE_USE_ENV_PROXY=1 node --experimental-strip-types scripts/fetch-arasaac.ts",
-    "build:picto": "NODE_USE_ENV_PROXY=1 node --experimental-strip-types scripts/build-picto-library.ts",
+    "fetch:picto": "bash scripts/fetch-pictogram-sources.sh",
+    "build:picto": "node --experimental-strip-types scripts/build-pictograms.ts",
+    "build:symbols": "node --experimental-strip-types scripts/build-default-symbols.ts",
     "test:db": "bash scripts/test-db.sh",
-    "test:live": "jest --testPathIgnorePatterns=/node_modules/ --testPathPatterns=live/ --forceExit --runInBand",
-    "update:picto": "NODE_USE_ENV_PROXY=1 node --experimental-strip-types scripts/build-picto-library.ts --add-missing"
+    "test:live": "jest --testPathIgnorePatterns=/node_modules/ --testPathPatterns=live/ --forceExit --runInBand"
   },
   "private": true,
   "jest": {

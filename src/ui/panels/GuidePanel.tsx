@@ -6,7 +6,7 @@ import { locate } from '../../lib/search';
 import type { DemoStep } from '../../model/types';
 import { useApp } from '../../state/AppState';
 import { Btn, Panel, Segmented, useNavRtl } from '../common';
-import { ArasaacCredit } from '../ArasaacCredit';
+import { PictoCredit } from '../PictoCredits';
 import { Icon } from '../Icon';
 import { C, radius } from '../theme';
 
@@ -105,7 +105,7 @@ export function GuidePanel() {
           lockedNote={c.action && NEEDS_CAREGIVER.includes(c.action) && !editMode ? t.guideUnlock : undefined}
         />
       ))}
-      <ArasaacCredit lang={ui} />
+      <PictoCredit lang={ui} />
     </Panel>
   );
 }

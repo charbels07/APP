@@ -1,13 +1,26 @@
-/** Keyword search over the offline ARASAAC library index (pure, no I/O). */
+/** Keyword search over the offline pictogram library index (pure, no I/O). */
 import type { Lang } from '../model/types';
 import { normalize } from './search';
 
-/** [id, pack, offset, length, fr keywords, en keywords, ar keywords, ARASAAC categories + tags, sensitive (1)] */
-export type PictoItem = [number, number, number, number, string[], string[], string[], string[]?, number?];
+/**
+ * [id, pack, offset, length, fr keywords, en keywords, ar keywords, categories + tags, flags,
+ *  library (position in `libs`), key (`library/name`)]
+ */
+export type PictoItem = [number, number, number, number, string[], string[], string[], string[]?, number?, number?, string?];
+
+/** Flags of a pictogram (bits). */
+export const PICTO_SENSITIVE = 1;
+/** French / Arabic label added automatically (not given by the library): to be reviewed. */
+export const PICTO_FR_AUTO = 2;
+export const PICTO_AR_AUTO = 4;
+/** The English word has several meanings: the translation may not fit this picture. */
+export const PICTO_AMBIGUOUS = 8;
 
 export interface PictoIndex {
   size: number;
   packs: string[];
+  /** Library ids, in the order used by the items. */
+  libs?: string[];
   items: PictoItem[];
 }
 
@@ -21,6 +34,7 @@ interface Keyword {
 export interface PreparedIndex {
   raw: PictoIndex;
   byId: Map<number, PictoItem>;
+  byKey: Map<string, number>;
   norm: { id: number; kw: [Keyword[], Keyword[], Keyword[]] }[];
 }
 
@@ -46,6 +60,7 @@ export function prepareIndex(raw: PictoIndex): PreparedIndex {
   return {
     raw,
     byId: new Map(raw.items.map((it) => [it[0], it])),
+    byKey: new Map(raw.items.flatMap((it) => (it[10] ? [[it[10], it[0]] as [string, number]] : []))),
     norm: raw.items.map((it) => ({ id: it[0], kw: [prep(it[4]), prep(it[5]), prep(it[6])] })),
   };
 }
@@ -70,13 +85,18 @@ function score(kw: Keyword, q: string, qWords: string[], pos: number): number {
   return 0;
 }
 
-export function searchPictos(index: PreparedIndex, query: string, lang: Lang, max = 24): number[] {
+/** Library id of a pictogram ("mulberry", "openmoji"…). */
+export const libraryOf = (index: PreparedIndex, id: number): string | undefined => index.raw.libs?.[index.byId.get(id)?.[9] ?? -1];
+
+export function searchPictos(index: PreparedIndex, query: string, lang: Lang, max = 24, library?: string): number[] {
   const q = normalize(query);
   if (!q) return [];
+  const onlyLib = library ? index.raw.libs?.indexOf(library) : undefined;
   const qWords = keywordWords(query);
   const slot = LANG_SLOT[lang];
   const scored: { id: number; s: number; len: number }[] = [];
   for (const { id, kw } of index.norm) {
+    if (onlyLib !== undefined && index.byId.get(id)?.[9] !== onlyLib) continue;
     let best = 0;
     let len = 99;
     kw.forEach((list, l) => {
@@ -100,6 +120,7 @@ const BROAD = new Set([
   'verb', 'usual verbs', 'core vocabulary', 'core vocabulary-communication', 'core vocabulary-knowledge',
   'qualifying adjective', 'adjective', 'noun', 'object', 'communication', 'language', 'person', 'people',
   'activity', 'action', 'thing', 'concept', 'place', 'leisure', 'daily life',
+  'emoji', 'icon', 'health', 'symbols', 'objects', 'people-body', 'smileys-emotion', 'extras-openmoji', 'extras-unicode',
 ]);
 
 /** Finds the pictogram for one exact keyword (used by the starter word lists). */
@@ -127,7 +148,7 @@ export function exactPicto(index: PreparedIndex, keyword: string): number | unde
  * Suggests pictograms for a situation (TLA topic).
  * Used when the situation library (data/situations.ts) doesn't know the topic:
  * the pictogram that matches the topic, then others that share its
- *    most specific ARASAAC categories/tags (rarest first) or mention the topic.
+ *    most specific categories/tags (rarest first) or mention the topic.
  */
 export function suggestForTopic(
   index: PreparedIndex,
@@ -157,7 +178,7 @@ export function suggestForTopic(
   const q = normalize(topic);
   const tiers: number[][] = [[], ...specific.map(() => [] as number[])];
   for (const it of index.raw.items) {
-    if (it[0] === anchor || it[8]) continue;
+    if (it[0] === anchor || (it[8] ?? 0) & PICTO_SENSITIVE) continue;
     if (q.length >= 3 && it[4].some((k) => normalize(k).split(' ').includes(q))) {
       tiers[0].push(it[0]);
       continue;

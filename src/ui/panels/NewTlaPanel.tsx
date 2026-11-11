@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native';
-import { ARASAAC_DEFAULTS } from '../../data/arasaacMap';
+import { SYMBOL_DEFAULTS } from '../../data/symbolMap';
 import { TLA_CORE } from '../../data/defaults';
 import { editStrings } from '../../i18n/edit';
 import { aiAvailable, askAiForPhoto, askAiForTla } from '../../lib/aiPlanner';
 import { pickPhotoForAi, type AiPhoto } from '../../lib/photoForAi';
 import { allConceptIds, getConcept, label, symbolOf } from '../../lib/lexicon';
-import { pictoToMedia } from '../../lib/pictoLibrary';
+import { pictoCredit, pictoToMedia } from '../../lib/pictoLibrary';
 import type { PreparedIndex } from '../../lib/pictoSearch';
 import { normalize } from '../../lib/search';
 import { planAutomatically, planFromAi, planFromLibrary, type PlanItem, type TlaPlan } from '../../lib/tlaPlanner';
@@ -23,11 +23,11 @@ const FUNCTION_WORDS = ['look_at', 'my_turn', 'i_like_it', 'where'];
 const MAX_WORDS = 24;
 const MAX_STEPS = 12;
 
-const byArasaacId = new Map(Object.entries(ARASAAC_DEFAULTS).map(([concept, id]) => [id, concept]));
+const byPictoKey = new Map(Object.entries(SYMBOL_DEFAULTS).map(([concept, key]) => [key, concept]));
 
 /** Reuses a word the profile already has (same pictogram or same French label). */
-function existingConcept(profile: Profile, pictoId: number, fr: string): string | undefined {
-  const known = byArasaacId.get(pictoId);
+function existingConcept(profile: Profile, pictoKey: string | undefined, fr: string): string | undefined {
+  const known = pictoKey ? byPictoKey.get(pictoKey) : undefined;
   if (known) return known;
   const key = normalize(fr);
   return allConceptIds(profile).find((id) => {
@@ -38,11 +38,11 @@ function existingConcept(profile: Profile, pictoId: number, fr: string): string 
 
 function guessClass(topics: string[]): WordClass {
   if (topics.includes('verb')) return 'verb';
-  if (topics.includes('qualifying adjective')) return 'descriptor';
+  if (topics.includes('qualifying adjective') || topics.includes('adjective')) return 'descriptor';
   return 'noun';
 }
 
-/** Labels for a planned item: the proposal's own words first, then ARASAAC's keywords. */
+/** Labels for a planned item: the proposal's own words first, then the library's keywords. */
 function labelsFor(lib: PreparedIndex, item: PlanItem) {
   const it = lib.byId.get(item.id);
   const fr = item.labels?.fr ?? it?.[4][0] ?? '';
@@ -144,6 +144,7 @@ export function NewTlaPanel() {
     const titleId = `c_tla_${stamp}`;
     const newConcepts: Record<string, Concept> = {};
     const symbols: Record<string, string> = {};
+    const credits: Record<string, string | undefined> = {};
     const made = new Map<number, string>(); // pictogram → concept, shared by words and steps
     let n = 0;
     const conceptFor = async (item: PlanItem): Promise<string | undefined> => {
@@ -151,7 +152,7 @@ export function NewTlaPanel() {
       const it = lib.byId.get(item.id);
       if (!it) return undefined;
       const labels = labelsFor(lib, item);
-      const reuse = existingConcept(profile, item.id, labels.fr);
+      const reuse = existingConcept(profile, it[10], labels.fr);
       if (reuse) {
         made.set(item.id, reuse);
         return reuse;
@@ -160,13 +161,13 @@ export function NewTlaPanel() {
       newConcepts[cid] = {
         id: cid,
         cls: item.cls ?? guessClass(it[7] ?? []),
-        // Arabic from ARASAAC is Standard Arabic; AI proposals give Lebanese. Editable either way.
+        // Arabic from the library is Standard Arabic; AI proposals give Lebanese. Editable either way.
         labels,
         emoji: '⭐',
         custom: true,
       };
       const media = await pictoToMedia(item.id).catch(() => undefined);
-      if (media) symbols[cid] = media;
+      if (media) (symbols[cid] = media), (credits[cid] = await pictoCredit(item.id).catch(() => undefined));
       made.set(item.id, cid);
       return cid;
     };
@@ -198,7 +199,7 @@ export function NewTlaPanel() {
     };
     if (p?.anchor !== undefined) {
       const media = await pictoToMedia(p.anchor).catch(() => undefined);
-      if (media) symbols[titleId] = media;
+      if (media) (symbols[titleId] = media), (credits[titleId] = await pictoCredit(p.anchor).catch(() => undefined));
     }
 
     // Core words in the two left columns (same place on every TLA), then functions, then topic words.
@@ -228,7 +229,7 @@ export function NewTlaPanel() {
       : undefined;
     app.update((d) => {
       Object.assign(d.customConcepts, newConcepts);
-      for (const [cid, media] of Object.entries(symbols)) d.overrides[cid] = { symbol: { kind: 'media', name: media } };
+      for (const [cid, media] of Object.entries(symbols)) d.overrides[cid] = { symbol: { kind: 'media', name: media }, credit: credits[cid] };
       d.boards[boardId] = board;
       d.tlaOrder.push(boardId);
       if (schedule) {

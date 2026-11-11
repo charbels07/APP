@@ -1,0 +1,98 @@
+{
+  "built": "2026-11-11",
+  "total": 24128,
+  "concepts": 15489,
+  "libraries": {
+    "mulberry": {
+      "available": 3436,
+      "imported": 3436,
+      "fr": 2459,
+      "ar": 2009,
+      "frAuto": 2278,
+      "arAuto": 1853,
+      "ambiguous": 125
+    },
+    "openmoji": {
+      "available": 4495,
+      "imported": 2403,
+      "fr": 1963,
+      "ar": 1963,
+      "frAuto": 38,
+      "arAuto": 38,
+      "ambiguous": 4
+    },
+    "fluent": {
+      "available": 3145,
+      "imported": 1595,
+      "fr": 1595,
+      "ar": 1595,
+      "frAuto": 0,
+      "arAuto": 0,
+      "ambiguous": 0
+    },
+    "noto": {
+      "available": 3750,
+      "imported": 1667,
+      "fr": 1667,
+      "ar": 1667,
+      "frAuto": 0,
+      "arAuto": 0,
+      "ambiguous": 0
+    },
+    "twemoji": {
+      "available": 4009,
+      "imported": 1918,
+      "fr": 1918,
+      "ar": 1918,
+      "frAuto": 0,
+      "arAuto": 0,
+      "ambiguous": 0
+    },
+    "healthicons": {
+      "available": 1552,
+      "imported": 770,
+      "fr": 103,
+      "ar": 103,
+      "frAuto": 85,
+      "arAuto": 85,
+      "ambiguous": 12
+    },
+    "material": {
+      "available": 4425,
+      "imported": 4080,
+      "fr": 207,
+      "ar": 207,
+      "frAuto": 183,
+      "arAuto": 183,
+      "ambiguous": 36
+    },
+    "phosphor": {
+      "available": 9072,
+      "imported": 1432,
+      "fr": 280,
+      "ar": 280,
+      "frAuto": 257,
+      "arAuto": 257,
+      "ambiguous": 42
+    },
+    "lucide": {
+      "available": 2052,
+      "imported": 2052,
+      "fr": 275,
+      "ar": 275,
+      "frAuto": 243,
+      "arAuto": 243,
+      "ambiguous": 40
+    },
+    "tabler": {
+      "available": 6287,
+      "imported": 4775,
+      "fr": 293,
+      "ar": 293,
+      "frAuto": 261,
+      "arAuto": 261,
+      "ambiguous": 43
+    }
+  },
+  "unreadable": []
+}

@@ -3,8 +3,9 @@
  * printed or exported as PDF, locally. Personal data (name, diagnosis, contact)
  * is never included (PRN-07).
  */
-import { ARASAAC_IMAGES } from '../data/arasaacMap';
-import { ARASAAC_CREDIT } from '../data/arasaacCredit';
+import { pictoCreditLine } from '../data/pictoCredit';
+import { SYMBOL_IMAGES } from '../data/symbolMap';
+import { pictoImageUriByKey } from './pictoLibrary';
 import type { Board, Lang, Profile } from '../model/types';
 import { CLASS_COLORS } from '../ui/theme';
 import { isRtl, label, symbolOf, wordClass } from './lexicon';
@@ -34,9 +35,9 @@ const escape = (s: string) =>
 async function imageFor(profile: Profile, conceptId: string): Promise<{ img?: string; emoji?: string }> {
   const sym = symbolOf(profile, conceptId);
   try {
-    if (sym.kind === 'arasaac') {
-      const mod = ARASAAC_IMAGES[sym.id];
-      return { img: mod ? await bundledImageSrc(mod) : `https://static.arasaac.org/pictograms/${sym.id}/${sym.id}_300.png` };
+    if (sym.kind === 'picto') {
+      const mod = SYMBOL_IMAGES[sym.key];
+      return { img: mod ? await bundledImageSrc(mod) : await pictoImageUriByKey(sym.key) };
     }
     if (sym.kind === 'media') return { img: await mediaDataUrl(sym.name) };
     return { emoji: sym.value };
@@ -104,6 +105,6 @@ ${o.cutCards ? '.cell { outline: 1px dashed #666; outline-offset: 2.5mm; }' : ''
 </style></head><body>
 <h1>${escape(title)}</h1>
 <div class="grid">${cellHtml}</div>
-<div class="foot">${escape(ARASAAC_CREDIT[lang])}</div>
+<div class="foot">${escape(pictoCreditLine(lang))}</div>
 </body></html>`;
 }

@@ -1,7 +1,7 @@
 /**
  * AI help (spec §20, "service de génération") on phones and tablets: the app's server function
  * "caa-ai" (supabase/functions/caa-ai) asks Claude. Without a configured server (offline demo build)
- * it is unavailable and the app uses the situation library and ARASAAC categories instead.
+ * it is unavailable and the app uses the situation library and the pictogram library's categories instead.
  * The browser demo uses aiPlanner.web.ts. Only the topic or the photo is sent (spec GEN-04).
  */
 import { backend } from '../backend';

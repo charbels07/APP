@@ -30,16 +30,3 @@ export async function pickPhoto(source: 'library' | 'camera'): Promise<string | 
   }
   return saveMedia(uri, 'jpg');
 }
-
-export interface ArasaacHit {
-  id: number;
-  keyword: string;
-}
-
-/** Online pictogram search (needs network; the chosen picture is then stored locally). */
-export async function searchArasaac(term: string, lang: 'fr' | 'en' | 'ar'): Promise<ArasaacHit[]> {
-  const res = await fetch(`https://api.arasaac.org/v1/pictograms/${lang}/search/${encodeURIComponent(term)}`);
-  if (!res.ok) return [];
-  const data = (await res.json()) as { _id: number; keywords?: { keyword: string }[] }[];
-  return data.slice(0, 24).map((d) => ({ id: d._id, keyword: d.keywords?.[0]?.keyword ?? '' }));
-}

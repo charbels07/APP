@@ -2,7 +2,7 @@ import { createDefaultProfile } from '../../data/defaults';
 import { enterFullscreen, exitFullscreen } from '../../lib/childLock';
 import { useBoard } from '../../state/BoardContext';
 import { useSession } from '../../state/Session';
-import { ArasaacCredit } from '../ArasaacCredit';
+import { PictoCredit } from '../PictoCredits';
 import { onboardingStrings } from '../../i18n/onboarding';
 import { editStrings } from '../../i18n/edit';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -16,7 +16,7 @@ import { APP_PRESETS, appLinkOf, isIncomplete, openAppUrl } from '../../lib/appL
 import { exportJson, exportPdf, printDocument } from '../../lib/platform';
 import { boardCells, buildPrintHtml, conceptCell, type PrintOptions } from '../../lib/printHtml';
 import { canSpan } from '../../lib/boardOps';
-import { pictoToMedia } from '../../lib/pictoLibrary';
+import { pictoCredit, pictoToMedia } from '../../lib/pictoLibrary';
 import { search } from '../../lib/search';
 import { listVoices, prepareVoices, speakText } from '../../lib/speech';
 import type { VoiceChoice } from '../../lib/voices';
@@ -304,7 +304,7 @@ function ConceptEditorBody({ conceptId, only }: { conceptId: string; only?: 'ima
                 lang={profile.settings.uiLang}
                 onPick={async (id) => {
                   const name = await pictoToMedia(id);
-                  if (name) setSymbol({ kind: 'media', name });
+                  if (name) setSymbol({ kind: 'media', name }, await pictoCredit(id));
                 }}
               />
             </>
@@ -533,7 +533,7 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
       .sort((a, b) => label(profile, a, lang).localeCompare(label(profile, b, lang)));
   }, [q, profile, lang]);
 
-  // Pictogram picked automatically from the offline ARASAAC library as the name is typed.
+  // Pictogram picked automatically from the offline library as the name is typed.
   const [picto, setPicto] = useState<number | undefined>();
   const [pictoTouched, setPictoTouched] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -553,6 +553,7 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
     setBusy(true);
     const media =
       ownPicture?.name ?? (picto !== undefined ? await pictoToMedia(picto).catch(() => undefined) : undefined);
+    const credit = ownPicture?.name ? ownPicture.credit : picto !== undefined ? await pictoCredit(picto).catch(() => undefined) : undefined;
     app.update((d) => {
       d.customConcepts[id] = {
         id,
@@ -561,7 +562,7 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
         emoji: draft.emoji || '⭐',
         custom: true,
       };
-      if (media) d.overrides[id] = { symbol: { kind: 'media', name: media }, credit: ownPicture?.credit };
+      if (media) d.overrides[id] = { symbol: { kind: 'media', name: media }, credit };
     });
     setBusy(false);
     onPick(id);
@@ -821,7 +822,7 @@ export function BoardSettingsBody() {
           value={st.symbolSet}
           onChange={(v) => set((x) => void (x.symbolSet = v))}
           options={[
-            { value: 'arasaac', label: 'ARASAAC' },
+            { value: 'pictos', label: t.sSymbolsPictos },
             { value: 'emoji', label: 'Emoji' },
           ]}
         />
@@ -1046,7 +1047,7 @@ export function BoardSettingsBody() {
 
       <Section title={t.sAbout}>
         <Text style={s.note}>{t.aboutText}</Text>
-        <ArasaacCredit lang={profile.settings.uiLang} />
+        <PictoCredit lang={profile.settings.uiLang} />
       </Section>
     </>
   );

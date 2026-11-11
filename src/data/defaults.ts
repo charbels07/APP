@@ -239,7 +239,7 @@ export const DEFAULT_SETTINGS: Settings = {
   uiLang: 'fr',
   gender: 'm',
   revealLevel: 3,
-  symbolSet: 'arasaac',
+  symbolSet: 'pictos',
   showLabels: true,
   speakOnTap: true,
   addToStrip: true,

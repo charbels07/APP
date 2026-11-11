@@ -89,15 +89,20 @@ describe('pictures from the internet', () => {
   });
   const answer = (body: unknown) => Promise.resolve({ ok: true, json: () => Promise.resolve(body) } as Response);
 
-  it('keeps PNG pictograms with their licence, without ARASAAC (already offline)', async () => {
+  it('keeps PNG pictograms of the verified collections only, with their licence', async () => {
     global.fetch = jest.fn((url: string) =>
       answer(
         String(url).includes('symbolsets')
-          ? [{ id: 13, name: 'Mulberry Symbols', licence: { name: 'Creative Commons BY SA 4.0' } }]
+          ? [
+              { id: 13, slug: 'mulberry', name: 'Mulberry Symbols', licence: { name: 'Creative Commons BY SA 4.0' } },
+              { id: 17, slug: 'arasaac', name: 'ARASAAC', licence: { name: 'Creative Commons BY NC SA 4.0' } },
+              { id: 21, slug: 'tawasol', name: 'Tawasol', licence: { name: 'Creative Commons BY SA 4.0' } },
+            ]
           : [
               { text: 'ballon', picto: { id: 1, symbolset_id: 13, image_url: 'https://globalsymbols.com/a.png' } },
               { text: 'ballon', picto: { id: 2, symbolset_id: 17, image_url: 'https://globalsymbols.com/b.png' } },
               { text: 'ballon', picto: { id: 3, symbolset_id: 13, image_url: 'https://globalsymbols.com/c.svg' } },
+              { text: 'ballon', picto: { id: 4, symbolset_id: 21, image_url: 'https://globalsymbols.com/d.png' } },
             ],
       ),
     ) as unknown as typeof fetch;

@@ -2,7 +2,7 @@
 const { getDefaultConfig } = require('expo/metro-config');
 
 const config = getDefaultConfig(__dirname);
-// Offline ARASAAC library: binary pictogram packs and their JSON index (see scripts/build-picto-library.ts).
+// Offline pictogram library: pictogram packs and their JSON index (see scripts/build-pictograms.ts).
 config.resolver.assetExts.push('pack', 'pidx');
 
 module.exports = config;

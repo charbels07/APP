@@ -29,7 +29,7 @@ import {
 } from '../../lib/onboarding';
 import { pickTextFile } from '../../lib/pickTextFile';
 import { exactPicto, searchPictos } from '../../lib/pictoSearch';
-import { loadPictoLibrary, pictoToMedia } from '../../lib/pictoLibrary';
+import { loadPictoLibrary, pictoCredit, pictoToMedia } from '../../lib/pictoLibrary';
 import { prepareVoices, speakText } from '../../lib/speech';
 import { forgetLegacyProfile, loadLegacyProfile, migrate } from '../../lib/storage';
 import { LANGS, type Lang, type Profile } from '../../model/types';
@@ -738,7 +738,7 @@ function TryBoard({
 }
 
 /** The family's own activities become words, with a pictogram from the offline library when one matches. */
-async function customWords(texts: string[], lang: Lang): Promise<{ id: string; label: string; media?: string }[]> {
+async function customWords(texts: string[], lang: Lang): Promise<{ id: string; label: string; media?: string; credit?: string }[]> {
   if (!texts.length) return [];
   const stamp = Date.now().toString(36);
   let index: Awaited<ReturnType<typeof loadPictoLibrary>> | null = null;
@@ -750,11 +750,13 @@ async function customWords(texts: string[], lang: Lang): Promise<{ id: string; l
   const out = [];
   for (const [i, text] of texts.entries()) {
     let media: string | undefined;
+    let credit: string | undefined;
     if (index) {
       const id = exactPicto(index, text) ?? searchPictos(index, text, lang, 1)[0];
       if (id !== undefined) media = await pictoToMedia(id).catch(() => undefined);
+      if (id !== undefined && media) credit = await pictoCredit(id).catch(() => undefined);
     }
-    out.push({ id: `c_${stamp}${i}`, label: text, media });
+    out.push({ id: `c_${stamp}${i}`, label: text, media, credit });
   }
   return out;
 }

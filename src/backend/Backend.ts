@@ -139,9 +139,13 @@ export interface Backend {
   saveUsageDay(profileId: string, data: UsageDay): Promise<void>;
   /** Every device's days from `fromDay` (YYYY-MM-DD): family and people allowed to see the data. */
   listUsage(profileId: string, fromDay: string): Promise<UsageDay[]>;
+  /** Erases every recorded day of this child (family or team manager). */
+  deleteUsage(profileId: string): Promise<void>;
   listObservations(profileId: string): Promise<Observation[]>;
   saveObservation(o: Omit<Observation, 'id' | 'createdBy' | 'authorName' | 'createdAt'> & { id?: string }): Promise<Observation>;
   deleteObservation(id: string): Promise<void>;
+  /** Demonstration only (local backend): fills the progress pages with an example. */
+  demoSeedUsage?(profileId: string, label: (id: string) => string): Promise<void>;
 
   // ── Notifications ──
   listNotices(): Promise<Notice[]>;

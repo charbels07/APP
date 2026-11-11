@@ -1,24 +1,28 @@
 /**
- * Settings in three pages:
+ * Settings in four pages:
  *  - Board: the child's AAC settings (words, voice, presentation, access…);
  *  - Team: who works with the child, invitations, permissions, proposals, history;
- *  - Account: my account, children, devices and sync, privacy, preferences.
+ *  - Account: my account, children, devices and sync, privacy, preferences;
+ *  - Suivi: the communication data the family chose to record, and observations
+ *    (owner, managers and members allowed to see the data).
  * In the preview and the set-up trial (no account yet) only the Board page exists.
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { Invitation, Proposal } from '../../backend/types';
+import { dataStrings } from '../../i18n/data';
 import { settingsStrings } from '../../i18n/settings';
 import { useApp } from '../../state/AppState';
 import { useBoard } from '../../state/BoardContext';
 import { useSession } from '../../state/Session';
 import { Panel, Segmented, useNavRtl } from '../common';
 import { BoardSettingsBody } from '../panels/CaregiverPanels';
+import { DataDashboard } from '../data/DataDashboard';
 import { C } from '../theme';
 import { AccountTab } from './AccountTab';
 import { TeamTab } from './TeamTab';
 
-type Tab = 'board' | 'team' | 'account';
+type Tab = 'board' | 'team' | 'data' | 'account';
 
 export function SettingsScreen() {
   const app = useApp();
@@ -27,7 +31,8 @@ export function SettingsScreen() {
   const x = settingsStrings(uiLang);
   const [tab, setTab] = useState<Tab>('board');
   const isDevice = account?.provider === 'device';
-  const tabs: Tab[] = board ? (isDevice ? ['board', 'account'] : ['board', 'team', 'account']) : ['board'];
+  const seesData = !!board && !isDevice && (board.manager || !!board.access?.perms.viewData);
+  const tabs: Tab[] = board ? (isDevice ? ['board', 'account'] : ['board', 'team', ...(seesData ? (['data'] as Tab[]) : []), 'account']) : ['board'];
 
   // Things waiting for the parent: shown as a number on the Team page.
   const [waiting, setWaiting] = useState(0);
@@ -44,7 +49,7 @@ export function SettingsScreen() {
   }, [refreshWaiting, tab]);
 
   const label = (t: Tab) =>
-    t === 'board' ? x.tabBoard : t === 'team' ? (waiting ? `${x.tabTeam} (${waiting})` : x.tabTeam) : x.tabAccount;
+    t === 'board' ? x.tabBoard : t === 'team' ? (waiting ? `${x.tabTeam} (${waiting})` : x.tabTeam) : t === 'data' ? dataStrings(uiLang).tab : x.tabAccount;
 
   return (
     <Panel title={app.t.settings} onClose={() => app.setOverlay(null)} tone="edit" maxWidth={820}>
@@ -55,6 +60,23 @@ export function SettingsScreen() {
       )}
       {tab === 'board' && <BoardSettingsBody />}
       {tab === 'team' && board && <TeamTab board={board} onChanged={refreshWaiting} />}
+      {tab === 'data' && board && (
+        <DataDashboard
+          profileId={board.profileId}
+          childName={board.childName}
+          profile={app.profile}
+          manager={board.manager}
+          tracker={board.tracker}
+          onConsent={
+            board.manager
+              ? (patch) =>
+                  app.update((d) => {
+                    Object.assign(d.settings, patch);
+                  })
+              : undefined
+          }
+        />
+      )}
       {tab === 'account' && board && <AccountTab board={board} openTeam={() => setTab('team')} />}
     </Panel>
   );

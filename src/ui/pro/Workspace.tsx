@@ -9,14 +9,17 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { Invitation, Membership, Notice, ProfileSummary, Proposal, Resource, Verification } from '../../backend/types';
 import { APP_NAME, errorText } from '../../i18n/account';
+import { dataStrings } from '../../i18n/data';
 import { proStrings, type ProSection, type ProStrings } from '../../i18n/pro';
 import { settingsStrings } from '../../i18n/settings';
 import { preset, type AccessLevel, type CollaboratorRole, type PermissionSet } from '../../lib/permissions';
 import { EDITED_ON_BOARD } from '../../lib/resources';
+import type { Profile } from '../../model/types';
 import type { Overlay } from '../../state/AppState';
 import { useSession } from '../../state/Session';
 import { Btn, Field, Section, Segmented } from '../common';
 import { ArasaacCredit } from '../ArasaacCredit';
+import { DataDashboard } from '../data/DataDashboard';
 import { Icon, type IconName } from '../Icon';
 import { DeleteAccount, MyAccount, Preferences } from '../settings/AccountTab';
 import { Note, ss } from '../settings/SettingsScreen';
@@ -466,10 +469,22 @@ function UserView({
 }) {
   const { api, uiLang } = useSession();
   const x = settingsStrings(uiLang);
+  const d = dataStrings(uiLang);
   const [team, setTeam] = useState<Membership[]>([]);
+  // The child's communication data (only if the family allowed it: "See the progress data").
+  const [data, setData] = useState<Profile | 'loading' | 'offline' | null>(null);
   useEffect(() => {
     api.listMembers(user.id).then((m) => setTeam(m.filter((y) => y.status === 'active' && y.role !== 'device'))).catch(() => {});
   }, [api, user.id]);
+  if (data && typeof data === 'object') {
+    return (
+      <>
+        <Btn small kind="ghost" icon="chevronLeft" label={p.back} onPress={() => setData(null)} style={{ alignSelf: 'flex-start' }} />
+        <H text={`${d.title} · ${user.name}`} />
+        <DataDashboard profileId={user.id} childName={user.name} profile={data} manager={false} />
+      </>
+    );
+  }
   return (
     <>
       <Btn small kind="ghost" icon="chevronLeft" label={p.back} onPress={onBack} style={{ alignSelf: 'flex-start' }} />
@@ -480,6 +495,19 @@ function UserView({
         <Text style={ss.title}>{p.openBoard}</Text>
         <Note text={p.openBoardNote} />
         <Btn kind="primary" icon="grid" label={p.openBoard} onPress={() => onOpen()} />
+      </View>
+      <View style={ss.card}>
+        <Text style={ss.title}>{d.title}</Text>
+        <Note text={data === 'offline' ? d.offline : p.dataNote} />
+        <Btn
+          icon="list"
+          label={data === 'loading' ? d.loading : p.openData}
+          disabled={data === 'loading'}
+          onPress={() => {
+            setData('loading');
+            api.getProfile(user.id).then((r) => setData(r.data)).catch(() => setData('offline'));
+          }}
+        />
       </View>
       <Section title={p.myProposals}>
         {proposals.length ? (

@@ -643,6 +643,10 @@ export class SupabaseBackend implements Backend {
     return rows.map((r) => r.data as UsageDay);
   }
 
+  async deleteUsage(profileId: string): Promise<void> {
+    await data(this.sb.from('usage_days').delete().eq('profile_id', profileId));
+  }
+
   async listObservations(profileId: string): Promise<Observation[]> {
     const rows = await data<Row[]>(this.sb.from('observations').select('*').eq('profile_id', profileId).order('at', { ascending: false }));
     return rows.map(toObservation);

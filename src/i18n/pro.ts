@@ -104,7 +104,9 @@ const fr = {
   resume: 'Reprendre',
   withdraw: 'Retirer',
   yourLevel: 'Vos droits',
-  noPrivate: 'Les phrases de l’enfant ne sont jamais visibles.',
+  noPrivate: 'Vous ne voyez que ce que la famille partage avec vous : les données de suivi (et les phrases de l’enfant) seulement si elle les enregistre et vous y autorise.',
+  openData: 'Voir le suivi',
+  dataNote: 'Utilisation, vocabulaire, langage et fonctions de communication, si la famille a activé le suivi et vous l’a permis. Vous pouvez y noter vos observations et les exporter.',
 
   // Draft on the child's board
   draftBanner: (n: number) => (n ? `Brouillon : ${n} changement(s) prêts à envoyer. Rien n’est changé pour l’enfant avant l’accord de la famille.` : 'Brouillon : vos changements ne touchent pas le tableau de l’enfant tant que la famille n’a pas accepté.'),
@@ -227,7 +229,7 @@ const fr = {
     account: 'Compte et licence : votre vérification, vos informations et vos préférences.',
   } as Record<ProSection, string>,
   tips: {
-    users: 'Astuce : vous ne voyez un enfant qu’après l’accord de sa famille. Les phrases de l’enfant ne sont jamais visibles.',
+    users: 'Astuce : vous ne voyez un enfant qu’après l’accord de sa famille. Son suivi n’est visible que si elle vous y autorise.',
     create: 'Astuce : un modèle sans enfant se réutilise ; dupliquez-le pour le personnaliser sans toucher l’original.',
     library: 'Astuce : « Proposer au profil » envoie un support à la famille, qui décide.',
   } as Record<string, string>,
@@ -333,7 +335,9 @@ const en: Dict = {
   resume: 'Resume',
   withdraw: 'Withdraw',
   yourLevel: 'Your rights',
-  noPrivate: 'The child’s sentences are never visible.',
+  noPrivate: 'You only see what the family shares with you: the progress data (and the child’s sentences) only if they record it and allow you.',
+  openData: 'See the progress data',
+  dataNote: 'Use, vocabulary, language and communicative functions, if the family turned the follow-up on and allowed you. You can write and export your observations there.',
 
   draftBanner: (n) => (n ? `Draft: ${n} change(s) ready to send. Nothing changes for the child before the family agrees.` : 'Draft: your changes don’t touch the child’s board until the family accepts.'),
   draftUseOnly: 'Use only: you can use the board and model, without changing anything.',
@@ -447,7 +451,7 @@ const en: Dict = {
     account: 'Account & licence: your verification, your details and preferences.',
   },
   tips: {
-    users: 'Tip: you only see a child after their family agrees. The child’s sentences are never visible.',
+    users: 'Tip: you only see a child after their family agrees. Their progress data is visible only if the family allows you.',
     create: 'Tip: a template without a child can be reused; duplicate it to personalise without changing the original.',
     library: 'Tip: “Propose to the profile” sends a material to the family, who decides.',
   },
@@ -551,7 +555,9 @@ const ar: Dict = {
   resume: 'متابعة',
   withdraw: 'سحب',
   yourLevel: 'صلاحياتك',
-  noPrivate: 'جمل الطفل غير ظاهرة أبداً.',
+  noPrivate: 'لا ترى إلا ما تشاركه العائلة معك: بيانات المتابعة (وجمل الطفل) فقط إذا سجّلتها وسمحت لك.',
+  openData: 'رؤية المتابعة',
+  dataNote: 'الاستعمال، المفردات، اللغة ووظائف التواصل، إذا شغّلت العائلة المتابعة وسمحت لك. يمكنك تدوين ملاحظاتك وتصديرها.',
 
   draftBanner: (n) => (n ? `مسودة: ${n} تغيير(ات) جاهزة للإرسال. لا يتغيّر شيء للطفل قبل موافقة العائلة.` : 'مسودة: تغييراتك لا تمسّ لوحة الطفل قبل قبول العائلة.'),
   draftUseOnly: 'استعمال فقط: يمكنك استعمال اللوحة والنمذجة من دون تغيير أي شيء.',
@@ -665,7 +671,7 @@ const ar: Dict = {
     account: 'الحساب والترخيص: التحقق، معلوماتك وتفضيلاتك.',
   },
   tips: {
-    users: 'نصيحة: لا ترى طفلاً إلا بعد موافقة عائلته. جمل الطفل غير ظاهرة أبداً.',
+    users: 'نصيحة: لا ترى طفلاً إلا بعد موافقة عائلته. متابعته لا تظهر إلا إذا سمحت لك العائلة.',
     create: 'نصيحة: النموذج من دون طفل قابل لإعادة الاستعمال؛ انسخه لتخصيصه من دون تغيير الأصل.',
     library: 'نصيحة: «اقتراح على الملف» يرسل المادة إلى العائلة وهي تقرّر.',
   },

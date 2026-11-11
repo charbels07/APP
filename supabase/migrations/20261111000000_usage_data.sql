@@ -59,6 +59,8 @@ begin
 end $$;
 
 create policy "read usage" on public.usage_days for select to authenticated using (can_view_data(profile_id));
+-- The family (or a team manager) can erase everything recorded.
+create policy "erase usage" on public.usage_days for delete to authenticated using (is_manager(profile_id));
 
 create policy "read observations" on public.observations for select to authenticated using (can_view_data(profile_id));
 create policy "add observations" on public.observations for insert to authenticated

@@ -33,7 +33,12 @@ export async function exportPdf(html: string): Promise<void> {
 }
 
 export async function exportJson(filename: string, data: unknown): Promise<void> {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  await exportText(filename, JSON.stringify(data, null, 2), 'application/json');
+}
+
+/** Downloads a text file (CSV with a byte-order mark so spreadsheets read accents and Arabic). */
+export async function exportText(filename: string, text: string, mimeType: string): Promise<void> {
+  const blob = new Blob([mimeType === 'text/csv' ? `\uFEFF${text}` : text], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

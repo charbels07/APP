@@ -12,6 +12,7 @@ import type { Profile } from '../model/types';
 import type { Op } from '../lib/profileDiff';
 import { type AccessLevel, type CollaboratorRole, type PermissionSet, preset } from '../lib/permissions';
 import { saveMedia } from '../lib/media';
+import { demoObservations, demoUsage } from '../lib/demoUsage';
 import { limitToConsent } from '../lib/usageConsent';
 import { BackendError, type Backend, type CodeSent, type SignUpInput } from './Backend';
 import {
@@ -941,6 +942,13 @@ export class LocalBackend implements Backend {
     });
   }
 
+  async deleteUsage(profileId: string): Promise<void> {
+    await this.tx((db, m) => {
+      LocalBackend.requireManager(db, profileId, LocalBackend.need(m));
+      db.usage = (db.usage ?? []).filter((u) => u.profileId !== profileId);
+    });
+  }
+
   async listObservations(profileId: string): Promise<Observation[]> {
     return this.tx((db, m) => {
       if (!LocalBackend.canViewData(db, profileId, LocalBackend.need(m))) throw new BackendError('forbidden');
@@ -972,6 +980,19 @@ export class LocalBackend implements Backend {
       if (!o) return;
       if (!LocalBackend.canViewData(db, o.profileId, me)) throw new BackendError('forbidden');
       db.observations = (db.observations ?? []).filter((x) => x.id !== id);
+    });
+  }
+
+  async demoSeedUsage(profileId: string, label: (id: string) => string): Promise<void> {
+    await this.tx((db, m) => {
+      const me = LocalBackend.need(m);
+      LocalBackend.requireManager(db, profileId, me);
+      const days = demoUsage('demo-tablet', 'ios · iPad');
+      db.usage = [...(db.usage ?? []).filter((u) => !(u.profileId === profileId && u.data.deviceId === 'demo-tablet')), ...days.map((data) => ({ profileId, data }))];
+      db.observations ??= [];
+      for (const o of demoObservations(days, label)) {
+        db.observations.push({ ...o, id: uid('o'), profileId, createdBy: me.id, authorName: memberName(me), createdAt: Date.now() } as Observation);
+      }
     });
   }
 

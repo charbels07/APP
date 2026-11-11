@@ -40,6 +40,15 @@ export async function exportJson(filename: string, data: unknown): Promise<void>
   await Sharing.shareAsync(file.uri, { mimeType: 'application/json' });
 }
 
+/** A text file (CSV…) through the share sheet. CSV gets a byte-order mark so spreadsheets read accents and Arabic. */
+export async function exportText(filename: string, text: string, mimeType: string): Promise<void> {
+  const file = new File(Paths.cache, filename);
+  if (file.exists) file.delete();
+  file.create();
+  await file.write(mimeType === 'text/csv' ? `\uFEFF${text}` : text);
+  await Sharing.shareAsync(file.uri, { mimeType });
+}
+
 /** Reads a bundled asset (e.g. the pictogram library) as bytes or text. */
 export async function readAssetBytes(mod: number): Promise<Uint8Array> {
   const asset = Asset.fromModule(mod);

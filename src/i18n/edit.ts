@@ -78,6 +78,8 @@ const fr = {
   photoFailed: 'La photo n’a pas pu être lue (connexion ?). Réessayez, ou écrivez le sujet ci-dessus.',
   photoEmpty: 'Rien d’utilisable sur cette photo : essayez plus près, avec plus de lumière.',
   photoAgain: 'Autre photo',
+  cardMoved: 'Carte déplacée',
+  undoMove: 'Annuler',
 };
 
 type Dict = typeof fr;
@@ -152,6 +154,8 @@ const en: Dict = {
   photoFailed: 'The photo could not be read (connection?). Try again, or type the topic above.',
   photoEmpty: 'Nothing usable on this photo: try closer, with more light.',
   photoAgain: 'Another photo',
+  cardMoved: 'Card moved',
+  undoMove: 'Undo',
 };
 
 const ar: Dict = {
@@ -224,6 +228,8 @@ const ar: Dict = {
   photoFailed: 'تعذّرت قراءة الصورة (الاتصال؟). أعيدوا المحاولة أو اكتبوا الموضوع أعلاه.',
   photoEmpty: 'لا شيء قابل للاستعمال في هذه الصورة: جرّبوا عن قرب ومع ضوء أكثر.',
   photoAgain: 'صورة أخرى',
+  cardMoved: 'نُقلت البطاقة',
+  undoMove: 'تراجع',
 };
 
 const DICTS: Record<UiLang, Dict> = { fr, en, ar };

@@ -536,6 +536,7 @@ const BASE: BaseChapter[] = [
     steps: {
       fr: [
         'Touchez deux fois une carte : Modifier, Remplacer l’image, Enregistrer la prononciation, Ajouter aux favoris (« mes mots »), Dupliquer, Supprimer.',
+        'Appui long sur une carte, puis glissez-la : elle prend la place où vous la lâchez (deux cartes s’échangent). « Annuler » apparaît quelques secondes. Sans glisser, l’appui long ouvre la carte (pratique pour un dossier).',
         'Touchez deux fois l’onglet d’un TLA : modifier son titre, Dupliquer, Partager (envoyer à quelqu’un qui a un compte, ou enregistrer un fichier), Imprimer.',
         'Sélectionner : touchez plusieurs cartes, puis Copier / Coller, changer la Taille, les envoyer Vers un tableau d’activité, les Imprimer en cartes. Depuis le tableau principal, les cartes sont copiées : leur place ne change pas.',
         'Nouveau TLA → Créer à partir d’une photo : photographiez un menu ou une boîte de jeu ; vérifiez et corrigez les mots proposés avant de créer.',
@@ -543,6 +544,7 @@ const BASE: BaseChapter[] = [
       ],
       en: [
         'Tap a card twice: Edit, Replace the picture, Record the pronunciation, Add to favourites (“my words”), Duplicate, Delete.',
+        'Long press a card, then slide it: it takes the place where you let go (two cards swap). “Undo” shows for a few seconds. Without sliding, the long press opens the card (handy for a folder).',
         'Tap an activity board tab twice: edit its title, Duplicate, Share (send to someone with an account, or save a file), Print.',
         'Select: tap several cards, then Copy / Paste, change the Size, send them To an activity board, Print them as cards. From the main board cards are copied: their place does not change.',
         'New activity board → Create from a photo: photograph a menu or a game box; check and correct the suggested words before creating.',
@@ -800,6 +802,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
     title: 'الحركات السريعة في وضع المرافق',
     steps: [
       'المس البطاقة مرتين: تعديل، تغيير الصورة، تسجيل اللفظ، إضافة إلى المفضّلة («كلماتي»)، نسخ، حذف.',
+      'اضغط مطوّلاً على بطاقة ثم اسحبها: تأخذ المكان الذي تتركها فيه (تتبادل البطاقتان). يظهر «تراجع» لبضع ثوانٍ. من دون سحب، الضغطة الطويلة تفتح البطاقة (مفيدة للمجلد).',
       'المس تبويب لوحة النشاط مرتين: تعديل العنوان، نسخ، مشاركة (إرسال إلى شخص لديه حساب، أو حفظ ملف)، طباعة.',
       'تحديد: المس عدة بطاقات ثم نسخ / لصق، تغيير الحجم، إرسالها إلى لوحة نشاط، طباعتها كبطاقات. من اللوح الرئيسي تُنسخ البطاقات ولا يتغيّر مكانها.',
       'لوحة نشاط جديدة ← الإنشاء من صورة: صوّر قائمة طعام أو علبة لعبة، وتحقّق من الكلمات المقترحة وصحّحها قبل الإنشاء.',

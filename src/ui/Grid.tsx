@@ -1,5 +1,7 @@
+import * as Haptics from 'expo-haptics';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Platform, Pressable, ScrollView, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
+import { Animated, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
+import { editStrings } from '../i18n/edit';
 import { appLinkOf } from '../lib/appLinks';
 import { coveredSlots, moveCell } from '../lib/boardOps';
 import { display, isRtl, label, symbolOf, wordClass } from '../lib/lexicon';
@@ -14,7 +16,11 @@ const GAP = 6;
 const MIN_CELL_W = 56;
 /** Caregiver mode: a second tap within this time opens the card's menu. */
 const DOUBLE_TAP_MS = 320;
+/** Dragging a card near the left or right edge scrolls a wide board. */
+const EDGE = 40;
+const EDGE_STEP = 14;
 const nativeDriver = Platform.OS !== 'web';
+const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
 export function Grid({ board }: { board: Board }) {
   const app = useApp();
@@ -90,12 +96,151 @@ export function Grid({ board }: { board: Board }) {
     [board.id, board.kind],
   );
 
+  // ── Caregiver mode: long press a card, then slide it to its new place ──
+  // (released without sliding, the long press keeps its usual action: edit the card).
+  const [drag, setDrag] = useState<{ from: number; over: number } | null>(null);
+  const dragRef = useRef<{ from: number; over: number; moving: boolean; startScroll: number } | null>(null);
+  const dragXY = useRef(new Animated.ValueXY()).current;
+  const gesture = useRef({ dx: 0, dy: 0 });
+  const geo = useRef({ cellW: 0, cellH: 0, cols: 1, rows: 1, viewW: 0, totalW: 0, scrolls: false });
+  const coveredRef = useRef<Map<number, number>>(new Map());
+  const containerRef = useRef<React.ComponentRef<typeof View>>(null);
+  const containerX = useRef(0);
+  const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
+  const scrollOffset = useRef(0);
+  const autoScroll = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [moved, setMoved] = useState<{ from: number; to: number } | null>(null);
+
+  const stopAutoScroll = () => {
+    if (autoScroll.current) clearInterval(autoScroll.current);
+    autoScroll.current = null;
+  };
+  /** Where the dragged card is now, and which slot it is over. */
+  const placeDrag = useCallback(() => {
+    const d = dragRef.current;
+    if (!d) return;
+    const g = geo.current;
+    const x = gesture.current.dx + (scrollOffset.current - d.startScroll);
+    const y = gesture.current.dy;
+    dragXY.setValue({ x, y });
+    const cx = (d.from % g.cols) * (g.cellW + GAP) + g.cellW / 2 + x;
+    const cy = Math.floor(d.from / g.cols) * (g.cellH + GAP) + g.cellH / 2 + y;
+    const col = clamp(Math.floor(cx / (g.cellW + GAP)), 0, g.cols - 1);
+    const row = clamp(Math.floor(cy / (g.cellH + GAP)), 0, g.rows - 1);
+    // A slot covered by a spread card stands for that card.
+    const slot = row * g.cols + col;
+    const over = coveredRef.current.get(slot) ?? slot;
+    if (over !== d.over) {
+      d.over = over;
+      setDrag({ from: d.from, over });
+    }
+  }, [dragXY]);
+  const endDrag = useCallback(
+    (drop: boolean) => {
+      stopAutoScroll();
+      const d = dragRef.current;
+      dragRef.current = null;
+      setDrag(null);
+      dragXY.setValue({ x: 0, y: 0 });
+      if (!d || !drop || !d.moving || d.over === d.from) return;
+      appRef.current.update((p) => moveCell(p.boards[board.id], d.from, d.over));
+      setMoved({ from: d.from, to: d.over });
+    },
+    [board.id, dragXY],
+  );
+  const pan = useMemo(
+    () =>
+      PanResponder.create({
+        // Takes the touch from the card only once a long press armed the drag.
+        onMoveShouldSetPanResponderCapture: () => {
+          if (!dragRef.current) return false;
+          dragRef.current.moving = true;
+          return true;
+        },
+        onPanResponderTerminationRequest: () => false,
+        onPanResponderMove: (e, g) => {
+          gesture.current = { dx: g.dx, dy: g.dy };
+          placeDrag();
+          const { viewW, totalW, scrolls } = geo.current;
+          if (!scrolls) return;
+          const x = e.nativeEvent.pageX - containerX.current;
+          const dir = x < EDGE ? -1 : x > viewW - EDGE ? 1 : 0;
+          stopAutoScroll();
+          if (dir)
+            autoScroll.current = setInterval(() => {
+              const next = clamp(scrollOffset.current + dir * EDGE_STEP, 0, Math.max(0, totalW - viewW));
+              if (next === scrollOffset.current) return;
+              scrollOffset.current = next;
+              scrollRef.current?.scrollTo({ x: next, animated: false });
+              placeDrag();
+            }, 16);
+        },
+        onPanResponderRelease: () => endDrag(true),
+        onPanResponderTerminate: () => endDrag(false),
+      }),
+    [placeDrag, endDrag],
+  );
+  // Another board on screen, or leaving caregiver mode: nothing stays half-moved.
+  useEffect(() => {
+    setMoved(null);
+    return () => {
+      stopAutoScroll();
+      dragRef.current = null;
+    };
+  }, [board.id, editMode]);
+  useEffect(() => {
+    if (!moved) return;
+    const id = setTimeout(() => setMoved(null), 7000);
+    return () => clearTimeout(id);
+  }, [moved]);
+  // Browser: while a card is dragged the page must not scroll, and a long press must not open
+  // the browser's own menu or select text.
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const node = containerRef.current as unknown as HTMLElement | null;
+    if (!node?.addEventListener) return;
+    const keepStill = (e: Event) => {
+      if (dragRef.current) e.preventDefault();
+    };
+    const noMenu = (e: Event) => e.preventDefault();
+    node.addEventListener('touchmove', keepStill, { passive: false });
+    node.addEventListener('contextmenu', noMenu);
+    node.style.setProperty('-webkit-touch-callout', 'none');
+    node.style.setProperty('-webkit-user-select', 'none');
+    node.style.setProperty('user-select', 'none');
+    return () => {
+      node.removeEventListener('touchmove', keepStill);
+      node.removeEventListener('contextmenu', noMenu);
+    };
+  }, []);
+
+  const onCellPressOut = useCallback(
+    (index: number) => {
+      const d = dragRef.current;
+      if (!d || d.moving || d.from !== index) return;
+      // Long press released without sliding.
+      dragRef.current = null;
+      setDrag(null);
+      appRef.current.setOverlay({ kind: 'editor', board: board.id, index });
+    },
+    [board.id],
+  );
+
   const onCellLongPress = useCallback(
     (index: number) => {
       const a = appRef.current;
       const cell = a.profile.boards[board.id]?.cells[index];
       if (a.editMode) {
-        if (cell && !a.selection) a.setOverlay({ kind: 'editor', board: board.id, index });
+        if (!cell || a.selection || a.moveSource) return;
+        clearTimeout(lastTap.current?.timer);
+        lastTap.current = null;
+        dragRef.current = { from: index, over: index, moving: false, startScroll: scrollOffset.current };
+        gesture.current = { dx: 0, dy: 0 };
+        dragXY.setValue({ x: 0, y: 0 });
+        setDrag({ from: index, over: index });
+        setMoved(null);
+        containerRef.current?.measureInWindow((x: number) => (containerX.current = x));
+        if (a.profile.settings.haptics !== false) Haptics.selectionAsync().catch(() => {});
         return;
       }
       // Use mode: a long press on a folder shows its most requested words without opening it;
@@ -103,7 +248,7 @@ export function Grid({ board }: { board: Board }) {
       if (cell?.folder && a.profile.boards[cell.folder] && !a.playing && !a.recording) a.setOverlay({ kind: 'peek', folder: cell.folder });
       else onCellPress(index);
     },
-    [board.id, onCellPress],
+    [board.id, onCellPress, dragXY],
   );
 
   const covered = useMemo(() => coveredSlots(board), [board]);
@@ -115,6 +260,18 @@ export function Grid({ board }: { board: Board }) {
   const cellH = size.h ? (size.h - GAP * (rows - 1)) / rows : 0;
   const level = profile.settings.revealLevel;
   const totalW = cellW * cols + GAP * (cols - 1);
+  geo.current = { cellW, cellH, cols, rows, viewW: size.w, totalW, scrolls: scrollX };
+  coveredRef.current = covered;
+  const frameOf = (index: number) => {
+    const [sw, sh] = board.cells[index]?.span ?? [1, 1];
+    return {
+      position: 'absolute' as const,
+      left: (index % cols) * (cellW + GAP),
+      top: Math.floor(index / cols) * (cellH + GAP),
+      width: sw * cellW + (sw - 1) * GAP,
+      height: sh * cellH + (sh - 1) * GAP,
+    };
+  };
 
   const grid =
     size.w > 0 ? (
@@ -148,8 +305,12 @@ export function Grid({ board }: { board: Board }) {
             );
           }
           const k = cell.size ?? 1;
+          const dragging = drag?.from === index;
           return (
-            <View key={index} style={[frame, styles.slot]}>
+            <Animated.View
+              key={index}
+              style={[frame, styles.slot, dragging && styles.dragging, dragging && { transform: [...dragXY.getTranslateTransform(), { scale: 1.08 }] }]}
+            >
               <CellView
                 index={index}
                 width={frame.width * k}
@@ -177,21 +338,54 @@ export function Grid({ board }: { board: Board }) {
                 holdMs={Math.round((profile.settings.holdTime || 1) * 1000)}
                 onPress={onCellPress}
                 onLongPress={onCellLongPress}
+                onPressOut={editMode ? onCellPressOut : undefined}
               />
-            </View>
+            </Animated.View>
           );
         })}
+        {drag && drag.over !== drag.from && <View pointerEvents="none" style={[frameOf(drag.over), styles.dropTarget]} />}
       </View>
     ) : null;
 
+  const e = editStrings(profile.settings.uiLang);
   return (
-    <View style={{ flex: 1 }} onLayout={onLayout}>
+    <View ref={containerRef} style={{ flex: 1 }} onLayout={onLayout} {...pan.panHandlers}>
       {scrollX ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={{ paddingBottom: 4 }}>
+        <ScrollView
+          ref={scrollRef}
+          horizontal
+          showsHorizontalScrollIndicator
+          scrollEnabled={!drag}
+          scrollEventThrottle={16}
+          onScroll={(ev) => {
+            if (!autoScroll.current) scrollOffset.current = ev.nativeEvent.contentOffset.x;
+          }}
+          contentContainerStyle={{ paddingBottom: 4 }}
+        >
           {grid}
         </ScrollView>
       ) : (
         grid
+      )}
+      {editMode && moved && (
+        <View style={styles.movedToast} accessibilityLiveRegion="polite">
+          <View style={{ flexShrink: 1 }}>
+            <Text style={styles.movedText}>{e.cardMoved}</Text>
+            {board.kind === 'core' && <Text style={styles.movedNote}>{e.coreNote}</Text>}
+          </View>
+          <Pressable
+            onPress={() => {
+              app.update((p) => moveCell(p.boards[board.id], moved.to, moved.from));
+              setMoved(null);
+            }}
+            style={({ pressed }) => [styles.movedUndo, pressed && { opacity: 0.7 }]}
+            accessibilityRole="button"
+            accessibilityLabel={e.undoMove}
+          >
+            <Icon name="undo" size={18} color="#fff" />
+            <Text style={styles.movedUndoText}>{e.undoMove}</Text>
+          </Pressable>
+        </View>
       )}
     </View>
   );
@@ -268,6 +462,7 @@ interface CellProps {
   holdMs?: number;
   onPress: (index: number) => void;
   onLongPress?: (index: number) => void;
+  onPressOut?: (index: number) => void;
 }
 
 export const CellView = React.memo(function CellView(p: CellProps) {
@@ -341,6 +536,7 @@ export const CellView = React.memo(function CellView(p: CellProps) {
         onPressIn={p.access === 'press' ? () => p.onPress(p.index) : undefined}
         onLongPress={p.access === 'hold' ? () => p.onPress(p.index) : p.onLongPress ? () => p.onLongPress!(p.index) : undefined}
         delayLongPress={p.access === 'hold' ? p.holdMs ?? 1000 : 600}
+        onPressOut={p.onPressOut ? () => p.onPressOut!(p.index) : undefined}
         accessibilityRole="button"
         accessibilityLabel={p.text}
         accessibilityState={p.selected !== undefined ? { selected: p.selected } : undefined}
@@ -410,6 +606,36 @@ export const CellView = React.memo(function CellView(p: CellProps) {
 
 const styles = StyleSheet.create({
   slot: { alignItems: 'center', justifyContent: 'center' },
+  dragging: {
+    zIndex: 30,
+    opacity: 0.94,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 12,
+  },
+  dropTarget: { borderRadius: 14, borderWidth: 3, borderStyle: 'dashed', borderColor: C.accent, backgroundColor: 'rgba(37, 99, 235, 0.14)', zIndex: 20 },
+  movedToast: {
+    position: 'absolute',
+    left: 8,
+    right: 8,
+    bottom: 8,
+    maxWidth: 520,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    backgroundColor: C.rail,
+    zIndex: 40,
+  },
+  movedText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  movedNote: { color: C.railText, fontSize: 12, marginTop: 2 },
+  movedUndo: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, backgroundColor: C.accent },
+  movedUndoText: { color: '#fff', fontSize: 14, fontWeight: '700' },
   selectedBadge: {
     position: 'absolute',
     top: 4,

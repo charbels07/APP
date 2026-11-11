@@ -9,6 +9,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { createDefaultProfile, DEFAULT_SETTINGS } from '../../data/defaults';
 import { errorText } from '../../i18n/account';
+import { dataStrings } from '../../i18n/data';
 import { onboardingStrings, type OnboardingStrings } from '../../i18n/onboarding';
 import { getConcept, label, symbolOf, wordClass } from '../../lib/lexicon';
 import {
@@ -41,7 +42,7 @@ import { ErrorText, LinkBtn, StartLayout, T, st, useRtl } from '../start/StartLa
 import { SymbolView } from '../SymbolView';
 import { C, CLASS_COLORS, radius } from '../theme';
 
-const STEPS = ['child', 'langs', 'voice', 'comm', 'activities', 'visual', 'feedback', 'review', 'vocab', 'layout', 'access', 'plans', 'try'] as const;
+const STEPS = ['child', 'langs', 'voice', 'comm', 'activities', 'visual', 'feedback', 'review', 'vocab', 'layout', 'access', 'plans', 'data', 'try'] as const;
 type StepId = (typeof STEPS)[number];
 const SETUP_FROM = STEPS.indexOf('vocab');
 const LANG_LABEL: Record<Lang, string> = { fr: 'Français', en: 'English', ar: 'عربي (لبناني)' };
@@ -181,6 +182,7 @@ export function Onboarding() {
       {stepId === 'layout' && <LayoutStep o={o} a={a} set={set} />}
       {stepId === 'access' && <AccessStep o={o} a={a} set={set} />}
       {stepId === 'plans' && <PlansStep o={o} a={a} set={set} />}
+      {stepId === 'data' && <DataStep o={o} a={a} set={set} />}
       <ErrorText text={error} />
       <View style={[s.footer, useRtlRow()]}>
         <Btn label={o.back} onPress={back} style={{ flex: 1 }} />
@@ -641,6 +643,20 @@ function PlansStep({ o, a, set }: StepProps) {
       <Option multi label={o.planWeek} note={o.planWeekNote} selected={!!a.planWeek} onPress={() => set({ planWeek: !a.planWeek })} />
       <Option multi label={o.planMonth} note={o.planMonthNote} selected={!!a.planMonth} onPress={() => set({ planMonth: !a.planMonth })} />
       <T style={{ color: C.textMuted, fontSize: 14 }}>{o.plansLater}</T>
+    </>
+  );
+}
+
+/** Communication follow-up: the family chooses; no answer is pre-selected (no answer = nothing recorded). */
+function DataStep({ o, a, set }: StepProps) {
+  const d = dataStrings(useSession().uiLang);
+  return (
+    <>
+      <Title text={o.dataTitle} intro={o.dataIntro} />
+      {(['off', 'usage', 'vocabulary', 'language'] as const).map((l) => (
+        <Option key={l} label={d.levels[l]} note={d.levelNotes[l]} selected={a.dataCollection === l} onPress={() => set({ dataCollection: l })} />
+      ))}
+      <T style={{ color: C.textMuted, fontSize: 14 }}>{o.dataLater}</T>
     </>
   );
 }

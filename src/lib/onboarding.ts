@@ -55,6 +55,8 @@ export interface Answers {
   /** Optional plans next to the day plan. */
   planWeek: boolean;
   planMonth: boolean;
+  /** Communication follow-up: nothing is pre-chosen; not answered = off. */
+  dataCollection?: 'off' | 'usage' | 'vocabulary' | 'language';
 }
 
 export function emptyAnswers(lang: Lang): Answers {
@@ -134,6 +136,7 @@ export function applyAnswers(base: Profile, a: Answers, custom: { id: string; la
   st.holdTime = a.holdTime;
   st.repeatDelay = a.repeatDelay;
   st.plans = { week: !!a.planWeek, month: !!a.planMonth };
+  st.dataCollection = a.dataCollection ?? 'off';
 
   for (const c of custom) {
     p.customConcepts[c.id] = {

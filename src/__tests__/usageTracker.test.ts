@@ -3,6 +3,7 @@ import { LocalBackend } from '../backend/local';
 import { createDefaultProfile } from '../data/defaults';
 import type { Settings } from '../model/types';
 import { UsageTracker } from '../state/usageTracker';
+import { applyAnswers, emptyAnswers } from '../lib/onboarding';
 
 const api = new LocalBackend();
 let profileId = '';
@@ -83,5 +84,14 @@ describe('communication data, with the family consent', () => {
     expect(day.samples).toBeUndefined();
     expect(day.level).toBe('usage');
     t.close();
+  });
+});
+
+describe('consent chosen during set-up', () => {
+  it('nothing is pre-chosen: no answer means nothing recorded; an answer is kept', () => {
+    expect(emptyAnswers('fr').dataCollection).toBeUndefined();
+    expect(applyAnswers(createDefaultProfile(), emptyAnswers('fr')).settings.dataCollection).toBe('off');
+    expect(applyAnswers(createDefaultProfile(), { ...emptyAnswers('fr'), dataCollection: 'vocabulary' }).settings.dataCollection).toBe('vocabulary');
+    expect(createDefaultProfile().settings.shareStats).toBe('none');
   });
 });

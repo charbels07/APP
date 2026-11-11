@@ -153,8 +153,9 @@ const fr = {
 
   privacy: 'Vie privée et données',
   privacyPoints: [
-    'Les phrases de l’enfant ne sont ni enregistrées ni envoyées.',
-    'Aucune statistique d’utilisation n’est collectée.',
+    'Le suivi de la communication est arrêté par défaut : vous choisissez ce qui est enregistré (Réglages → Suivi), et vous pouvez tout arrêter et tout effacer.',
+    'Les phrases de l’enfant ne sont gardées que si vous choisissez le niveau « phrases » ; seuls vous et les membres que vous autorisez les voient.',
+    'Statistiques anonymes (des nombres, jamais le nom, les mots ni les phrases) seulement si vous l’acceptez.',
     'Les photos et enregistrements restent sur l’appareil qui les a créés.',
     'L’historique ne contient que des changements de réglages et de vocabulaire.',
   ],
@@ -327,8 +328,9 @@ const en: Dict = {
 
   privacy: 'Privacy and data',
   privacyPoints: [
-    'The child’s sentences are never recorded or sent.',
-    'No usage statistics are collected.',
+    'Communication follow-up is off by default: you choose what is recorded (Settings → Progress), and you can stop and erase everything.',
+    'The child’s sentences are kept only if you choose the “sentences” level; only you and the members you allow see them.',
+    'Anonymous statistics (numbers, never the name, words or sentences) only if you agree.',
     'Photos and recordings stay on the device that made them.',
     'The history only holds settings and vocabulary changes.',
   ],
@@ -499,8 +501,9 @@ const ar: Dict = {
 
   privacy: 'الخصوصية والبيانات',
   privacyPoints: [
-    'جمل الطفل لا تُسجَّل ولا تُرسل أبداً.',
-    'لا تُجمع أي إحصاءات استعمال.',
+    'متابعة التواصل متوقّفة تلقائياً: أنتم تختارون ما يُسجَّل (الإعدادات ← المتابعة)، ويمكنكم إيقاف كل شيء ومحوه.',
+    'لا تُحفظ جمل الطفل إلا إذا اخترتم مستوى «الجمل»؛ ولا يراها إلا أنتم والأعضاء الذين تسمحون لهم.',
+    'إحصاءات مجهولة الهوية (أرقام، لا الاسم ولا الكلمات ولا الجمل أبداً) فقط بموافقتكم.',
     'تبقى الصور والتسجيلات على الجهاز الذي أنشأها.',
     'السجل لا يحتوي إلا تغييرات الإعدادات والمفردات.',
   ],

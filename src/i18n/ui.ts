@@ -194,7 +194,7 @@ const fr = {
   sResetConfirm: 'Touchez encore pour confirmer la réinitialisation',
   sAbout: 'À propos',
   aboutText:
-    'Brouillon de démonstration. Vocabulaire et tableaux provisoires, à valider par l’orthophoniste. Les phrases ne sont jamais enregistrées ni envoyées.',
+    'Brouillon de démonstration. Vocabulaire et tableaux provisoires, à valider par l’orthophoniste. Rien n’est enregistré sur l’utilisation sans l’accord de la famille (Réglages → Suivi).',
   attribution:
     'Pictogrammes : Sergio Palao. Origine : ARASAAC (arasaac.org). Licence : CC BY-NC-SA. Propriété : Gouvernement d’Aragon (Espagne).',
   // print
@@ -531,7 +531,7 @@ const en: Dict = {
   sResetConfirm: 'Tap again to confirm reset',
   sAbout: 'About',
   aboutText:
-    'Demo draft. Placeholder vocabulary and boards, to be validated by the speech-language therapist. Sentences are never stored or sent.',
+    'Demo draft. Placeholder vocabulary and boards, to be validated by the speech-language therapist. Nothing about use is recorded without the family’s agreement (Settings → Progress).',
   attribution:
     'Pictograms: Sergio Palao. Origin: ARASAAC (arasaac.org). Licence: CC BY-NC-SA. Owner: Government of Aragón (Spain).',
   printTitle: 'Print / export PDF',
@@ -863,7 +863,7 @@ const ar: Dict = {
   sResetConfirm: 'المس مرة أخرى لتأكيد إعادة الضبط',
   sAbout: 'حول التطبيق',
   aboutText:
-    'نسخة تجريبية. المفردات واللوحات مؤقتة، وتحتاج إلى موافقة أخصائية النطق. لا تُحفظ الجمل ولا تُرسل أبداً.',
+    'نسخة تجريبية. المفردات واللوحات مؤقتة، وتحتاج إلى موافقة أخصائية النطق. لا يُسجَّل شيء عن الاستعمال من دون موافقة العائلة (الإعدادات ← المتابعة).',
   attribution:
     'الرموز: Sergio Palao. المصدر: ARASAAC (arasaac.org). الترخيص: CC BY-NC-SA. الملكية: حكومة أراغون (إسبانيا).',
   printTitle: 'طباعة / تصدير PDF',

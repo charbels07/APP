@@ -529,19 +529,65 @@ const BASE: BaseChapter[] = [
     action: 'print',
   },
   {
+    id: 'quickActions',
+    track: 'pro',
+    icon: 'check',
+    title: { fr: 'Gestes rapides du mode accompagnant', en: 'Quick gestures in caregiver mode' },
+    steps: {
+      fr: [
+        'Touchez deux fois une carte : Modifier, Remplacer l’image, Enregistrer la prononciation, Ajouter aux favoris (« mes mots »), Dupliquer, Supprimer.',
+        'Touchez deux fois l’onglet d’un TLA : modifier son titre, Dupliquer, Partager (envoyer à quelqu’un qui a un compte, ou enregistrer un fichier), Imprimer.',
+        'Sélectionner : touchez plusieurs cartes, puis Copier / Coller, changer la Taille, les envoyer Vers un tableau d’activité, les Imprimer en cartes. Depuis le tableau principal, les cartes sont copiées : leur place ne change pas.',
+        'Nouveau TLA → Créer à partir d’une photo : photographiez un menu ou une boîte de jeu ; vérifiez et corrigez les mots proposés avant de créer.',
+        'En mode utilisation, un appui long sur un dossier montre ses mots les plus demandés sans l’ouvrir.',
+      ],
+      en: [
+        'Tap a card twice: Edit, Replace the picture, Record the pronunciation, Add to favourites (“my words”), Duplicate, Delete.',
+        'Tap an activity board tab twice: edit its title, Duplicate, Share (send to someone with an account, or save a file), Print.',
+        'Select: tap several cards, then Copy / Paste, change the Size, send them To an activity board, Print them as cards. From the main board cards are copied: their place does not change.',
+        'New activity board → Create from a photo: photograph a menu or a game box; check and correct the suggested words before creating.',
+        'In use mode, a long press on a folder shows its most asked-for words without opening it.',
+      ],
+    },
+    action: 'caregiver',
+  },
+  {
+    id: 'progress',
+    track: 'pro',
+    icon: 'list',
+    title: { fr: 'Suivi de la communication', en: 'Communication progress' },
+    steps: {
+      fr: [
+        'Réglages → Suivi. Rien n’est enregistré tant que la famille n’a pas choisi : l’utilisation, + les mots, + les phrases. Arrêter efface ce que l’appareil gardait ; « Effacer les données enregistrées » efface tout.',
+        'Utilisation : jours, sessions, durée, moments de la journée, pages, TLA, appareils, pauses. Vocabulaire : mots les plus utilisés, nouveaux, réutilisés, base / spécifique, catégories, recherches.',
+        'Langage (niveau « phrases ») : longueur des messages, combinaisons, relations, pronoms, verbes, négation, questions, connecteurs, récit. Fonctions : demander, refuser, commenter… reconnues dans les phrases et notées par les adultes.',
+        'Observations : notez ce que l’enfant a dit ou fait, la fonction, le contexte, avec qui, l’autonomie et le résultat. Sélectionnez-en plusieurs pour les exporter (CSV) ou leur donner un contexte commun.',
+        'Les professionnels voient le suivi seulement si la famille coche « Voir le suivi » dans Équipe.',
+      ],
+      en: [
+        'Settings → Progress. Nothing is recorded until the family chooses: use, + words, + sentences. Stopping erases what the device kept; “Erase the recorded data” erases everything.',
+        'Use: days, sessions, length, times of day, pages, activity boards, devices, breaks. Vocabulary: most used words, new, used again, core / specific, categories, searches.',
+        'Language (“sentences” level): message length, combinations, relations, pronouns, verbs, negation, questions, connectors, telling. Functions: asking, refusing, commenting… recognised in sentences and noted by adults.',
+        'Observations: note what the child said or did, the function, the context, with whom, autonomy and result. Select several to export them (CSV) or give them a common context.',
+        'Professionals see the progress data only if the family ticks “See the progress data” in Team.',
+      ],
+    },
+    action: 'settings',
+  },
+  {
     id: 'privacy',
     track: 'pro',
     icon: 'lock',
     title: { fr: 'Données et confidentialité', en: 'Data and privacy' },
     steps: {
       fr: [
-        'Le profil de l’enfant (mots, tableaux, réglages) est gardé sur l’appareil et, avec un compte, sur le serveur en Europe, pour l’équipe que vous choisissez. Les phrases de l’enfant ne sont jamais enregistrées ni envoyées. Les photos restent sur l’appareil qui les a prises.',
-        'L’IA (propositions de TLA, dessins) ne reçoit que le sujet ou le dessin ; elle se coupe dans Réglages → Données.',
+        'Le profil de l’enfant (mots, tableaux, réglages) est gardé sur l’appareil et, avec un compte, sur le serveur en Europe, pour l’équipe que vous choisissez. Ce que l’enfant fait n’est enregistré que si la famille l’a choisi (Réglages → Suivi). Les photos restent sur l’appareil qui les a prises.',
+        'L’IA (propositions de TLA, photo → TLA, dessins) ne reçoit que le sujet, la photo ou le dessin, jamais le nom ni les phrases de l’enfant ; elle se coupe dans Réglages → Données.',
         'Exporter le profil (sauvegarde) avant de changer d’appareil ; Réinitialiser le profil repart de zéro.',
       ],
       en: [
-        'The child’s profile (words, boards, settings) is kept on the device and, with an account, on the server in Europe, for the team you choose. The child’s sentences are never stored or sent. Photos stay on the device that took them.',
-        'The AI (board suggestions, drawings) only receives the topic or the drawing; it can be turned off in Settings → Data.',
+        'The child’s profile (words, boards, settings) is kept on the device and, with an account, on the server in Europe, for the team you choose. What the child does is recorded only if the family chose it (Settings → Progress). Photos stay on the device that took them.',
+        'The AI (board suggestions, photo → board, drawings) only receives the topic, the photo or the drawing, never the child’s name or sentences; it can be turned off in Settings → Data.',
         'Export profile (backup) before changing device; Reset profile starts from scratch.',
       ],
     },
@@ -750,11 +796,31 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
       'احتفظ دائماً بنسخة ورقية: بطارية فارغة، مسبح، شاطئ…',
     ],
   },
+  quickActions: {
+    title: 'الحركات السريعة في وضع المرافق',
+    steps: [
+      'المس البطاقة مرتين: تعديل، تغيير الصورة، تسجيل اللفظ، إضافة إلى المفضّلة («كلماتي»)، نسخ، حذف.',
+      'المس تبويب لوحة النشاط مرتين: تعديل العنوان، نسخ، مشاركة (إرسال إلى شخص لديه حساب، أو حفظ ملف)، طباعة.',
+      'تحديد: المس عدة بطاقات ثم نسخ / لصق، تغيير الحجم، إرسالها إلى لوحة نشاط، طباعتها كبطاقات. من اللوح الرئيسي تُنسخ البطاقات ولا يتغيّر مكانها.',
+      'لوحة نشاط جديدة ← الإنشاء من صورة: صوّر قائمة طعام أو علبة لعبة، وتحقّق من الكلمات المقترحة وصحّحها قبل الإنشاء.',
+      'في وضع الاستعمال، الضغطة الطويلة على مجلد تُظهر كلماته الأكثر طلباً من دون فتحه.',
+    ],
+  },
+  progress: {
+    title: 'متابعة التواصل',
+    steps: [
+      'الإعدادات ← المتابعة. لا يُسجَّل شيء قبل أن تختار العائلة: الاستعمال، + الكلمات، + الجمل. الإيقاف يمحو ما احتفظ به الجهاز؛ و«محو البيانات المسجّلة» يمحو كل شيء.',
+      'الاستعمال: الأيام، الجلسات، المدة، أوقات النهار، الصفحات، لوحات النشاط، الأجهزة، الانقطاعات. المفردات: الكلمات الأكثر استعمالاً، الجديدة، المُعاد استعمالها، الأساسية / الخاصة، الفئات، البحث.',
+      'اللغة (مستوى «الجمل»): طول الرسائل، التراكيب، العلاقات، الضمائر، الأفعال، النفي، الأسئلة، أدوات الربط، السرد. الوظائف: الطلب، الرفض، التعليق… يتعرّف عليها التطبيق ويدوّنها البالغون.',
+      'الملاحظات: دوّن ما قاله الطفل أو فعله، الوظيفة، السياق، مع مَن، الاستقلالية والنتيجة. حدّد عدة ملاحظات لتصديرها (CSV) أو لإعطائها سياقاً مشتركاً.',
+      'لا يرى المختصون المتابعة إلا إذا فعّلت العائلة «رؤية المتابعة» في الفريق.',
+    ],
+  },
   privacy: {
     title: 'البيانات والخصوصية',
     steps: [
-      'يُحفظ ملف الطفل (الكلمات، اللوحات، الإعدادات) على الجهاز، ومع الحساب على الخادم في أوروبا، للفريق الذي تختاره. لا تُحفظ جمل الطفل ولا تُرسل أبداً. تبقى الصور على الجهاز الذي التقطها.',
-      'الذكاء الاصطناعي (اقتراحات اللوحات، الرسومات) لا يتلقى إلا الموضوع أو الرسم، ويمكن إيقافه في الإعدادات ← البيانات.',
+      'يُحفظ ملف الطفل (الكلمات، اللوحات، الإعدادات) على الجهاز، ومع الحساب على الخادم في أوروبا، للفريق الذي تختاره. لا يُسجَّل ما يفعله الطفل إلا إذا اختارت العائلة ذلك (الإعدادات ← المتابعة). تبقى الصور على الجهاز الذي التقطها.',
+      'الذكاء الاصطناعي (اقتراحات اللوحات، من صورة إلى لوحة، الرسومات) لا يتلقى إلا الموضوع أو الصورة أو الرسم، لا اسم الطفل ولا جمله أبداً، ويمكن إيقافه في الإعدادات ← البيانات.',
       '«تصدير الملف الشخصي (نسخة احتياطية)» قبل تغيير الجهاز؛ «إعادة ضبط الملف الشخصي» يبدأ من الصفر.',
     ],
   },

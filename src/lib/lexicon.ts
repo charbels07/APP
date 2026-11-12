@@ -1,10 +1,19 @@
 import { SYMBOL_DEFAULTS } from '../data/symbolMap';
 import { BUILTIN_CONCEPTS } from '../data/concepts';
-import type { CellDisplay, Concept, Lang, Profile, SymbolRef, WordClass } from '../model/types';
+import { conceptsFor, DIALECTS } from '../data/dialects';
+import { LANGS, type CellDisplay, type Concept, type Lang, type Profile, type Settings, type SymbolRef, type WordClass } from '../model/types';
 
-/** Resolves concepts through the profile (custom words + family overrides). */
+/**
+ * Resolves concepts through the profile (custom words + family overrides). The Arabic words of
+ * the built-in vocabulary are those of the dialect the family chose (settings.arabic).
+ */
 export function getConcept(profile: Profile, id: string): Concept | undefined {
-  return profile.customConcepts[id] ?? BUILTIN_CONCEPTS[id];
+  return profile.customConcepts[id] ?? conceptsFor(profile.settings.arabic)[id];
+}
+
+/** Communication languages the app offers for this child: no Arabic when the family chose "none". */
+export function availableLangs(settings: Pick<Settings, 'arabic'>): Lang[] {
+  return settings.arabic === 'none' ? LANGS.filter((l) => l !== 'ar') : LANGS;
 }
 
 export function allConceptIds(profile: Profile): string[] {
@@ -70,15 +79,26 @@ export function audioOf(profile: Profile, id: string, lang: Lang): string | unde
   return profile.overrides[id]?.audio?.[lang];
 }
 
-/** BCP-47 tag for speech synthesis. Lebanese Arabic falls back to an Arabic voice. */
+/**
+ * BCP-47 tag for speech synthesis. Tablets rarely have a voice per Arabic dialect: Arabic asks
+ * for the Standard (Saudi) voice, and lib/voices picks the dialect's own voice when one exists.
+ */
 export function speechTag(lang: Lang): string {
   return lang === 'fr' ? 'fr-FR' : lang === 'en' ? 'en-US' : 'ar-SA';
 }
 
-export const LANG_NAMES: Record<Lang, string> = {
-  fr: 'Français',
-  en: 'English',
-  ar: 'عربي (لبناني)',
-};
+/** Locale of the chosen Arabic (ar-EG, ar-LB…): the voice and the speech recognition to prefer. */
+export function arabicLocale(settings: Pick<Settings, 'arabic'>): string {
+  const d = settings.arabic;
+  return DIALECTS[!d || d === 'none' ? 'lb' : d].locale;
+}
+
+/** Name of a communication language as shown to the family: « عربي (مصري) ». */
+export function langName(settings: Pick<Settings, 'arabic'>, lang: Lang): string {
+  if (lang === 'fr') return 'Français';
+  if (lang === 'en') return 'English';
+  const d = settings.arabic;
+  return DIALECTS[!d || d === 'none' ? 'lb' : d].langName;
+}
 
 export const isRtl = (lang: Lang) => lang === 'ar';

@@ -1,18 +1,15 @@
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import React, { useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { label } from '../lib/lexicon';
+import { arabicLocale, label } from '../lib/lexicon';
 import type { Lang } from '../model/types';
 import { useApp } from '../state/AppState';
 import { Icon } from './Icon';
 import { C, radius } from './theme';
 
-const RECOGNITION_LANG: Record<Lang, string> = {
-  fr: 'fr-FR',
-  en: 'en-US',
-  // iOS only offers Standard (Saudi) Arabic; Android and browsers accept Lebanese.
-  ar: Platform.OS === 'ios' ? 'ar-SA' : 'ar-LB',
-};
+/** iOS only offers Standard (Saudi) Arabic; Android and browsers accept the country's own Arabic. */
+const recognitionLang = (lang: Lang, arabic: string): string =>
+  lang === 'fr' ? 'fr-FR' : lang === 'en' ? 'en-US' : Platform.OS === 'ios' ? 'ar-SA' : arabic;
 
 /** Microphone button: speech recognition on the device (dictation, search by voice). */
 export function VoiceButton({
@@ -67,7 +64,7 @@ export function VoiceButton({
         .map((c) => label(profile, c!.concept, lang))
         .slice(0, 100);
       ExpoSpeechRecognitionModule.start({
-        lang: RECOGNITION_LANG[lang],
+        lang: recognitionLang(lang, arabicLocale(profile.settings)),
         interimResults: true,
         continuous: false,
         contextualStrings: vocab,

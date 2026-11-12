@@ -7,7 +7,7 @@ import * as Speech from 'expo-speech';
 import { Platform } from 'react-native';
 import type { Lang, Settings } from '../model/types';
 import type { Segment } from './grammar';
-import { speechTag } from './lexicon';
+import { arabicLocale, speechTag } from './lexicon';
 import { chooseVoice, voiceGender, type VoiceChoice, type VoiceGender, type VoiceInfo } from './voices';
 import { mediaUri } from './media';
 
@@ -126,7 +126,7 @@ export async function prepareVoices(settings: Settings): Promise<Record<Lang, Vo
   const voices = await deviceVoices();
   const next = {} as Record<Lang, VoiceChoice>;
   for (const l of ['fr', 'en', 'ar'] as Lang[])
-    next[l] = chooseVoice(voices, l, speechTag(l), settings.voiceKind ?? 'device', settings.voiceAge ?? 'adult', settings.voices[l]);
+    next[l] = chooseVoice(voices, l, speechTag(l), settings.voiceKind ?? 'device', settings.voiceAge ?? 'adult', settings.voices[l], l === 'ar' ? arabicLocale(settings) : undefined);
   plan = next;
   return next;
 }

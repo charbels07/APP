@@ -20,7 +20,7 @@ export interface PictoLibraryInfo {
   fullText: boolean;
   extraLicense?: string;
 }
-export const PICTO_BUILT = "2026-11-11";
+export const PICTO_BUILT = "2026-11-12";
 export const PICTO_TOTAL = 24128;
 export const PICTO_LIBRARIES: PictoLibraryInfo[] = [
   {

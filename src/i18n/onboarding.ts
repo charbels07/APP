@@ -29,6 +29,10 @@ const fr = {
   langMain: 'principale',
   langNavNote: 'Les menus restent dans la langue choisie en haut de l’écran : elle se règle à part.',
   needLang: 'Choisissez au moins une langue.',
+  arabicTitle: 'L’arabe dans l’application',
+  arabicIntro: 'Les mots arabes changent d’un pays à l’autre. Choisissez l’arabe que votre enfant entend et parle : les mots du tableau, la voix et les propositions suivront. Vous pourrez le changer dans les Réglages.',
+  needArabic: 'Choisissez un arabe, ou « Aucun ».',
+  rArabic: 'Arabe',
 
   voiceTitle: 'La voix',
   voiceIntro: 'La voix qui dit les mots de votre enfant.',
@@ -208,6 +212,10 @@ const en: Dict = {
   langMain: 'main',
   langNavNote: 'Menus stay in the language chosen at the top of the screen: it is set separately.',
   needLang: 'Choose at least one language.',
+  arabicTitle: 'Arabic in the app',
+  arabicIntro: 'Arabic words change from one country to another. Choose the Arabic your child hears and speaks: the words on the board, the voice and the suggestions will follow. You can change it later in Settings.',
+  needArabic: 'Choose an Arabic, or “None”.',
+  rArabic: 'Arabic',
 
   voiceTitle: 'The voice',
   voiceIntro: 'The voice that says your child’s words.',
@@ -372,6 +380,10 @@ const ar: Dict = {
   langMain: 'أساسية',
   langNavNote: 'تبقى القوائم باللغة المختارة أعلى الشاشة: تُضبط بشكل منفصل.',
   needLang: 'اختر لغة واحدة على الأقل.',
+  arabicTitle: 'العربية في التطبيق',
+  arabicIntro: 'تختلف الكلمات العربية من بلد إلى آخر. اختر العربية التي يسمعها طفلك ويتكلّمها: كلمات اللوحة والصوت والاقتراحات ستتبعها. يمكنك تغييرها لاحقاً من الإعدادات.',
+  needArabic: 'اختر لهجة عربية، أو «لا شيء».',
+  rArabic: 'العربية',
 
   voiceTitle: 'الصوت',
   voiceIntro: 'الصوت الذي يقول كلمات طفلك.',

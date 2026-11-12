@@ -145,6 +145,8 @@ const fr = {
   // settings
   sCommunication: 'Communication',
   sCommLang: 'Langue de communication',
+  sArabic: 'Arabe de l’application',
+  sArabicNote: 'Change les mots arabes du tableau, la voix et les propositions. « Aucun » retire l’arabe des langues de l’enfant. Les mots que vous avez écrits vous-même ne changent pas.',
   sGender: 'Accords (genre de l’utilisateur)',
   masculine: 'Masculin',
   feminine: 'Féminin',
@@ -277,7 +279,7 @@ const fr = {
   topicWords: 'Mots proposés',
   creating: 'Création…',
   sourceLibrary: 'Proposition tirée de la bibliothèque de situations',
-  sourceAi: 'Proposition de l’IA — à vérifier (libellés libanais compris)',
+  sourceAi: 'Proposition de l’IA — à vérifier (libellés arabes compris)',
   sourceAuto: 'Proposition automatique (catégories de la bibliothèque)',
   askAi: 'Demander à l’IA',
   aiThinking: 'L’IA prépare le tableau et les étapes… (quelques secondes)',
@@ -486,6 +488,8 @@ const en: Dict = {
   pictoOffline: 'Pictogram library unavailable',
   sCommunication: 'Communication',
   sCommLang: 'Communication language',
+  sArabic: 'Arabic used in the app',
+  sArabicNote: 'Changes the Arabic words of the board, the voice and the suggestions. “None” removes Arabic from the child’s languages. Words you wrote yourself do not change.',
   sGender: 'Agreement (user gender)',
   masculine: 'Masculine',
   feminine: 'Feminine',
@@ -614,7 +618,7 @@ const en: Dict = {
   topicWords: 'Suggested words',
   creating: 'Creating…',
   sourceLibrary: 'Suggested from the situation library',
-  sourceAi: 'Suggested by AI — please check (Lebanese labels included)',
+  sourceAi: 'Suggested by AI — please check (Arabic labels included)',
   sourceAuto: 'Automatic suggestion (library categories)',
   askAi: 'Ask the AI',
   aiThinking: 'The AI is preparing the board and the steps… (a few seconds)',
@@ -692,7 +696,7 @@ const en: Dict = {
 
 /**
  * Arabic navigation (menus, buttons, messages). Simple Modern Standard Arabic, the usual
- * register of app interfaces in Lebanon; the board's words stay in Lebanese Arabic.
+ * register of app interfaces; the board's words are in the Arabic the family chose (a dialect or Standard Arabic).
  * PLACEHOLDER translation — to be reviewed by a native speaker.
  */
 const ar: Dict = {
@@ -949,7 +953,7 @@ const ar: Dict = {
   topicWords: 'الكلمات المقترحة',
   creating: 'جارٍ الإنشاء…',
   sourceLibrary: 'اقتراح من مكتبة المواقف',
-  sourceAi: 'اقتراح من الذكاء الاصطناعي — يُرجى التحقق (مع التسميات اللبنانية)',
+  sourceAi: 'اقتراح من الذكاء الاصطناعي — يُرجى التحقق (مع التسميات العربية)',
   sourceAuto: 'اقتراح تلقائي (فئات المكتبة)',
   askAi: 'اسأل الذكاء الاصطناعي',
   aiThinking: 'يُحضّر الذكاء الاصطناعي اللوحة والخطوات… (بضع ثوانٍ)',
@@ -1025,6 +1029,8 @@ const ar: Dict = {
   sAutoApps: 'فتح التطبيق المذكور في جملة (مثلاً «بدّي إسمع موسيقى» ← سبوتيفاي)',
   // languages
   sCommLang: 'لغة التواصل',
+  sArabic: 'العربية المستعملة في التطبيق',
+  sArabicNote: 'يغيّر الكلمات العربية في اللوحة والصوت والاقتراحات. «لا شيء» يزيل العربية من لغات الطفل. الكلمات التي كتبتها بنفسك لا تتغيّر.',
   sInterface: 'لغة التنقل',
   wordsLang: 'لغة التواصل',
   wordsLangNote: 'ما يقوله الجهاز وما يُكتب على البطاقات.',

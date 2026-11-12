@@ -22,6 +22,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import sharp from 'sharp';
 import { BUILTIN_CONCEPTS } from '../src/data/concepts.ts';
+import { DIALECT_WORDS } from '../src/data/dialectWords.ts';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = process.env.PICTO_SOURCES ?? join(root, '../picto-sources');
@@ -70,6 +71,14 @@ interface Rec {
   flags: number;
   author?: string;
   emoji?: string;
+}
+
+/** Every way a built-in word is said across the Arabic dialects the app offers (search aid). */
+function arabicVariants(id: string): string[] {
+  const c = BUILTIN_CONCEPTS[id];
+  const out = new Set<string>([c?.labels.ar, c?.labelsF?.ar].filter((x): x is string => !!x));
+  for (const words of Object.values(DIALECT_WORDS)) for (const w of (words[id] ?? '').split('|')) if (w) out.add(w);
+  return [...out];
 }
 
 const libraries: Library[] = JSON.parse(readFileSync(join(root, 'pictograms/libraries.json'), 'utf8'));
@@ -406,14 +415,15 @@ function lexicon(): Map<string, Tr> {
       lex.set(conceptOf(en), before?.from === 'curated' ? { fr: join(fr, before.fr), ar: join(before.ar, ar), from: 'curated' } : { fr: fr || undefined, ar: ar || undefined, from: 'curated' });
     }
   }
-  // 1. The app's own vocabulary (checked by hand; Arabic is Lebanese), followed by what the
-  //    translation files add for the same word (e.g. Standard Arabic).
+  // 1. The app's own vocabulary (checked by hand), in every Arabic dialect the app offers
+  //    (src/data/dialects.ts), followed by what the translation files add for the same word
+  //    (e.g. Standard Arabic): a family finds « أبغى », « عايز » or « بدّي » alike.
   for (const c of Object.values(BUILTIN_CONCEPTS)) {
     if (c.cls === 'folder' || !c.labels.en) continue;
     const key = conceptOf(c.labels.en);
     const extra = lex.get(key);
     const more = (own: string, other?: string) => [own, ...(extra?.from === 'curated' && other ? other.split(';') : [])].join(';');
-    lex.set(key, { fr: more(c.labels.fr, extra?.fr), ar: more(c.labels.ar, extra?.ar), from: 'app' });
+    lex.set(key, { fr: more(c.labels.fr, extra?.fr), ar: more(arabicVariants(c.id).join(';') || c.labels.ar, extra?.ar), from: 'app' });
   }
   return lex;
 }

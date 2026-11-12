@@ -3,7 +3,7 @@
  * « pizza » ajouté dans « nourriture », Réglage modifié : vitesse de la voix…
  * Labels of the old values come from the profile before the change, new ones from after.
  */
-import { dayLabel, parseYmd, WEEKDAYS } from '../data/calendar';
+import { dayLabel, parseYmd, weekdays } from '../data/calendar';
 import type { Lang, MonthEvent, Profile, UiLang } from '../model/types';
 import type { IconName } from '../ui/Icon';
 import { areaOf } from './permissions';
@@ -99,6 +99,7 @@ const W = {
 const SETTING_NAMES: Record<string, Record<UiLang, string>> = {
   lang: { fr: 'langue de communication', en: 'communication language', ar: 'لغة التواصل' },
   langs: { fr: 'langues de l’enfant', en: 'child’s languages', ar: 'لغات الطفل' },
+  arabic: { fr: 'arabe de l’application', en: 'Arabic used in the app', ar: 'العربية المستعملة في التطبيق' },
   revealLevel: { fr: 'vocabulaire révélé', en: 'revealed vocabulary', ar: 'المفردات الظاهرة' },
   speechRate: { fr: 'vitesse de la voix', en: 'speech rate', ar: 'سرعة الصوت' },
   voiceKind: { fr: 'voix', en: 'voice', ar: 'الصوت' },
@@ -174,7 +175,7 @@ export function describeOps(ops: Op[], before: Profile, ui: UiLang, lang: Lang):
       const k = op.path[1] as string;
       return { icon: 'settings', text: w.setting(SETTING_NAMES[k]?.[ui] ?? k), core };
     }
-    if (kind === 'weekDay') return { icon: 'calendar', text: w.weekDay(WEEKDAYS[ui][Number(op.path[1])] ?? ''), core };
+    if (kind === 'weekDay') return { icon: 'calendar', text: w.weekDay(weekdays(ui)[Number(op.path[1])] ?? ''), core };
     if (kind === 'monthEvent') {
       const eb = op.before as MonthEvent | undefined;
       const ea = op.after as MonthEvent | undefined;

@@ -75,17 +75,25 @@ export function chooseVoice(
   kind: VoiceKind,
   age: VoiceAge,
   explicitId?: string,
+  /** Locale to prefer inside the language (the family's Arabic: ar-EG, ar-LB…), when a voice has it. */
+  preferLocale?: string,
 ): VoiceChoice {
   const child = age === 'child' ? CHILD_PITCH[kind] : 1;
   const prefix = tag.slice(0, 2).toLowerCase();
-  const forLang = voices.filter((v) => v.language.toLowerCase().replace('_', '-').startsWith(prefix));
+  const locale = (v: VoiceInfo) => v.language.toLowerCase().replace('_', '-');
+  const forLang = voices.filter((v) => locale(v).startsWith(prefix));
+  const local = (v: VoiceInfo) => !!preferLocale && locale(v) === preferLocale.toLowerCase();
   if (explicitId) {
     const v = voices.find((x) => x.id === explicitId);
     return { id: explicitId, name: v?.name, pitch: clamp(child), exact: true };
   }
-  if (kind === 'device') return { pitch: clamp(child), exact: true };
   const score = (v: VoiceInfo) =>
-    (/enhanced|premium/i.test(v.quality ?? '') ? 4 : 0) + (v.language.toLowerCase().replace('_', '-') === tag.toLowerCase() ? 2 : 0);
+    (local(v) ? 8 : 0) + (/enhanced|premium/i.test(v.quality ?? '') ? 4 : 0) + (locale(v) === tag.toLowerCase() ? 2 : 0);
+  if (kind === 'device') {
+    // The device's default voice, unless it has a voice of the family's own dialect.
+    const own = forLang.filter(local).sort((a, b) => score(b) - score(a) || a.name.localeCompare(b.name))[0];
+    return own ? { id: own.id, name: own.name, pitch: clamp(child), exact: true } : { pitch: clamp(child), exact: true };
+  }
   const match = forLang.filter((v) => voiceGender(v) === kind).sort((a, b) => score(b) - score(a) || a.name.localeCompare(b.name))[0];
   if (match) return { id: match.id, name: match.name, pitch: clamp(child), exact: true };
   // No voice of that kind for this language: the default voice, pitched lower (man) or higher (woman).

@@ -4,8 +4,8 @@
  * the word lives so the app can guide the user to it ("show me where").
  */
 import { BUILTIN_CONCEPTS } from '../data/concepts';
-import { LANGS, type Lang, type Profile } from '../model/types';
-import { allConceptIds, getConcept, label } from './lexicon';
+import type { Lang, Profile } from '../model/types';
+import { allConceptIds, availableLangs, getConcept, label } from './lexicon';
 
 export interface Location {
   /** Board that contains the word. */
@@ -105,7 +105,7 @@ export function search(profile: Profile, query: string, max = 24): SearchResult[
     // Names in the active language weigh more than the other languages.
     const active = profile.settings.lang;
     const names: { n: string; w: number }[] = [];
-    for (const l of LANGS) {
+    for (const l of availableLangs(profile.settings)) {
       const w = l === active ? 1 : 0.85;
       names.push({ n: normalize(label(profile, id, l)), w }, { n: normalize(c.labels[l]), w });
       const f = c.labelsF?.[l];

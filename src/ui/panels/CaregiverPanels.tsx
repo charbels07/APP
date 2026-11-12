@@ -7,9 +7,9 @@ import { onboardingStrings } from '../../i18n/onboarding';
 import { editStrings } from '../../i18n/edit';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Image, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { BUILTIN_CONCEPTS } from '../../data/concepts';
+import { DIALECT_ORDER, dialectName } from '../../data/dialects';
 import { CLASS_NAMES, CLASS_ORDER, CLASS_COLORS, C, radius } from '../theme';
-import { allConceptIds, display, getConcept, isRtl, label, LANG_NAMES, symbolOf, wordClass } from '../../lib/lexicon';
+import { allConceptIds, availableLangs, display, getConcept, isRtl, label, langName, symbolOf, wordClass } from '../../lib/lexicon';
 import { deleteMedia } from '../../lib/media';
 import { pickPhoto } from '../../lib/photos';
 import { APP_PRESETS, appLinkOf, isIncomplete, openAppUrl } from '../../lib/appLinks';
@@ -21,7 +21,7 @@ import { search } from '../../lib/search';
 import { listVoices, prepareVoices, speakText } from '../../lib/speech';
 import type { VoiceChoice } from '../../lib/voices';
 import { UI_LANG_NAMES } from '../../i18n/ui';
-import { LANGS, type AppLink, type CellDisplay, type Lang, type Profile, type UiLang, type WordClass } from '../../model/types';
+import type { AppLink, ArabicDialect, CellDisplay, Lang, Profile, UiLang, WordClass } from '../../model/types';
 import { useApp } from '../../state/AppState';
 import { Btn, Field, Panel, Section, Segmented, Toggle } from '../common';
 import { PictoSearch } from '../PictoPicker';
@@ -70,7 +70,7 @@ function setLabel(d: Profile, id: string, lang: Lang, value: string) {
     custom.labels[lang] = value;
     return;
   }
-  const base = BUILTIN_CONCEPTS[id]?.labels[lang];
+  const base = getConcept(d, id)?.labels[lang];
   const o = (d.overrides[id] ??= {});
   o.labels = { ...(o.labels ?? {}) };
   if (!value.trim() || value === base) delete o.labels[lang];
@@ -237,7 +237,7 @@ function LabelField({ conceptId, lang }: { conceptId: string; lang: Lang }) {
   }, [value]);
   return (
     <Field
-      label={LANG_NAMES[lang]}
+      label={langName(app.profile.settings, lang)}
       value={value}
       onChangeText={setValue}
       style={isRtl(lang) ? { textAlign: 'right', writingDirection: 'rtl' } : undefined}
@@ -248,7 +248,9 @@ function LabelField({ conceptId, lang }: { conceptId: string; lang: Lang }) {
 function ConceptEditorBody({ conceptId, only }: { conceptId: string; only?: 'image' | 'voice' }) {
   const app = useApp();
   const { profile, t, lang } = app;
-  const [audioLang, setAudioLang] = useState<Lang>(lang);
+  const langs = availableLangs(profile.settings);
+  const [audioChoice, setAudioLang] = useState<Lang>(lang);
+  const audioLang = langs.includes(audioChoice) ? audioChoice : langs[0];
   const [emoji, setEmoji] = useState('');
   const [source, setSource] = useState<PictureSource>('pictos');
   const cls = wordClass(profile, conceptId);
@@ -281,7 +283,7 @@ function ConceptEditorBody({ conceptId, only }: { conceptId: string; only?: 'ima
         </View>
         {!only && (
           <View style={{ flex: 1, gap: 8 }}>
-            {LANGS.map((l) => (
+            {langs.map((l) => (
               <LabelField key={l} conceptId={conceptId} lang={l} />
             ))}
           </View>
@@ -346,8 +348,8 @@ function ConceptEditorBody({ conceptId, only }: { conceptId: string; only?: 'ima
       )}
 
       {only !== 'image' && (
-        <Section title={`${t.voice} — ${LANG_NAMES[audioLang]}`}>
-          <Segmented value={audioLang} onChange={setAudioLang} options={LANGS.map((l) => ({ value: l, label: LANG_NAMES[l] }))} />
+        <Section title={`${t.voice} — ${langName(profile.settings, audioLang)}`}>
+          <Segmented value={audioLang} onChange={setAudioLang} options={langs.map((l) => ({ value: l, label: langName(profile.settings, l) }))} />
           <Recorder
             key={audioLang}
             media={audio}
@@ -387,7 +389,7 @@ function VoicesUsed() {
   const { profile, t } = useApp();
   const st = profile.settings;
   const [plan, setPlan] = useState<Record<Lang, VoiceChoice> | null>(null);
-  const key = JSON.stringify([st.voiceKind, st.voiceAge, st.voices]);
+  const key = JSON.stringify([st.voiceKind, st.voiceAge, st.voices, st.arabic]);
   useEffect(() => {
     let alive = true;
     prepareVoices(st).then((p) => alive && setPlan(p));
@@ -399,13 +401,13 @@ function VoicesUsed() {
   return (
     <View style={{ gap: 6 }}>
       <Text style={s.label}>{t.voiceUsed}</Text>
-      {LANGS.map((l) => {
+      {availableLangs(st).map((l) => {
         const c = plan?.[l];
         return (
           <View key={l} style={s.row}>
             {/* Separate lines: an Arabic language name must not turn the French line right-to-left. */}
             <View style={{ flex: 1 }}>
-              <Text style={s.classText}>{LANG_NAMES[l]}</Text>
+              <Text style={s.classText}>{langName(st, l)}</Text>
               <Text style={s.note}>
                 {c?.name ?? t.voiceDefaultUsed}
                 {c && !c.exact ? ` — ${t.voiceApprox}` : ''}
@@ -583,9 +585,16 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
             </View>
           </View>
           <View style={s.row}>
-            <View style={{ flex: 1 }}>
-              <Field label="عربي" value={draft.ar} onChangeText={(ar) => setDraft({ ...draft, ar })} style={{ textAlign: 'right' }} />
-            </View>
+            {availableLangs(profile.settings).includes('ar') && (
+              <View style={{ flex: 1 }}>
+                <Field
+                  label={langName(profile.settings, 'ar')}
+                  value={draft.ar}
+                  onChangeText={(ar) => setDraft({ ...draft, ar })}
+                  style={{ textAlign: 'right' }}
+                />
+              </View>
+            )}
             <View style={{ width: 110 }}>
               <Field label={t.emoji} value={draft.emoji} onChangeText={(emoji) => setDraft({ ...draft, emoji })} maxLength={8} />
             </View>
@@ -782,7 +791,18 @@ export function BoardSettingsBody() {
   const o = onboardingStrings(profile.settings.uiLang);
   const st = profile.settings;
   const set = (fn: (s: Profile['settings']) => void) => app.update((d) => fn(d.settings));
-  const [voiceLang, setVoiceLang] = useState<Lang>(st.lang);
+  const langs = availableLangs(st);
+  const [voiceChoice, setVoiceLang] = useState<Lang>(st.lang);
+  const voiceLang = langs.includes(voiceChoice) ? voiceChoice : langs[0];
+  // "None" takes Arabic out of the child's languages; a dialect only changes the words.
+  const setArabic = (v: ArabicDialect) =>
+    set((x) => {
+      x.arabic = v;
+      if (v !== 'none') return;
+      const kept = (x.langs?.length ? x.langs : [x.lang]).filter((l) => l !== 'ar');
+      x.langs = kept.length ? kept : ['fr'];
+      if (x.lang === 'ar') x.lang = x.langs[0];
+    });
   const [voices, setVoices] = useState<Awaited<ReturnType<typeof listVoices>>>([]);
   const [confirmReset, setConfirmReset] = useState(false);
   const [pin, setPin] = useState(st.pin);
@@ -795,7 +815,24 @@ export function BoardSettingsBody() {
       <Btn icon="book" label={t.openGuide} onPress={() => app.setOverlay({ kind: 'guide' })} />
       <Section title={t.sCommunication}>
         <Text style={s.label}>{t.sCommLang}</Text>
-        <Segmented value={st.lang} onChange={(v: Lang) => set((x) => void (x.lang = v))} options={LANGS.map((l) => ({ value: l, label: LANG_NAMES[l] }))} />
+        <Segmented value={st.lang} onChange={(v: Lang) => set((x) => void (x.lang = v))} options={langs.map((l) => ({ value: l, label: langName(st, l) }))} />
+        <Text style={s.label}>{t.sArabic}</Text>
+        <View style={s.wrapRow} accessibilityRole="radiogroup">
+          {([...DIALECT_ORDER, 'none'] as ArabicDialect[]).map((d) => {
+            const on = (st.arabic ?? 'lb') === d;
+            return (
+              <Btn
+                key={d}
+                small
+                kind={on ? 'primary' : 'secondary'}
+                icon={on ? 'check' : undefined}
+                label={dialectName(d, st.uiLang)}
+                onPress={() => setArabic(d)}
+              />
+            );
+          })}
+        </View>
+        <Text style={s.note}>{t.sArabicNote}</Text>
         <Text style={s.label}>{t.sInterface}</Text>
         <Segmented
           value={st.uiLang}
@@ -884,7 +921,7 @@ export function BoardSettingsBody() {
       <Section title={o.presentationAccess}>
         <Text style={s.label}>{o.langTitle}</Text>
         <View style={s.wrapRow}>
-          {LANGS.map((l) => {
+          {langs.map((l) => {
             const on = (st.langs ?? [st.lang]).includes(l);
             return (
               <Btn
@@ -892,7 +929,7 @@ export function BoardSettingsBody() {
                 small
                 kind={on ? 'primary' : 'secondary'}
                 icon={on ? 'check' : undefined}
-                label={LANG_NAMES[l]}
+                label={langName(st, l)}
                 onPress={() =>
                   set((x) => {
                     const cur = x.langs?.length ? x.langs : [x.lang];
@@ -985,7 +1022,7 @@ export function BoardSettingsBody() {
         <VoicesUsed />
         <Text style={s.label}>{t.voicePrecise}</Text>
         <Text style={s.label}>{t.sVoiceFor}</Text>
-        <Segmented value={voiceLang} onChange={setVoiceLang} options={LANGS.map((l) => ({ value: l, label: LANG_NAMES[l] }))} />
+        <Segmented value={voiceLang} onChange={setVoiceLang} options={langs.map((l) => ({ value: l, label: langName(st, l) }))} />
         <View style={s.wrapRow}>
           <Btn
             small
@@ -1006,10 +1043,10 @@ export function BoardSettingsBody() {
       </Section>
 
       <Section title={t.sHelp}>
-        {LANGS.map((l) => (
+        {langs.map((l) => (
           <Field
             key={l}
-            label={`${t.sHelpMessage} — ${LANG_NAMES[l]}`}
+            label={`${t.sHelpMessage} — ${langName(st, l)}`}
             value={profile.help.message[l]}
             onChangeText={(v) => app.update((d) => void (d.help.message[l] = v))}
             style={isRtl(l) ? { textAlign: 'right' } : undefined}

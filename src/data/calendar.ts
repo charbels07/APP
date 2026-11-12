@@ -1,26 +1,30 @@
 /**
  * Day and month names for the week and month plans, in the child's communication language.
- * Arabic uses the month names used in Lebanon (كانون الثاني، شباط…). Weeks start on Monday.
+ * Arabic follows the dialect the family chose: كانون الثاني، شباط… in the Levant and Iraq,
+ * يناير، فبراير… in Egypt, Saudi Arabia and the Gulf. Weeks start on Monday.
  */
-import type { Lang } from '../model/types';
+import type { ArabicDialect, Lang } from '../model/types';
+import { arabicDays, arabicDaysShort, arabicMonths } from './dialects';
 
-export const WEEKDAYS: Record<Lang, string[]> = {
+const WEEKDAYS: Record<Exclude<Lang, 'ar'>, string[]> = {
   fr: ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'],
   en: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-  ar: ['الإثنين', 'التلاتا', 'الأربعا', 'الخميس', 'الجمعة', 'السبت', 'الأحد'],
 };
 
-export const WEEKDAYS_SHORT: Record<Lang, string[]> = {
+const WEEKDAYS_SHORT: Record<Exclude<Lang, 'ar'>, string[]> = {
   fr: ['lun', 'mar', 'mer', 'jeu', 'ven', 'sam', 'dim'],
   en: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-  ar: ['إثنين', 'تلاتا', 'أربعا', 'خميس', 'جمعة', 'سبت', 'أحد'],
 };
 
-export const MONTHS: Record<Lang, string[]> = {
+const MONTHS: Record<Exclude<Lang, 'ar'>, string[]> = {
   fr: ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'],
   en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
-  ar: ['كانون الثاني', 'شباط', 'آذار', 'نيسان', 'أيار', 'حزيران', 'تموز', 'آب', 'أيلول', 'تشرين الأول', 'تشرين الثاني', 'كانون الأول'],
 };
+
+/** Monday first. `arabic`: the family's dialect (settings.arabic). */
+export const weekdays = (lang: Lang, arabic?: ArabicDialect): string[] => (lang === 'ar' ? arabicDays(arabic) : WEEKDAYS[lang]);
+export const weekdaysShort = (lang: Lang, arabic?: ArabicDialect): string[] => (lang === 'ar' ? arabicDaysShort(arabic) : WEEKDAYS_SHORT[lang]);
+export const months = (lang: Lang, arabic?: ArabicDialect): string[] => (lang === 'ar' ? arabicMonths(arabic) : MONTHS[lang]);
 
 /** 0 = Monday … 6 = Sunday. */
 export const weekdayIndex = (d: Date) => (d.getDay() + 6) % 7;
@@ -48,6 +52,6 @@ export function monthGrid(year: number, month: number): (Date | null)[] {
 }
 
 /** « samedi 14 novembre » / « Saturday 14 November » / « السبت 14 تشرين الثاني ». */
-export function dayLabel(d: Date, lang: Lang): string {
-  return `${WEEKDAYS[lang][weekdayIndex(d)]} ${d.getDate()} ${MONTHS[lang][d.getMonth()]}`;
+export function dayLabel(d: Date, lang: Lang, arabic?: ArabicDialect): string {
+  return `${weekdays(lang, arabic)[weekdayIndex(d)]} ${d.getDate()} ${months(lang, arabic)[d.getMonth()]}`;
 }

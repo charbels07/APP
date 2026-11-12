@@ -9,6 +9,12 @@
 export type Lang = 'fr' | 'en' | 'ar';
 export const LANGS: Lang[] = ['fr', 'en', 'ar'];
 
+/**
+ * The Arabic of the child's words, chosen by the family at set-up: a dialect, Modern Standard
+ * Arabic, or 'none' (no Arabic at all in the child's app). See src/data/dialects.ts.
+ */
+export type ArabicDialect = 'none' | 'lb' | 'sy' | 'jo' | 'eg' | 'sa' | 'gulf' | 'iq' | 'msa';
+
 /** Navigation language (menus, buttons, guide) — chosen separately from the words' language. */
 export type UiLang = 'fr' | 'en' | 'ar';
 
@@ -160,6 +166,8 @@ export interface Settings {
   repeatDelay: number;
   /** Languages the child communicates in (the first is the main one); `lang` is the one in use. */
   langs: Lang[];
+  /** Which Arabic the words use; 'none' removes Arabic from the languages offered. */
+  arabic: ArabicDialect;
   /** Standard, larger text and buttons, or high contrast (dark cards, bright borders). */
   visual: 'standard' | 'large' | 'contrast';
   /** Picture size inside the cards: normal, or larger (with a smaller label). */

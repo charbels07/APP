@@ -24,5 +24,9 @@
   `src/data/guide.ts`, FR/EN/AR). Arabic navigation mirrors menus via `useNavRtl()`; never mirror boards.
 - Pictures from the internet (`src/lib/webPictures.ts`): Global Symbols (labels match whole words only;
   only the sets in `VERIFIED_SETS`) and Openverse (anonymous requests: `page_size` ≤ 20). The artifact demo has no network: paste works there.
+- Arabic: the family chooses a dialect or none (`settings.arabic`). `src/data/concepts.ts` holds the Lebanese
+  words; `src/data/dialectWords.ts` lists what differs per dialect (data only: also read by the build script).
+  Always read Arabic labels through `getConcept` / `label`, languages through `availableLangs`, and the
+  language name through `langName` — never `BUILTIN_CONCEPTS[id].labels.ar` or `LANGS` directly in screens.
 - App pictograms live in `src/data/concepts.ts` (`app: { url, triggers }`); new built-in folders are added
   to saved profiles by a one-time migration in `src/lib/storage.ts` (only into an empty slot).

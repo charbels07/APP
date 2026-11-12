@@ -8,10 +8,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { createDefaultProfile, DEFAULT_SETTINGS } from '../../data/defaults';
+import { DIALECT_ORDER, DIALECTS, dialectName } from '../../data/dialects';
 import { errorText } from '../../i18n/account';
 import { dataStrings } from '../../i18n/data';
 import { onboardingStrings, type OnboardingStrings } from '../../i18n/onboarding';
-import { getConcept, label, symbolOf, wordClass } from '../../lib/lexicon';
+import { availableLangs, getConcept, label, langName, symbolOf, wordClass } from '../../lib/lexicon';
 import {
   AAC_BEFORE,
   ACTIVITY_CHOICES,
@@ -32,7 +33,7 @@ import { exactPicto, searchPictos } from '../../lib/pictoSearch';
 import { loadPictoLibrary, pictoCredit, pictoToMedia } from '../../lib/pictoLibrary';
 import { prepareVoices, speakText } from '../../lib/speech';
 import { forgetLegacyProfile, loadLegacyProfile, migrate } from '../../lib/storage';
-import { LANGS, type Lang, type Profile } from '../../model/types';
+import type { ArabicDialect, Lang, Profile } from '../../model/types';
 import { AppProvider } from '../../state/AppState';
 import { useSession } from '../../state/Session';
 import { Btn, Field, Segmented } from '../common';
@@ -42,10 +43,11 @@ import { ErrorText, LinkBtn, StartLayout, T, st, useRtl } from '../start/StartLa
 import { SymbolView } from '../SymbolView';
 import { C, CLASS_COLORS, radius } from '../theme';
 
-const STEPS = ['child', 'langs', 'voice', 'comm', 'activities', 'visual', 'feedback', 'review', 'vocab', 'layout', 'access', 'plans', 'data', 'try'] as const;
+const STEPS = ['child', 'arabic', 'langs', 'voice', 'comm', 'activities', 'visual', 'feedback', 'review', 'vocab', 'layout', 'access', 'plans', 'data', 'try'] as const;
 type StepId = (typeof STEPS)[number];
 const SETUP_FROM = STEPS.indexOf('vocab');
-const LANG_LABEL: Record<Lang, string> = { fr: 'Français', en: 'English', ar: 'عربي (لبناني)' };
+/** Name of a language of the child, with the Arabic the family chose. */
+const langLabel = (a: Answers, l: Lang) => langName({ arabic: a.arabic ?? 'lb' }, l);
 
 interface Draft {
   answers: Answers;
@@ -96,6 +98,7 @@ export function Onboarding() {
   };
   const next = () => {
     if (stepId === 'child' && !a.name.trim()) return setError(o.needName);
+    if (stepId === 'arabic' && !a.arabic) return setError(o.needArabic);
     if (stepId === 'langs' && !a.langs.length) return setError(o.needLang);
     goto(draft.step + 1);
   };
@@ -134,6 +137,7 @@ export function Onboarding() {
       {resumed && <T style={{ color: C.textMuted, fontSize: 14 }}>{o.resumeNote}</T>}
       {stepId === 'child' && <ChildStep o={o} a={a} set={set} />}
       {stepId === 'child' && <LinkBtn label={sess.s.haveCode} onPress={() => sess.go({ name: 'invitations' })} />}
+      {stepId === 'arabic' && <ArabicStep o={o} a={a} set={set} />}
       {stepId === 'langs' && <LangStep o={o} a={a} set={set} />}
       {stepId === 'voice' && <VoiceStep o={o} a={a} set={set} />}
       {stepId === 'comm' && <CommStep o={o} a={a} set={set} />}
@@ -287,13 +291,29 @@ function ChildStep({ o, a, set }: StepProps) {
   );
 }
 
+/** Which Arabic the family wants (asked, nothing pre-chosen), or none at all. */
+function ArabicStep({ o, a, set }: StepProps) {
+  const { uiLang } = useSession();
+  const choose = (arabic: ArabicDialect) =>
+    // "None": Arabic cannot stay among the child's languages.
+    set({ arabic, langs: arabic === 'none' ? a.langs.filter((l) => l !== 'ar') : a.langs });
+  return (
+    <>
+      <Title text={o.arabicTitle} intro={o.arabicIntro} />
+      {([...DIALECT_ORDER, 'none'] as ArabicDialect[]).map((d) => (
+        <Option key={d} label={dialectName(d, uiLang)} note={d === 'none' ? undefined : DIALECTS[d].langName} selected={a.arabic === d} onPress={() => choose(d)} />
+      ))}
+    </>
+  );
+}
+
 function LangStep({ o, a, set }: StepProps) {
   const toggle = (l: Lang) => set({ langs: a.langs.includes(l) ? a.langs.filter((x) => x !== l) : [...a.langs, l] });
   return (
     <>
       <Title text={o.langTitle} intro={o.langIntro} />
-      {LANGS.map((l) => (
-        <Option key={l} multi label={LANG_LABEL[l]} selected={a.langs.includes(l)} onPress={() => toggle(l)} badge={a.langs[0] === l ? o.langMain : undefined} />
+      {availableLangs({ arabic: a.arabic ?? 'lb' }).map((l) => (
+        <Option key={l} multi label={langLabel(a, l)} selected={a.langs.includes(l)} onPress={() => toggle(l)} badge={a.langs[0] === l ? o.langMain : undefined} />
       ))}
       <T style={{ color: C.textMuted, fontSize: 14 }}>{o.langNavNote}</T>
     </>
@@ -480,9 +500,11 @@ function LookPreview({ visual }: { visual: VisualChoice }) {
 
 function ReviewStep({ o, a, goto }: { o: OnboardingStrings; a: Answers; goto: (i: number) => void }) {
   const rtl = useRtl();
+  const { uiLang } = useSession();
   const rows: { label: string; value: string; step: StepId }[] = [
     { label: o.rName, value: [a.name, a.age ? `${a.age} ${o.years}` : '', a.gender === 'f' ? o.girl : o.boy].filter(Boolean).join(' · '), step: 'child' },
-    { label: o.rLangs, value: a.langs.map((l) => LANG_LABEL[l]).join(', '), step: 'langs' },
+    { label: o.rArabic, value: dialectName(a.arabic, uiLang), step: 'arabic' },
+    { label: o.rLangs, value: a.langs.map((l) => langLabel(a, l)).join(', '), step: 'langs' },
     {
       label: o.rVoice,
       value: `${a.voiceKind === 'f' ? o.voiceF : a.voiceKind === 'm' ? o.voiceM : o.voiceDevice} · ${a.voiceAge === 'child' ? o.voiceChild : o.voiceAdult}`,

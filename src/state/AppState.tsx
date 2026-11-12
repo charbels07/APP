@@ -241,11 +241,11 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
   const t = strings(uiLang);
 
   // Pick the device voice for each language (woman / man, adult / child) when those settings change.
-  const { voiceKind, voiceAge, voices } = profile.settings;
+  const { voiceKind, voiceAge, voices, arabic } = profile.settings;
   const voicesKey = JSON.stringify(voices);
   useEffect(() => {
     prepareVoices(profileRef.current.settings);
-  }, [voiceKind, voiceAge, voicesKey]);
+  }, [voiceKind, voiceAge, voicesKey, arabic]);
 
   const [view, setView] = useState<View>('board');
   /** Latest navigation, readable from async replays without stale closures. */

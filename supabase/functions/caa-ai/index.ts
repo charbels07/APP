@@ -12,7 +12,7 @@ import Anthropic from 'npm:@anthropic-ai/sdk@1.8.0';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import {
   type AiRequest,
-  DRAWING_PROMPT,
+  drawingPrompt,
   DRAWING_SCHEMA,
   MAX_IMAGE_B64,
   PLAN_SCHEMA,
@@ -62,13 +62,13 @@ Deno.serve(async (req) => {
   let prompt: string;
   let schema: Record<string, unknown>;
   if (body.task === 'tla' && body.topic?.trim()) {
-    prompt = tlaPrompt(body.topic);
+    prompt = tlaPrompt(body.topic, body.arabic);
     schema = PLAN_SCHEMA;
   } else if (body.task === 'photo' && image) {
-    prompt = photoPrompt(body.hint);
+    prompt = photoPrompt(body.hint, body.arabic);
     schema = PLAN_SCHEMA;
   } else if (body.task === 'drawing' && image) {
-    prompt = DRAWING_PROMPT;
+    prompt = drawingPrompt(body.arabic);
     schema = DRAWING_SCHEMA;
   } else {
     return json({ error: 'bad_request' }, 400);

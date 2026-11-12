@@ -6,7 +6,7 @@
  * moving, so the child's motor memory is never broken.
  */
 import type { Intake } from '../backend/types';
-import type { Lang, Profile } from '../model/types';
+import type { ArabicDialect, Lang, Profile } from '../model/types';
 
 export type Speech = Intake['speech'];
 export type OtherWay = Intake['otherWays'][number];
@@ -32,6 +32,8 @@ export interface Answers {
   gender: 'm' | 'f';
   /** Communication languages, the first is the main one. */
   langs: Lang[];
+  /** The Arabic the family wants in the app (a dialect, Standard Arabic, or none); asked, never pre-chosen. */
+  arabic?: ArabicDialect;
   voiceKind: 'device' | 'f' | 'm';
   voiceAge: 'adult' | 'child';
   speech?: Speech;
@@ -113,7 +115,10 @@ export function intakeOf(a: Answers): Intake {
 export function applyAnswers(base: Profile, a: Answers, custom: { id: string; label: string; media?: string; credit?: string }[] = []): Profile {
   const p: Profile = JSON.parse(JSON.stringify(base));
   const st = p.settings;
-  st.langs = a.langs.length ? [...a.langs] : [st.lang];
+  if (a.arabic) st.arabic = a.arabic;
+  // "No Arabic": it is not one of the child's languages either.
+  const chosen = a.langs.filter((l) => l !== 'ar' || st.arabic !== 'none');
+  st.langs = chosen.length ? chosen : [st.lang === 'ar' && st.arabic === 'none' ? 'fr' : st.lang];
   st.lang = st.langs[0];
   st.gender = a.gender;
   st.voiceKind = a.voiceKind;

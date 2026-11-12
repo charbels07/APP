@@ -22,22 +22,23 @@ export async function aiAvailable(): Promise<boolean> {
 
 const asPlan = (data: unknown): AiPlan | null => (data && typeof data === 'object' && Array.isArray((data as AiPlan).words) ? (data as AiPlan) : null);
 
-export async function askAiForTla(topic: string, signal?: AbortSignal): Promise<AiPlan | null> {
+/** `arabic`: the family's Arabic (settings.arabic), so the proposal comes in their dialect, or without Arabic. */
+export async function askAiForTla(topic: string, signal?: AbortSignal, arabic?: string): Promise<AiPlan | null> {
   const api = backend();
   if (!api.askAi) return null;
   try {
-    return asPlan(await api.askAi({ task: 'tla', topic }, signal));
+    return asPlan(await api.askAi({ task: 'tla', topic, arabic }, signal));
   } catch {
     return null;
   }
 }
 
 /** Photo → activity board: what the photo shows, plus words to take part (see aiPrompts.photoPrompt). */
-export async function askAiForPhoto(photo: AiPhoto, hint: string, signal?: AbortSignal): Promise<AiPlan | null> {
+export async function askAiForPhoto(photo: AiPhoto, hint: string, signal?: AbortSignal, arabic?: string): Promise<AiPlan | null> {
   const api = backend();
   if (!api.askAi) return null;
   try {
-    return asPlan(await api.askAi({ task: 'photo', hint, image: { data: photo.data, mediaType: photo.mediaType } }, signal));
+    return asPlan(await api.askAi({ task: 'photo', hint, arabic, image: { data: photo.data, mediaType: photo.mediaType } }, signal));
   } catch {
     return null;
   }
@@ -50,6 +51,7 @@ export async function askAiToReadDrawing(
   _width: number,
   _height: number,
   _signal?: AbortSignal,
+  _arabic?: string,
 ): Promise<DrawingGuess[] | null> {
   return null;
 }

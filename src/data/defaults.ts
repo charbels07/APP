@@ -258,6 +258,7 @@ export const DEFAULT_SETTINGS: Settings = {
   voiceAge: 'adult',
   repeatDelay: 2,
   langs: ['fr'],
+  arabic: 'lb',
   visual: 'standard',
   pictoSize: 'normal',
   reduceMotion: false,

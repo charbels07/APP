@@ -160,12 +160,14 @@ const BASE: BaseChapter[] = [
     steps: {
       fr: [
         'Les langues se choisissent dans les Réglages (mode accompagnant), avec deux choix séparés : Langue de communication (ce que dit l’appareil et ce qui est écrit sur les cases) et Langue de navigation (menus, boutons, guide).',
-        'Par exemple : naviguer en français et parler en libanais, ou l’inverse. Les mots restent exactement à la même place dans toutes les langues.',
+        'Par exemple : naviguer en français et parler en arabe, ou l’inverse. Les mots restent exactement à la même place dans toutes les langues.',
+        'L’arabe de l’application se choisit à l’installation et se change ici (Arabe de l’application) : libanais, syrien, jordanien / palestinien, égyptien, saoudien, du Golfe, irakien, arabe standard — ou Aucun, qui retire l’arabe des langues de l’enfant. Les mots arabes du tableau, la voix et les propositions suivent ce choix.',
         'On peut mélanger les langues dans une même phrase : chaque mot est dit dans sa langue.',
       ],
       en: [
         'Languages are chosen in Settings (caregiver mode), with two separate choices: Communication language (what the device says and what is written on the cards) and Navigation language (menus, buttons, guide).',
-        'For example: navigate in English and speak in Lebanese Arabic, or the other way round. Words stay exactly in the same place in every language.',
+        'For example: navigate in English and speak in Arabic, or the other way round. Words stay exactly in the same place in every language.',
+        'The Arabic of the app is chosen at set-up and changed here (Arabic used in the app): Lebanese, Syrian, Jordanian / Palestinian, Egyptian, Saudi, Gulf, Iraqi, Modern Standard Arabic — or None, which removes Arabic from the child’s languages. The Arabic words of the board, the voice and the suggestions follow that choice.',
         'Languages can be mixed in one sentence: each word is said in its own language.',
       ],
     },
@@ -350,16 +352,16 @@ const BASE: BaseChapter[] = [
     title: { fr: 'Modifier un mot', en: 'Editing a word' },
     steps: {
       fr: [
-        'En mode accompagnant, touchez la case : libellés en français, anglais et libanais.',
+        'En mode accompagnant, touchez la case : libellés en français, en anglais et dans l’arabe choisi.',
         'Image : Pictogrammes (bibliothèque hors ligne d’environ 24 000 images ; cherchez en français, en anglais ou en arabe, et touchez le nom d’une banque — Mulberry, OpenMoji… — pour ne voir que la sienne), Photo (galerie ou appareil photo), ou Internet (pictogrammes Mulberry et OpenMoji en ligne, photos et dessins libres, Coller l’image, lien d’une image). La source et la licence sont gardées avec le mot.',
-        'Voix enregistrée : enregistrez votre voix ou celle d’un proche, pour chaque langue — idéal pour le libanais.',
+        'Voix enregistrée : enregistrez votre voix ou celle d’un proche, pour chaque langue — idéal pour l’arabe parlé à la maison.',
         'Catégorie (couleur) et Affichage de la case (image + texte, image seule, texte seul).',
         'Carte : taille, agrandir sur les cases vides voisines, intensité de la couleur pour attirer l’attention.',
       ],
       en: [
-        'In caregiver mode, touch the card: labels in French, English and Lebanese Arabic.',
+        'In caregiver mode, touch the card: labels in French, English and the Arabic you chose.',
         'Picture: Pictograms (offline library of about 24,000 pictures; search in French, English or Arabic, and touch a library’s name — Mulberry, OpenMoji… — to see only its pictures), Photo (library or camera), or Internet (Mulberry and OpenMoji pictograms online, free photos and drawings, Paste picture, picture link). The source and licence are kept with the word.',
-        'Recorded voice: record your voice or a relative’s, for each language — ideal for Lebanese Arabic.',
+        'Recorded voice: record your voice or a relative’s, for each language — ideal for the Arabic spoken at home.',
         'Category (colour) and Cell display (picture + text, picture only, text only).',
         'Card: size, spread over empty neighbouring slots, colour strength to draw attention.',
       ],
@@ -656,7 +658,7 @@ const BASE: BaseChapter[] = [
 
 /**
  * Arabic navigation: the same chapters in simple Modern Standard Arabic (board words quoted in
- * Lebanese, as they appear on the cards). PLACEHOLDER translation — to be reviewed by a native speaker.
+ * Lebanese, the app's first dialect). PLACEHOLDER translation — to be reviewed by a native speaker.
  */
 const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   screen: {
@@ -700,7 +702,8 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
     title: 'اختيار اللغات',
     steps: [
       'تُختار اللغات في الإعدادات (وضع المرافق)، بخيارين منفصلين: «لغة التواصل» (ما يقوله الجهاز وما يُكتب على البطاقات) و«لغة التنقل» (القوائم والأزرار والدليل).',
-      'مثلاً: التنقل بالعربية والكلمات بالفرنسية، أو التنقل بالفرنسية والكلمات باللبنانية. تبقى الكلمات في المكان نفسه في كل اللغات.',
+      'مثلاً: التنقل بالعربية والكلمات بالفرنسية، أو التنقل بالفرنسية والكلمات بالعربية. تبقى الكلمات في المكان نفسه في كل اللغات.',
+      'تُختار عربية التطبيق عند الإعداد وتُغيَّر من هنا («العربية المستعملة في التطبيق»): اللبنانية، السورية، الأردنية / الفلسطينية، المصرية، السعودية، الخليجية، العراقية، العربية الفصحى — أو «لا شيء» الذي يزيل العربية من لغات الطفل. كلمات اللوحة العربية والصوت والاقتراحات تتبع هذا الاختيار.',
       'يمكن خلط اللغات في جملة واحدة: تُقال كل كلمة بلغتها.',
     ],
   },
@@ -779,9 +782,9 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   editWord: {
     title: 'تعديل كلمة',
     steps: [
-      'في وضع المرافق، المس البطاقة: التسميات بالفرنسية والإنجليزية واللبنانية.',
+      'في وضع المرافق، المس البطاقة: التسميات بالفرنسية والإنجليزية وبالعربية التي اخترتها.',
       'الصورة: «رموز» (مكتبة دون إنترنت فيها نحو 24 ألف صورة؛ ابحث بالفرنسية أو الإنجليزية أو العربية، والمس اسم مكتبة — Mulberry أو OpenMoji… — لترى صورها فقط)، «صورة» (المعرض أو الكاميرا)، أو «الإنترنت» (رموز Mulberry و OpenMoji على الإنترنت، صور ورسومات حرة، «لصق الصورة»، رابط صورة). يُحفظ المصدر والترخيص مع الكلمة.',
-      '«صوت مسجّل»: سجّل صوتك أو صوت أحد الأقارب، لكل لغة — مثالي للّبنانية.',
+      '«صوت مسجّل»: سجّل صوتك أو صوت أحد الأقارب، لكل لغة — مثالي للعربية المحكية في البيت.',
       '«الفئة (اللون)» و«عرض الخانة» (صورة + نص، صورة فقط، نص فقط).',
       'البطاقة: الحجم، التوسّع على الخانات الفارغة المجاورة، شدّة اللون لجذب الانتباه.',
     ],

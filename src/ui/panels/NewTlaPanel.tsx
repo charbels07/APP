@@ -83,7 +83,7 @@ export function NewTlaPanel() {
     const ctl = new AbortController();
     aiCtl.current = ctl;
     setReading(true);
-    const ai = await askAiForPhoto(p, hint || topic, ctl.signal);
+    const ai = await askAiForPhoto(p, hint || topic, ctl.signal, profile.settings.arabic);
     if (ctl.signal.aborted) return;
     setReading(false);
     if (!ai) return setPhotoMsg(e.photoFailed);
@@ -113,7 +113,7 @@ export function NewTlaPanel() {
     aiCtl.current = ctl;
     setThinking(true);
     setAiFailed(false);
-    const ai = await askAiForTla(topic, ctl.signal);
+    const ai = await askAiForTla(topic, ctl.signal, profile.settings.arabic);
     if (ctl.signal.aborted) return;
     setThinking(false);
     const p = ai ? planFromAi(lib, topic, ui, ai) : null;
@@ -161,7 +161,7 @@ export function NewTlaPanel() {
       newConcepts[cid] = {
         id: cid,
         cls: item.cls ?? guessClass(it[7] ?? []),
-        // Arabic from the library is Standard Arabic; AI proposals give Lebanese. Editable either way.
+        // Arabic from the library is Standard Arabic; AI proposals come in the family's dialect. Editable either way.
         labels,
         emoji: '⭐',
         custom: true,

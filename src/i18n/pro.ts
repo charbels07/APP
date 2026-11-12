@@ -193,7 +193,7 @@ const fr = {
     modelling: 'Modéliser avec la main animée',
     tla: 'Créer un tableau d’activité',
     access: 'Façons de sélectionner et appareils',
-    languages: 'Plusieurs langues et l’arabe libanais',
+    languages: 'Plusieurs langues et les dialectes arabes',
   } as Record<string, string>,
   learnNotes: {
     demo: 'Un tableau complet pour essayer tout sans risque.',
@@ -416,7 +416,7 @@ const en: Dict = {
     modelling: 'Modelling with the animated hand',
     tla: 'Making an activity board',
     access: 'Access methods and devices',
-    languages: 'Several languages and Lebanese Arabic',
+    languages: 'Several languages and the Arabic dialects',
   },
   learnNotes: {
     demo: 'A full board to try everything safely.',
@@ -636,7 +636,7 @@ const ar: Dict = {
     modelling: 'النمذجة باليد المتحركة',
     tla: 'إنشاء لوحة نشاط',
     access: 'طرق الاختيار والأجهزة',
-    languages: 'عدة لغات واللهجة اللبنانية',
+    languages: 'عدة لغات واللهجات العربية',
   },
   learnNotes: {
     demo: 'لوحة كاملة لتجربة كل شيء بأمان.',

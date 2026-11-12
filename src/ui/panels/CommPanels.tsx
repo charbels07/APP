@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { aiAvailable, askAiToReadDrawing, type DrawingGuess, type Stroke } from '../../lib/aiPlanner';
-import { isRtl, label, LANG_NAMES, symbolOf } from '../../lib/lexicon';
+import { availableLangs, isRtl, label, langName, symbolOf } from '../../lib/lexicon';
 import { search, type Location } from '../../lib/search';
 import { speakText } from '../../lib/speech';
 import { typedChips } from '../../lib/typedWords';
-import { LANGS, type Lang, type UiLang } from '../../model/types';
+import type { Lang, UiLang } from '../../model/types';
 import { UI_LANG_NAMES } from '../../i18n/ui';
 import { useApp } from '../../state/AppState';
 import { Btn, Panel, Section } from '../common';
@@ -75,7 +75,7 @@ export function SearchPanel() {
       {q.trim() && !results.length ? <Text style={styles.muted}>{t.noResults}</Text> : null}
       {results.map((r) => {
         const loc = r.locations.find((l) => l.path[0] === 'core') ?? r.locations[0];
-        const others = LANGS.filter((l) => l !== lang).map((l) => label(profile, r.concept, l));
+        const others = availableLangs(profile.settings).filter((l) => l !== lang).map((l) => label(profile, r.concept, l));
         return (
           <View key={r.concept} style={styles.result}>
             <SymbolView symbol={symbolOf(profile, r.concept)} size={52} />
@@ -134,7 +134,7 @@ function DrawSearch({
     const c = new AbortController();
     ctl.current = c;
     setState('thinking');
-    const res = await askAiToReadDrawing(strokes, size[0], size[1], c.signal);
+    const res = await askAiToReadDrawing(strokes, size[0], size[1], c.signal, profile.settings.arabic);
     if (c.signal.aborted) return;
     if (res === null) return setState('unavailable');
     setGuesses(res);
@@ -295,20 +295,20 @@ export function LangPanel() {
       <Section title={t.wordsLang}>
         <Text style={styles.muted}>{t.wordsLangNote}</Text>
         {/* The child's languages first; the others stay reachable below. */}
-        {(st.langs?.length ? st.langs : LANGS).map((l) => (
+        {(st.langs?.length ? st.langs : availableLangs(st)).map((l) => (
           <LangChoice
             key={l}
-            label={LANG_NAMES[l]}
+            label={langName(st, l)}
             active={st.lang === l}
             onPress={() => app.update((d) => void (d.settings.lang = l))}
           />
         ))}
-        {st.langs?.length && st.langs.length < LANGS.length ? (
+        {st.langs?.length && st.langs.length < availableLangs(st).length ? (
           <>
             <Text style={styles.muted}>{t.otherLangs}</Text>
             <View style={[styles.row, { flexWrap: 'wrap' }]}>
-              {LANGS.filter((l) => !st.langs.includes(l)).map((l) => (
-                <LangChoice key={l} compact label={LANG_NAMES[l]} active={st.lang === l} onPress={() => app.update((d) => void (d.settings.lang = l))} />
+              {availableLangs(st).filter((l) => !st.langs.includes(l)).map((l) => (
+                <LangChoice key={l} compact label={langName(st, l)} active={st.lang === l} onPress={() => app.update((d) => void (d.settings.lang = l))} />
               ))}
             </View>
           </>

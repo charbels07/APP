@@ -6,7 +6,7 @@
  */
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { dayLabel, MONTHS, monthGrid, WEEKDAYS, WEEKDAYS_SHORT, weekdayIndex, ymd } from '../../data/calendar';
+import { dayLabel as dayLabelOf, monthGrid, months, weekdays, weekdaysShort, weekdayIndex, ymd } from '../../data/calendar';
 import { isRtl, label, symbolOf } from '../../lib/lexicon';
 import { speakText } from '../../lib/speech';
 import type { MonthEvent } from '../../model/types';
@@ -27,7 +27,7 @@ export function WeekView() {
   const add = (d: number) =>
     app.setOverlay({
       kind: 'picker',
-      title: `${t.planAdd} · ${WEEKDAYS[lang][d]}`,
+      title: `${t.planAdd} · ${weekdays(lang, profile.settings.arabic)[d]}`,
       onPick: (concept) => {
         app.update((p) => {
           p.weekPlan ??= {};
@@ -49,7 +49,7 @@ export function WeekView() {
       {editMode && <Text style={styles.hint}>{t.planEditHint}</Text>}
       <ScrollView horizontal contentContainerStyle={{ flexGrow: 1 }} showsHorizontalScrollIndicator={false}>
         <View style={styles.week}>
-          {WEEKDAYS[lang].map((name, d) => {
+          {weekdays(lang, profile.settings.arabic).map((name, d) => {
             const items = days[String(d)] ?? [];
             const isToday = d === today;
             return (
@@ -100,6 +100,7 @@ export function WeekView() {
 export function MonthView() {
   const app = useApp();
   const { profile, lang, t, editMode } = app;
+  const dayLabel = (d: Date, l: typeof lang) => dayLabelOf(d, l, profile.settings.arabic);
   const { width } = useWindowDimensions();
   const now = new Date();
   const [cursor, setCursor] = useState({ y: now.getFullYear(), m: now.getMonth() });
@@ -148,11 +149,11 @@ export function MonthView() {
       <View style={{ flex: wide ? 2 : 3, gap: 6 }}>
         <View style={styles.monthHead}>
           <Btn small icon="chevronLeft" accessibilityLabel={t.prevMonth} onPress={() => move(-1)} />
-          <Text style={styles.monthTitle}>{`${MONTHS[lang][cursor.m]} ${cursor.y}`}</Text>
+          <Text style={styles.monthTitle}>{`${months(lang, profile.settings.arabic)[cursor.m]} ${cursor.y}`}</Text>
           <Btn small icon="chevronRight" accessibilityLabel={t.nextMonth} onPress={() => move(1)} />
         </View>
         <View style={styles.weekRow}>
-          {WEEKDAYS_SHORT[lang].map((d) => (
+          {weekdaysShort(lang, profile.settings.arabic).map((d) => (
             <Text key={d} style={styles.weekLabel} numberOfLines={1}>
               {d}
             </Text>

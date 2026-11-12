@@ -3,6 +3,7 @@ import { ActivityIndicator, Image, Pressable, StyleSheet, Text, TextInput, View 
 import { PICTO_LIBRARIES } from '../data/pictoLibraries';
 import { loadPictoLibrary, pictoImageUri } from '../lib/pictoLibrary';
 import { libraryOf, PICTO_AMBIGUOUS, PICTO_AR_AUTO, PICTO_FR_AUTO, searchPictos, type PreparedIndex } from '../lib/pictoSearch';
+import { normalize } from '../lib/search';
 import type { Lang } from '../model/types';
 import { useApp } from '../state/AppState';
 import { Icon } from './Icon';
@@ -141,7 +142,10 @@ export function PictoSearch({
   const captionOf = (id: number) => {
     const it = lib ? lib.byId.get(id) : undefined;
     if (!it) return undefined;
-    const word = (it[slot] as string[])[0] ?? it[5][0];
+    // The word that matches what was typed (e.g. the family's own Arabic), else the first one.
+    const q = normalize(debounced);
+    const words = it[slot] as string[];
+    const word = (q ? words.find((w) => normalize(w).includes(q)) : undefined) ?? words[0] ?? it[5][0];
     const auto = (it[8] ?? 0) & ((l === 'fr' ? PICTO_FR_AUTO : l === 'ar' ? PICTO_AR_AUTO : 0) | PICTO_AMBIGUOUS);
     return `${word}${auto ? ' *' : ''}\n${LIBRARY_NAMES[libraryOf(lib as PreparedIndex, id) ?? ''] ?? ''}`;
   };

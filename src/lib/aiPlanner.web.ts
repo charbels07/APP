@@ -4,7 +4,7 @@
  * Only the topic text is sent — never the child's name, vocabulary or messages
  * (spec GEN-04), and nothing is spoken or added without the family's choice (GEN-02/03).
  */
-import { DRAWING_PROMPT, photoPrompt, tlaPrompt } from '../../supabase/functions/_shared/aiPrompts';
+import { drawingPrompt, photoPrompt, tlaPrompt } from '../../supabase/functions/_shared/aiPrompts';
 import type { DrawingGuess, Stroke } from './aiPlanner';
 import type { AiPhoto } from './photoForAi';
 import type { AiPlan } from './tlaPlanner';
@@ -32,11 +32,11 @@ export async function aiAvailable(): Promise<boolean> {
   return (await getSample()) !== null;
 }
 
-export async function askAiForTla(topic: string, signal?: AbortSignal): Promise<AiPlan | null> {
+export async function askAiForTla(topic: string, signal?: AbortSignal, arabic?: string): Promise<AiPlan | null> {
   const sample = await getSample();
   if (!sample) return null;
   try {
-    const data = (await sample.json(tlaPrompt(topic), { modelTier: 'default', signal })) as AiPlan;
+    const data = (await sample.json(tlaPrompt(topic, arabic), { modelTier: 'default', signal })) as AiPlan;
     return data && typeof data === 'object' ? data : null;
   } catch {
     return null;
@@ -44,13 +44,13 @@ export async function askAiForTla(topic: string, signal?: AbortSignal): Promise<
 }
 
 /** Photo → activity board: only the photo (and the parent's few words) is sent. */
-export async function askAiForPhoto(photo: AiPhoto, hint: string, signal?: AbortSignal): Promise<AiPlan | null> {
+export async function askAiForPhoto(photo: AiPhoto, hint: string, signal?: AbortSignal, arabic?: string): Promise<AiPlan | null> {
   const sample = await getSample();
   if (!sample) return null;
   try {
     const bytes = Uint8Array.from(atob(photo.data), (c) => c.charCodeAt(0));
     const blob = new Blob([bytes], { type: photo.mediaType });
-    const data = (await sample.json(photoPrompt(hint), { images: [blob], modelTier: 'default', signal })) as AiPlan;
+    const data = (await sample.json(photoPrompt(hint, arabic), { images: [blob], modelTier: 'default', signal })) as AiPlan;
     return data && typeof data === 'object' && Array.isArray(data.words) ? data : null;
   } catch {
     return null;
@@ -96,13 +96,14 @@ export async function askAiToReadDrawing(
   _width: number,
   _height: number,
   signal?: AbortSignal,
+  arabic?: string,
 ): Promise<DrawingGuess[] | null> {
   const sample = await getSample();
   if (!sample) return null;
   const png = await drawingToPng(strokes);
   if (!png) return [];
   try {
-    const data = (await sample.json(DRAWING_PROMPT, { images: [png], modelTier: 'quick', signal })) as {
+    const data = (await sample.json(drawingPrompt(arabic), { images: [png], modelTier: 'quick', signal })) as {
       guesses?: DrawingGuess[];
     };
     return Array.isArray(data?.guesses) ? data.guesses.filter((g) => g && (g.fr || g.en || g.ar)).slice(0, 5) : [];

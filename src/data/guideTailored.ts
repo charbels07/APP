@@ -3,7 +3,7 @@
  * settings (how many words are shown, how to select, languages, favourites) so the family
  * starts with what matters for them.
  */
-import { LANG_NAMES } from '../lib/lexicon';
+import { langName } from '../lib/lexicon';
 import type { Profile, UiLang } from '../model/types';
 import type { GuideChapter } from './guide';
 
@@ -16,7 +16,7 @@ export function tailoredChapter(p: Profile): GuideChapter | null {
   const st = p.settings;
   const shown = p.boards.core.cells.filter((c) => c && (c.level ?? 1) <= st.revealLevel).length;
   const favourites = (p.boards.mine?.cells ?? []).filter(Boolean).length;
-  const langs = (st.langs?.length ? st.langs : [st.lang]).map((l) => LANG_NAMES[l]).join(', ');
+  const langs = (st.langs?.length ? st.langs : [st.lang]).map((l) => langName(st, l)).join(', ');
 
   const lines: L3[] = [];
   lines.push(

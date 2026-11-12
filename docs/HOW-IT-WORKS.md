@@ -176,12 +176,32 @@ is not involved. `sharp` is only a development tool (it is not shipped in the ap
 | Progress page in the preview | Settings shows Board, Team, Progress and Account even before an account exists; the last three explain what they will hold and offer *Create my account*. |
 | Phone width | On a narrow screen the *New board* button keeps only its « + » so the board tabs stay visible, and the caregiver banner no longer cuts its *Done* button. |
 
+## Round 11 — Arabic dialects (for the Middle East), or no Arabic
+
+Arabic is not the same in Beirut, Cairo or Riyadh, so the family now chooses which Arabic the
+app uses — or none.
+
+| Feature | How it was built |
+|---|---|
+| The question at set-up | A new step in `src/ui/onboarding/Onboarding.tsx` (React Native), right after the child's name: Lebanese, Syrian, Jordanian / Palestinian, Egyptian, Saudi, Gulf, Iraqi, Modern Standard Arabic, or **None**. Nothing is chosen in advance and the family cannot continue without answering. The answer is saved in the child's profile as `settings.arabic` (`src/model/types.ts`). |
+| The words of each dialect | `src/data/dialectWords.ts` (TypeScript, data only): for each dialect, only the words that differ from the Lebanese list — Syrian 17, Jordanian / Palestinian 43, Egyptian 117, Saudi 112, Gulf 113, Iraqi 123, Standard Arabic 182 (of 254 words). A word can have a masculine and a feminine form (« عايز / عايزة »). **First version: each list must be checked by a native speaker of that country.** |
+| How the board changes | `conceptsFor(dialect)` in `src/data/dialects.ts` gives the vocabulary with its Arabic words in the chosen dialect, and `getConcept` in `src/lib/lexicon.ts` uses it — so the board, the sentence, the search, the keyboard and the printed pages all follow, with no other change. Words never move: only what is written and said changes. Words the family typed themselves stay as they are. |
+| "None" | `availableLangs` (`src/lib/lexicon.ts`) removes Arabic from the child's languages: it disappears from the language choices, from the label fields of a word, from the recorded voice, the voice settings, the Help message and the word search. Menus in Arabic (the navigation language) remain a separate choice. |
+| Changing it later | Settings → Board → Communication → *Arabic used in the app* (`src/ui/panels/CaregiverPanels.tsx`). The change appears in the team's history like any other setting. |
+| The voice | Tablets rarely have a voice per dialect. `src/lib/voices.ts` picks the device voice of the same country when there is one (for example an Egyptian voice), otherwise the standard Arabic voice. For a real dialect accent, the recorded voice (word editor) stays the best. Speech recognition asks for the same country on Android and in browsers. |
+| Calendar | `src/data/calendar.ts`: كانون الثاني، شباط… for the Levant and Iraq, يناير، فبراير… for Egypt, Saudi Arabia, the Gulf and Standard Arabic. |
+| AI suggestions | The prompts (`supabase/functions/_shared/aiPrompts.ts`) ask for the chosen Arabic, or for no Arabic. The app only sends a short code (`eg`, `sa`…), never free text. The server function must be deployed again for this (`supabase functions deploy caa-ai`). |
+| Finding pictures | The pictogram library's search index now contains every dialect's word for the app's vocabulary (`npm run build:picto`), so « أبغى », « عايز », « أريد » and « بدّي » all find the "want" pictogram. |
+| Tested | 12 Jest tests (`src/__tests__/dialects.test.ts`): the words per dialect and gender, "none", the set-up answer, old profiles (they stay Lebanese), months, AI prompts, voices, search. A browser walkthrough: Saudi → « أبغى », then Egyptian → « عايز », then None → no Arabic left. |
+
+Infrastructure: nothing new in the database (the choice is one more setting inside the profile).
+
 ## How everything is checked
 
 | Check | What it does |
 |---|---|
 | `npm run typecheck` | TypeScript reads the whole code and refuses mistakes such as a missing field or a wrong type. |
-| `npm test` | 143 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences. |
+| `npm test` | 155 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences. |
 | `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger and a tablet; 35+ checks. |
 | `npm run test:live` | The same story on the real Supabase project, through the app's own code: 13 steps, including devices, history undo, invitation codes, revisions and materials (needs "Confirm email" off while it runs). Last run: all 13 passed. |
 | Browser walkthroughs | Playwright drives the web version like a person: the parent journey, the team (invite, undo, join with a code), the professional journey (verification, tour, request, draft, proposal, approval), and the Arabic screens. |
@@ -209,6 +229,10 @@ is not involved. `sharp` is only a development tool (it is not shipped in the ap
   the browser demo only for now.
 - **Switch access and eye gaze**: not available (the set-up says so).
 - **Arabic texts** are a first version: to be reviewed by a native speaker.
+- **Arabic dialects**: the seven dialect word lists (Syrian, Jordanian / Palestinian, Egyptian, Saudi,
+  Gulf, Iraqi, Standard Arabic) were written without a native reviewer. Before selling in a country,
+  have its list read by a speech therapist or a parent from there (`src/data/dialectWords.ts`).
+  North African dialects (Moroccan, Algerian, Tunisian) are not included.
 - **Pictogram words**: about 11,900 line icons (Material, Tabler, Lucide, Phosphor, Health Icons)
   are found in English only; the French and Arabic words added by our lists are marked "to review"
   and must be checked by the speech therapist and a native Arabic speaker.

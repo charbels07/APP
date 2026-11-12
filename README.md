@@ -1,6 +1,7 @@
 # CAA — Augmentative & Alternative Communication app (first draft)
 
-Tablet-first AAC app for French, English and Lebanese Arabic, built from the
+Tablet-first AAC app for French, English and Arabic (the family chooses the dialect: Lebanese,
+Syrian, Jordanian / Palestinian, Egyptian, Saudi, Gulf, Iraqi or Standard Arabic — or no Arabic), built from the
 *Cahier des charges CAA*. This is **draft 0.1**: the mechanics are real, the
 vocabulary and boards are **placeholders** that the speech-language therapist
 must replace and validate.
@@ -129,6 +130,8 @@ Arabic morphology, other dialects, opt-in usage statistics, version history.
   in the app allow commercial use; their obligations (credits page, share-alike for modified
   drawings, never selling the pictograms themselves) and the points to show a lawyer are in
   `docs/PICTOGRAM-LICENSES.md`.
-- **Arabic voice**: devices only offer a Standard Arabic voice; Lebanese words
+- **Arabic dialects**: the word lists of each dialect (`src/data/dialectWords.ts`) are a first version
+  to be validated by native speakers of each country.
+- **Arabic voice**: devices only offer a Standard Arabic voice; dialect words
   should get recorded audio (word editor → *Voix enregistrée*).
 - Regulatory review (EU MDR), privacy policy, Apple developer account.

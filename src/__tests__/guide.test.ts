@@ -55,12 +55,20 @@ describe('in-app guide', () => {
         pro.nav.users, pro.nav.create, pro.nav.library, pro.nav.learn, pro.sendForApproval, st.levels[1], st.levels[2], st.levels[3],
         // the certificate must be accepted first; writing to the app's team
         pro.nav.account, adminStrings(lang).writeTeam,
+        // the account page: children, devices, deleting, preferences
+        st.myAccount, st.addChild, st.devices, st.syncNow, st.linkDevice, st.unlink, st.privacy, st.deleteAccount, st.prefs, st.interfaceLang,
+        // the team: ending an access, what happened, a new code
+        st.expiry, st.revoke, st.news, st.renewCode,
+        // the professional workspace: verification, connecting to a family, collaborations
+        pro.verifyTitle, pro.submit, pro.connectUser, pro.familyCode, pro.sendRequest, pro.nav.dashboard, pro.nav.collab, pro.collabConnections,
+        // anonymous statistics are a separate, optional choice
+        dataStrings(lang).shareTitle,
       ];
       for (const label of quoted) expect(text(lang)).toContain(label);
       // Removed things are no longer described.
       expect(text(lang)).not.toMatch(/ARASAAC/i);
     }
-    expect(GUIDE.map((c) => c.id)).toEqual(expect.arrayContaining(['pictos', 'proposals', 'keyboard', 'quickActions', 'progress', 'privacy']));
+    expect(GUIDE.map((c) => c.id)).toEqual(expect.arrayContaining(['pictos', 'proposals', 'keyboard', 'quickActions', 'progress', 'privacy', 'account', 'workspace']));
     // The language button left the bar: the bar is listed without it.
     expect(GUIDE.find((c) => c.id === 'screen')!.steps.en[0]).not.toContain('Language');
     expect(GUIDE.find((c) => c.id === 'language')!.action).toBe('settings');

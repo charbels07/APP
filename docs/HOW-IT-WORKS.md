@@ -255,6 +255,14 @@ the accounts the database lists as "team".
 To use it on the real server: run the new migration, then add yourself to the team
 (`supabase/README.md`, section 8).
 
+**Guide checked again after this round.** Every button and setting name of the screens was compared
+with the guide's text by a small script; what was missing was added in French, English and Arabic
+(`src/data/guide.ts`, now 30 chapters): *Your account, children and devices*, *Professionals: your
+workspace* (verification, connecting to a family, sharing materials, collaborations), ending or
+removing someone's access in *The child's team*, and the optional anonymous statistics in *Data and
+privacy*. The back office is not in the guide on purpose: it is for our team only. The guide test now
+checks 23 more button names in the three languages.
+
 **Where the real app can be opened in a browser.** The web version is the same code turned into a
 folder of plain files (`npm run build:web`, output in `dist`: one **HTML** page, one **JavaScript**
 file and the pictogram packs). A hosting service (Cloudflare) can rebuild and publish that folder

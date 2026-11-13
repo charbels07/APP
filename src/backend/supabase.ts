@@ -16,7 +16,7 @@ import { Platform } from 'react-native';
 import type { Profile } from '../model/types';
 import type { Op } from '../lib/profileDiff';
 import type { AccessLevel, CollaboratorRole, PermissionSet } from '../lib/permissions';
-import { BackendError, type Backend, type CodeSent, type SignUpInput } from './Backend';
+import { BackendError, type Backend, type CodeSent, type SignInMethods, type SignUpInput } from './Backend';
 import { normEmail, normPhone } from './local';
 import {
   DEFAULT_PREFS,
@@ -228,7 +228,11 @@ export class SupabaseBackend implements Backend {
    * `storageKey`: where the login is kept on the device (tests use one per person).
    * `fetch`: how requests reach the internet (tests running outside the app bring their own).
    */
-  constructor(url: string, anonKey: string, opts: { storageKey?: string; fetch?: typeof fetch } = {}) {
+  constructor(
+    private url: string,
+    private anonKey: string,
+    private opts: { storageKey?: string; fetch?: typeof fetch } = {},
+  ) {
     this.sb = createClient(url, anonKey, {
       ...(opts.fetch ? { global: { fetch: opts.fetch } } : {}),
       auth: {
@@ -331,7 +335,23 @@ export class SupabaseBackend implements Backend {
     return this.me();
   }
 
+  private methods?: Promise<SignInMethods>;
+  /**
+   * Asks the server which sign-in methods are turned on (public information, no account needed).
+   * If the answer cannot be read, only e-mail is offered: a button must never lead to an error page.
+   */
+  signInMethods(): Promise<SignInMethods> {
+    return (this.methods ??= (this.opts.fetch ?? fetch)(`${this.url}/auth/v1/settings`, { headers: { apikey: this.anonKey } })
+      .then((r) => r.json() as Promise<{ external?: Record<string, boolean> }>)
+      .then((j) => ({ google: !!j.external?.google, apple: !!j.external?.apple, phone: !!j.external?.phone }))
+      .catch(() => {
+        this.methods = undefined;
+        return { google: false, apple: false, phone: false };
+      }));
+  }
+
   async signInWithProvider(provider: 'google' | 'apple', role: Role): Promise<Account> {
+    if (!(await this.signInMethods())[provider]) throw new BackendError('provider_off');
     await AsyncStorage.setItem(PENDING_ROLE, role);
     if (provider === 'apple' && Platform.OS === 'ios') {
       // Native "Sign in with Apple" sheet, then the token is exchanged with Supabase.

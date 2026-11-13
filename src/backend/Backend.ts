@@ -43,6 +43,12 @@ export class BackendError extends Error {
   }
 }
 
+export interface SignInMethods {
+  google: boolean;
+  apple: boolean;
+  phone: boolean;
+}
+
 export interface SignUpInput {
   role: Role;
   displayName: string;
@@ -71,6 +77,11 @@ export interface Backend {
   signIn(input: { email?: string; phone?: string; password: string }): Promise<Account>;
   /** Google or Apple. `role` is used when this creates the account. */
   signInWithProvider(provider: 'google' | 'apple', role: Role): Promise<Account>;
+  /**
+   * Which extra ways to sign in are turned on (e-mail + password always is). The screens only
+   * offer these. Absent = all of them (the demo server plays them all).
+   */
+  signInMethods?(): Promise<SignInMethods>;
   signOut(): Promise<void>;
   requestPasswordReset(target: { email?: string; phone?: string }): Promise<CodeSent>;
   resetPassword(target: { email?: string; phone?: string }, code: string, password: string): Promise<void>;

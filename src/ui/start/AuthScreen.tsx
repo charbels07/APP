@@ -2,10 +2,11 @@
  * Create an account / sign in / forgotten password.
  * Ways in: Apple, Google, email + password, phone + password. A new email or phone is
  * confirmed with a 6-digit code (in the demo the code is shown on screen instead of sent).
+ * Apple, Google and phone are only offered when the server has them turned on.
  */
 import React, { useEffect, useState } from 'react';
 import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
-import type { CodeSent } from '../../backend/Backend';
+import type { CodeSent, SignInMethods } from '../../backend/Backend';
 import type { Role } from '../../backend/types';
 import { errorText } from '../../i18n/account';
 import { useSession } from '../../state/Session';
@@ -41,6 +42,17 @@ export function AuthScreen({ mode: initialMode, role: initialRole }: { mode: Mod
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  // Nothing extra is offered until the server said what it accepts (the demo server plays them all).
+  const [ways, setWays] = useState<SignInMethods | null>(api.signInMethods ? null : { google: true, apple: true, phone: true });
+  useEffect(() => {
+    let alive = true;
+    api.signInMethods?.().then((w) => alive && setWays(w), () => {});
+    return () => {
+      alive = false;
+    };
+  }, [api]);
+  const showApple = !!ways?.apple && Platform.OS !== 'android';
+  const showGoogle = !!ways?.google;
 
   const target: Target = method === 'email' ? { email } : { phone };
   const run = async (fn: () => Promise<void>) => {
@@ -147,29 +159,31 @@ export function AuthScreen({ mode: initialMode, role: initialRole }: { mode: Mod
 
       {mode === 'forgot' ? (
         <T style={st.muted}>{s.resetIntro}</T>
-      ) : (
+      ) : showApple || showGoogle ? (
         <View style={{ gap: 10 }}>
-          {Platform.OS !== 'android' && <AppleButton label={s.continueApple} onPress={() => provider('apple')} disabled={busy} />}
-          <GoogleButton label={s.continueGoogle} onPress={() => provider('google')} disabled={busy} />
+          {showApple && <AppleButton label={s.continueApple} onPress={() => provider('apple')} disabled={busy} />}
+          {showGoogle && <GoogleButton label={s.continueGoogle} onPress={() => provider('google')} disabled={busy} />}
           <View style={[styles.orRow, rtl && st.rev]}>
             <View style={styles.orLine} />
             <T style={{ color: C.textMuted }}>{s.or}</T>
             <View style={styles.orLine} />
           </View>
         </View>
-      )}
+      ) : null}
 
-      <Segmented<Method>
-        value={method}
-        onChange={(m) => {
-          setMethod(m);
-          setError(null);
-        }}
-        options={[
-          { value: 'email', label: s.byEmail },
-          { value: 'phone', label: s.byPhone },
-        ]}
-      />
+      {ways?.phone && (
+        <Segmented<Method>
+          value={method}
+          onChange={(m) => {
+            setMethod(m);
+            setError(null);
+          }}
+          options={[
+            { value: 'email', label: s.byEmail },
+            { value: 'phone', label: s.byPhone },
+          ]}
+        />
+      )}
 
       {mode === 'signUp' && (
         <View style={{ gap: 4 }}>

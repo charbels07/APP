@@ -49,6 +49,7 @@
     "test": "jest",
     "typecheck": "tsc --noEmit",
     "export:web": "expo export -p web",
+    "build:web": "node scripts/check-web-env.js && EXPO_OFFLINE=1 expo export -p web",
     "fetch:picto": "bash scripts/fetch-pictogram-sources.sh",
     "build:picto": "node --experimental-strip-types scripts/build-pictograms.ts",
     "build:symbols": "node --experimental-strip-types scripts/build-default-symbols.ts",

@@ -254,6 +254,12 @@ the accounts the database lists as "team".
 To use it on the real server: run the new migration, then add yourself to the team
 (`supabase/README.md`, section 8).
 
+**Where the real app can be opened in a browser.** The web version is the same code turned into a
+folder of plain files (`npm run build:web`, output in `dist`: one **HTML** page, one **JavaScript**
+file and the pictogram packs). A hosting service (Cloudflare) can rebuild and publish that folder
+each time the code changes on GitHub; `wrangler.jsonc` is its settings file. The page talks straight
+to Supabase, so the hosting service stores no data and holds no secret.
+
 ## How everything is checked
 
 | Check | What it does |
@@ -269,8 +275,8 @@ To use it on the real server: run the new migration, then add yourself to the te
 - **Billing** (deferred).
 - **Back office**: built and tested on a local database, but **not yet run on the real Supabase
   project** (the new migration must be run there, and an account added to `admins`). It lives inside
-  the app, so opening it on a computer needs the app's web version (`npx expo start --web` for now;
-  no public web address yet). The team's accounts have a password only: turn on two-step sign-in
+  the app, so opening it on a computer needs the app's web version online (the repository is ready
+  for Cloudflare, see `supabase/README.md`; the first build there has not been seen working yet). The team's accounts have a password only: turn on two-step sign-in
   in Supabase before real certificates arrive. Certificates that are PDF files open in a new tab,
   pictures open in the page.
 - **Photos and recorded sounds stay on the device that made them**: words, boards and settings

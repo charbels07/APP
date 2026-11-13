@@ -107,6 +107,22 @@ cannot show the real one (the demo never talks to this server). It opens whereve
 runs: a tablet or phone build, or the web version (`npx expo start --web`, or the web export put
 online).
 
+### The web version online (Cloudflare)
+
+The repository is ready to be connected to Cloudflare (*Create an app → Connect GitHub*): each
+push then rebuilds and republishes the web version by itself.
+
+| Field in Cloudflare | Value |
+|---|---|
+| Project name | `empower-communication` (the same as `name` in `wrangler.jsonc`) |
+| Build command | `npm run build:web` |
+| Deploy command | `npx wrangler deploy` (the default) |
+| Build variables | `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` (the project's address and its *publishable* key: both are public, they ship inside every copy of the app) |
+
+`npm run build:web` refuses to build if the two variables are missing, because the result would
+quietly be the demo instead of the real app. `wrangler.jsonc` tells Cloudflare to serve the `dist`
+folder as plain files. Never put the service-role / secret key in these variables.
+
 To remove someone: `delete from public.admins where user_id = (select id from auth.users where email = '…');`
 To see who is in the team: `select u.email, a.added_at from public.admins a join auth.users u on u.id = a.user_id;`
 

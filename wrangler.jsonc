@@ -1,0 +1,10 @@
+// Web hosting on Cloudflare: the web version of the app (built into ./dist) served as plain files.
+// The name must stay the same as the project's name in the Cloudflare dashboard.
+{
+  "name": "empower-communication",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}

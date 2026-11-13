@@ -16,6 +16,7 @@ import { useApp } from '../../state/AppState';
 import type { BoardCtx } from '../../state/BoardContext';
 import { forgetLocal } from '../../state/profileSync';
 import { useSession } from '../../state/Session';
+import { WriteTeam } from '../admin/WriteTeam';
 import { Btn, Field, Section, Segmented, Toggle } from '../common';
 import { C } from '../theme';
 import { Note, ss } from './SettingsScreen';
@@ -45,6 +46,7 @@ export function AccountTab({ board, openTeam }: { board: BoardCtx; openTeam: () 
       </Section>
       <Privacy board={board} x={x} />
       <Preferences x={x} />
+      <WriteTeam />
       <Help x={x} />
     </>
   );

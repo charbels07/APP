@@ -1,6 +1,7 @@
 import { GUIDE, GUIDE_TRACK_INTRO } from '../data/guide';
 import { createDefaultProfile } from '../data/defaults';
 import { migrate } from '../lib/storage';
+import { adminStrings } from '../i18n/admin';
 import { dataStrings } from '../i18n/data';
 import { editStrings } from '../i18n/edit';
 import { onboardingStrings } from '../i18n/onboarding';
@@ -52,6 +53,8 @@ describe('in-app guide', () => {
         ob.presentationAccess, ob.plansTitle, t.lockTitle,
         // professionals
         pro.nav.users, pro.nav.create, pro.nav.library, pro.nav.learn, pro.sendForApproval, st.levels[1], st.levels[2], st.levels[3],
+        // the certificate must be accepted first; writing to the app's team
+        pro.nav.account, adminStrings(lang).writeTeam,
       ];
       for (const label of quoted) expect(text(lang)).toContain(label);
       // Removed things are no longer described.

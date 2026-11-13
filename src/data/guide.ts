@@ -514,6 +514,7 @@ const BASE: BaseChapter[] = [
         'Propositions : chaque changement proposé s’affiche avant / après ; approuvez, demandez une modification ou refusez. Changer la place d’un mot de base demande une confirmation.',
         'Historique : qui a changé quoi et quand (jamais ce que l’enfant a dit), avec Annuler.',
         'Compte → Appareils : relier une tablette avec un code à 6 chiffres, ou retirer un appareil perdu.',
+        'Compte → Écrire à l’équipe : une idée ou un problème à nous signaler (n’écrivez jamais le nom d’un enfant).',
       ],
       en: [
         'Settings (caregiver mode) → Team: the people who have access, their role and what they can do.',
@@ -521,6 +522,7 @@ const BASE: BaseChapter[] = [
         'Proposals: each suggested change shows before / after; approve, ask for a change or decline. Moving a core word asks for confirmation.',
         'History: who changed what and when (never what the child said), with Undo.',
         'Account → Devices: link a tablet with a 6-digit code, or remove a lost device.',
+        'Account → Write to the team: an idea or a problem to tell us about (never write a child’s name).',
       ],
     },
     action: 'settings',
@@ -537,6 +539,7 @@ const BASE: BaseChapter[] = [
         'Envoyer pour approbation : donnez un titre à la proposition et, si vous voulez, la raison. La famille voit l’avant / après et approuve, demande une modification ou refuse.',
         'Modifier directement : vos changements s’appliquent tout de suite et apparaissent dans l’historique. Utiliser : vous pouvez utiliser le tableau et modéliser, sans rien changer.',
         'Créer des supports : préparez un TLA, un planning, un D’abord / Ensuite, un minuteur ou des cartes à imprimer, pour un enfant ou comme modèle réutilisable, et gardez-les dans Ma bibliothèque. Centre d’apprentissage : un tableau de démonstration pour s’exercer, où rien n’est enregistré.',
+        'Avant de rejoindre l’équipe d’un enfant, votre certificat doit être accepté par notre équipe : envoyez-le depuis Compte et licence. Vous êtes prévenu dès qu’il est accepté ; en attendant, vous pouvez explorer votre espace et préparer des supports.',
       ],
       en: [
         'From your workspace, My AAC users opens a child’s board. Your rights are chosen by the family: Use, Contribute or Edit directly.',
@@ -544,6 +547,7 @@ const BASE: BaseChapter[] = [
         'Send for approval: give the proposal a title and, if you like, the reason. The family sees before / after and approves, asks for a change or declines.',
         'Edit directly: your changes apply at once and appear in the history. Use: you can use the board and model, without changing anything.',
         'Create materials: prepare an activity board, a schedule, a First / Then, a timer or picture cards, for one child or as a reusable template, and keep them in My library. Learning center: a demonstration board to practise, where nothing is saved.',
+        'Before joining a child’s team, your certificate must be accepted by our team: send it from Account & licence. You are told as soon as it is accepted; meanwhile you can explore your workspace and prepare materials.',
       ],
     },
   },
@@ -855,6 +859,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
       'الاقتراحات: يظهر كل تغيير مقترح قبل / بعد؛ وافق، أو اطلب تعديلاً، أو ارفض. تغيير مكان كلمة أساسية يحتاج إلى تأكيد.',
       'السجل: من غيّر ماذا ومتى (أبداً ما قاله الطفل)، مع «تراجع».',
       'الحساب ← الأجهزة: ربط جهاز لوحي برمز من 6 أرقام، أو سحب جهاز مفقود.',
+      'الحساب ← «الكتابة إلى الفريق»: فكرة أو مشكلة تريد إبلاغنا بها (لا تكتب اسم طفل أبداً).',
     ],
   },
   proposals: {
@@ -865,6 +870,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
       '«إرسال للموافقة»: أعطِ الاقتراح عنواناً، واذكر السبب إن شئت. ترى العائلة ما قبل وما بعد، فتوافق أو تطلب تعديلاً أو ترفض.',
       '«تعديل مباشر»: تُطبَّق تغييراتك فوراً وتظهر في السجلّ. «استعمال»: يمكنك استعمال اللوحة والنمذجة دون تغيير أي شيء.',
       '«إنشاء مواد»: حضّر لوحة نشاط أو جدولاً أو «أولاً / ثم» أو مؤقتاً أو بطاقات للطباعة، لطفل واحد أو كنموذج يُعاد استعماله، واحفظها في «مكتبتي». «مركز التعلّم»: لوحة تجريبية للتدرّب، لا يُحفظ فيها شيء.',
+      'قبل الانضمام إلى فريق طفل، يجب أن يقبل فريقنا شهادتك: أرسلها من «الحساب والترخيص». نخبرك فور قبولها؛ وفي الانتظار يمكنك استكشاف مساحتك وتحضير المواد.',
     ],
   },
   linkApp: {

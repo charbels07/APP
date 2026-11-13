@@ -77,7 +77,8 @@ d('real server (Supabase): a family, a therapist, a teacher, a stranger and a ta
   const marc = person('marc');
   const eve = person('eve');
   const tablet = person('tablet');
-  const everyone = [rita, sarah, marc, eve, tablet];
+  const nour = person('nour');
+  const everyone = [rita, sarah, marc, eve, tablet, nour];
   let profileId = '';
 
   afterAll(async () => {
@@ -106,8 +107,8 @@ d('real server (Supabase): a family, a therapist, a teacher, a stranger and a ta
   it('the parent invites a therapist who signs up afterwards and accepts', async () => {
     const inv = await rita.invite(profileId, { email: mail('sarah'), name: 'Sarah', role: 'therapist', ...preset('therapist') });
     expect(inv).toMatchObject({ status: 'pending', role: 'therapist', level: 2 });
-    await signUp(sarah, 'sarah', 'pro', 'Sarah K.');
-    expect((await sarah.currentAccount())?.role).toBe('pro');
+    // A family-type account here: a professional account first needs the back office (see "Nour" below).
+    await signUp(sarah, 'sarah', 'parent', 'Sarah K.');
     const { received } = await sarah.myInvitations();
     expect(received.map((i) => i.childName)).toEqual(['Adam']);
     expect((await sarah.listNotices()).some((n) => n.kind === 'invitation')).toBe(true);
@@ -148,7 +149,7 @@ d('real server (Supabase): a family, a therapist, a teacher, a stranger and a ta
 
   it('a teacher asks with the family code, is approved, then revoked', async () => {
     const familyCode = await rita.connectionCode(profileId);
-    await signUp(marc, 'marc', 'pro', 'Marc');
+    await signUp(marc, 'marc', 'parent', 'Marc');
     await expectCode(marc.requestConnection('WRONGCODE', { role: 'teacher', ...preset('teacher') }), 'code_invalid');
     const req = await marc.requestConnection(familyCode.toLowerCase(), { role: 'teacher', ...preset('teacher'), message: 'CE1' });
     expect(await marc.myAccess(profileId)).toBeNull();
@@ -172,16 +173,39 @@ d('real server (Supabase): a family, a therapist, a teacher, a stranger and a ta
     expect(await tablet.myAccess(profileId)).toBeNull();
   });
 
-  it('a professional submits a verification, then it is locked', async () => {
-    await expectCode(sarah.submitVerification(), 'incomplete');
-    await sarah.saveVerification({
-      fullName: 'Sarah Khoury',
-      country: 'France',
+  it('a professional account works only once the back office accepted the certificate', async () => {
+    await signUp(nour, 'nour', 'pro', 'Nour');
+    expect((await nour.currentAccount())?.role).toBe('pro');
+    const familyCode = await rita.connectionCode(profileId);
+    const ask = { role: 'therapist' as const, ...preset('therapist') };
+    await expectCode(nour.requestConnection(familyCode, ask), 'pro_not_verified');
+    await expectCode(nour.submitVerification(), 'incomplete');
+    await nour.saveVerification({
+      fullName: 'Nour Test',
+      country: 'Liban',
       profession: 'slp',
       documents: [{ name: 'diplome.pdf', kind: 'diploma', uploadedAt: Date.now(), ref: 'test' }],
     });
-    expect((await sarah.submitVerification()).status).toBe('pending');
-    await expectCode(sarah.saveVerification({ fullName: 'X', country: 'France', profession: 'slp', documents: [] }), 'verification_locked');
+    expect((await nour.submitVerification()).status).toBe('pending');
+    await expectCode(nour.saveVerification({ fullName: 'X', country: 'France', profession: 'slp', documents: [] }), 'verification_locked');
+    // Nobody outside the app's team reaches the back office.
+    expect(await nour.isAdmin()).toBe(false);
+    await expectCode(nour.adminVerifications(), 'forbidden');
+    await expectCode(rita.adminOverview(), 'forbidden');
+    await expectCode(rita.adminDecideVerification((await nour.currentAccount())!.id, 'verified'), 'forbidden');
+    await rita.sendFeedback({ kind: 'other', text: 'Message de test automatique', platform: 'test', appVersion: '0' });
+    await expectCode(rita.adminFeedback(), 'forbidden');
+    // With a team account given in the environment (LIVE_ADMIN_EMAIL / LIVE_ADMIN_PASSWORD): the real decision.
+    const { LIVE_ADMIN_EMAIL: email, LIVE_ADMIN_PASSWORD: password } = process.env;
+    if (email && password) {
+      const team = person('team');
+      await team.signIn({ email, password });
+      const req = (await team.adminVerifications()).find((v) => v.email === mail('nour'))!;
+      await team.adminDecideVerification(req.userId, 'verified');
+      expect((await nour.requestConnection(familyCode, ask)).status).toBe('pending');
+      expect((await team.adminOverview()).accounts.parents).toBeGreaterThan(0);
+      await team.signOut();
+    }
   });
 
   it('devices report their sync; the change history can be undone', async () => {

@@ -11,7 +11,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Profile } from '../model/types';
 import type { Op } from '../lib/profileDiff';
 import { type AccessLevel, type CollaboratorRole, type PermissionSet, preset } from '../lib/permissions';
-import { saveMedia } from '../lib/media';
+import { deleteMedia, mediaUri, saveMedia } from '../lib/media';
+import { exampleDocument, exampleOverview, exampleRequests } from '../lib/demoBackOffice';
 import { demoObservations, demoUsage } from '../lib/demoUsage';
 import { limitToConsent } from '../lib/usageConsent';
 import { BackendError, type Backend, type CodeSent, type SignUpInput } from './Backend';
@@ -21,7 +22,12 @@ import {
   type UsageDay,
   type Account,
   type AccountPrefs,
+  type AdminLogEntry,
+  type AdminOverview,
+  type AdminVerification,
   type ChildRecord,
+  type Feedback,
+  type FeedbackKind,
   type Device,
   type HistoryEntry,
   type Intake,
@@ -72,6 +78,12 @@ interface DB {
   resources: Resource[];
   usage?: { profileId: string; data: UsageDay }[];
   observations?: Observation[];
+  /** Accounts of the app's own team (back office). */
+  admins?: string[];
+  adminLog?: AdminLogEntry[];
+  feedback?: (Feedback & { userId: string })[];
+  /** The example requests of the back-office demonstration were added. */
+  backOfficeSeeded?: boolean;
 }
 const emptyDb = (): DB => ({
   accounts: {},
@@ -181,7 +193,21 @@ export class LocalBackend implements Backend {
     if (p.ownerId === userId) return { owner: true, role: 'owner' as const, level: 3 as AccessLevel, perms: preset('parent').perms };
     const m = db.members.find((x) => x.profileId === profileId && x.userId === userId && x.status === 'active');
     if (!m || (m.expiresAt && m.expiresAt < Date.now())) return null;
+    // A professional whose acceptance was withdrawn: access suspended (it comes back if accepted again).
+    if (!LocalBackend.cleared(db, userId)) return null;
     return { owner: false, role: m.role, level: m.level, perms: m.perms };
+  }
+  /** A family account, or a professional whose certificate was accepted (same rule as the real server). */
+  private static cleared(db: DB, userId: string): boolean {
+    return db.accounts[userId]?.role !== 'pro' || db.verifications[userId]?.status === 'verified';
+  }
+  private static requireAdmin(db: DB, me: StoredAccount | null): StoredAccount {
+    const a = LocalBackend.need(me);
+    if (!(db.admins ?? []).includes(a.id)) throw new BackendError('forbidden');
+    return a;
+  }
+  private static adminNote(db: DB, me: StoredAccount, action: string, targetName?: string, detail?: string) {
+    (db.adminLog ??= []).unshift({ id: uid('l'), adminName: memberName(me), action, targetName, detail, createdAt: Date.now() });
   }
   private static managers(db: DB, profileId: string): string[] {
     const p = db.profiles[profileId];
@@ -383,6 +409,8 @@ export class LocalBackend implements Backend {
       db.usage = (db.usage ?? []).filter((u) => !owned.has(u.profileId));
       db.observations = (db.observations ?? []).filter((o) => !owned.has(o.profileId));
       delete db.verifications[me.id];
+      db.admins = (db.admins ?? []).filter((id) => id !== me.id);
+      db.feedback = (db.feedback ?? []).filter((f) => f.userId !== me.id);
       delete db.accounts[me.id];
     });
     await store.remove(SESSION_KEY);
@@ -551,6 +579,8 @@ export class LocalBackend implements Backend {
   }
 
   private static join(db: DB, inv: Invitation, userId: string, grant?: { level: AccessLevel; perms: PermissionSet }) {
+    // A professional joins a child's team only once the app's team accepted the certificate.
+    if (!LocalBackend.cleared(db, userId)) throw new BackendError('pro_not_verified');
     const acc = db.accounts[userId];
     db.members = db.members.filter((x) => !(x.profileId === inv.profileId && x.userId === userId));
     db.members.push({
@@ -638,6 +668,7 @@ export class LocalBackend implements Backend {
       const p = Object.values(db.profiles).find((x) => x.connectionCode && x.connectionCode === code.trim().toUpperCase());
       if (!p) throw new BackendError('code_invalid');
       if (LocalBackend.access(db, p.id, me.id)) throw new BackendError('already_member');
+      if (!LocalBackend.cleared(db, me.id)) throw new BackendError('pro_not_verified');
       const inv: Invitation = {
         id: uid('i'),
         direction: 'request',
@@ -791,7 +822,7 @@ export class LocalBackend implements Backend {
     });
   }
 
-  async registerDevice(profileId: string, input: { id: string; name: string; kind: Device['kind']; platform: string }): Promise<Device> {
+  async registerDevice(profileId: string, input: { id: string; name: string; kind: Device['kind']; platform: string; appVersion?: string }): Promise<Device> {
     return this.tx((db, m) => {
       const me = LocalBackend.need(m);
       LocalBackend.requireAccess(db, profileId, me);
@@ -800,7 +831,7 @@ export class LocalBackend implements Backend {
       if (!d) {
         d = { ...input, profileId, userId: me.id, pendingChanges: 0, revoked: false, createdAt: Date.now() };
         db.devices.push(d);
-      } else Object.assign(d, { name: input.name, kind: input.kind, platform: input.platform });
+      } else Object.assign(d, { name: input.name, kind: input.kind, platform: input.platform, appVersion: input.appVersion });
       return clone(d);
     });
   }
@@ -911,6 +942,178 @@ export class LocalBackend implements Backend {
       const v = db.verifications[LocalBackend.need(m).id];
       if (v) Object.assign(v, { status, note, decidedAt: Date.now() });
     });
+  }
+
+  // ── Messages to the app's team ──
+
+  async sendFeedback(input: { kind: FeedbackKind; text: string; platform: string; appVersion: string }): Promise<void> {
+    await this.tx((db, m) => {
+      const me = LocalBackend.need(m);
+      if (me.provider === 'device') throw new BackendError('forbidden');
+      const text = input.text.trim();
+      if (text.length < 3) throw new BackendError('incomplete');
+      const mine = (db.feedback ?? []).filter((f) => f.userId === me.id && f.createdAt > Date.now() - 86400000);
+      if (mine.length >= 10) throw new BackendError('too_many');
+      (db.feedback ??= []).push({
+        id: uid('f'),
+        userId: me.id,
+        kind: input.kind,
+        text: text.slice(0, 4000),
+        platform: input.platform,
+        appVersion: input.appVersion,
+        status: 'new',
+        createdAt: Date.now(),
+        fromName: memberName(me),
+        fromRole: me.role,
+        fromEmail: me.email,
+      });
+    });
+  }
+
+  // ── Back office (the app's own team) ──
+
+  async isAdmin(): Promise<boolean> {
+    return this.tx((db, me) => !!me && (db.admins ?? []).includes(me.id));
+  }
+
+  async adminVerifications(): Promise<AdminVerification[]> {
+    return this.tx((db, m) => {
+      LocalBackend.requireAdmin(db, m);
+      const list = Object.values(db.verifications)
+        .filter((v) => v.status !== 'draft')
+        .map((v): AdminVerification => {
+          const a = db.accounts[v.userId];
+          return {
+            ...clone(v),
+            email: a?.email,
+            phone: a?.phone,
+            accountName: a?.displayName ?? '',
+            accountCreatedAt: a?.createdAt ?? 0,
+            children: db.members.filter((x) => x.userId === v.userId && x.status === 'active').length,
+          };
+        });
+      const waiting = (v: AdminVerification) => (v.status === 'pending' ? 0 : 1);
+      return list.sort((a, b) => waiting(a) - waiting(b) || (b.submittedAt ?? 0) - (a.submittedAt ?? 0));
+    });
+  }
+
+  async adminDecideVerification(userId: string, status: 'verified' | 'more_info' | 'rejected', note?: string): Promise<void> {
+    const gone = await this.tx((db, m) => {
+      const me = LocalBackend.requireAdmin(db, m);
+      const n = note?.trim() || undefined;
+      if (status !== 'verified' && !n) throw new BackendError('note_required');
+      const v = db.verifications[userId];
+      if (!v || v.status === 'draft') throw new BackendError('not_found');
+      // The identity document only served to check the certificate: forgotten once decided.
+      const ids = status === 'more_info' ? [] : v.documents.filter((d) => d.kind === 'id');
+      if (ids.length) v.documents = v.documents.filter((d) => d.kind !== 'id');
+      Object.assign(v, { status, note: n, decidedAt: Date.now() });
+      const lang = db.accounts[userId]?.prefs.uiLang ?? 'fr';
+      const text = {
+        verified: {
+          fr: 'Votre certificat a été accepté : vous pouvez maintenant rejoindre l’équipe d’un enfant.',
+          en: 'Your certificate was accepted: you can now join a child’s team.',
+          ar: 'تم قبول شهادتك: يمكنك الآن الانضمام إلى فريق طفل.',
+        },
+        more_info: {
+          fr: `Vérification : il nous manque une information. ${n}`,
+          en: `Verification: we need one more thing. ${n}`,
+          ar: `التحقق: نحتاج إلى معلومة إضافية. ${n}`,
+        },
+        rejected: {
+          fr: `Votre demande de vérification n’a pas été acceptée. ${n}`,
+          en: `Your verification request was not accepted. ${n}`,
+          ar: `لم يتم قبول طلب التحقق. ${n}`,
+        },
+      }[status][lang];
+      LocalBackend.notify(db, userId, 'verification', text);
+      LocalBackend.adminNote(db, me, status, v.fullName, n);
+      return ids.map((d) => d.ref);
+    });
+    for (const ref of gone) if (!ref.startsWith('example:')) await deleteMedia(ref).catch(() => {});
+  }
+
+  async adminDocumentUrl(userId: string, ref: string): Promise<string> {
+    const doc = await this.tx((db, m) => {
+      const me = LocalBackend.requireAdmin(db, m);
+      const v = db.verifications[userId];
+      const d = v?.documents.find((x) => x.ref === ref);
+      if (!v || !d) throw new BackendError('not_found');
+      LocalBackend.adminNote(db, me, 'open_document', v.fullName, `${d.kind} · ${d.name}`);
+      return { ...d, owner: v.fullName };
+    });
+    if (ref.startsWith('example:')) return exampleDocument(doc.kind, doc.owner);
+    const uri = await mediaUri(ref);
+    if (!uri) throw new BackendError('not_found');
+    return uri;
+  }
+
+  /** The demo has no real users: example figures, with this device's own requests and messages. */
+  async adminOverview(): Promise<AdminOverview> {
+    return this.tx((db, m) => {
+      LocalBackend.requireAdmin(db, m);
+      const o = exampleOverview(Date.now());
+      const status: Record<string, number> = {};
+      for (const v of Object.values(db.verifications)) status[v.status] = (status[v.status] ?? 0) + 1;
+      o.pros.status = { ...o.pros.status, pending: status.pending ?? 0, more_info: status.more_info ?? 0 };
+      const fb = db.feedback ?? [];
+      o.feedback = { ...o.feedback, new: fb.filter((f) => f.status === 'new').length };
+      return o;
+    });
+  }
+
+  async adminLog(): Promise<AdminLogEntry[]> {
+    return this.tx((db, m) => {
+      LocalBackend.requireAdmin(db, m);
+      return clone((db.adminLog ?? []).slice(0, 200));
+    });
+  }
+
+  async adminFeedback(): Promise<Feedback[]> {
+    return this.tx((db, m) => {
+      LocalBackend.requireAdmin(db, m);
+      const list = clone(db.feedback ?? []).map(({ userId: _u, ...f }) => f);
+      return list.sort((a, b) => (a.status === 'new' ? 0 : 1) - (b.status === 'new' ? 0 : 1) || b.createdAt - a.createdAt);
+    });
+  }
+
+  async adminSetFeedback(id: string, status: 'new' | 'done'): Promise<void> {
+    await this.tx((db, m) => {
+      LocalBackend.requireAdmin(db, m);
+      const f = (db.feedback ?? []).find((x) => x.id === id);
+      if (!f) throw new BackendError('not_found');
+      f.status = status;
+    });
+  }
+
+  /**
+   * Demonstration: signs in as a member of the app's team. The first time, a few example
+   * professionals (invented people, example documents) are waiting, so the page is not empty.
+   * A request really sent on this device by a professional account appears there too.
+   */
+  async demoOpenBackOffice(): Promise<Account> {
+    const acc = await this.tx((db) => {
+      const email = 'equipe@demo.local';
+      let a = LocalBackend.findAccount(db, { email });
+      if (!a) {
+        a = { id: uid('u'), role: 'parent', displayName: 'Équipe (démo)', email, provider: 'email', verified: true, createdAt: Date.now(), prefs: clone(DEFAULT_PREFS), salt: uid() };
+        db.accounts[a.id] = a;
+      }
+      db.admins = [...new Set([...(db.admins ?? []), a.id])];
+      if (!db.backOfficeSeeded) {
+        db.backOfficeSeeded = true;
+        const ex = exampleRequests(Date.now());
+        for (const r of ex.people) {
+          const id = uid('u');
+          db.accounts[id] = { id, role: 'pro', displayName: r.fullName, email: r.email, provider: 'email', verified: true, createdAt: r.createdAt, prefs: clone(DEFAULT_PREFS), salt: uid() };
+          db.verifications[id] = { ...r.request, userId: id };
+        }
+        for (const f of ex.messages) (db.feedback ??= []).push({ ...f, id: uid('f'), userId: a.id });
+      }
+      return a;
+    });
+    await store.set(SESSION_KEY, acc.id);
+    return LocalBackend.public(acc);
   }
 
   // ── Notifications ──

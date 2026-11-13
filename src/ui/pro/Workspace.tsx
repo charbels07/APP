@@ -17,6 +17,7 @@ import { EDITED_ON_BOARD } from '../../lib/resources';
 import type { Profile } from '../../model/types';
 import type { Overlay } from '../../state/AppState';
 import { useSession } from '../../state/Session';
+import { WriteTeam } from '../admin/WriteTeam';
 import { Btn, Field, Section, Segmented } from '../common';
 import { PictoCredit } from '../PictoCredits';
 import { DataDashboard } from '../data/DataDashboard';
@@ -692,6 +693,7 @@ function ProAccount({ p, verification, users, onVerify }: { p: ProStrings; verif
       <Section title={x.subscription}>
         <Note text={x.subscriptionLater} />
       </Section>
+      <WriteTeam />
       <DeleteAccount x={x} />
       <PictoCredit lang={uiLang} />
     </>

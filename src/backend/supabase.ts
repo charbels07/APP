@@ -39,6 +39,11 @@ import {
   type Role,
   type SaveResult,
   type Verification,
+  type AdminLogEntry,
+  type AdminOverview,
+  type AdminVerification,
+  type Feedback,
+  type FeedbackKind,
 } from './types';
 
 type Row = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -149,6 +154,7 @@ const toDevice = (r: Row): Device => ({
   name: r.name,
   kind: r.kind,
   platform: r.platform,
+  appVersion: r.app_version || undefined,
   lastSyncedAt: ms(r.last_synced_at),
   lastBackupAt: ms(r.last_backup_at),
   pendingChanges: r.pending_changes,
@@ -565,10 +571,9 @@ export class SupabaseBackend implements Backend {
     return (await data<Row[]>(this.sb.from('devices').select('*').eq('profile_id', profileId))).map(toDevice);
   }
 
-  async registerDevice(profileId: string, input: { id: string; name: string; kind: Device['kind']; platform: string }): Promise<Device> {
-    return toDevice(
-      await data<Row>(this.sb.rpc('register_device', { p_id: profileId, p_dev: input.id, p_name: input.name, p_kind: input.kind, p_platform: input.platform })),
-    );
+  async registerDevice(profileId: string, input: { id: string; name: string; kind: Device['kind']; platform: string; appVersion?: string }): Promise<Device> {
+    const args = { p_id: profileId, p_dev: input.id, p_name: input.name, p_kind: input.kind, p_platform: input.platform };
+    return toDevice(await data<Row>(this.sb.rpc('register_device', { ...args, p_version: input.appVersion ?? '' })));
   }
 
   async reportSync(profileId: string, deviceId: string, info: { synced?: boolean; backedUp?: boolean; pendingChanges?: number }): Promise<void> {
@@ -630,6 +635,86 @@ export class SupabaseBackend implements Backend {
 
   async submitVerification(): Promise<Verification> {
     return toVerification(await data<Row>(this.sb.rpc('submit_verification')));
+  }
+
+  // ── Messages to the app's team ──
+
+  async sendFeedback(input: { kind: FeedbackKind; text: string; platform: string; appVersion: string }): Promise<void> {
+    await data(this.sb.rpc('send_feedback', { p_kind: input.kind, p_text: input.text, p_platform: input.platform, p_version: input.appVersion }));
+  }
+
+  // ── Back office (every function checks, in the database, that the account is in the app's team) ──
+
+  async isAdmin(): Promise<boolean> {
+    return !!(await data<boolean>(this.sb.rpc('is_admin')));
+  }
+
+  async adminVerifications(): Promise<AdminVerification[]> {
+    return (await data<Row[]>(this.sb.rpc('admin_verifications'))).map((r) => ({
+      ...toVerification(r),
+      email: r.email ?? undefined,
+      phone: r.phone ?? undefined,
+      accountName: r.account_name ?? '',
+      accountCreatedAt: ms(r.account_created_at) ?? 0,
+      children: r.children ?? 0,
+    }));
+  }
+
+  async adminDecideVerification(userId: string, status: 'verified' | 'more_info' | 'rejected', note?: string): Promise<void> {
+    // Checked here too, so that no file is deleted for a decision the database would then refuse.
+    if (status !== 'verified' && !note?.trim()) throw new BackendError('note_required');
+    if (status !== 'more_info') {
+      // The identity document is deleted as soon as the request is accepted or refused.
+      const v = (await this.adminVerifications()).find((x) => x.userId === userId);
+      const ids = (v?.documents ?? []).filter((d) => d.kind === 'id' && d.ref.startsWith(`${userId}/`)).map((d) => d.ref);
+      if (ids.length) {
+        const { error } = await this.sb.storage.from('verification-docs').remove(ids);
+        if (error) fail(error);
+      }
+    }
+    await data(this.sb.rpc('admin_decide_verification', { p_user: userId, p_status: status, p_note: note ?? null }));
+  }
+
+  async adminDocumentUrl(userId: string, ref: string): Promise<string> {
+    // Writes who opened which document, then asks for an address that stops working after 5 minutes.
+    const path = await data<string>(this.sb.rpc('admin_open_document', { p_user: userId, p_ref: ref }));
+    const { data: d, error } = await this.sb.storage.from('verification-docs').createSignedUrl(path, 300);
+    if (error || !d) fail(error);
+    return d.signedUrl;
+  }
+
+  async adminOverview(): Promise<AdminOverview> {
+    return data<AdminOverview>(this.sb.rpc('admin_overview'));
+  }
+
+  async adminLog(): Promise<AdminLogEntry[]> {
+    return (await data<Row[]>(this.sb.rpc('admin_history'))).map((r) => ({
+      id: r.id,
+      adminName: r.admin_name,
+      action: r.action,
+      targetName: r.target_name ?? undefined,
+      detail: r.detail ?? undefined,
+      createdAt: ms(r.created_at) ?? 0,
+    }));
+  }
+
+  async adminFeedback(): Promise<Feedback[]> {
+    return (await data<Row[]>(this.sb.rpc('admin_feedback'))).map((r) => ({
+      id: r.id,
+      kind: r.kind,
+      text: r.text,
+      platform: r.platform,
+      appVersion: r.app_version,
+      status: r.status,
+      createdAt: ms(r.created_at) ?? 0,
+      fromName: r.from_name,
+      fromRole: r.from_role,
+      fromEmail: r.from_email ?? undefined,
+    }));
+  }
+
+  async adminSetFeedback(id: string, status: 'new' | 'done'): Promise<void> {
+    await data(this.sb.rpc('admin_set_feedback', { p_id: id, p_status: status }));
   }
 
   // ── Communication data (Suivi) ──

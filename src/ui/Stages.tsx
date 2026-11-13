@@ -6,6 +6,7 @@ import { ActivityIndicator, AppState as RNAppState, Platform, StyleSheet, Text, 
 import { BackendError } from '../backend/Backend';
 import { createDefaultProfile } from '../data/defaults';
 import { errorText } from '../i18n/account';
+import { APP_VERSION } from '../lib/appVersion';
 import { guardLeaving } from '../lib/childLock';
 import { invertOps } from '../lib/profileDiff';
 import type { Profile } from '../model/types';
@@ -16,6 +17,7 @@ import { UsageTracker } from '../state/usageTracker';
 import { useSession } from '../state/Session';
 import { Btn } from './common';
 import { Icon } from './Icon';
+import { BackOffice } from './admin/BackOffice';
 import { Onboarding } from './onboarding/Onboarding';
 import { ProHome } from './pro/ProHome';
 import { Root } from './Root';
@@ -62,6 +64,8 @@ function Current() {
       return <BoardStage key={stage.profileId} profileId={stage.profileId} />;
     case 'pro':
       return <ProHome />;
+    case 'admin':
+      return <BackOffice />;
   }
 }
 
@@ -130,7 +134,7 @@ function BoardStage({ profileId }: { profileId: string }) {
         void api.myAccess(profileId).then((a) => alive && setAccess(a)).catch(() => {});
         // This device appears in "Devices and sync"; a removed device is signed out.
         void api
-          .registerDevice(profileId, { id: sess.deviceId, name: deviceName(), kind: 'companion', platform: Platform.OS })
+          .registerDevice(profileId, { id: sess.deviceId, name: deviceName(), kind: 'companion', platform: Platform.OS, appVersion: APP_VERSION })
           .catch((e) => {
             if (e instanceof BackendError && e.code === 'device_revoked') void sess.signOut();
           });

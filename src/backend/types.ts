@@ -159,6 +159,8 @@ export interface Device {
   name: string;
   kind: 'primary' | 'secondary' | 'companion';
   platform: string;
+  /** Version of the app on this device (so the team knows which versions are still in use). */
+  appVersion?: string;
   lastSyncedAt?: number;
   lastBackupAt?: number;
   /** Local changes not sent to the server yet. */
@@ -190,7 +192,130 @@ export interface Verification {
   decidedAt?: number;
 }
 
-export type NoticeKind = 'invitation' | 'request' | 'proposal' | 'decision' | 'revision' | 'access' | 'sync' | 'share';
+/** A professional's request as the app's team sees it in the back office. */
+export interface AdminVerification extends Verification {
+  email?: string;
+  phone?: string;
+  accountName: string;
+  accountCreatedAt: number;
+  /** Children whose team this professional is in. */
+  children: number;
+}
+
+/** What the app's team did in the back office (decisions, certificates opened). */
+export interface AdminLogEntry {
+  id: string;
+  adminName: string;
+  action: 'verified' | 'more_info' | 'rejected' | 'open_document' | string;
+  targetName?: string;
+  detail?: string;
+  createdAt: number;
+}
+
+export type FeedbackKind = 'problem' | 'idea' | 'other';
+/** A message someone sent to the app's team from the app. */
+export interface Feedback {
+  id: string;
+  kind: FeedbackKind;
+  text: string;
+  platform: string;
+  appVersion: string;
+  status: 'new' | 'done';
+  createdAt: number;
+  fromName: string;
+  fromRole: string;
+  fromEmail?: string;
+}
+
+type Counts = Record<string, number>;
+/**
+ * Every figure of the back office. Counts only: no name, no word, no sentence.
+ * `usage` and `setup` come from the children's profiles: only the families who share anonymous
+ * statistics, and only from `minimum` children up (below that, just the number of children).
+ */
+export interface AdminOverview {
+  at: string;
+  /** Demo server: example figures, not real ones. */
+  example?: boolean;
+  accounts: {
+    parents: number;
+    pros: number;
+    unconfirmed: number;
+    new7: number;
+    new30: number;
+    /** Language of the menus chosen by each adult. */
+    languages: Counts;
+    weeks: { week: string; parents: number; pros: number }[];
+  };
+  families: {
+    parents: number;
+    withChild: number;
+    children: number;
+    withTablet: number;
+    withTeam: number;
+    used7: number;
+    used30: number;
+    edited30: number;
+    /** What the families let the app record: off / usage / vocabulary / language. */
+    collection: Counts;
+    sharing: number;
+  };
+  devices: { total: number; seen7: number; seen30: number; waiting: number; platforms: Counts; versions: Counts };
+  pros: {
+    accounts: number;
+    status: Counts;
+    professions: Counts;
+    countries: Counts;
+    hoursToDecide: number | null;
+    oldestWaitingDays: number | null;
+    working: number;
+    childrenFollowed: number;
+  };
+  teamwork: {
+    members: Counts;
+    invitations: Counts;
+    requests: Counts;
+    proposals: Counts;
+    materials: Counts;
+    shares: number;
+    observations: number;
+    changes30: number;
+  };
+  ai: { calls30: number; users30: number; mostPerPersonDay: number; days: { day: string; calls: number; users: number }[] };
+  feedback: { new: number; total: number; kinds: Counts };
+  usage: {
+    sharing: number;
+    children: number;
+    minimum: number;
+    enough: boolean;
+    days: number;
+    childDays?: number;
+    daysPerWeek?: number;
+    /** Averages per child and per day of use. */
+    minutes?: number;
+    selections?: number;
+    utterances?: number;
+    words?: number;
+    searches?: number;
+    boardsMade?: number;
+    errors?: number;
+    offlineShare?: number | null;
+    lengths?: { one: number; two: number; more: number };
+    places?: Counts;
+    hours?: number[];
+    platforms?: Counts;
+    weeks?: { week: string; children: number; minutes: number | null; selections: number | null }[];
+    ages?: { band: string; children: number; minutes: number; selections: number; longer: number | null }[];
+  };
+  setup: {
+    children: number;
+    minimum: number;
+    choices?: Record<string, Counts>;
+    averages?: { activityBoards: number; ownWords: number; changedWords: number; schedules: number; demonstrations: number };
+  };
+}
+
+export type NoticeKind = 'invitation' | 'request' | 'proposal' | 'decision' | 'revision' | 'access' | 'sync' | 'share' | 'verification';
 
 /** An in-app notification. Never contains what the child said. */
 export interface Notice {

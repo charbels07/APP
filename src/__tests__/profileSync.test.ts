@@ -84,6 +84,13 @@ describe('profile sync: device copy + server', () => {
     await api.invite(id, { email: 'ortho@example.com', role: 'therapist', ...preset('therapist') });
     await api.signOut();
     await signUp('ortho@example.com', 'pro');
+    // A professional joins a team once the app's team accepted the certificate (back office).
+    await api.saveVerification({ fullName: 'Ortho', country: 'Liban', profession: 'slp', documents: [{ name: 'd.pdf', kind: 'diploma', uploadedAt: 1, ref: 'x' }] });
+    await api.submitVerification();
+    await api.demoOpenBackOffice();
+    const req = (await api.adminVerifications()).find((v) => v.email === 'ortho@example.com')!;
+    await api.adminDecideVerification(req.userId, 'verified');
+    await api.signIn({ email: 'ortho@example.com', password: 'secret123' });
     const [inv] = (await api.myInvitations()).received;
     await api.respondInvitation(inv.id, true);
     await ProfileSync.open(api, id);

@@ -4,6 +4,7 @@
  * Journey: welcome → preview of the board → "who are you?" → sign-in →
  *   parent: the child's profile (questionnaire, set-up) → the board
  *   professional: verification → workspace
+ *   the app's team: the back office (they can open the app as usual from there)
  * A tablet linked with a code goes straight to its child's board.
  *
  * What is remembered on this device (AsyncStorage): the interface language, the last account
@@ -30,7 +31,9 @@ export type Stage =
   | { name: 'invitations' }
   | { name: 'onboarding' }
   | { name: 'board'; profileId: string }
-  | { name: 'pro' };
+  | { name: 'pro' }
+  /** The app's own team: certificates to accept, figures, messages (src/ui/admin). */
+  | { name: 'admin' };
 
 interface DevicePrefs {
   uiLang: UiLang;
@@ -59,8 +62,11 @@ interface SessionCtx {
   deviceId: string;
   /** Started without internet: working from what this device remembers. */
   offline: boolean;
-  /** After signing in, signing up or linking a tablet: go to the right place. */
-  enter: (opts?: { profileId?: string }) => Promise<void>;
+  /** After signing in, signing up or linking a tablet: go to the right place.
+   *  `app`: a member of the app's team opens the app itself instead of the back office. */
+  enter: (opts?: { profileId?: string; app?: boolean }) => Promise<void>;
+  /** This account belongs to the app's team (the server decides; this only shows the way in). */
+  isAdmin: boolean;
   signOut: () => Promise<void>;
   /** Reads the account again (after changing the name, for example). */
   refreshAccount: () => Promise<void>;
@@ -114,6 +120,7 @@ export function SessionProvider({ children, api = backend() }: { children: React
   const [account, setAccount] = useState<Account | null>(null);
   const [stage, setStage] = useState<Stage>({ name: 'loading' });
   const [offline, setOffline] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const saveDevice = useCallback((patch: Partial<DevicePrefs>) => {
     const next = { ...(deviceRef.current as DevicePrefs), ...patch };
@@ -124,7 +131,11 @@ export function SessionProvider({ children, api = backend() }: { children: React
 
   /** Where a signed-in person lands. */
   const route = useCallback(
-    async (a: Account, opts: { profileId?: string } = {}) => {
+    async (a: Account, opts: { profileId?: string; app?: boolean } = {}) => {
+      // The app's team lands in the back office (a tablet linked with a code is never in the team).
+      const admin = a.provider !== 'device' && (await api.isAdmin().catch(() => false));
+      setIsAdmin(admin);
+      if (admin && !opts.app && !opts.profileId) return setStage({ name: 'admin' });
       if (a.role === 'pro') return setStage({ name: 'pro' });
       if (opts.profileId) return setStage({ name: 'board', profileId: opts.profileId });
       try {
@@ -168,7 +179,7 @@ export function SessionProvider({ children, api = backend() }: { children: React
   }, [api, route, saveDevice]);
 
   const enter = useCallback(
-    async (opts: { profileId?: string } = {}) => {
+    async (opts: { profileId?: string; app?: boolean } = {}) => {
       const a = await api.currentAccount();
       if (!a) throw new BackendError('not_signed_in');
       // The language chosen before signing in becomes the account's, unless it already had one.
@@ -193,6 +204,7 @@ export function SessionProvider({ children, api = backend() }: { children: React
     for (const id of deviceRef.current?.localProfiles ?? []) await forgetLocal(id);
     saveDevice({ account: undefined, localProfiles: [] });
     setAccount(null);
+    setIsAdmin(false);
     setStage({ name: 'welcome' });
   }, [api, saveDevice]);
 
@@ -256,6 +268,7 @@ export function SessionProvider({ children, api = backend() }: { children: React
       deviceId: device?.deviceId ?? 'dev',
       offline,
       enter,
+      isAdmin,
       signOut,
       refreshAccount,
       updatePrefs,
@@ -264,7 +277,7 @@ export function SessionProvider({ children, api = backend() }: { children: React
       childLock: !!device?.childLock,
       setChildLock,
     }),
-    [api, stage, account, uiLang, setUiLang, device?.deviceId, offline, enter, signOut, refreshAccount, updatePrefs, openProfile, rememberLocal, device?.childLock, setChildLock],
+    [api, stage, account, uiLang, setUiLang, device?.deviceId, offline, enter, isAdmin, signOut, refreshAccount, updatePrefs, openProfile, rememberLocal, device?.childLock, setChildLock],
   );
 
   return (

@@ -76,10 +76,45 @@ Only the topic, the photo or the drawing is sent — never the child's name, wor
 
 ## 7. Communication data (Suivi) for the app's team
 
-Run `…_usage_data.sql`. Families choose what is recorded (Settings → Suivi); professionals see it
+Run `…_usage_data.sql`. (The back office, section 8, now shows these figures as charts.) Families choose what is recorded (Settings → Suivi); professionals see it
 only with "See the progress data". For our own statistics, open **Table Editor → research_usage**
 (or `select * from research_usage` in the SQL Editor): anonymous daily numbers, only for families
 who agreed to share anonymous statistics. The app itself cannot read this view.
+
+## 8. The back office (certificates, figures, messages)
+
+The back office is a page of the app that only the app's team can open. Who is in the team is a
+table, `admins`, that nobody can read or change from the app.
+
+1. Run `…_backoffice.sql` in the SQL Editor.
+2. Create your account in the app like anybody else (sign up, confirm the e-mail).
+3. Add yourself to the team: SQL Editor → run this with your own address:
+
+   ```sql
+   insert into public.admins (user_id, note)
+   select id, 'founder' from auth.users where email = 'you@example.com';
+   ```
+
+   It must answer `INSERT 0 1`. `INSERT 0 0` means no account has that address yet.
+4. Sign in to the app with that account: it opens on the back office. *Open the app* goes to the
+   app itself; *Account → Open the back office* comes back.
+
+To remove someone: `delete from public.admins where user_id = (select id from auth.users where email = '…');`
+To see who is in the team: `select u.email, a.added_at from public.admins a join auth.users u on u.id = a.user_id;`
+
+What changes for professionals: an account created as "professional" can join a child's team or ask a
+family for a connection only once its request was **accepted** in the back office. Accepting or
+refusing deletes the identity document (the therapist was promised so). Every decision and every
+certificate opened is kept in `admin_log`.
+
+The figures about how children use the app only cover families who turned on "share anonymous
+statistics", and only appear from 5 children up.
+
+Before real certificates arrive: use a long, unique password for the team accounts and turn on
+two-step sign-in (Authentication → Sign In / Providers → Multi-Factor).
+
+`npm run test:live` can also play the real decision if a team account is given in the environment
+of your own terminal (never in a file): `LIVE_ADMIN_EMAIL` and `LIVE_ADMIN_PASSWORD`.
 
 ## What is where
 
@@ -92,7 +127,11 @@ who agreed to share anonymous statistics. The app itself cannot read this view.
 | `proposals` | suggested changes waiting for the parent |
 | `history` | configuration changes (never what the child said), with undo |
 | `devices`, `pairing_codes` | tablets and phones linked to a profile |
-| `verifications` | professionals' verification requests (status set by the back-office) |
+| `verifications` | professionals' verification requests (status set by the back office) |
+| `admins` | the accounts of the app's own team (filled by hand, unreadable from the app) |
+| `admin_log` | what the team did in the back office: decisions, certificates opened |
+| `feedback` | messages written from the app ("Write to the team") |
+| `bo_people`, `bo_child_days` (views) | what the back-office figures are computed from; not reachable from the app |
 | `notices` | in-app notifications |
 | `resources`, `resource_shares` | professionals' libraries and what they share |
 | `usage_days` | communication data, one row per child, device and day (only what the family allowed) |
@@ -100,5 +139,5 @@ who agreed to share anonymous statistics. The app itself cannot read this view.
 | `research_usage` (view) | anonymous daily numbers for the app's team, consenting families only |
 | `ai_calls` | how many AI requests each account made today (daily limit) |
 
-Storage buckets: `verification-docs` (diplomas, private to their owner) and `profile-media`
+Storage buckets: `verification-docs` (diplomas, private to their owner and the app's team) and `profile-media`
 (a child's photos and recordings, private to the child's team).

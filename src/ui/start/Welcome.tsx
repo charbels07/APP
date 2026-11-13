@@ -1,6 +1,7 @@
 /** First screen: what the app is, the language, and the ways in. */
 import React from 'react';
 import { View } from 'react-native';
+import { adminStrings } from '../../i18n/admin';
 import { useSession } from '../../state/Session';
 import { PictoCredit } from '../PictoCredits';
 import { Btn } from '../common';
@@ -9,7 +10,7 @@ import { C } from '../theme';
 import { LinkBtn, Logo, StartLayout, T, st, useRtl } from './StartLayout';
 
 export function Welcome() {
-  const { s, go, uiLang } = useSession();
+  const { s, go, uiLang, api, enter } = useSession();
   const rtl = useRtl();
   return (
     <StartLayout>
@@ -34,6 +35,10 @@ export function Welcome() {
       <View style={{ gap: 2 }}>
         <LinkBtn label={s.haveAccount} onPress={() => go({ name: 'auth', mode: 'signIn', role: 'parent' })} />
         <LinkBtn label={s.pairDevice} onPress={() => go({ name: 'pair' })} />
+        {/* Demo server only: a look at the app's team side, with invented people and figures. */}
+        {api.demoOpenBackOffice && (
+          <LinkBtn label={adminStrings(uiLang).demoEntry} onPress={() => void api.demoOpenBackOffice!().then(() => enter()).catch(() => {})} />
+        )}
       </View>
       <PictoCredit lang={uiLang} compact />
     </StartLayout>

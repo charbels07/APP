@@ -227,20 +227,52 @@ Before selling: ask Microsoft in writing that audio generated with a paid Speech
 shipped inside a paid app and used offline (their public answers say commercial use needs the paid
 tier, but none covers bundled audio precisely).
 
+## Round 13 — The back office (our own side of the app)
+
+The back office is where **we** (the app's team) accept the therapists and read the figures that help
+improve the app. It is not a second program: it is a hidden page inside the same app, opened only for
+the accounts the database lists as "team".
+
+| Feature | How it was built |
+|---|---|
+| Who gets in | A table `admins` in the database (**SQL**, `supabase/migrations/20261113000000_backoffice.sql`). It is filled by hand in Supabase's SQL editor, never from the app. A function `is_admin()` answers "is the signed-in person in that table?", and every back-office function starts by asking it. Hiding the page is not the lock: the database itself refuses everybody else. |
+| Where it is | `src/ui/admin/BackOffice.tsx` (**TypeScript + React Native**, the same code on tablet, phone and web). After sign-in, `src/state/Session.tsx` asks the server `is_admin()`; if yes the person lands on the back office, with a button *Open the app* to use the app normally, and a button *Open the back office* in their account page to come back. |
+| Certificates | The list shows every request sent, the ones waiting first. Opening one shows who it is and the files sent. **Accept** sets the request to "verified": from that second the therapist can join a child's team. **Ask for more information** and **Refuse** need a message that the therapist reads. All of this is one database function, `admin_decide_verification`. |
+| "She can start working" is a real lock | Two database **triggers** (small rules the database runs by itself before saving) refuse a professional account that is not accepted when it tries to join a team or to ask a family for a connection (error `pro_not_verified`, shown as a sentence). If an acceptance is withdrawn later, the access is suspended, not erased: accepting again gives it back. |
+| Looking at a certificate | The files stay in the private storage folder `verification-docs`. A storage rule lets the team read them; the app asks for an address that stops working after 5 minutes. Just before, `admin_open_document` writes who opened which file in the history. |
+| The identity document is deleted | The therapist is told at sign-up that her identity document is deleted once the check is done. So when a request is accepted or refused, the back office deletes that file and removes it from the request. |
+| The therapist is told | A notification is written in the language she chose for the menus (French, English or Arabic): accepted, something missing, or refused, with our message. |
+| Figures: Overview | One database function, `admin_overview`, returns every number at once as **JSON** (a text format for data). Counts only: accounts and new accounts per week, where families stop (account → child profile → linked device → use this week), devices by system and by **version of the app** (devices now tell their version, so we know when an old version can be dropped), therapists by state / profession / country and how long we take to decide, teamwork (invitations, proposals, materials), and AI calls per day (cost). |
+| Figures: Use of the app | Only the families who turned on *share anonymous statistics*. Minutes and touches per day, sentence length, where the child touches (main board, folders, activity boards…), hours of the day, by age group, and how these families set the app up (Arabic dialect, languages, options). **Never a name, a word or a sentence.** |
+| Nobody can be recognised | The use figures appear only from **5 children** up, and an age group only with 5 children or more. Below that the page just says how many families share. The consent sentence in the app now also mentions "the settings chosen, such as the language". |
+| Messages | New: *Account → Write to the team* (idea / problem / other) for families and professionals. Stored in a table `feedback`, read only in the back office, where a message can be marked as dealt with. Limited to 10 messages a day per account. |
+| History | A table `admin_log`: every decision and every certificate opened, with who and when. The app has no way to erase it. |
+| Charts | The same small chart pieces as the Suivi pages (`src/ui/data/Charts.tsx`): no chart library. |
+| Demo | The demo has no real users, so *Back office (demonstration)* on the first screen opens it with **invented** therapists and example figures, and says so in a banner. A request really sent on that device by a professional account appears there too, so the whole path can be tried: send a certificate → accept it → the therapist can work. |
+| Tests | 63 database checks (`npm run test:db`): nobody outside the team reads or decides anything, the lock on professionals, the identity document, figures hidden under 5 children, a family that did not agree is never counted. 3 new Jest tests on the demo server and one browser walkthrough of the whole path. |
+
+To use it on the real server: run the new migration, then add yourself to the team
+(`supabase/README.md`, section 8).
+
 ## How everything is checked
 
 | Check | What it does |
 |---|---|
 | `npm run typecheck` | TypeScript reads the whole code and refuses mistakes such as a missing field or a wrong type. |
-| `npm test` | 161 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences. |
-| `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger and a tablet; 35+ checks. |
-| `npm run test:live` | The same story on the real Supabase project, through the app's own code: 13 steps, including devices, history undo, invitation codes, revisions and materials (needs "Confirm email" off while it runs). Last run: all 13 passed. |
+| `npm test` | 163 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office. |
+| `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger, a tablet and a member of our team; 63 checks. |
+| `npm run test:live` | The same story on the real Supabase project, through the app's own code: 13 steps, including devices, history undo, invitation codes, revisions and materials (needs "Confirm email" off while it runs). Last full run: before the back office (all 13 passed); **to run again once the back-office migration is on the real project**. |
 | Browser walkthroughs | Playwright drives the web version like a person: the parent journey, the team (invite, undo, join with a code), the professional journey (verification, tour, request, draft, proposal, approval), and the Arabic screens. |
 
 ## Not done yet (honest list)
 
-- **Billing** (deferred) and the **back-office** (later): the professional verification decision is
-  simulated in the demo; on the real server someone must set it until the back-office exists.
+- **Billing** (deferred).
+- **Back office**: built and tested on a local database, but **not yet run on the real Supabase
+  project** (the new migration must be run there, and an account added to `admins`). It lives inside
+  the app, so opening it on a computer needs the app's web version (`npx expo start --web` for now;
+  no public web address yet). The team's accounts have a password only: turn on two-step sign-in
+  in Supabase before real certificates arrive. Certificates that are PDF files open in a new tab,
+  pictures open in the page.
 - **Photos and recorded sounds stay on the device that made them**: words, boards and settings
   sync, but a photo added on the parent's phone does not yet appear on the child's tablet. The
   private storage folder for it exists (`profile-media`); copying the files is the next step.
@@ -250,7 +282,7 @@ tier, but none covers bundled audio precisely).
   Gmail limits how many e-mails can be sent per day; a domain and an e-mail service are better
   once many families sign up.
 - **Notifications** are in-app only (no phone push yet), and their text is written in French by the
-  server.
+  server (except the certificate decisions, written in the person's language).
 - **Communication data on several devices**: each tablet records its own days; the Suivi page adds
   them up. Days recorded while the follow-up was off are never recorded later.
 - **Function recognition** is a set of simple word rules: a guide for the speech therapist, to be

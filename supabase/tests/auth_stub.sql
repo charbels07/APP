@@ -8,6 +8,8 @@ create table auth.users (
   email text,
   phone text,
   email_confirmed_at timestamptz,
+  phone_confirmed_at timestamptz,
+  is_anonymous boolean not null default false,
   raw_user_meta_data jsonb not null default '{}'
 );
 create function auth.uid() returns uuid language sql stable as $$

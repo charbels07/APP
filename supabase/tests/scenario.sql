@@ -6,6 +6,7 @@
 \set marc    '00000000-0000-0000-0000-00000000000c'
 \set eve     '00000000-0000-0000-0000-00000000000d'
 \set tablet  '00000000-0000-0000-0000-00000000000e'
+\set zoe     '00000000-0000-0000-0000-00000000000f'
 
 create schema test;
 grant usage on schema test to authenticated;
@@ -62,6 +63,50 @@ select set_config('request.jwt.claim.sub', :'sarah', false);
 select test.ok((select role = 'pro' from accounts where id = auth.uid()), 'account created with the pro role');
 select test.ok((select count(*) = 1 from notices where kind = 'invitation'), 'invitation notice waiting');
 select test.ok((select count(*) = 0 from profiles), 'no access before accepting');
+
+-- A professional starts working only once the app's team accepted her certificate (back office).
+select test.expect_error(format('select respond_invitation(%L, true)', (select v from test.ids where k = 'inv')), 'pro_not_verified');
+select test.ok(true, 'a professional cannot join a team before her certificate is accepted');
+insert into verifications (user_id, full_name, country, profession) values (:'sarah', 'Sarah K', 'France', 'slp');
+select test.expect_error('update verifications set status = ''verified'' where user_id = auth.uid()', 'new row violates row-level security policy for table "verifications"');
+select test.expect_error('select submit_verification()', 'incomplete');
+update verifications set documents = format('[{"name":"diplome.pdf","kind":"diploma","ref":"%s/1-diplome.pdf"},{"name":"passeport.jpg","kind":"id","ref":"%s/2-passeport.jpg"}]', :'sarah', :'sarah')::jsonb where user_id = auth.uid();
+select test.ok((select (submit_verification()).status = 'pending'), 'verification submitted');
+update verifications set full_name = 'changed' where user_id = auth.uid();
+select test.ok((select full_name = 'Sarah K' from verifications), 'a submitted verification is locked');
+select test.expect_error(format('select admin_decide_verification(%L, ''verified'')', :'sarah'), 'forbidden');
+select test.expect_error('select count(*) from admin_verifications()', 'forbidden');
+select test.expect_error('select admin_overview()', 'forbidden');
+select test.expect_error('select count(*) from admin_history()', 'forbidden');
+select test.ok(not is_admin(), 'nobody accepts a certificate or reads the figures without being in the app''s team');
+
+-- Zoe works for the app: she is added to the team by hand, in the database.
+reset role;
+insert into auth.users (id, email, email_confirmed_at, raw_user_meta_data) values
+  (:'zoe', 'zoe@app.example', now(), '{"role":"parent","display_name":"Zoe"}');
+insert into admins (user_id) values (:'zoe');
+set role authenticated;
+select set_config('request.jwt.claim.sub', :'zoe', false);
+select test.ok(is_admin() and (select count(*) = 0 from admins), 'the team list itself cannot be read or changed from the app');
+select test.expect_error(format('insert into admins (user_id) values (%L)', :'eve'), 'new row violates row-level security policy for table "admins"');
+select test.ok((select count(*) = 1 and bool_and(email = 'sarah@clinic.fr' and status = 'pending') from admin_verifications()),
+  'the back office sees the requests that are waiting');
+select test.expect_error(format('select admin_decide_verification(%L, ''more_info'')', :'sarah'), 'note_required');
+select test.expect_error(format('select admin_open_document(%L, %L)', :'sarah', :'eve' || '/x.pdf'), 'not_found');
+select test.ok((select admin_open_document(:'sarah', :'sarah' || '/1-diplome.pdf') is not null), 'a certificate is opened through the back office only');
+select admin_decide_verification(:'sarah', 'more_info', 'Le diplôme est illisible.');
+select set_config('request.jwt.claim.sub', :'sarah', false);
+select test.ok((select count(*) = 1 from notices where kind = 'verification' and text like '%illisible%'), 'the professional is told what is missing');
+update verifications set organization = 'Clinique' where user_id = auth.uid();
+select test.ok((select (submit_verification()).status = 'pending'), 'she completes her request and sends it again');
+select set_config('request.jwt.claim.sub', :'zoe', false);
+select test.ok((select jsonb_array_length(documents) = 2 from admin_verifications()), 'while a request is still open, nothing is deleted');
+select test.ok((select (admin_decide_verification(:'sarah', 'verified')).status = 'verified'), 'the back office accepts the certificate');
+select test.ok((select jsonb_array_length(documents) = 1 and documents -> 0 ->> 'kind' = 'diploma' from admin_verifications()),
+  'the identity document is forgotten as soon as the request is decided');
+select test.ok((select count(*) = 3 and bool_and(admin_name = 'Zoe') from admin_history()), 'every decision and every certificate opened is written down');
+select set_config('request.jwt.claim.sub', :'sarah', false);
+select test.ok((select count(*) = 2 from notices where kind = 'verification'), 'the professional is told she was accepted');
 select respond_invitation((select v::uuid from test.ids where k = 'inv'), true);
 select test.ok((select count(*) = 1 from profiles), 'access after accepting');
 select test.ok((select level = 2 from access_of((select v::uuid from test.ids where k = 'adam'))), 'therapist at level 2');
@@ -96,6 +141,13 @@ select set_config('request.jwt.claim.sub', :'rita', false);
 insert into test.ids select 'code', connection_code((select v::uuid from test.ids where k = 'adam'));
 select set_config('request.jwt.claim.sub', :'marc', false);
 select test.expect_error('select request_connection(''NOPE1234'', ''teacher'', 1, ''{}'', null)', 'code_invalid');
+select test.expect_error(format('select request_connection(%L, ''teacher'', 1, ''{}'', null)', (select v from test.ids where k = 'code')), 'pro_not_verified');
+select test.ok(true, 'a professional cannot ask a family for a connection before being accepted');
+insert into verifications (user_id, full_name, country, profession, documents) values (:'marc', 'Marc T', 'Liban', 'teacher', '[{"name":"carte.pdf","kind":"licence","ref":"x"}]');
+select submit_verification();
+select set_config('request.jwt.claim.sub', :'zoe', false);
+select admin_decide_verification(:'marc', 'verified');
+select set_config('request.jwt.claim.sub', :'marc', false);
 insert into test.ids select 'req', (request_connection(lower((select v from test.ids where k = 'code')), 'teacher', 1, '{}', 'CE1')).id::text;
 select test.ok((select count(*) = 0 from profiles), 'no access while the request is pending');
 select set_config('request.jwt.claim.sub', :'rita', false);
@@ -111,7 +163,7 @@ select test.ok((select count(*) = 0 from profiles), 'revoked teacher loses acces
 select set_config('request.jwt.claim.sub', :'rita', false);
 insert into test.ids select 'pair', code from create_pairing_code((select v::uuid from test.ids where k = 'adam'), 'use');
 reset role;
-insert into auth.users (id) values (:'tablet');
+insert into auth.users (id, is_anonymous) values (:'tablet', true);
 set role authenticated;
 select set_config('request.jwt.claim.sub', :'tablet', false);
 select set_config('request.jwt.claims', '{"is_anonymous": true}', false);
@@ -122,22 +174,15 @@ select test.expect_error(format('select save_profile(%L, ''{}'', 3)', (select v 
 -- A nameless tablet account cannot start anything of its own.
 select test.expect_error(format('insert into profiles (owner_id, name, data) values (%L, ''x'', ''{}'')', :'tablet'), 'forbidden');
 select test.expect_error(format('insert into resources (owner_id, kind, title, data) values (%L, ''cards'', ''x'', ''{}'')', :'tablet'), 'forbidden');
-select test.ok(true, 'a tablet cannot create a profile or a resource of its own');
+select test.expect_error('select send_feedback(''idea'', ''hello there'')', 'forbidden');
+select test.ok(true, 'a tablet cannot create a profile or a resource of its own, or write to the app''s team');
 select set_config('request.jwt.claims', '', false);
 select set_config('request.jwt.claim.sub', :'rita', false);
 select revoke_device((select v::uuid from test.ids where k = 'adam'), 'school-1');
 select set_config('request.jwt.claim.sub', :'tablet', false);
 select test.ok((select count(*) = 0 from profiles), 'revoked tablet loses access');
 
--- Professional verification: only a draft can be edited; the status is set by the back-office.
 select set_config('request.jwt.claim.sub', :'sarah', false);
-insert into verifications (user_id, full_name, country, profession) values (:'sarah', 'Sarah K', 'France', 'slp');
-select test.expect_error('update verifications set status = ''verified'' where user_id = auth.uid()', 'new row violates row-level security policy for table "verifications"');
-select test.expect_error('select submit_verification()', 'incomplete');
-update verifications set documents = '[{"name":"diplome.pdf"}]' where user_id = auth.uid();
-select test.ok((select (submit_verification()).status = 'pending'), 'verification submitted');
-update verifications set full_name = 'changed' where user_id = auth.uid();
-select test.ok((select full_name = 'Sarah K' from verifications), 'a submitted verification is locked');
 
 -- Library: private by default, visible once shared.
 insert into resources (owner_id, owner_name, kind, title, data) values (:'sarah', 'Sarah', 'tla', 'Dentiste', '{}');
@@ -185,6 +230,68 @@ select test.ok((select count_ai_call() = 1) and (select count_ai_call() = 2), 'A
 select set_config('request.jwt.claim.sub', :'sarah', false);
 select test.ok((select count_ai_call() = 1), 'each account has its own count');
 select test.ok((select count(*) = 0 from ai_calls), 'nobody reads the AI counters from the app');
+
+-- This tablet tells which version of the app it runs.
+select set_config('request.jwt.claim.sub', :'rita', false);
+select test.ok((select (register_device((select v::uuid from test.ids where k = 'adam'), 'ipad-rita', 'iPad', 'companion', 'ios', '1.2.0')).app_version = '1.2.0'),
+  'a device says which version of the app it runs');
+
+-- Messages to the app's team: anyone with an account writes, only the back office reads.
+select send_feedback('idea', 'Ajouter des pictogrammes de football.', 'ios', '1.2.0');
+select test.ok((select count(*) = 0 from feedback), 'messages cannot be read from the app');
+select test.expect_error('select count(*) from admin_feedback()', 'forbidden');
+select set_config('request.jwt.claim.sub', :'zoe', false);
+select test.ok((select count(*) = 1 and bool_and(from_name = 'Rita' and status = 'new') from admin_feedback()), 'the back office reads the messages');
+select admin_set_feedback((select id from admin_feedback() limit 1), 'done');
+select test.ok((select bool_and(status = 'done') from admin_feedback()), 'a message is marked as dealt with');
+
+-- An acceptance can be withdrawn: the access is suspended, and comes back if she is accepted again.
+select admin_decide_verification(:'sarah', 'rejected', 'Licence expirée.');
+select set_config('request.jwt.claim.sub', :'sarah', false);
+select test.ok((select count(*) = 0 from profiles), 'a professional who is no longer accepted loses access to the children');
+select set_config('request.jwt.claim.sub', :'zoe', false);
+select admin_decide_verification(:'sarah', 'verified');
+select set_config('request.jwt.claim.sub', :'sarah', false);
+select test.ok((select count(*) = 1 from profiles), 'accepted again: her access is back as it was');
+
+-- Figures: counts for everybody; what comes from the children only with consent, and from 5 children up.
+select set_config('request.jwt.claim.sub', :'zoe', false);
+select test.ok((select (o -> 'accounts' ->> 'parents')::int = 3 and (o -> 'accounts' ->> 'pros')::int = 2
+                   and (o -> 'families' ->> 'children')::int = 1 and (o -> 'devices' -> 'versions' ->> '1.2.0')::int = 1
+                   and (o -> 'pros' -> 'status' ->> 'verified')::int = 2 and (o -> 'ai' ->> 'calls30')::int = 3
+                  from admin_overview() o), 'the back office counts accounts, children, tablets and certificates (tablets are not people)');
+reset role;
+update profiles set data = jsonb_set(data, '{settings,shareStats}', '"anonymous"');
+insert into usage_days (profile_id, device_id, day, data) select id, 'ipad', current_date - 1,
+  '{"platform":"ios · iPad","sessions":[{"activeMs":600000}],"selections":40,"utterances":10,"stats":{"distinctConcepts":12,"len1":6,"len2":3,"len3plus":1},"modes":{"core":30,"folder":10},"hours":[0,0,0,0,0,0,0,0,5,35]}'
+  from profiles;
+set role authenticated;
+select test.ok((select (o -> 'usage' ->> 'children')::int = 1 and not (o -> 'usage' ->> 'enough')::boolean
+                   and not (o -> 'usage') ? 'minutes' and not (o -> 'setup') ? 'choices'
+                  from admin_overview() o), 'figures about fewer than 5 children are never shown');
+reset role;
+insert into profiles (owner_id, name, age, data)
+select :'eve', 'Enfant ' || g, 5, '{"settings":{"shareStats":"anonymous","lang":"ar","arabic":"sa","langs":["ar","en"]},"tlaOrder":["a","b"]}'
+  from generate_series(1, 4) g;
+insert into usage_days (profile_id, device_id, day, data) select id, 'ipad', current_date - 1,
+  '{"platform":"ios · iPad","sessions":[{"activeMs":600000}],"selections":40,"utterances":10,"stats":{"distinctConcepts":12,"len1":6,"len2":3,"len3plus":1},"modes":{"core":30,"folder":10},"hours":[0,0,0,0,0,0,0,0,5,35]}'
+  from profiles where name like 'Enfant%';
+-- A sixth family records its child's use but did not agree to share it.
+insert into profiles (owner_id, name, age, data) values (:'eve', 'Secret', 9, '{"settings":{"dataCollection":"usage"}}');
+insert into usage_days (profile_id, device_id, day, data) select id, 'ipad', current_date - 1, '{"sessions":[{"activeMs":6000000}],"selections":4000}' from profiles where name = 'Secret';
+set role authenticated;
+select test.ok((select (o -> 'usage' ->> 'enough')::boolean and (o -> 'usage' ->> 'children')::int = 5
+                   and (o -> 'usage' ->> 'minutes')::numeric = 10 and (o -> 'usage' ->> 'selections')::numeric = 40
+                   and (o -> 'usage' -> 'places' ->> 'core')::int = 150 and (o -> 'usage' -> 'hours' ->> 9)::int = 175
+                   and (o -> 'usage' -> 'lengths' ->> 'two')::int = 15
+                   and (o -> 'setup' -> 'choices' -> 'arabic' ->> 'sa')::int = 4
+                   and (o -> 'setup' -> 'averages' ->> 'activityBoards')::numeric = 1.6
+                  from admin_overview() o), 'from 5 children up: averages of the families who agreed, and only theirs');
+select test.ok((select o::text not like '%Adam%' and o::text not like '%Enfant%' and o::text not like '%pizza%' from admin_overview() o),
+  'no name and no word in the figures');
+select test.expect_error('select count(*) from bo_child_days', 'permission denied for view bo_child_days');
+select test.expect_error('select count(*) from bo_people', 'permission denied for view bo_people');
+select test.ok(true, 'the lists behind the figures are not reachable from the app');
 
 -- Deleting an account removes the child's profile it owns.
 select set_config('request.jwt.claim.sub', :'rita', false);

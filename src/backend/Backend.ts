@@ -13,6 +13,11 @@ import type {
   UsageDay,
   Account,
   AccountPrefs,
+  AdminLogEntry,
+  AdminOverview,
+  AdminVerification,
+  Feedback,
+  FeedbackKind,
   ChildRecord,
   Device,
   HistoryEntry,
@@ -120,7 +125,7 @@ export interface Backend {
 
   // ── Devices ──
   listDevices(profileId: string): Promise<Device[]>;
-  registerDevice(profileId: string, input: { id: string; name: string; kind: Device['kind']; platform: string }): Promise<Device>;
+  registerDevice(profileId: string, input: { id: string; name: string; kind: Device['kind']; platform: string; appVersion?: string }): Promise<Device>;
   reportSync(profileId: string, deviceId: string, info: { synced?: boolean; backedUp?: boolean; pendingChanges?: number }): Promise<void>;
   revokeDevice(profileId: string, deviceId: string): Promise<void>;
   createPairingCode(profileId: string, access: 'full' | 'use'): Promise<{ code: string; expiresAt: number }>;
@@ -150,6 +155,29 @@ export interface Backend {
   askAi?(req: AiRequest, signal?: AbortSignal): Promise<unknown>;
   /** Demonstration only (local backend): fills the progress pages with an example. */
   demoSeedUsage?(profileId: string, label: (id: string) => string): Promise<void>;
+
+  // ── Messages to the app's team ──
+  /** An idea or a problem, written from the app (never about a child by name). */
+  sendFeedback(input: { kind: FeedbackKind; text: string; platform: string; appVersion: string }): Promise<void>;
+
+  // ── Back office: the app's own team only (the server refuses everybody else) ──
+  isAdmin(): Promise<boolean>;
+  /** Every request that was sent, the ones waiting first. */
+  adminVerifications(): Promise<AdminVerification[]>;
+  /**
+   * Accept ('verified': the professional can start working), ask for something more or refuse.
+   * A note for the professional is required unless accepted. The identity document is deleted
+   * as soon as the request is accepted or refused.
+   */
+  adminDecideVerification(userId: string, status: 'verified' | 'more_info' | 'rejected', note?: string): Promise<void>;
+  /** An address to look at a certificate for a few minutes; who opened it is written in the log. */
+  adminDocumentUrl(userId: string, ref: string): Promise<string>;
+  adminOverview(): Promise<AdminOverview>;
+  adminLog(): Promise<AdminLogEntry[]>;
+  adminFeedback(): Promise<Feedback[]>;
+  adminSetFeedback(id: string, status: 'new' | 'done'): Promise<void>;
+  /** Demonstration only (local backend): signs in as the app's team, with example requests and figures. */
+  demoOpenBackOffice?(): Promise<Account>;
 
   // ── Notifications ──
   listNotices(): Promise<Notice[]>;

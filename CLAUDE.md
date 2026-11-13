@@ -33,3 +33,8 @@
   `src/lib/dialectVoice.ts` chooses the clip, `src/lib/speech.ts` plays it. Empty index = tablet voice.
 - App pictograms live in `src/data/concepts.ts` (`app: { url, triggers }`); new built-in folders are added
   to saved profiles by a one-time migration in `src/lib/storage.ts` (only into an empty slot).
+- Back office (`src/ui/admin/`, stage `admin`): only accounts in the database table `admins`; every
+  `admin_*` function checks `is_admin()` (never rely on hiding the page). A `pro` account works on a
+  child's profile only once its verification is `verified` (triggers + `access_of`; the demo server
+  mirrors this in `LocalBackend.cleared`). Figures from children's profiles or usage: consenting
+  families only (`shareStats = 'anonymous'`), never under 5 children, never a name, word or sentence.

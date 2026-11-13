@@ -8,7 +8,7 @@ import { Platform } from 'react-native';
 import type { Lang, Settings } from '../model/types';
 import type { Segment } from './grammar';
 import { arabicLocale, speechTag } from './lexicon';
-import { chooseVoice, voiceGender, type VoiceChoice, type VoiceGender, type VoiceInfo } from './voices';
+import { chooseVoice, forVoice, voiceGender, type VoiceChoice, type VoiceGender, type VoiceInfo } from './voices';
 import { mediaUri } from './media';
 import { clipUri } from './voiceClips';
 
@@ -44,7 +44,7 @@ function speakOne(text: string, lang: Lang, settings: Settings, onWord?: (charIn
         resolve();
       }
     };
-    Speech.speak(text, {
+    Speech.speak(forVoice(text), {
       language: speechTag(lang),
       rate: settings.speechRate,
       voice: choice.id,

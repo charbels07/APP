@@ -99,3 +99,12 @@ export function chooseVoice(
   // No voice of that kind for this language: the default voice, pitched lower (man) or higher (woman).
   return { pitch: clamp((kind === 'm' ? 0.8 : 1.2) * child), exact: false };
 }
+
+/**
+ * The text handed to the device's voice. A capital letter on its own ("I") is announced by several
+ * voices as "capital I"; the same letter in lower case is simply read, and sounds the same.
+ * The length never changes, so the word-by-word highlight keeps its positions.
+ */
+export function forVoice(text: string): string {
+  return /^\s*\p{Lu}\s*[.!?…,;:]*\s*$/u.test(text) ? text.toLowerCase() : text;
+}

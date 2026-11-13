@@ -97,7 +97,7 @@ export function BackOffice() {
         <Btn small icon="refresh" label={a.refresh} onPress={() => void load()} disabled={busy} />
         <View style={{ flex: 1 }} />
         <LangSwitch />
-        <Btn small icon="home" label={a.openApp} onPress={() => void enter({ app: true })} />
+        <Btn small icon="home" label={a.openApp} onPress={() => void enter({ app: true }).catch((e) => setError(errorText(s, e)))} />
         <Btn small kind="ghost" icon="logout" label={s.signOut} onPress={() => void signOut()} />
       </View>
       <View>

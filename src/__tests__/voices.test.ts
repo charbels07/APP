@@ -1,4 +1,4 @@
-import { chooseVoice, voiceGender, type VoiceInfo } from '../lib/voices';
+import { chooseVoice, voiceGender, type VoiceInfo, forVoice } from '../lib/voices';
 
 const v = (id: string, name: string, language: string, quality = 'Default'): VoiceInfo => ({ id, name, language, quality });
 
@@ -42,5 +42,16 @@ describe('choosing the voice for each language', () => {
   });
   it('a precise voice chosen by the family wins', () => {
     expect(chooseVoice(voices, 'fr', 'fr-FR', 'f', 'adult', 't')).toMatchObject({ id: 't', name: 'Thomas' });
+  });
+});
+
+describe('text handed to the voice', () => {
+  it('a capital letter alone is said in lower case, so the voice does not announce "capital I"', () => {
+    expect(forVoice('I')).toBe('i');
+    expect(forVoice('I.')).toBe('i.');
+    expect(forVoice(' A ')).toBe(' a ');
+  });
+  it('everything else is left exactly as it is', () => {
+    for (const t of ['I want water', 'Adam', 'OK', 'i', '5', 'أنا', 'À table', '']) expect(forVoice(t)).toBe(t);
   });
 });

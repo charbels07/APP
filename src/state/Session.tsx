@@ -16,7 +16,9 @@ import { backend } from '../backend';
 import type { Backend } from '../backend/Backend';
 import { BackendError } from '../backend/Backend';
 import type { Account, AccountPrefs, Role } from '../backend/types';
+import { createDefaultProfile } from '../data/defaults';
 import { accountStrings, type AccountStrings } from '../i18n/account';
+import { adminStrings } from '../i18n/admin';
 import { strings, type UiStrings } from '../i18n/ui';
 import type { UiLang } from '../model/types';
 import { forgetLocal } from './profileSync';
@@ -142,6 +144,17 @@ export function SessionProvider({ children, api = backend() }: { children: React
         const list = await api.listProfiles();
         const active = list.find((p) => p.id === a.prefs.activeProfileId) ?? list[0];
         if (active) return setStage({ name: 'board', profileId: active.id });
+        // A member of the app's team opening the app: no questions, a ready-made test profile is
+        // created once (it can be renamed or deleted in Settings → Account like any other).
+        if (admin) {
+          const lang = a.prefs.uiLang ?? deviceRef.current?.uiLang ?? 'fr';
+          const data = createDefaultProfile();
+          data.settings.uiLang = lang;
+          data.settings.lang = lang;
+          data.settings.langs = [lang, ...(['fr', 'en', 'ar'] as const).filter((l) => l !== lang)];
+          const rec = await api.createProfile({ name: adminStrings(lang).testChild, data });
+          return setStage({ name: 'board', profileId: rec.id });
+        }
         // Invited before having a child of their own (grandparent, nanny…): the invitations first.
         const { received } = await api.myInvitations().catch(() => ({ received: [] as { status: string }[] }));
         setStage(received.some((i) => i.status === 'pending') ? { name: 'invitations' } : { name: 'onboarding' });

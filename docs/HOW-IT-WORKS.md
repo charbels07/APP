@@ -237,6 +237,7 @@ the accounts the database lists as "team".
 |---|---|
 | Who gets in | A table `admins` in the database (**SQL**, `supabase/migrations/20261113000000_backoffice.sql`). It is filled by hand in Supabase's SQL editor, never from the app. A function `is_admin()` answers "is the signed-in person in that table?", and every back-office function starts by asking it. Hiding the page is not the lock: the database itself refuses everybody else. |
 | Where it is | `src/ui/admin/BackOffice.tsx` (**TypeScript + React Native**, the same code on tablet, phone and web). After sign-in, `src/state/Session.tsx` asks the server `is_admin()`; if yes the person lands on the back office, with a button *Open the app* to use the app normally, and a button *Open the back office* in their account page to come back. |
+| The team looks at the app | *Open the app* never asks the set-up questions: the first time, a ready-made test profile ("Test") is created for that team account and the board opens at once. It is a normal profile: it can be renamed or deleted in Settings → Account, and it is counted as one child in the figures. |
 | Certificates | The list shows every request sent, the ones waiting first. Opening one shows who it is and the files sent. **Accept** sets the request to "verified": from that second the therapist can join a child's team. **Ask for more information** and **Refuse** need a message that the therapist reads. All of this is one database function, `admin_decide_verification`. |
 | "She can start working" is a real lock | Two database **triggers** (small rules the database runs by itself before saving) refuse a professional account that is not accepted when it tries to join a team or to ask a family for a connection (error `pro_not_verified`, shown as a sentence). If an acceptance is withdrawn later, the access is suspended, not erased: accepting again gives it back. |
 | Looking at a certificate | The files stay in the private storage folder `verification-docs`. A storage rule lets the team read them; the app asks for an address that stops working after 5 minutes. Just before, `admin_open_document` writes who opened which file in the history. |
@@ -265,7 +266,7 @@ to Supabase, so the hosting service stores no data and holds no secret.
 | Check | What it does |
 |---|---|
 | `npm run typecheck` | TypeScript reads the whole code and refuses mistakes such as a missing field or a wrong type. |
-| `npm test` | 166 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office. |
+| `npm test` | 168 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office. |
 | `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger, a tablet and a member of our team; 63 checks. |
 | `npm run test:live` | The same story on the real Supabase project, through the app's own code: 13 steps, including devices, history undo, invitation codes, revisions and materials (needs "Confirm email" off while it runs). Last full run: before the back office (all 13 passed); **to run again once the back-office migration is on the real project**. |
 | Browser walkthroughs | Playwright drives the web version like a person: the parent journey, the team (invite, undo, join with a code), the professional journey (verification, tour, request, draft, proposal, approval), and the Arabic screens. |
@@ -298,6 +299,8 @@ to Supabase, so the hosting service stores no data and holds no secret.
 - **AI on devices** needs the `caa-ai` function deployed with an Anthropic key (see
   `supabase/README.md`); until then the app uses the situation library. Search by drawing works in
   the browser demo only for now.
+- **The team's own accounts are counted in the figures** (as a parent account, and its test profile as
+  a child). Negligible once real families arrive; to be excluded in the database if exact numbers matter.
 - **Switch access and eye gaze**: not available (the set-up says so).
 - **Arabic texts** are a first version: to be reviewed by a native speaker.
 - **Arabic dialects**: the seven dialect word lists (Syrian, Jordanian / Palestinian, Egyptian, Saudi,

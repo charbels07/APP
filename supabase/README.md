@@ -92,12 +92,20 @@ table, `admins`, that nobody can read or change from the app.
 
    ```sql
    insert into public.admins (user_id, note)
-   select id, 'founder' from auth.users where email = 'you@example.com';
+   select id, 'founder' from auth.users where email = 'you@example.com'
+   returning user_id;
    ```
 
-   It must answer `INSERT 0 1`. `INSERT 0 0` means no account has that address yet.
-4. Sign in to the app with that account: it opens on the back office. *Open the app* goes to the
-   app itself; *Account → Open the back office* comes back.
+   One line in the result = done. "Success. No rows returned" = no account has that address yet
+   (create the account first, then run it again).
+4. Sign in to the app with that account (sign out and in again if it was already open): it opens
+   on the back office. *Open the app* goes to the app itself; *Account → Open the back office*
+   comes back.
+
+The back office is a page **of the app**: it is not in the Supabase dashboard, and the demo link
+cannot show the real one (the demo never talks to this server). It opens wherever the real app
+runs: a tablet or phone build, or the web version (`npx expo start --web`, or the web export put
+online).
 
 To remove someone: `delete from public.admins where user_id = (select id from auth.users where email = '…');`
 To see who is in the team: `select u.email, a.added_at from public.admins a join auth.users u on u.id = a.user_id;`

@@ -196,12 +196,43 @@ app uses — or none.
 
 Infrastructure: nothing new in the database (the choice is one more setting inside the profile).
 
+## Round 12 — Dialect voices (so the app does not speak every dialect with one standard accent)
+
+Tablets ship one Arabic voice (Standard Arabic). Recording each dialect ourselves is not possible,
+so the clips are generated once by a speech service and shipped inside the app.
+
+| Feature | How it was built |
+|---|---|
+| Which service | Microsoft **Azure AI Speech**: the only one found with a synthetic voice per Arab country (Lebanon, Syria, Jordan, Egypt, Saudi Arabia, Iraq, Kuwait…). Amazon has Gulf and Standard Arabic only; Google has Standard Arabic only. |
+| Generating the clips | `scripts/build-voice-packs.ts` (**TypeScript**, run on a computer with `npm run build:voices`): asks the service which voices exist, picks a woman's and a man's voice for each dialect, and has every Arabic word of the built-in vocabulary said once (about 270 words per dialect, 21,500 characters in total). Only the app's own word list is sent — nothing about any child. `--dry` shows the numbers without sending anything, `--sample 20` makes a few MP3 files to listen to first. |
+| Where the clips live | `assets/voice/<dialect>.<f|m>.pack` (the **MP3** clips one after the other, stored as text like the pictogram packs) and `src/data/voicePackIndex.ts` (which word is where, and the voice's name). Inside the app: no internet needed to speak. |
+| Playing them | `src/lib/dialectVoice.ts` (TypeScript, 6 Jest tests) decides, for each Arabic word, whether the dialect pack has it; `src/lib/speech.ts` then plays the clip (`expo-audio`) instead of asking the tablet's voice. Woman / man follows Settings → Voice; the child voice plays the clip slightly faster and higher. |
+| What is not covered | Words the family adds, typed text and anything not in the pack keep the tablet's standard voice — in one sentence the two voices can follow each other. A word the family recorded themselves always comes first. |
+| Turning it off | Settings → Voice → *Dialect voice for the Arabic words of the board* (shown only when a pack exists for the family's dialect). |
+| Telling people | Settings → About says the dialect voices are synthetic and which service made them. |
+| State today | **The packs are not generated yet**: this needs a paid Azure Speech key (see below). Until then the app speaks Arabic with the tablet's voice, exactly as before. Everything else was tested with stand-in clips: the generator's files, the app build, and a browser check that touching « عايز » loads the Egyptian clip. |
+
+To generate the packs (once, then again only when words change):
+
+1. Create an Azure account and an **AI Speech** resource on the **paid** tier ("Standard S0"). The free
+   tier does not give the right to ship the audio in a product. The cost is tiny: about 21,500
+   characters, billed per million.
+2. In your own terminal (never in a file, never in a chat): `export AZURE_SPEECH_KEY=…` and
+   `export AZURE_SPEECH_REGION=…` (for example `westeurope`).
+3. `npm run build:voices -- --sample 20`, and have a native speaker of each dialect listen to the
+   files in `voice-samples/`. Drop a dialect whose voice reads the words badly (`--only eg,sa`).
+4. `npm run build:voices`, then commit the new files in `assets/voice/` and `src/data/`.
+
+Before selling: ask Microsoft in writing that audio generated with a paid Speech resource may be
+shipped inside a paid app and used offline (their public answers say commercial use needs the paid
+tier, but none covers bundled audio precisely).
+
 ## How everything is checked
 
 | Check | What it does |
 |---|---|
 | `npm run typecheck` | TypeScript reads the whole code and refuses mistakes such as a missing field or a wrong type. |
-| `npm test` | 155 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences. |
+| `npm test` | 161 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences. |
 | `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger and a tablet; 35+ checks. |
 | `npm run test:live` | The same story on the real Supabase project, through the app's own code: 13 steps, including devices, history undo, invitation codes, revisions and materials (needs "Confirm email" off while it runs). Last run: all 13 passed. |
 | Browser walkthroughs | Playwright drives the web version like a person: the parent journey, the team (invite, undo, join with a code), the professional journey (verification, tour, request, draft, proposal, approval), and the Arabic screens. |
@@ -233,6 +264,9 @@ Infrastructure: nothing new in the database (the choice is one more setting insi
   Gulf, Iraqi, Standard Arabic) were written without a native reviewer. Before selling in a country,
   have its list read by a speech therapist or a parent from there (`src/data/dialectWords.ts`).
   North African dialects (Moroccan, Algerian, Tunisian) are not included.
+- **Dialect voices**: the app can play a voice per dialect, but the clips are not generated yet (a paid
+  Azure Speech key is needed, see Round 12). Whether those voices pronounce everyday dialect words
+  well has not been checked by ear; new words and typed sentences keep the tablet's standard voice.
 - **Pictogram words**: about 11,900 line icons (Material, Tabler, Lucide, Phosphor, Health Icons)
   are found in English only; the French and Arabic words added by our lists are marked "to review"
   and must be checked by the speech therapist and a native Arabic speaker.

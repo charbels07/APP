@@ -8,6 +8,8 @@ import { editStrings } from '../../i18n/edit';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Image, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { DIALECT_ORDER, dialectName } from '../../data/dialects';
+import { VOICE_INDEX, VOICE_PROVIDER } from '../../data/voicePackIndex';
+import { dialectPack } from '../../lib/dialectVoice';
 import { CLASS_NAMES, CLASS_ORDER, CLASS_COLORS, C, radius } from '../theme';
 import { allConceptIds, availableLangs, display, getConcept, isRtl, label, langName, symbolOf, wordClass } from '../../lib/lexicon';
 import { deleteMedia } from '../../lib/media';
@@ -1019,6 +1021,10 @@ export function BoardSettingsBody() {
           ]}
         />
         {st.voiceAge === 'child' && <Text style={s.note}>{t.voiceChildNote}</Text>}
+        {/* Only when the app has a voice for the family's dialect. */}
+        {dialectPack({ ...st, dialectVoice: true }) && (
+          <Toggle label={t.sDialectVoice} value={st.dialectVoice !== false} onChange={(v) => set((x) => void (x.dialectVoice = v))} note={t.sDialectVoiceNote} />
+        )}
         <VoicesUsed />
         <Text style={s.label}>{t.voicePrecise}</Text>
         <Text style={s.label}>{t.sVoiceFor}</Text>
@@ -1084,6 +1090,11 @@ export function BoardSettingsBody() {
 
       <Section title={t.sAbout}>
         <Text style={s.note}>{t.aboutText}</Text>
+        {Object.keys(VOICE_INDEX).length > 0 && (
+          <Text style={s.note}>
+            {t.aboutVoices} {VOICE_PROVIDER.name}.
+          </Text>
+        )}
         <PictoCredit lang={profile.settings.uiLang} />
       </Section>
     </>

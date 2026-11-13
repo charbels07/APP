@@ -28,5 +28,8 @@
   words; `src/data/dialectWords.ts` lists what differs per dialect (data only: also read by the build script).
   Always read Arabic labels through `getConcept` / `label`, languages through `availableLangs`, and the
   language name through `langName` — never `BUILTIN_CONCEPTS[id].labels.ar` or `LANGS` directly in screens.
+- Dialect voices: `npm run build:voices` (needs `AZURE_SPEECH_KEY` / `AZURE_SPEECH_REGION` in the environment,
+  never in a file) generates `assets/voice/*.pack` and `src/data/voicePackIndex.ts` / `voicePackAssets.ts`;
+  `src/lib/dialectVoice.ts` chooses the clip, `src/lib/speech.ts` plays it. Empty index = tablet voice.
 - App pictograms live in `src/data/concepts.ts` (`app: { url, triggers }`); new built-in folders are added
   to saved profiles by a one-time migration in `src/lib/storage.ts` (only into an empty slot).

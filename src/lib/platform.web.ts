@@ -58,6 +58,16 @@ export async function readAssetText(mod: number): Promise<string> {
   return (await fetch(Asset.fromModule(mod).uri)).text();
 }
 
+const audioUrls = new Map<string, string>();
+export async function bytesToAudioUri(bytes: Uint8Array, key: string): Promise<string> {
+  let url = audioUrls.get(key);
+  if (!url) {
+    url = URL.createObjectURL(new Blob([bytes as Uint8Array<ArrayBuffer>], { type: 'audio/mpeg' }));
+    audioUrls.set(key, url);
+  }
+  return url;
+}
+
 const imageUrls = new Map<string, string>();
 export async function bytesToImageUri(bytes: Uint8Array, key: string): Promise<string> {
   let url = imageUrls.get(key);

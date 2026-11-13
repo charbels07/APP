@@ -62,6 +62,18 @@ export async function readAssetText(mod: number): Promise<string> {
   return new File(asset.localUri ?? asset.uri).text();
 }
 
+/** Writes a short audio clip (MP3) to the cache once and returns a playable URI. */
+export async function bytesToAudioUri(bytes: Uint8Array, key: string): Promise<string> {
+  const dir = new Directory(Paths.cache, 'voice');
+  if (!dir.exists) dir.create({ idempotent: true, intermediates: true });
+  const file = new File(dir, `${key}.mp3`);
+  if (!file.exists) {
+    file.create();
+    await file.write(bytes);
+  }
+  return file.uri;
+}
+
 /** Writes image bytes to the cache once and returns a displayable URI. */
 export async function bytesToImageUri(bytes: Uint8Array, key: string): Promise<string> {
   const dir = new Directory(Paths.cache, 'picto');

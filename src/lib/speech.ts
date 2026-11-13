@@ -10,6 +10,7 @@ import type { Segment } from './grammar';
 import { arabicLocale, speechTag } from './lexicon';
 import { chooseVoice, voiceGender, type VoiceChoice, type VoiceGender, type VoiceInfo } from './voices';
 import { mediaUri } from './media';
+import { clipUri } from './voiceClips';
 
 let generation = 0;
 let player: AudioPlayer | null = null;
@@ -59,11 +60,20 @@ function speakOne(text: string, lang: Lang, settings: Settings, onWord?: (charIn
   });
 }
 
-function playOne(uri: string): Promise<void> {
+/** `rate`: above 1 for the child voice of a dialect clip (faster and higher, like the synthetic child voice). */
+function playOne(uri: string, rate = 1): Promise<void> {
   return new Promise((resolve) => {
     let settled = false;
     const p = createAudioPlayer(uri);
     player = p;
+    if (rate !== 1) {
+      try {
+        p.shouldCorrectPitch = false;
+        p.playbackRate = rate;
+      } catch {
+        /* this device cannot change the speed: the clip plays as it is */
+      }
+    }
     const done = () => {
       if (settled) return;
       settled = true;
@@ -87,6 +97,12 @@ export async function speakSegments(segments: Segment[], settings: Settings, onP
     if (seg.kind === 'tts') {
       if (seg.text.trim())
         await speakOne(seg.text, seg.lang, settings, onProgress && ((c) => mine === generation && onProgress(i, c)));
+    } else if (seg.kind === 'clip') {
+      // The dialect's own voice; if the clip cannot be read, the tablet's voice says the word.
+      const uri = await clipUri(seg.pack, seg.text);
+      if (mine !== generation) return;
+      if (uri) await playOne(uri, settings.voiceAge === 'child' ? 1.12 : 1);
+      else await speakOne(seg.text, seg.lang, settings);
     } else {
       const uri = await mediaUri(seg.media);
       if (uri && mine === generation) await playOne(uri);

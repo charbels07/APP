@@ -52,6 +52,7 @@
     "fetch:picto": "bash scripts/fetch-pictogram-sources.sh",
     "build:picto": "node --experimental-strip-types scripts/build-pictograms.ts",
     "build:symbols": "node --experimental-strip-types scripts/build-default-symbols.ts",
+    "build:voices": "NODE_USE_ENV_PROXY=1 node --experimental-strip-types scripts/build-voice-packs.ts",
     "test:db": "bash scripts/test-db.sh",
     "test:live": "jest --testPathIgnorePatterns=/node_modules/ --testPathPatterns=live/ --forceExit --runInBand"
   },

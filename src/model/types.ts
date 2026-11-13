@@ -168,6 +168,8 @@ export interface Settings {
   langs: Lang[];
   /** Which Arabic the words use; 'none' removes Arabic from the languages offered. */
   arabic: ArabicDialect;
+  /** Say the board's Arabic words with the dialect's own voice when the app has one (default: yes). */
+  dialectVoice?: boolean;
   /** Standard, larger text and buttons, or high contrast (dark cards, bright borders). */
   visual: 'standard' | 'large' | 'contrast';
   /** Picture size inside the cards: normal, or larger (with a smaller label). */

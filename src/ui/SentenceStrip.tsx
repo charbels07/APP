@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
-import { renderStrip } from '../lib/grammar';
+import { renderStrip, tokenSegment } from '../lib/grammar';
 import { isRtl, symbolOf } from '../lib/lexicon';
 import { speakSegments } from '../lib/speech';
 import type { Profile, SymbolRef } from '../model/types';
@@ -46,10 +46,7 @@ export function SentenceStrip({ compact }: { compact: boolean }) {
                 key={tok.key}
                 onPress={() => {
                   pulse(tok.concept ?? tok.picture?.word ?? '', tok.key);
-                  speakSegments(
-                    tok.audio ? [{ kind: 'audio', media: tok.audio }] : [{ kind: 'tts', text: tok.text, lang: tok.lang }],
-                    profile.settings,
-                  );
+                  speakSegments([tokenSegment(tok)], profile.settings);
                 }}
                 style={({ pressed }) => [styles.chip, pressed && { opacity: 0.6 }]}
                 accessibilityLabel={tok.text}

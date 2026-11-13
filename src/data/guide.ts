@@ -161,13 +161,13 @@ const BASE: BaseChapter[] = [
       fr: [
         'Les langues se choisissent dans les Réglages (mode accompagnant), avec deux choix séparés : Langue de communication (ce que dit l’appareil et ce qui est écrit sur les cases) et Langue de navigation (menus, boutons, guide).',
         'Par exemple : naviguer en français et parler en arabe, ou l’inverse. Les mots restent exactement à la même place dans toutes les langues.',
-        'L’arabe de l’application se choisit à l’installation et se change ici (Arabe de l’application) : libanais, syrien, jordanien / palestinien, égyptien, saoudien, du Golfe, irakien, arabe standard — ou Aucun, qui retire l’arabe des langues de l’enfant. Les mots arabes du tableau, la voix et les propositions suivent ce choix.',
+        'L’arabe de l’application se choisit à l’installation et se change ici (Arabe de l’application) : libanais, syrien, jordanien / palestinien, égyptien, saoudien, du Golfe, irakien, arabe standard — ou Aucun, qui retire l’arabe des langues de l’enfant. Les mots arabes du tableau et les propositions suivent ce choix. La voix arabe est celle du pays quand l’application ou la tablette en a une, sinon la voix arabe standard de la tablette ; vous pouvez toujours enregistrer un mot avec votre propre voix.',
         'On peut mélanger les langues dans une même phrase : chaque mot est dit dans sa langue.',
       ],
       en: [
         'Languages are chosen in Settings (caregiver mode), with two separate choices: Communication language (what the device says and what is written on the cards) and Navigation language (menus, buttons, guide).',
         'For example: navigate in English and speak in Arabic, or the other way round. Words stay exactly in the same place in every language.',
-        'The Arabic of the app is chosen at set-up and changed here (Arabic used in the app): Lebanese, Syrian, Jordanian / Palestinian, Egyptian, Saudi, Gulf, Iraqi, Modern Standard Arabic — or None, which removes Arabic from the child’s languages. The Arabic words of the board, the voice and the suggestions follow that choice.',
+        'The Arabic of the app is chosen at set-up and changed here (Arabic used in the app): Lebanese, Syrian, Jordanian / Palestinian, Egyptian, Saudi, Gulf, Iraqi, Modern Standard Arabic — or None, which removes Arabic from the child’s languages. The Arabic words of the board and the suggestions follow that choice. The Arabic voice is the one of that country when the app or the tablet has one, otherwise the tablet’s standard Arabic voice; you can always record a word with your own voice.',
         'Languages can be mixed in one sentence: each word is said in its own language.',
       ],
     },
@@ -703,7 +703,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
     steps: [
       'تُختار اللغات في الإعدادات (وضع المرافق)، بخيارين منفصلين: «لغة التواصل» (ما يقوله الجهاز وما يُكتب على البطاقات) و«لغة التنقل» (القوائم والأزرار والدليل).',
       'مثلاً: التنقل بالعربية والكلمات بالفرنسية، أو التنقل بالفرنسية والكلمات بالعربية. تبقى الكلمات في المكان نفسه في كل اللغات.',
-      'تُختار عربية التطبيق عند الإعداد وتُغيَّر من هنا («العربية المستعملة في التطبيق»): اللبنانية، السورية، الأردنية / الفلسطينية، المصرية، السعودية، الخليجية، العراقية، العربية الفصحى — أو «لا شيء» الذي يزيل العربية من لغات الطفل. كلمات اللوحة العربية والصوت والاقتراحات تتبع هذا الاختيار.',
+      'تُختار عربية التطبيق عند الإعداد وتُغيَّر من هنا («العربية المستعملة في التطبيق»): اللبنانية، السورية، الأردنية / الفلسطينية، المصرية، السعودية، الخليجية، العراقية، العربية الفصحى — أو «لا شيء» الذي يزيل العربية من لغات الطفل. كلمات اللوحة العربية والاقتراحات تتبع هذا الاختيار. الصوت العربي هو صوت ذلك البلد إذا توفّر في التطبيق أو الجهاز، وإلا فصوت الجهاز العربي الفصيح؛ ويمكنك دائماً تسجيل كلمة بصوتك.',
       'يمكن خلط اللغات في جملة واحدة: تُقال كل كلمة بلغتها.',
     ],
   },

@@ -3,7 +3,8 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { strings, type UiStrings } from '../i18n/ui';
 import { createRepeatGuard } from '../lib/repeatGuard';
 import { APPS_NEED_TAP, appLinkOf, findAppInSentence, isIncomplete, openAppUrl } from '../lib/appLinks';
-import { joinTokens, renderStrip, toSpeechPlan } from '../lib/grammar';
+import { clipFor } from '../lib/dialectVoice';
+import { joinTokens, renderStrip, tokenSegment, toSpeechPlan } from '../lib/grammar';
 import { audioOf, label } from '../lib/lexicon';
 import { locate, type Location } from '../lib/search';
 import { beep, prepareVoices, speakSegments, speakText, stopSpeech } from '../lib/speech';
@@ -325,11 +326,9 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
     const p = profileRef.current;
     const l = p.settings.lang;
     pulse(conceptId);
+    const text = label(p, conceptId, l);
     const audio = audioOf(p, conceptId, l);
-    speakSegments(
-      audio ? [{ kind: 'audio', media: audio }] : [{ kind: 'tts', text: label(p, conceptId, l), lang: l }],
-      p.settings,
-    );
+    speakSegments([tokenSegment({ text, lang: l, audio, clip: audio ? undefined : clipFor(p.settings, l, text) })], p.settings);
   }, [pulse]);
 
   // ── Demonstration recording ──
@@ -369,7 +368,7 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
           // Say the word as it appears in the sentence: "je" + "vouloir" → "veux".
           const tokens = renderStrip([...stripRef.current, item], p);
           const tok = tokens[tokens.length - 1];
-          speakSegments(tok.audio ? [{ kind: 'audio', media: tok.audio }] : [{ kind: 'tts', text: tok.text, lang: l }], p.settings);
+          speakSegments([tokenSegment({ ...tok, lang: l })], p.settings);
         } else speakConcept(conceptId);
       }
       if (p.settings.addToStrip) {

@@ -259,6 +259,7 @@ export const DEFAULT_SETTINGS: Settings = {
   repeatDelay: 2,
   langs: ['fr'],
   arabic: 'lb',
+  dialectVoice: true,
   visual: 'standard',
   pictoSize: 'normal',
   reduceMotion: false,

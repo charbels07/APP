@@ -10,6 +10,7 @@
  * speech-language therapist and native speakers before it is implemented.
  */
 import type { Lang, Profile, StripItem } from '../model/types';
+import { clipFor } from './dialectVoice';
 import { audioOf, baseLabel, hasOverrideLabel, label, wordClass } from './lexicon';
 
 /** je, tu, il/elle, nous, vous, ils/elles */
@@ -76,8 +77,20 @@ export interface Token {
   concept?: string;
   /** Recorded audio to play instead of synthesis, if the surface form is unchanged. */
   audio?: string;
+  /** Dialect voice pack that has a clip saying exactly this word (see lib/dialectVoice). */
+  clip?: string;
   /** Typed text: the picture shown with it (a word of the boards, or a library pictogram). */
   picture?: { word?: string; picto?: string };
+}
+
+/** Arabic words that the dialect voice can say (and that the family has not recorded themselves). */
+function withClips(tokens: Token[], profile: Profile): Token[] {
+  for (const t of tokens) {
+    if (t.audio) continue;
+    const pack = clipFor(profile.settings, t.lang, t.text);
+    if (pack) t.clip = pack;
+  }
+  return tokens;
 }
 
 export function renderStrip(items: StripItem[], profile: Profile): Token[] {
@@ -92,7 +105,7 @@ export function renderStrip(items: StripItem[], profile: Profile): Token[] {
       audio: audioOf(profile, it.concept, it.lang),
     };
   });
-  if (!grammar) return tokens;
+  if (!grammar) return withClips(tokens, profile);
 
   const conjugated = new Set<number>();
   for (let k = 1; k < items.length; k++) {
@@ -136,7 +149,7 @@ export function renderStrip(items: StripItem[], profile: Profile): Token[] {
       tokens[k].audio = undefined;
     }
   }
-  return tokens;
+  return withClips(tokens, profile);
 }
 
 /** Joins tokens of one language into a natural string ("j'" + "aime" → "j'aime"). */
@@ -153,7 +166,15 @@ export function joinTokens(tokens: Token[]): string {
  * Groups tokens into speech segments: consecutive synthesised words in the same
  * language are spoken together; recorded words are played as audio clips.
  */
-export type Segment = { kind: 'tts'; text: string; lang: Lang } | { kind: 'audio'; media: string };
+export type Segment =
+  | { kind: 'tts'; text: string; lang: Lang }
+  | { kind: 'audio'; media: string }
+  /** A word said by the dialect's own voice (falls back to synthesis if the clip cannot be read). */
+  | { kind: 'clip'; pack: string; text: string; lang: Lang };
+
+/** How one word is said: the family's recording, else the dialect voice, else synthesis. */
+export const tokenSegment = (t: Pick<Token, 'text' | 'lang' | 'audio' | 'clip'>): Segment =>
+  t.audio ? { kind: 'audio', media: t.audio } : t.clip ? { kind: 'clip', pack: t.clip, text: t.text, lang: t.lang } : { kind: 'tts', text: t.text, lang: t.lang };
 
 export function toSegments(tokens: Token[]): Segment[] {
   const segs: Segment[] = [];
@@ -163,9 +184,9 @@ export function toSegments(tokens: Token[]): Segment[] {
     buf = [];
   };
   for (const t of tokens) {
-    if (t.audio) {
+    if (t.audio || t.clip) {
       flush();
-      segs.push({ kind: 'audio', media: t.audio });
+      segs.push(tokenSegment(t));
     } else {
       if (buf.length && buf[0].lang !== t.lang) flush();
       buf.push(t);
@@ -198,9 +219,9 @@ export function toSpeechPlan(tokens: Token[]): { segments: Segment[]; marks: { t
     buf = [];
   };
   tokens.forEach((t, k) => {
-    if (t.audio) {
+    if (t.audio || t.clip) {
       flush();
-      segments.push({ kind: 'audio', media: t.audio });
+      segments.push(tokenSegment(t));
       marks.push([{ token: k, start: 0 }]);
     } else {
       if (buf.length && tokens[buf[0]].lang !== t.lang) flush();

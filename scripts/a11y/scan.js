@@ -47,7 +47,7 @@ const results = [];
   await p.getByRole('button').first().waitFor();
   await scan('01-welcome');
   if (locale === 'en-GB') {
-    await step('02-role', async () => { await btn(L.cont).click(); await btn(L.create, false).click(); await p.getByText('Who are you').first().waitFor().catch(() => {}); await scan('02-role'); });
+    await step('02-role', async () => { await btn('Sign up').click(); await p.getByText('Who are you').first().waitFor().catch(() => {}); await scan('02-role'); });
     await step('03-signup', async () => { await p.getByText(L.parent).first().click(); await p.getByLabel(L.email).waitFor(); await scan('03-signup'); });
     await step('04-code', async () => {
       await p.getByLabel(L.name).fill('Rita'); await p.getByLabel(L.email).fill('rita@example.com'); await p.getByLabel(L.pw, { exact: true }).fill('secret123');

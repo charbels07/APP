@@ -1,4 +1,4 @@
-/** First screen: what the app is, the language, and the ways in. */
+/** First screen: what the app is, the language, and the ways in (log in, sign up, a tablet's code, a free try). */
 import React from 'react';
 import { View } from 'react-native';
 import { adminStrings } from '../../i18n/admin';
@@ -31,10 +31,14 @@ export function Welcome() {
           </View>
         ))}
       </View>
-      <Btn kind="primary" label={s.continue} onPress={() => go({ name: 'preview' })} />
+      {/* The two ways in. "Keep me logged in" is on the form that follows. */}
+      <View style={{ gap: 10 }}>
+        <Btn kind="primary" icon="user" label={s.logIn} onPress={() => go({ name: 'auth', mode: 'signIn', role: 'parent' })} />
+        <Btn icon="plus" label={s.signUp} onPress={() => go({ name: 'role' })} />
+      </View>
       <View style={{ gap: 2 }}>
-        <LinkBtn label={s.haveAccount} onPress={() => go({ name: 'auth', mode: 'signIn', role: 'parent' })} />
         <LinkBtn label={s.pairDevice} onPress={() => go({ name: 'pair' })} />
+        <LinkBtn label={s.tryFirst} onPress={() => go({ name: 'preview' })} />
         {/* Demo server only: a look at the app's team side, with invented people and figures. */}
         {api.demoOpenBackOffice && (
           <LinkBtn label={adminStrings(uiLang).demoEntry} onPress={() => void api.demoOpenBackOffice!().then(() => enter()).catch(() => {})} />

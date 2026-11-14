@@ -11,6 +11,7 @@ import type { Role } from '../../backend/types';
 import { errorText } from '../../i18n/account';
 import { useSession } from '../../state/Session';
 import { Btn, Field, Segmented } from '../common';
+import { checked } from '../a11y';
 import { Icon } from '../Icon';
 import { C, radius } from '../theme';
 import { AppleButton, GoogleButton } from './BrandButtons';
@@ -29,7 +30,7 @@ type Step =
 const MIN_PASSWORD = 8;
 
 export function AuthScreen({ mode: initialMode, role: initialRole }: { mode: Mode; role: Role }) {
-  const { s, go, api, enter } = useSession();
+  const { s, go, api, enter, keep, setKeep } = useSession();
   const rtl = useRtl();
   const [mode, setMode] = useState<Mode>(initialMode);
   const [role, setRole] = useState<Role>(initialRole);
@@ -229,6 +230,17 @@ export function AuthScreen({ mode: initialMode, role: initialRole }: { mode: Mod
         </View>
       )}
 
+      {/* Saved at once, so it also holds for Apple / Google (which leave this page and come back). */}
+      {mode !== 'forgot' && (
+        <Pressable onPress={() => void setKeep(!keep)} style={[styles.keep, rtl && st.rev]} accessibilityRole="checkbox" {...checked(keep)} accessibilityLabel={s.keepSignedIn}>
+          <View style={[styles.box, keep && styles.boxOn]}>{keep && <Icon name="check" size={18} color="#fff" />}</View>
+          <View style={{ flex: 1, gap: 2 }}>
+            <T style={{ fontWeight: '700' }}>{s.keepSignedIn}</T>
+            <T style={styles.hint}>{s.keepSignedInNote}</T>
+          </View>
+        </Pressable>
+      )}
+
       <ErrorText text={error} />
       {info ? <T style={{ color: C.success, fontWeight: '600' }}>{info}</T> : null}
 
@@ -365,6 +377,19 @@ function CodeStep({
 }
 
 const styles = StyleSheet.create({
+  keep: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, minHeight: 44, paddingVertical: 4 },
+  box: {
+    width: 26,
+    height: 26,
+    borderRadius: 7,
+    borderWidth: 2,
+    borderColor: C.inputBorder,
+    backgroundColor: C.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+  boxOn: { backgroundColor: C.accent, borderColor: C.accent },
   roleChip: {
     flexDirection: 'row',
     alignItems: 'center',

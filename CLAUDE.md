@@ -81,4 +81,8 @@
   engine there): Team / Follow-up / Account are `ProSettingsTab` (`src/ui/pro/ProSettings.tsx`). Do not hand
   a fake `BoardCtx` to `TeamTab` / `AccountTab` (they write through `board.sync`). On that board the banner
   only shows once something changed; without changes only the child's name and "Close".
+- Entry screen: "Log in" and "Sign up" (plus the tablet code and a quiet "try it first"). "Keep me logged
+  in" (`src/lib/keepSignedIn.ts`, ticked by default) decides where the session is written: on the device,
+  or in the visit's store (`src/lib/visit(.web).ts`). The Supabase client must keep `storage: sessionStore`;
+  a tablet linked with a code always keeps its session (`PairScreen` forces the choice to yes).
 - Services and keys: `docs/API-KEYS.md` (keep it up to date when a feature starts needing one).

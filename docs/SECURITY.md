@@ -88,6 +88,14 @@ family's caregiver code is no longer asked to prepare changes. That code keeps t
 the tools on the child's tablet; a signed-in professional's changes are still checked one by one
 by the database (proposal, direct edit or refusal, according to the rights the family gave).
 
+### Added later: "Keep me logged in" (November 2026)
+
+On the log-in and sign-up forms. Ticked (the default, right for the family's own tablet or
+phone), the session is kept on the device. Not ticked (a shared or borrowed computer), the
+session is never written on the device: it lives for the visit only and is gone when the tab or
+the app is closed; the children's copies kept on that device are erased the next time the app
+opens. A tablet linked with a code always stays connected.
+
 ## 4. What only you can do
 
 ### Now (10 minutes)
@@ -148,7 +156,7 @@ Names move a little between versions of the dashboard; look for the nearest word
 | Command | What it proves |
 |---|---|
 | `npm run test:db` | 116 checks on a throw-away database: the normal story, then **every attack of this review, which must fail**, then the hand-over of a profile created by a professional. |
-| `npm test` | 209 tests; `security.test.ts` covers links, other people's changes, what stays on the device, the print page, the website protections. |
+| `npm test` | 214 tests; `security.test.ts` covers links, other people's changes, what stays on the device, the print page, the website protections. |
 | `npm audit` | Known flaws in libraries. Today: none in what ships to families (4 medium ones in build tools only). |
 | `npm run test:a11y` | The screens still pass the accessibility scan after these changes. |
 

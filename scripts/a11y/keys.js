@@ -18,9 +18,9 @@ fs.mkdirSync(OUT, { recursive: true });
   for (let i = 0; i < 7; i++) { await p.keyboard.press('Tab'); const f = await focused(); console.log(`  ${i + 1}.`, f ? `${f.role} "${f.name}" | focus mark: ${f.outline}${f.shadow ? ' + ' + f.shadow : ''}` : '(nothing)'); }
   await p.screenshot({ path: OUT + '/keys-welcome-focus.png' });
   // Enter on a button
-  await p.getByRole('button', { name: 'Continue', exact: true }).focus();
+  await p.getByRole('button', { name: 'Try it first, without an account', exact: true }).focus();
   await p.keyboard.press('Enter'); await p.waitForTimeout(1500);
-  console.log('== Enter on "Continue" opens the preview board:', /Preview/i.test(await body()));
+  console.log('== Enter on "Try it first" opens the preview board:', /Preview/i.test(await body()));
   // An English board: through the demonstration team account, all with the keyboard.
   await p.goto(`http://localhost:${PORT}/`); await p.getByRole('button').first().waitFor();
   await p.getByRole('button', { name: 'Back office (demonstration)' }).focus(); await p.keyboard.press('Enter');

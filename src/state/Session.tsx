@@ -23,6 +23,8 @@ import { strings, type UiStrings } from '../i18n/ui';
 import type { UiLang } from '../model/types';
 import { forgetLocal } from './profileSync';
 import { forgetEverything } from '../lib/deviceData';
+import { keepSignedIn, setKeepSignedIn } from '../lib/keepSignedIn';
+import { markVisit, sameVisit } from '../lib/visit';
 
 export type Stage =
   | { name: 'loading' }
@@ -82,6 +84,9 @@ interface SessionCtx {
   /** Child lock on this device (see src/lib/childLock). */
   childLock: boolean;
   setChildLock: (on: boolean) => void;
+  /** "Keep me logged in" on this device (ticked unless someone chose otherwise). */
+  keep: boolean;
+  setKeep: (keep: boolean) => Promise<void>;
 }
 
 const Ctx = createContext<SessionCtx | null>(null);
@@ -126,6 +131,7 @@ export function SessionProvider({ children, api = backend() }: { children: React
   const [stage, setStage] = useState<Stage>({ name: 'loading' });
   const [offline, setOffline] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [keep, setKeepState] = useState(true);
 
   const saveDevice = useCallback((patch: Partial<DevicePrefs>) => {
     const next = { ...(deviceRef.current as DevicePrefs), ...patch };
@@ -187,6 +193,16 @@ export function SessionProvider({ children, api = backend() }: { children: React
           a = d.account;
         }
       }
+      const kept = await keepSignedIn();
+      setKeepState(kept);
+      // Signed in without "Keep me logged in", and the app was closed since: the visit is over.
+      // (A tablet linked with a code always stays connected.)
+      if (a && a.provider !== 'device' && !kept && !sameVisit()) {
+        await forgetEverything({ beforeSignOut: true });
+        await api.signOut().catch(() => {});
+        saveDevice({ account: undefined, localProfiles: [] });
+        return setStage({ name: 'welcome' });
+      }
       if (!a) {
         // No session any more without a sign-out here (ended elsewhere, expired): what the last
         // account left on this device goes, except a board whose changes were never sent.
@@ -194,6 +210,7 @@ export function SessionProvider({ children, api = backend() }: { children: React
         if (d.account) saveDevice({ account: undefined });
         return setStage({ name: 'welcome' });
       }
+      markVisit();
       setAccount(a);
       saveDevice({ account: a });
       await route(a).catch(() => setStage({ name: 'welcome' }));
@@ -204,6 +221,7 @@ export function SessionProvider({ children, api = backend() }: { children: React
     async (opts: { profileId?: string; app?: boolean } = {}) => {
       const a = await api.currentAccount();
       if (!a) throw new BackendError('not_signed_in');
+      markVisit();
       // The language chosen before signing in becomes the account's, unless it already had one.
       let acc = a;
       const lang = deviceRef.current?.uiLang;
@@ -284,6 +302,10 @@ export function SessionProvider({ children, api = backend() }: { children: React
   );
 
   const setChildLock = useCallback((on: boolean) => saveDevice({ childLock: on }), [saveDevice]);
+  const setKeep = useCallback(async (v: boolean) => {
+    setKeepState(v);
+    await setKeepSignedIn(v);
+  }, []);
 
   const value = useMemo<SessionCtx>(
     () => ({
@@ -306,8 +328,10 @@ export function SessionProvider({ children, api = backend() }: { children: React
       rememberLocal,
       childLock: !!device?.childLock,
       setChildLock,
+      keep,
+      setKeep,
     }),
-    [api, stage, account, uiLang, setUiLang, device?.deviceId, offline, enter, isAdmin, signOut, refreshAccount, updatePrefs, openProfile, rememberLocal, device?.childLock, setChildLock],
+    [api, stage, account, uiLang, setUiLang, device?.deviceId, offline, enter, isAdmin, signOut, refreshAccount, updatePrefs, openProfile, rememberLocal, device?.childLock, setChildLock, keep, setKeep],
   );
 
   return (

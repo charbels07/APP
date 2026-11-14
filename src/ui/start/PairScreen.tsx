@@ -17,7 +17,7 @@ export const groupCode = (v: string) => {
 };
 
 export function PairScreen() {
-  const { s, go, api, deviceId, enter } = useSession();
+  const { s, go, api, deviceId, enter, setKeep } = useSession();
   const [code, setCode] = useState('');
   const [name, setName] = useState(s.deviceNameDefault);
   const [busy, setBusy] = useState(false);
@@ -27,6 +27,8 @@ export function PairScreen() {
     setError(null);
     setBusy(true);
     try {
+      // The child's tablet never meets a sign-in page: its connection is always kept.
+      await setKeep(true);
       const profileId = await api.redeemPairingCode(code.replace(/[^A-Za-z0-9]/g, ''), {
         id: deviceId,
         name: name.trim() || s.deviceNameDefault,

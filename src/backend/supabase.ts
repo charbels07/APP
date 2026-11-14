@@ -13,6 +13,7 @@ import type { AiRequest } from '../../supabase/functions/_shared/aiPrompts';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
+import { sessionStore } from '../lib/keepSignedIn';
 import type { Profile } from '../model/types';
 import type { Op } from '../lib/profileDiff';
 import type { AccessLevel, CollaboratorRole, PermissionSet } from '../lib/permissions';
@@ -242,7 +243,8 @@ export class SupabaseBackend implements Backend {
     this.sb = createClient(url, anonKey, {
       ...(opts.fetch ? { global: { fetch: opts.fetch } } : {}),
       auth: {
-        storage: AsyncStorage,
+        // On the device, or for this visit only: the person's choice at sign-in ("Keep me logged in").
+        storage: sessionStore,
         ...(opts.storageKey ? { storageKey: opts.storageKey } : {}),
         persistSession: true,
         autoRefreshToken: true,

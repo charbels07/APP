@@ -394,15 +394,25 @@ order, by itself.
 | A quieter board | `ChildDraftBoard` (`src/ui/pro/SandboxBoard.tsx`): while nothing was changed, only the child's name and "Close" are shown. The coloured sentence (with Save, or Send for approval) appears with the first change. |
 | Two picture libraries | `PictureSources` in `src/ui/panels/CaregiverPanels.tsx`: a word's picture comes from **App's library** (the pictograms inside the app) or **Your library** (a picture saved on the device, or a photo). Searching pictures on the internet was removed with its code (`webPictures`, `WebPictures`, pasting a picture), and the website no longer needs permission to contact those two outside sites (`public/_headers`). |
 
+## Round 22 — Log in or sign up, and "Keep me logged in"
+
+| What | How it was done |
+|---|---|
+| The first screen | `src/ui/start/Welcome.tsx`: two buttons, **Log in** and **Sign up**, then "Link this tablet with a code" and a small "Try it first, without an account". |
+| What "being logged in" is | After your password is checked, the server gives the app a *session*: a long secret text that proves who you are for the next requests, so the password is not asked again. Where the app keeps that text decides how long you stay logged in. |
+| Keep me logged in | A tick on the log-in and sign-up forms, ticked by default (`AuthScreen.tsx`). The choice is remembered on the device (`src/lib/keepSignedIn.ts`). **Ticked**: the session is written on the device, so the app opens directly next time. **Not ticked** (a computer that is not yours): the session only lives for the visit, in a store the browser empties when the tab is closed (`src/lib/visit.web.ts`; on a tablet, in memory until the app is closed), and if anything was left the app signs out when it is opened again (`Session.tsx`). |
+| The child's tablet | A tablet linked with a code always stays connected, whatever was chosen before (`PairScreen.tsx`): a child must never meet a log-in page. |
+| Tests | `src/__tests__/keepSignedIn.test.ts`; and a browser run that signs up both ways, closes the tab and comes back. |
+
 ## How everything is checked
 
 | Check | What it does |
 |---|---|
 | `npm run typecheck` | TypeScript reads the whole code and refuses mistakes such as a missing field or a wrong type. |
-| `npm test` | 209 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office, colour contrast. |
+| `npm test` | 214 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office, colour contrast. |
 | `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger, a tablet and a member of our team; then every attack found by the security review, which must fail; then a professional who prepares a profile and hands it to the parents; 116 checks. |
 | `npm run test:live` | The same story on a second, empty Supabase project (never the one families use), through the app's own code: 13 steps, including devices, history undo, invitation codes, revisions and materials (needs "Confirm email" off while it runs). Last full run: before the back office (all 13 passed); **to run again once the back-office migration is on the real project**. |
-| `npm run test:a11y` | Accessibility: 164 scans of 46 screens against WCAG 2.2 AA (four sizes, Arabic), then a keyboard-only run. Last run: 0 rule break. |
+| `npm run test:a11y` | Accessibility: 170 scans of 49 screens against WCAG 2.2 AA (four sizes, Arabic), then a keyboard-only run. Last run: 0 rule break. |
 | Browser walkthroughs | Playwright drives the web version like a person: the parent journey, the team (invite, undo, join with a code), the professional journey (verification, tour, request, draft, proposal, approval), and the Arabic screens. |
 
 ## Not done yet (honest list)

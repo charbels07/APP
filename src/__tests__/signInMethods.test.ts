@@ -4,7 +4,7 @@
  * The sign-in screen only offers Google, Apple or phone when the real server has them turned on:
  * a button must never lead to the server's raw error page.
  */
-import { SupabaseBackend } from '../backend/supabase';
+import { SupabaseBackend, providerName } from '../backend/supabase';
 
 const server = (settings: unknown) => {
   const calls: string[] = [];
@@ -35,5 +35,15 @@ describe('sign-in methods offered by the real server', () => {
     expect(await api.signInMethods()).toEqual({ google: false, apple: false, phone: false });
     await api.signInMethods();
     expect(calls).toHaveLength(2);
+  });
+});
+
+describe('the name Google or Apple gives with the sign-in', () => {
+  it('is read from what the provider sends, and nothing is invented', () => {
+    expect(providerName({ full_name: ' Rita Haddad ', name: 'rita' })).toBe('Rita Haddad');
+    expect(providerName({ name: 'Rita H.' })).toBe('Rita H.');
+    expect(providerName({ role: 'parent', display_name: 'typed at sign-up' })).toBe('');
+    expect(providerName({ full_name: 42 })).toBe('');
+    expect(providerName(null)).toBe('');
   });
 });

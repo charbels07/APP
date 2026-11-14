@@ -274,7 +274,7 @@ to Supabase, so the hosting service stores no data and holds no secret.
 | Check | What it does |
 |---|---|
 | `npm run typecheck` | TypeScript reads the whole code and refuses mistakes such as a missing field or a wrong type. |
-| `npm test` | 168 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office. |
+| `npm test` | 169 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office. |
 | `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger, a tablet and a member of our team; 63 checks. |
 | `npm run test:live` | The same story on the real Supabase project, through the app's own code: 13 steps, including devices, history undo, invitation codes, revisions and materials (needs "Confirm email" off while it runs). Last full run: before the back office (all 13 passed); **to run again once the back-office migration is on the real project**. |
 | Browser walkthroughs | Playwright drives the web version like a person: the parent journey, the team (invite, undo, join with a code), the professional journey (verification, tour, request, draft, proposal, approval), and the Arabic screens. |
@@ -292,7 +292,10 @@ to Supabase, so the hosting service stores no data and holds no secret.
   sync, but a photo added on the parent's phone does not yet appear on the child's tablet. The
   private storage folder for it exists (`profile-media`); copying the files is the next step.
 - **Google, Apple and phone sign-in** need settings in Supabase (Google OAuth client, Apple
-  Developer account, an SMS provider). Until they are turned on there, the app does not show those
+  Developer account, an SMS provider): the steps are in `supabase/README.md`, section 9. The code is
+  written (the browser goes to Google and comes back signed in; the iPad shows Apple's own sheet)
+  but **has never run against a real Google or Apple set-up**. Apple is offered in the iPhone / iPad
+  app only. Until they are turned on there, the app does not show those
   choices: at the sign-in screen it asks the server what is turned on (`signInMethods`) and offers
   e-mail and password only. E-mail sign-in works now: codes are sent through the app's
   Gmail account (tested: the e-mail arrived in the inbox and its code confirmed the account).

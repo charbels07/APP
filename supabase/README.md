@@ -140,6 +140,45 @@ two-step sign-in (Authentication → Sign In / Providers → Multi-Factor).
 `npm run test:live` can also play the real decision if a team account is given in the environment
 of your own terminal (never in a file): `LIVE_ADMIN_EMAIL` and `LIVE_ADMIN_PASSWORD`.
 
+## 9. Google and Apple sign-in
+
+The app only shows a sign-in method that is turned on here: it asks the project at the sign-in
+screen (`signInMethods` in `src/backend/supabase.ts`). Nothing to change in the code.
+
+### Google (free; works on the website and in the tablet app)
+
+1. **Supabase → Authentication → URL Configuration.** *Site URL*: the address of the website
+   (`https://….workers.dev`). *Redirect URLs*: add that address followed by `/**`, and
+   `empowercommunication://**` (the way back into the tablet app; the scheme is in `app.json`).
+2. **console.cloud.google.com** → create a project → *Google Auth Platform*:
+   - *Branding*: the app's name and a contact e-mail (shown to people when they sign in).
+   - *Audience*: External. While it says "Testing", only the test users listed there can sign in:
+     publish it ("In production") before real families use it.
+   - *Data access*: the three basic scopes only (`openid`, `.../auth/userinfo.email`,
+     `.../auth/userinfo.profile`).
+   - *Clients* → create a client of type **Web application**. *Authorized JavaScript origins*: the
+     website's address. *Authorized redirect URIs*: `https://<project ref>.supabase.co/auth/v1/callback`.
+3. **Supabase → Authentication → Sign In / Providers → Google**: turn it on and paste the client ID
+   and the client secret. The secret goes there and nowhere else (never in the app, `.env` or a chat).
+
+Google's page says "continue to `<project ref>.supabase.co`" unless the project has a custom
+domain (a paid Supabase option).
+
+### Apple (needs the paid Apple Developer Program; iPhone / iPad app only for now)
+
+Apple asks any iOS app that offers Google sign-in to offer Sign in with Apple too.
+
+1. Choose the app's identifier (`ios.bundleIdentifier` in `app.json`): it cannot change once the
+   app is on the App Store.
+2. developer.apple.com → Identifiers → that App ID → turn on **Sign in with Apple** (an EAS build
+   does this by itself: `ios.usesAppleSignIn` is set in `app.json`).
+3. **Supabase → Authentication → Sign In / Providers → Apple**: turn it on and put the identifier
+   in *Client IDs*. No secret is needed for the app.
+
+In a browser the Apple button is not shown: that way needs a "Services ID" and a secret that has
+to be renewed every six months. To offer it later, do that set-up, put the Services ID first in
+*Client IDs*, and remove the `Platform.OS === 'ios'` condition in `src/ui/start/AuthScreen.tsx`.
+
 ## What is where
 
 | Table | Contents |

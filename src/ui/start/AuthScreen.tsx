@@ -51,7 +51,9 @@ export function AuthScreen({ mode: initialMode, role: initialRole }: { mode: Mod
       alive = false;
     };
   }, [api]);
-  const showApple = !!ways?.apple && Platform.OS !== 'android';
+  // Apple: on iPhone / iPad only. In a browser it needs a separate set-up at Apple (a secret to
+  // renew every six months); until that exists the button would lead to an error page.
+  const showApple = !!ways?.apple && Platform.OS === 'ios';
   const showGoogle = !!ways?.google;
 
   const target: Target = method === 'email' ? { email } : { phone };

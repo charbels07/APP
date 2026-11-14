@@ -55,6 +55,12 @@ const PENDING_ROLE = 'caa.pendingRole';
 const isNetworkError = (e: { name?: string; message?: string; status?: number }) =>
   e.name === 'AuthRetryableFetchError' || e.status === 0 || /network|fetch|timed? ?out/i.test(e.message ?? '');
 
+/** The person's name as Google or Apple gave it with the sign-in, if any. */
+export function providerName(meta: Record<string, unknown> | null | undefined): string {
+  const pick = (k: string) => (typeof meta?.[k] === 'string' ? (meta[k] as string).trim() : '');
+  return (pick('full_name') || pick('name')).slice(0, 80);
+}
+
 /** Database / auth error → the app's short codes. */
 function fail(error: { message?: string } | null | undefined): never {
   const m = error?.message ?? 'unknown';
@@ -273,6 +279,11 @@ export class SupabaseBackend implements Backend {
       row = await data<Row>(this.sb.from('accounts').update({ role: pending }).eq('id', u.id).select().single());
     }
     if (pending) await AsyncStorage.removeItem(PENDING_ROLE);
+    // Google gives the person's name with the sign-in: it becomes the account's name, once.
+    const given = providerName(u.user_metadata);
+    if (row && !row.display_name && given) {
+      row = (await data<Row | null>(this.sb.from('accounts').update({ display_name: given }).eq('id', u.id).select().maybeSingle())) ?? row;
+    }
     const provider = u.is_anonymous ? 'device' : ((u.app_metadata?.provider as Account['provider']) ?? (u.email ? 'email' : 'phone'));
     return {
       id: u.id,
@@ -360,6 +371,9 @@ export class SupabaseBackend implements Backend {
       if (!cred.identityToken) throw new BackendError('cancelled');
       const { error } = await this.sb.auth.signInWithIdToken({ provider: 'apple', token: cred.identityToken });
       if (error) fail(error);
+      // Apple gives the name only the very first time, and only to the app: keep it now.
+      const name = [cred.fullName?.givenName, cred.fullName?.familyName].filter(Boolean).join(' ').trim();
+      if (name) await this.sb.auth.updateUser({ data: { full_name: name } }).catch(() => {});
       return this.me();
     }
     if (Platform.OS === 'web') {

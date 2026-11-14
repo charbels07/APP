@@ -63,6 +63,8 @@ describe('in-app guide', () => {
         pro.verifyTitle, pro.submit, pro.connectUser, pro.familyCode, pro.sendRequest, pro.nav.dashboard, pro.nav.collab, pro.collabConnections,
         // anonymous statistics are a separate, optional choice
         dataStrings(lang).shareTitle,
+        // a word recorded by the family, per language; which voice the device uses
+        t.voice, e.recordVoice, t.voiceUsed,
       ];
       for (const label of quoted) expect(text(lang)).toContain(label);
       // Removed things are no longer described.

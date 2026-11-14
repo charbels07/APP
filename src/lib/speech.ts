@@ -7,7 +7,7 @@ import * as Speech from 'expo-speech';
 import { Platform } from 'react-native';
 import type { Lang, Settings } from '../model/types';
 import type { Segment } from './grammar';
-import { arabicLocale, speechTag } from './lexicon';
+import { speechTag } from './lexicon';
 import { chooseVoice, forVoice, voiceGender, type VoiceChoice, type VoiceGender, type VoiceInfo } from './voices';
 import { mediaUri } from './media';
 import { clipUri } from './voiceClips';
@@ -138,11 +138,13 @@ function deviceVoices(): Promise<VoiceInfo[]> {
 /** Voice and pitch used for each language, from Settings → Voice (woman / man, adult / child). */
 let plan: Partial<Record<Lang, VoiceChoice>> = {};
 
+// Arabic uses the device's standard Arabic voice whatever the family's dialect: the voices of each
+// country were listened to by a native speaker and judged not good enough (the dialect only changes the words).
 export async function prepareVoices(settings: Settings): Promise<Record<Lang, VoiceChoice>> {
   const voices = await deviceVoices();
   const next = {} as Record<Lang, VoiceChoice>;
   for (const l of ['fr', 'en', 'ar'] as Lang[])
-    next[l] = chooseVoice(voices, l, speechTag(l), settings.voiceKind ?? 'device', settings.voiceAge ?? 'adult', settings.voices[l], l === 'ar' ? arabicLocale(settings) : undefined);
+    next[l] = chooseVoice(voices, l, speechTag(l), settings.voiceKind ?? 'device', settings.voiceAge ?? 'adult', settings.voices[l]);
   plan = next;
   return next;
 }

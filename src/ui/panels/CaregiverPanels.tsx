@@ -351,7 +351,13 @@ function ConceptEditorBody({ conceptId, only }: { conceptId: string; only?: 'ima
 
       {only !== 'image' && (
         <Section title={`${t.voice} — ${langName(profile.settings, audioLang)}`}>
-          <Segmented value={audioLang} onChange={setAudioLang} options={langs.map((l) => ({ value: l, label: langName(profile.settings, l) }))} />
+          {/* One recording per language; a tick shows the languages that already have one. */}
+          <Segmented
+            value={audioLang}
+            onChange={setAudioLang}
+            options={langs.map((l) => ({ value: l, label: `${profile.overrides[conceptId]?.audio?.[l] ? '✓ ' : ''}${langName(profile.settings, l)}` }))}
+          />
+          <Text style={s.note}>{t.recordNote}</Text>
           <Recorder
             key={audioLang}
             media={audio}

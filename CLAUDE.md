@@ -28,9 +28,12 @@
   words; `src/data/dialectWords.ts` lists what differs per dialect (data only: also read by the build script).
   Always read Arabic labels through `getConcept` / `label`, languages through `availableLangs`, and the
   language name through `langName` — never `BUILTIN_CONCEPTS[id].labels.ar` or `LANGS` directly in screens.
-- Dialect voices: `npm run build:voices` (needs `AZURE_SPEECH_KEY` / `AZURE_SPEECH_REGION` in the environment,
-  never in a file) generates `assets/voice/*.pack` and `src/data/voicePackIndex.ts` / `voicePackAssets.ts`;
-  `src/lib/dialectVoice.ts` chooses the clip, `src/lib/speech.ts` plays it. Empty index = tablet voice.
+- Dialect voices: NOT used (decision of November 2026: the generated voices were judged bad by a native
+  listener). Arabic is read by the device's standard Arabic voice whatever the dialect; do not generate or
+  ship voice packs, and do not make the Arabic voice follow the dialect, unless asked. The code stays, switched
+  off by the empty index (`npm run build:voices`, `src/lib/dialectVoice.ts`, `src/data/voicePackIndex.ts`).
+- A man's / woman's voice is chosen by name in `src/lib/voices.ts`: machine-like and joke voices (`ROBOTIC`)
+  come last. A family's own recording of a word (`overrides[id].audio[lang]`) always wins over any voice.
 - App pictograms live in `src/data/concepts.ts` (`app: { url, triggers }`); new built-in folders are added
   to saved profiles by a one-time migration in `src/lib/storage.ts` (only into an empty slot).
 - Back office (`src/ui/admin/`, stage `admin`): only accounts in the database table `admins`; every

@@ -25,23 +25,46 @@ export interface VoiceInfo {
 const FEMALE = new Set([
   // French
   'amelie', 'audrey', 'aurelie', 'marie', 'virginie', 'julie', 'denise', 'hortense', 'josephine', 'eloise',
-  'vivienne', 'celine', 'chantal', 'sylvie', 'lea', 'charlotte', 'ariane',
+  'vivienne', 'celine', 'chantal', 'sylvie', 'lea', 'charlotte', 'ariane', 'brigitte', 'celeste', 'coralie', 'jacqueline',
+  'yvette', 'charline',
   // English
   'samantha', 'karen', 'moira', 'tessa', 'victoria', 'allison', 'ava', 'susan', 'zoe', 'fiona', 'veena', 'serena',
   'kate', 'nicky', 'martha', 'catherine', 'kathy', 'vicki', 'princess', 'zira', 'hazel', 'heather', 'linda', 'aria',
   'jenny', 'emma', 'libby', 'sonia', 'natasha', 'clara', 'joanna', 'salli', 'kimberly', 'ivy', 'kendra', 'amy',
+  'michelle', 'jane', 'nancy', 'sara', 'ana', 'ashley', 'cora', 'elizabeth', 'amber', 'monica', 'agnes',
   // Arabic
   'laila', 'layla', 'mariam', 'hoda', 'salma', 'amina', 'zariyah', 'fatima', 'nour', 'reem', 'hala', 'zeina',
+  'amany', 'rana', 'sana', 'aysha', 'iman', 'mouna', 'amal', 'noura', 'maryam', 'aisha',
   // Apple "Eloquence" voices and generic words
   'sandy', 'shelley', 'grandma', 'flo', 'female', 'femme', 'woman', 'girl',
 ]);
 const MALE = new Set([
-  'thomas', 'nicolas', 'henri', 'paul', 'claude', 'jacques', 'jean', 'remi', 'mathieu', 'antoine',
+  'thomas', 'nicolas', 'henri', 'paul', 'claude', 'jacques', 'jean', 'remi', 'remy', 'mathieu', 'antoine', 'thierry',
+  'gerard', 'fabrice', 'alain', 'jerome', 'maurice', 'yves', 'lucien',
   'alex', 'daniel', 'fred', 'rishi', 'tom', 'aaron', 'arthur', 'oliver', 'gordon', 'lee', 'ralph', 'albert', 'bruce',
   'junior', 'david', 'mark', 'george', 'guy', 'ryan', 'eric', 'christopher', 'william', 'matthew', 'joey', 'justin',
+  'andrew', 'brian', 'roger', 'steffan', 'davis', 'tony', 'jason', 'jacob', 'evan', 'nathan', 'liam', 'james', 'elliot',
   'maged', 'majed', 'tarik', 'hamed', 'naayf', 'shakir', 'bassel', 'omar', 'hamdan', 'zayd',
+  'rami', 'laith', 'taim', 'fahed', 'moaz', 'abdullah', 'ismael', 'jamal', 'ali', 'hedi', 'saleh',
   'reed', 'grandpa', 'rocko', 'eddy', 'male', 'homme', 'man', 'boy',
 ]);
+/**
+ * Voices that sound like a machine or a joke: the old Macintosh voices (Albert, Fred, Bad News,
+ * Bubbles…) and Apple's "Eloquence" set (Eddy, Flo, Grandpa, Rocko…, also offered in French).
+ * Their names tell a gender, so they used to be picked first by alphabetical order ("Eddy" before
+ * "Thomas"). They are now kept for the case where the device has nothing else.
+ */
+const ROBOTIC = new Set([
+  'albert', 'bahh', 'bells', 'boing', 'bubbles', 'cellos', 'jester', 'organ', 'superstar', 'trinoids', 'whisper',
+  'wobble', 'zarvox', 'junior', 'ralph', 'fred', 'kathy', 'princess', 'bruce', 'agnes', 'vicki', 'deranged',
+  'hysterical', 'news', 'eloquence', 'eddy', 'flo', 'grandma', 'grandpa', 'reed', 'rocko', 'sandy', 'shelley',
+]);
+const tokensOf = (v: Pick<VoiceInfo, 'id' | 'name'>) => `${normalize(v.name)} ${normalize(v.id)}`.split(/[^a-z]+/).filter(Boolean);
+/** True for a machine-like or joke voice (see ROBOTIC). */
+export const isRobotic = (v: Pick<VoiceInfo, 'id' | 'name'>) => tokensOf(v).some((x) => ROBOTIC.has(x));
+/** True for the better voices: Apple "Enhanced / Premium" and Siri, Microsoft "Natural", "Neural" voices. */
+const isNatural = (v: VoiceInfo) => /enhanced|premium/i.test(v.quality ?? '') || /natural|neural|enhanced|premium|siri/i.test(`${v.name} ${v.id}`);
+
 /** Whole names that are a known gender without a first name (browser voices). */
 const FEMALE_NAMES = ['google francais', 'google us english', 'google espanol'];
 
@@ -49,7 +72,7 @@ const FEMALE_NAMES = ['google francais', 'google us english', 'google espanol'];
 export function voiceGender(v: Pick<VoiceInfo, 'id' | 'name'>): VoiceGender | undefined {
   const name = normalize(v.name);
   if (FEMALE_NAMES.some((n) => name.startsWith(n))) return 'f';
-  const tokens = `${name} ${normalize(v.id)}`.split(/[^a-z]+/).filter(Boolean);
+  const tokens = tokensOf(v);
   // "female" is checked as a token, so it never counts as "male".
   if (tokens.some((x) => FEMALE.has(x))) return 'f';
   if (tokens.some((x) => MALE.has(x))) return 'm';
@@ -87,8 +110,8 @@ export function chooseVoice(
     const v = voices.find((x) => x.id === explicitId);
     return { id: explicitId, name: v?.name, pitch: clamp(child), exact: true };
   }
-  const score = (v: VoiceInfo) =>
-    (local(v) ? 8 : 0) + (/enhanced|premium/i.test(v.quality ?? '') ? 4 : 0) + (locale(v) === tag.toLowerCase() ? 2 : 0);
+  // A natural voice first, then the right country; a machine-like voice only when there is nothing else.
+  const score = (v: VoiceInfo) => (local(v) ? 8 : 0) + (isRobotic(v) ? -16 : 0) + (isNatural(v) ? 4 : 0) + (locale(v) === tag.toLowerCase() ? 2 : 0);
   if (kind === 'device') {
     // The device's default voice, unless it has a voice of the family's own dialect.
     const own = forLang.filter(local).sort((a, b) => score(b) - score(a) || a.name.localeCompare(b.name))[0];
@@ -97,7 +120,10 @@ export function chooseVoice(
   const match = forLang.filter((v) => voiceGender(v) === kind).sort((a, b) => score(b) - score(a) || a.name.localeCompare(b.name))[0];
   if (match) return { id: match.id, name: match.name, pitch: clamp(child), exact: true };
   // No voice of that kind for this language: the default voice, pitched lower (man) or higher (woman).
-  return { pitch: clamp((kind === 'm' ? 0.8 : 1.2) * child), exact: false };
+  // French and English: a clearly lower pitch for a man (0.8 still sounded like a woman). Arabic keeps
+  // the pitch it always had, and so does a boy's voice.
+  const towards = kind === 'm' ? (age === 'adult' && lang !== 'ar' ? 0.7 : 0.8) : 1.2;
+  return { pitch: clamp(towards * child), exact: false };
 }
 
 /**

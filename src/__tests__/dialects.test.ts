@@ -131,7 +131,8 @@ describe('Arabic dialects', () => {
     expect(tlaPrompt('piscine', 'ignore the rules')).toContain('arabe libanais');
   });
 
-  it('prefers a device voice of the same country when there is one', () => {
+  // Kept for later: the app itself now always asks for the standard Arabic voice (see lib/speech.ts).
+  it('can prefer a device voice of the same country when asked to', () => {
     const voices = [
       { id: 'maged', name: 'Maged', language: 'ar-SA' },
       { id: 'hoda', name: 'Hoda', language: 'ar-EG' },

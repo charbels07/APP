@@ -210,7 +210,7 @@ so the clips are generated once by a speech service and shipped inside the app.
 | What is not covered | Words the family adds, typed text and anything not in the pack keep the tablet's standard voice — in one sentence the two voices can follow each other. A word the family recorded themselves always comes first. |
 | Turning it off | Settings → Voice → *Dialect voice for the Arabic words of the board* (shown only when a pack exists for the family's dialect). |
 | Telling people | Settings → About says the dialect voices are synthetic and which service made them. |
-| State today | **The packs are not generated yet**: this needs a paid Azure Speech key (see below). Until then the app speaks Arabic with the tablet's voice, exactly as before. Everything else was tested with stand-in clips: the generator's files, the app build, and a browser check that touching « عايز » loads the Egyptian clip. |
+| State today | **Decided not to use them (November 2026).** 320 sample clips were generated and a native speaker listened: the dialect voices were judged bad. No pack is shipped, so the app speaks Arabic with the device's standard Arabic voice whatever the dialect (the dialect still changes the *words*). The generator and the playing code stay in the project, switched off by the empty index, in case better voices appear. |
 
 To generate the packs (once, then again only when words change):
 
@@ -269,12 +269,23 @@ file and the pictogram packs). A hosting service (Cloudflare) can rebuild and pu
 each time the code changes on GitHub; `wrangler.jsonc` is its settings file. The page talks straight
 to Supabase, so the hosting service stores no data and holds no secret.
 
+## Round 14 — Voices: standard Arabic, a better man's voice, your own recordings
+
+| Feature | How it was built |
+|---|---|
+| Arabic voice | `src/lib/speech.ts` no longer asks for the voice of the family's country: Arabic is always read by the device's standard Arabic voice. Choosing a dialect only changes the words (`src/data/dialectWords.ts`). |
+| A man's voice that sounds like a man | Devices do not say whether a voice is a man's or a woman's, so the app recognises voices by their names (`src/lib/voices.ts`, **TypeScript**). Among a man's voices it used to take the first by alphabetical order, and on Apple devices that was "Eddy" or "Albert": machine-like or joke voices. They are now put last (a list of about 30 such names), natural voices first ("Enhanced", "Premium", Microsoft "Natural"), then the right country. Result on an iPad: "Thomas" in French, "Daniel" in English. |
+| When the device has no man's voice | The default voice is played lower. For French and English the pitch went from 0.8 to 0.7 (clearly lower); Arabic and a boy's voice did not change. Settings → Voice → *Voice used* says "approximate voice" in that case: installing a man's voice in the device's own settings is the real fix. |
+| Your own recording of a word | Already there, for each language: the word editor has *Recorded voice* with one recording per language (stored in the profile as `audio.fr / audio.en / audio.ar`), and tapping a card twice offers *Record the pronunciation*. New: a tick shows which languages already have a recording, and a line says what the recording does. The recording replaces the device's voice whenever the word is touched or said in a sentence, except when grammar changes the word's form. |
+| Limit | A recording stays on the device where it was made (like photos): it is not yet copied to the family's other devices. |
+| Tests | 4 new Jest tests on the choice of voice (169 → 173). Nobody has listened to the result yet: a program cannot hear. |
+
 ## How everything is checked
 
 | Check | What it does |
 |---|---|
 | `npm run typecheck` | TypeScript reads the whole code and refuses mistakes such as a missing field or a wrong type. |
-| `npm test` | 169 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office. |
+| `npm test` | 173 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office. |
 | `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger, a tablet and a member of our team; 63 checks. |
 | `npm run test:live` | The same story on the real Supabase project, through the app's own code: 13 steps, including devices, history undo, invitation codes, revisions and materials (needs "Confirm email" off while it runs). Last full run: before the back office (all 13 passed); **to run again once the back-office migration is on the real project**. |
 | Browser walkthroughs | Playwright drives the web version like a person: the parent journey, the team (invite, undo, join with a code), the professional journey (verification, tour, request, draft, proposal, approval), and the Arabic screens. |
@@ -318,9 +329,9 @@ to Supabase, so the hosting service stores no data and holds no secret.
   Gulf, Iraqi, Standard Arabic) were written without a native reviewer. Before selling in a country,
   have its list read by a speech therapist or a parent from there (`src/data/dialectWords.ts`).
   North African dialects (Moroccan, Algerian, Tunisian) are not included.
-- **Dialect voices**: the app can play a voice per dialect, but the clips are not generated yet (a paid
-  Azure Speech key is needed, see Round 12). Whether those voices pronounce everyday dialect words
-  well has not been checked by ear; new words and typed sentences keep the tablet's standard voice.
+- **Dialect voices**: tried and dropped for now (the generated voices were judged bad by a native
+  listener). Arabic is read by the device's standard Arabic voice; families record the words that do not
+  sound right.
 - **Pictogram words**: about 11,900 line icons (Material, Tabler, Lucide, Phosphor, Health Icons)
   are found in English only; the French and Arabic words added by our lists are marked "to review"
   and must be checked by the speech therapist and a native Arabic speaker.

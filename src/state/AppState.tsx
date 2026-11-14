@@ -199,10 +199,16 @@ export interface AppProviderProps {
   locked?: boolean;
   /** Communication data (with the family's consent): touches, sentences, pages… */
   onUsage?: (e: UsageEvent) => void;
+  /**
+   * Caregiver tools open without the caregiver code: a professional's own draft of a board, on
+   * their own account (the code keeps the child out of the tools on the child's device; here
+   * nothing reaches the child before the server checked the person's rights).
+   */
+  freeEdit?: boolean;
   children: React.ReactNode;
 }
 
-export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, preview = false, locked = false, onUsage, children }: AppProviderProps) {
+export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, preview = false, locked = false, onUsage, freeEdit = false, children }: AppProviderProps) {
   const usageRef = useRef(onUsage);
   usageRef.current = onUsage;
   const lockedRef = useRef(locked);
@@ -254,8 +260,17 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
   const viewRef = useRef<{ view: View; tlaId?: string }>({ view: 'board' });
   const [path, setPath] = useState<string[]>(['core']);
   const [tlaId, setTlaId] = useState<string | undefined>(initial.lastTla ?? initial.tlaOrder[0]);
-  const [overlay, setOverlay] = useState<Overlay>(null);
+  const [overlay, setOverlayState] = useState<Overlay>(null);
   const [editMode, setEditModeState] = useState(false);
+  const freeEditRef = useRef(freeEdit);
+  freeEditRef.current = freeEdit;
+  /** Opening a panel; where the caregiver code is not asked (freeEdit), "ask the code" opens the tools at once. */
+  const setOverlay = useCallback((o: Overlay) => {
+    if (o?.kind === 'pin' && freeEditRef.current) {
+      setEditModeState(true);
+      setOverlayState(o.then ?? null);
+    } else setOverlayState(o);
+  }, []);
   const [stripState, setStripState] = useState<{ items: StripItem[]; history: StripItem[][] }>({
     items: [],
     history: [],

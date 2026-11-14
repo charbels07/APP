@@ -64,7 +64,7 @@ function Current() {
     case 'board':
       return <BoardStage key={stage.profileId} profileId={stage.profileId} />;
     case 'pro':
-      return <ProHome />;
+      return <ProHome open={stage.open} />;
     case 'admin':
       return <BackOffice />;
   }

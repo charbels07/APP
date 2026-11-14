@@ -11,7 +11,8 @@ import { createDefaultProfile, DEFAULT_SETTINGS } from '../../data/defaults';
 import { DIALECT_ORDER, DIALECTS, dialectName } from '../../data/dialects';
 import { errorText } from '../../i18n/account';
 import { dataStrings } from '../../i18n/data';
-import { onboardingStrings, type OnboardingStrings } from '../../i18n/onboarding';
+import { forProfessional, onboardingStrings, type OnboardingStrings } from '../../i18n/onboarding';
+import { proStrings } from '../../i18n/pro';
 import { availableLangs, getConcept, label, langName, symbolOf, wordClass } from '../../lib/lexicon';
 import {
   AAC_BEFORE,
@@ -46,7 +47,6 @@ import { checked } from '../a11y';
 
 const STEPS = ['child', 'arabic', 'langs', 'voice', 'comm', 'activities', 'visual', 'feedback', 'review', 'vocab', 'layout', 'access', 'plans', 'data', 'try'] as const;
 type StepId = (typeof STEPS)[number];
-const SETUP_FROM = STEPS.indexOf('vocab');
 /** Name of a language of the child, with the Arabic the family chose. */
 const langLabel = (a: Answers, l: Lang) => langName({ arabic: a.arabic ?? 'lb' }, l);
 
@@ -58,7 +58,14 @@ interface Draft {
 export function Onboarding() {
   const sess = useSession();
   const { api, account, uiLang } = sess;
-  const o = onboardingStrings(uiLang);
+  // A professional prepares the profile of a child whose family has no account yet: the same
+  // questions, said about "the child"; what is recorded is not asked (the parents decide once connected).
+  const pro = account?.role === 'pro';
+  const o = useMemo(() => (pro ? forProfessional(onboardingStrings(uiLang), uiLang) : onboardingStrings(uiLang)), [pro, uiLang]);
+  const steps = useMemo<readonly StepId[]>(() => (pro ? STEPS.filter((x) => x !== 'data') : STEPS), [pro]);
+  const setupFrom = steps.indexOf('vocab');
+  // Other children this account already opens: "Back" on the first step returns there.
+  const [hasBoard, setHasBoard] = useState(false);
   const draftKey = `caa.onboarding.v1.${account?.id ?? 'anon'}`;
   const [draft, setDraft] = useState<Draft | null>(null);
   const [resumed, setResumed] = useState(false);
@@ -79,7 +86,9 @@ export function Onboarding() {
       if (d && d.step > 0) setResumed(true);
       setDraft(d ?? { answers: emptyAnswers(uiLang === 'en' ? 'en' : uiLang === 'ar' ? 'ar' : 'fr'), step: 0 });
       setLegacy(await loadLegacyProfile());
-      setSiblings((await api.listProfiles().catch(() => [])).filter((p) => p.access === 'owner').map((p) => ({ id: p.id, name: p.name })));
+      const mine = await api.listProfiles().catch(() => []);
+      setHasBoard(mine.length > 0);
+      setSiblings(mine.filter((p) => p.access === 'owner').map((p) => ({ id: p.id, name: p.name })));
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -91,11 +100,11 @@ export function Onboarding() {
   if (!draft) return null;
   const a = draft.answers;
   const set = (patch: Partial<Answers>) => save({ ...draft, answers: { ...a, ...patch } });
-  const stepId: StepId = STEPS[draft.step];
+  const stepId: StepId = steps[Math.min(draft.step, steps.length - 1)];
   const goto = (i: number) => {
     setError(null);
     setResumed(false);
-    save({ ...draft, step: Math.max(0, Math.min(STEPS.length - 1, i)) });
+    save({ ...draft, step: Math.max(0, Math.min(steps.length - 1, i)) });
   };
   const next = () => {
     if (stepId === 'child' && !a.name.trim()) return setError(o.needName);
@@ -103,7 +112,9 @@ export function Onboarding() {
     if (stepId === 'langs' && !a.langs.length) return setError(o.needLang);
     goto(draft.step + 1);
   };
-  const back = () => (draft.step === 0 ? sess.signOut() : goto(draft.step - 1));
+  // Leaving at the first step: back to the workspace (professional), to the child already open, or out.
+  const leave = () => (pro ? sess.go({ name: 'pro' }) : hasBoard ? void sess.enter().catch(() => sess.signOut()) : void sess.signOut());
+  const back = () => (draft.step === 0 ? leave() : goto(draft.step - 1));
 
   if (stepId === 'try') {
     return (
@@ -111,20 +122,23 @@ export function Onboarding() {
         answers={a}
         base={baseProfile(a, legacy, imported)}
         siblingId={a.vocab === 'copy' ? a.copyFrom : undefined}
+        freeEdit={pro}
         onBack={back}
         onDone={async (data) => {
           const rec = await api.createProfile({ name: a.name.trim(), age: a.age, intake: intakeOf(a), data });
           await AsyncStorage.removeItem(draftKey).catch(() => {});
           if (a.vocab === 'legacy') await forgetLegacyProfile();
-          sess.openProfile(rec.id);
+          // A professional goes back to the workspace, on this child's page (the parents' code is there).
+          if (pro) sess.go({ name: 'pro', open: rec.id });
+          else sess.openProfile(rec.id);
         }}
       />
     );
   }
 
-  const inSetup = draft.step >= SETUP_FROM;
-  const partSteps = inSetup ? STEPS.length - SETUP_FROM : SETUP_FROM;
-  const partIndex = inSetup ? draft.step - SETUP_FROM : draft.step;
+  const inSetup = draft.step >= setupFrom;
+  const partSteps = inSetup ? steps.length - setupFrom : setupFrom;
+  const partIndex = inSetup ? draft.step - setupFrom : draft.step;
   return (
     <StartLayout onBack={back} maxWidth={640}>
       <View style={{ gap: 8 }}>
@@ -132,12 +146,13 @@ export function Onboarding() {
           {inSetup ? o.partSetup : o.partChild} · {o.stepOf} {partIndex + 1} {o.of} {partSteps}
         </T>
         <View style={s.bar}>
-          <View style={[s.barFill, { width: `${((draft.step + 1) / STEPS.length) * 100}%` }]} />
+          <View style={[s.barFill, { width: `${((draft.step + 1) / steps.length) * 100}%` }]} />
         </View>
       </View>
       {resumed && <T style={{ color: C.textMuted, fontSize: 14 }}>{o.resumeNote}</T>}
+      {stepId === 'child' && pro && <T style={{ color: C.textMuted, fontSize: 14 }}>{proStrings(uiLang).setupFor}</T>}
       {stepId === 'child' && <ChildStep o={o} a={a} set={set} />}
-      {stepId === 'child' && <LinkBtn label={sess.s.haveCode} onPress={() => sess.go({ name: 'invitations' })} />}
+      {stepId === 'child' && !pro && <LinkBtn label={sess.s.haveCode} onPress={() => sess.go({ name: 'invitations' })} />}
       {stepId === 'arabic' && <ArabicStep o={o} a={a} set={set} />}
       {stepId === 'langs' && <LangStep o={o} a={a} set={set} />}
       {stepId === 'voice' && <VoiceStep o={o} a={a} set={set} />}
@@ -689,12 +704,15 @@ function TryBoard({
   answers,
   base,
   siblingId,
+  freeEdit,
   onBack,
   onDone,
 }: {
   answers: Answers;
   base: Profile;
   siblingId?: string;
+  /** A professional's try: the caregiver code is the family's to choose later. */
+  freeEdit?: boolean;
   onBack: () => void;
   onDone: (p: Profile) => Promise<void>;
 }) {
@@ -730,7 +748,7 @@ function TryBoard({
     <View style={[s.tryBanner, rtl && { flexDirection: 'row-reverse' }]}>
       <Icon name="sparkles" size={22} color={C.success} />
       <Text style={[s.tryText, rtl && { textAlign: 'right' }]} numberOfLines={3}>
-        {error ?? o.tryBanner}
+        {error ?? (freeEdit ? proStrings(sess.uiLang).tryBanner : o.tryBanner)}
       </Text>
       <Btn small label={o.back} onPress={onBack} disabled={busy} />
       <Btn
@@ -754,7 +772,7 @@ function TryBoard({
     </View>
   );
   return (
-    <AppProvider initial={profile} onChange={(p) => (latest.current = p)} uiLang={sess.uiLang} setUiLang={sess.setUiLang}>
+    <AppProvider initial={profile} onChange={(p) => (latest.current = p)} uiLang={sess.uiLang} setUiLang={sess.setUiLang} freeEdit={freeEdit}>
       <Root banner={banner} />
     </AppProvider>
   );

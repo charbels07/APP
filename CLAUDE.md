@@ -61,4 +61,15 @@
 - Words for the user: the Schedule screen holds "sequences" (step lists: New sequence / Edit sequence) and
   the week and month "schedules" (never "plan": it reads as a subscription plan). Lists the user orders
   by hand use `src/ui/Reorderable.tsx` (hold and slide, plus arrows as the non-drag alternative).
+- A verified `pro` account can create a child's profile and hand it to the parents (the role-`parent`
+  invitation it wrote: `join_profile`; `ParentsCard` in `src/ui/pro/Workspace.tsx`). While a professional
+  owns a profile, recording and sharing stay off (database + `LocalBackend`); never offer those controls there.
+  In the professional's own draft board the caregiver code is not asked (`freeEdit`); never use `freeEdit`
+  on a board the child uses.
+- Notices are stored as sentences by the server: a new notice gets its three versions in
+  `src/lib/notices.ts` (shown with `noticeText`), with a line in `src/__tests__/notices.test.ts`.
+- Professionals' materials: no separate "create" page and no title field; the library creates
+  (`CreateTiles`) and names a material by what it contains (`src/lib/resourceNames.ts`, shown with
+  `resourceName`). AI buttons and messages only show when `aiAvailable()` says yes: never a sentence about
+  the AI being unavailable.
 - Services and keys: `docs/API-KEYS.md` (keep it up to date when a feature starts needing one).

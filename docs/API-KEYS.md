@@ -58,6 +58,8 @@ npx supabase functions deploy caa-ai
 ```
 
 Today: **not deployed** on the real server, so the real app uses the built-in library only.
+Until it is deployed the app shows no AI button and no message about it (it asks the server once
+whether the function exists). The day you deploy it, the AI buttons appear by themselves.
 The online demo is different: it borrows the AI of the claude.ai page it sits in, with no key
 of yours.
 

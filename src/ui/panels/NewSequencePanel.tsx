@@ -47,6 +47,7 @@ export function NewSequencePanel() {
     const ai = await askAiForTla(topic, ctl.signal, profile.settings.arabic);
     if (ctl.signal.aborted) return;
     setThinking(false);
+    if (!ai) void aiAvailable().then(setAiOk);
     const p = ai ? planFromAi(lib, topic, ui, ai) : null;
     if (p?.steps.length) {
       setPlan(p);

@@ -54,7 +54,7 @@ describe('in-app guide', () => {
         // sequences (step lists) with suggested steps; settings are saved on demand; voice height; selection
         t.newSchedule, t.suggestSteps, t.createSeq, t.editSchedule, t.save, t.sDiscard, t.sPitch, e.selectAll, e.selectNone,
         // professionals
-        pro.nav.users, pro.nav.create, pro.nav.library, pro.nav.learn, pro.sendForApproval, st.levels[1], st.levels[2], st.levels[3],
+        pro.nav.users, pro.nav.library, pro.createTitle, pro.searchItems, pro.libTemplates, pro.nav.learn, pro.sendForApproval, st.levels[1], st.levels[2], st.levels[3],
         // the certificate must be accepted first; writing to the app's team
         pro.nav.account, adminStrings(lang).writeTeam,
         // the account page: children, devices, deleting, preferences
@@ -63,6 +63,8 @@ describe('in-app guide', () => {
         st.expiry, st.revoke, st.news, st.renewCode,
         // the professional workspace: verification, connecting to a family, collaborations
         pro.verifyTitle, pro.submit, pro.connectUser, pro.familyCode, pro.sendRequest, pro.nav.dashboard, pro.nav.collab, pro.collabConnections,
+        // a professional prepares a child's profile, then hands it to the parents
+        pro.createChild, pro.parentsTitle, pro.parentsMake, ob.childTitle,
         // anonymous statistics are a separate, optional choice
         dataStrings(lang).shareTitle,
         // a word recorded by the family, per language; which voice the device uses

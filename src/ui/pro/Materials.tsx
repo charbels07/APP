@@ -1,11 +1,13 @@
 /**
- * Professionals' materials: create (TLA, schedule, First–Then, timer, picture cards, from a
- * photo), the library (my templates / shared with me / each user's materials) and what can be
- * done with a material (open, duplicate, personalise for a child, share, propose to a profile,
- * export, delete). Templates carry no child's data; a child's materials stay with that child.
+ * Professionals' materials, all in "My library": a search bar (by name), the tiles that start
+ * a new material in one tap (TLA, schedule, First–Then, picture cards, from a photo), the lists
+ * (created items / shared with me / each user's materials) and what can be done with a material
+ * (open, duplicate, personalise for a child, share, propose to a profile, export, delete).
+ * No name is asked: a material is called by what it contains (see materialTitle).
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { BackendError } from '../../backend/Backend';
 import type { ProfileSummary, Resource, ResourceKind } from '../../backend/types';
 import { errorText } from '../../i18n/account';
 import { proStrings, type ProStrings } from '../../i18n/pro';
@@ -24,6 +26,8 @@ import {
   sandboxFor,
   withConcepts,
 } from '../../lib/resources';
+import { applyOps } from '../../lib/profileDiff';
+import { followsContent, isRealName, materialTitle, resourceName } from '../../lib/resourceNames';
 import { search } from '../../lib/search';
 import { migrate } from '../../lib/storage';
 import type { ResourceData } from '../../backend/types';
@@ -46,51 +50,54 @@ const langOf = (ui: string): Lang => (ui === 'en' ? 'en' : ui === 'ar' ? 'ar' : 
 
 // ── Create ──
 
-export function CreateMaterials({ users, onEdit, presetUser }: { users: ProfileSummary[]; onEdit: (e: Editing) => void; presetUser?: string }) {
+/**
+ * One tile per kind of material: a tap starts it. A visual timer is not offered: on its own it
+ * could be saved but not used with a child (timers live in the child's board and in the steps of
+ * a sequence); timers saved before still open.
+ */
+export function CreateTiles({ users, onEdit }: { users: ProfileSummary[]; onEdit: (e: Editing) => void }) {
   const { uiLang } = useSession();
   const p = proStrings(uiLang);
-  const [kind, setKind] = useState<ResourceKind | 'photo'>('tla');
-  const [title, setTitle] = useState('');
-  const [forUser, setForUser] = useState<string>(presetUser ?? '');
-  const choices: (ResourceKind | 'photo')[] = [...RESOURCE_KINDS, 'photo'];
+  const rtl = uiLang === 'ar';
+  // Optional: made for one child (kept with that child's materials). Nothing chosen: a created item.
+  const [forUser, setForUser] = useState<string | null>(null);
+  const choices: (ResourceKind | 'photo')[] = [...RESOURCE_KINDS.filter((k) => k !== 'timer'), 'photo'];
   return (
     <>
-      {choices.map((k) => (
-        <Pressable
-          key={k}
-          onPress={() => setKind(k)}
-          style={[ss.row, kind === k && { borderColor: C.accent, backgroundColor: '#F3F7FF' }]}
-          accessibilityRole="radio"
-          {...checked(kind === k)}
-        >
-          <Icon name={k === 'photo' ? 'camera' : KIND_ICON[k]} size={24} color={C.accent} />
-          <View style={{ flex: 1 }}>
-            <Text style={ss.title}>{k === 'photo' ? p.fromPhoto : p.kinds[k]}</Text>
-            <Text style={ss.sub}>{k === 'photo' ? p.kindNotes.cards : p.kindNotes[k]}</Text>
-          </View>
-          {kind === k && <Icon name="check" size={20} color={C.accent} />}
-        </Pressable>
-      ))}
-      <Field label={p.title} value={title} onChangeText={setTitle} />
-      <Note text={p.forUser} />
-      <Segmented<string>
-        value={forUser}
-        onChange={setForUser}
-        options={[{ value: '', label: p.generic }, ...users.map((u) => ({ value: u.id, label: u.name }))]}
-      />
-      <Btn
-        kind="primary"
-        icon="plus"
-        label={p.createTitle}
-        onPress={() =>
-          onEdit({
-            kind: kind === 'photo' ? 'cards' : kind,
-            title: title.trim() || p.untitled,
-            profileId: forUser || undefined,
-            photo: kind === 'photo',
-          })
-        }
-      />
+      {users.length > 0 && (
+        <View style={[st.forRow, rtl && { flexDirection: 'row-reverse' }]}>
+          <Text style={ss.sub}>{p.forUser}</Text>
+          {users.map((u) => {
+            const on = forUser === u.id;
+            return (
+              <Pressable key={u.id} onPress={() => setForUser(on ? null : u.id)} style={[st.forChip, on && st.forChipOn]} accessibilityRole="checkbox" {...checked(on)} accessibilityLabel={u.name}>
+                <Icon name="user" size={16} color={on ? '#fff' : C.accent} />
+                <Text style={[st.forText, on && { color: '#fff' }]}>{u.name}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
+      <View style={[st.tiles, rtl && { flexDirection: 'row-reverse' }]}>
+        {choices.map((k) => (
+          <Pressable
+            key={k}
+            onPress={() => onEdit({ kind: k === 'photo' ? 'cards' : k, title: '', profileId: forUser ?? undefined, photo: k === 'photo' })}
+            style={({ pressed }) => [st.tile, rtl && { flexDirection: 'row-reverse' }, pressed && { backgroundColor: '#F3F7FF', borderColor: C.accent }]}
+            accessibilityRole="button"
+            accessibilityLabel={`${p.createTitle} : ${k === 'photo' ? p.fromPhoto : p.kinds[k]}`}
+          >
+            <View style={st.tileIcon}>
+              <Icon name={k === 'photo' ? 'camera' : KIND_ICON[k]} size={24} color={C.accent} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[ss.title, rtl && { textAlign: 'right' }]}>{k === 'photo' ? p.fromPhoto : p.kinds[k]}</Text>
+              <Text style={[ss.sub, rtl && { textAlign: 'right' }]}>{k === 'photo' ? p.photoNote : p.kindNotes[k]}</Text>
+            </View>
+            <Icon name="plus" size={20} color={C.accent} />
+          </Pressable>
+        ))}
+      </View>
     </>
   );
 }
@@ -102,14 +109,20 @@ export function ResourceEditor({ editing, onClose }: { editing: Editing; onClose
   const p = proStrings(uiLang);
   const existing = 'resource' in editing ? editing.resource : undefined;
   const kind = existing?.kind ?? (editing as { kind: ResourceKind }).kind;
-  const title = existing?.title ?? (editing as { title: string }).title;
+  // A name typed in an older version is kept; otherwise the name follows the material itself
+  // (rename the board inside, and its name in the library follows).
+  const given = (existing?.title ?? '').trim();
+  const typed = !!existing && !followsContent(existing);
   const profileId = existing ? existing.profileId : (editing as { profileId?: string }).profileId;
   const [id] = useState(existing?.id ?? newResourceId());
   const [data, setData] = useState<ResourceData>(existing?.data ?? emptyResource(kind));
   const [msg, setMsg] = useState<string | null>(null);
-  const save = async (d: ResourceData) => {
+  const [title, setTitle] = useState(existing ? resourceName(existing, uiLang) : p.kinds[kind]);
+  const save = async (d: ResourceData, sandbox?: Profile) => {
     setData(d);
-    await api.saveResource({ id, kind, title, profileId, data: d });
+    const name = typed ? given : materialTitle(kind, d, sandbox, uiLang) || p.kinds[kind];
+    setTitle(name);
+    await api.saveResource({ id, kind, title: name, profileId, data: d });
     setMsg(p.savedLib);
   };
   if (EDITED_ON_BOARD.includes(kind)) {
@@ -118,7 +131,7 @@ export function ResourceEditor({ editing, onClose }: { editing: Editing; onClose
         initial={sandboxFor(kind, data)}
         view={kind === 'tla' ? 'tla' : 'schedule'}
         openNew={!existing}
-        onSave={(sb) => save(resourceFromSandbox(kind, sb, data))}
+        onSave={(sb) => save(resourceFromSandbox(kind, sb, data), sb)}
         onClose={onClose}
       />
     );
@@ -283,13 +296,28 @@ export function Library({ users, onEdit, onlyUser }: { users: ProfileSummary[]; 
   const p = proStrings(uiLang);
   const [lib, setLib] = useState<{ mine: Resource[]; sharedWithMe: Resource[] }>({ mine: [], sharedWithMe: [] });
   const [open, setOpen] = useState<string | null>(null);
-  const load = () => api.listResources().then(setLib).catch(() => {});
+  const [q, setQ] = useState('');
+  const load = () =>
+    api
+      .listResources()
+      .then((l) => {
+        setLib(l);
+        // Materials saved as "Untitled" by an older version take the name of what they contain.
+        for (const r of l.mine) {
+          const name = isRealName(r.title) ? '' : materialTitle(r.kind, r.data, undefined, uiLang);
+          if (name) void api.saveResource({ id: r.id, kind: r.kind, title: name, profileId: r.profileId, data: r.data }).catch(() => {});
+        }
+      })
+      .catch(() => {});
   useEffect(() => {
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const templates = lib.mine.filter((r) => !r.profileId);
-  const forUsers = lib.mine.filter((r) => r.profileId && (!onlyUser || r.profileId === onlyUser));
+  const needle = q.trim().toLocaleLowerCase();
+  const match = (r: Resource) => !needle || resourceName(r, uiLang).toLocaleLowerCase().includes(needle);
+  const templates = lib.mine.filter((r) => !r.profileId && match(r));
+  const forUsers = lib.mine.filter((r) => r.profileId && (!onlyUser || r.profileId === onlyUser) && match(r));
+  const sharedWithMe = lib.sharedWithMe.filter(match);
   const userName = (id?: string) => users.find((u) => u.id === id)?.name ?? '';
   const list = (rs: Resource[], shared = false) =>
     rs.length ? (
@@ -297,7 +325,7 @@ export function Library({ users, onEdit, onlyUser }: { users: ProfileSummary[]; 
         <View key={r.id} style={{ gap: 6 }}>
           <Row
             icon={KIND_ICON[r.kind]}
-            title={r.title}
+            title={resourceName(r, uiLang)}
             sub={[p.kinds[r.kind], r.profileId ? userName(r.profileId) : '', shared ? p.sharedBy(r.ownerName) : '', when(r.updatedAt, uiLang)].filter(Boolean).join(' · ')}
             onPress={() => setOpen(open === r.id ? null : r.id)}
           />
@@ -308,11 +336,43 @@ export function Library({ users, onEdit, onlyUser }: { users: ProfileSummary[]; 
       <Note text={p.libEmpty} />
     );
   if (onlyUser) return <>{list(forUsers)}</>;
+  const found = templates.length + forUsers.length + sharedWithMe.length;
   return (
     <>
-      <Section title={p.libTemplates}>{list(templates)}</Section>
-      <Section title={p.libShared}>{list(lib.sharedWithMe, true)}</Section>
-      <Section title={p.libUsers}>{list(forUsers)}</Section>
+      <View style={[st.search, uiLang === 'ar' && { flexDirection: 'row-reverse' }]}>
+        <Icon name="search" size={20} color={C.textMuted} />
+        <TextInput
+          value={q}
+          onChangeText={setQ}
+          placeholder={p.searchItems}
+          placeholderTextColor={C.placeholder}
+          style={[st.searchInput, uiLang === 'ar' && { textAlign: 'right' }]}
+          accessibilityLabel={p.searchItems}
+          autoCorrect={false}
+        />
+        {q ? <Btn small kind="ghost" icon="x" label={p.clearSearch} onPress={() => setQ('')} /> : null}
+      </View>
+      {needle ? (
+        // Searching: only what matches, wherever it is kept.
+        found ? (
+          <>
+            {templates.length > 0 && <Section title={p.libTemplates}>{list(templates)}</Section>}
+            {sharedWithMe.length > 0 && <Section title={p.libShared}>{list(sharedWithMe, true)}</Section>}
+            {forUsers.length > 0 && <Section title={p.libUsers}>{list(forUsers)}</Section>}
+          </>
+        ) : (
+          <Note text={p.noMatch(q.trim())} />
+        )
+      ) : (
+        <>
+          <Section title={p.createTitle}>
+            <CreateTiles users={users} onEdit={onEdit} />
+          </Section>
+          <Section title={p.libTemplates}>{list(templates)}</Section>
+          <Section title={p.libShared}>{list(sharedWithMe, true)}</Section>
+          {(users.length > 0 || forUsers.length > 0) && <Section title={p.libUsers}>{list(forUsers)}</Section>}
+        </>
+      )}
     </>
   );
 }
@@ -332,7 +392,8 @@ function ResourceActions({
   onChanged: () => void;
   shared: boolean;
 }) {
-  const { api, s } = useSession();
+  const { api, s, uiLang } = useSession();
+  const name = resourceName(r, uiLang);
   const [mode, setMode] = useState<null | 'personalise' | 'share' | 'propose' | 'delete'>(null);
   const [email, setEmail] = useState('');
   const [shareMode, setShareMode] = useState<'view' | 'edit'>('view');
@@ -350,7 +411,7 @@ function ResourceActions({
   };
   const copyTo = (profileId?: string) =>
     run(async () => {
-      await api.saveResource({ id: newResourceId(), kind: r.kind, title: p.copyOf(r.title), profileId, data: duplicateData(r.data) });
+      await api.saveResource({ id: newResourceId(), kind: r.kind, title: p.copyOf(name), profileId, data: duplicateData(r.data) });
       return p.savedLib;
     });
   const userPicker = (onPick: (id: string) => void) => (
@@ -369,7 +430,7 @@ function ResourceActions({
         {users.length > 0 && <Btn small icon="user" label={p.personalise} onPress={() => setMode('personalise')} />}
         {!shared && <Btn small icon="users" label={p.share} onPress={() => setMode('share')} />}
         {proposable && users.length > 0 && <Btn small icon="mail" label={p.propose} onPress={() => setMode('propose')} />}
-        <Btn small icon="download" label={p.exportFile} onPress={() => exportJson(`${r.title}.json`, { kind: r.kind, title: r.title, data: r.data })} />
+        <Btn small icon="download" label={p.exportFile} onPress={() => exportJson(`${name}.json`, { kind: r.kind, title: name, data: r.data })} />
         {!shared && <Btn small kind="danger" icon="trash" label={p.delete} onPress={() => setMode('delete')} />}
       </View>
       {mode === 'personalise' && userPicker((id) => copyTo(id))}
@@ -378,7 +439,13 @@ function ResourceActions({
           run(async () => {
             const child = await api.getProfile(id);
             const ops = resourceToOps(migrate(child.data), r.kind, r.data);
-            await api.createProposal(id, { title: `${p.kinds[r.kind]} « ${r.title} »`, ops, baseVersion: child.version });
+            // A profile this professional created (no family yet): added directly, nobody to ask.
+            if (users.find((u) => u.id === id)?.access === 'owner') {
+              const saved = await api.saveProfile(id, applyOps(migrate(child.data), ops).profile, child.version);
+              if (!saved.ok) throw new BackendError('generic');
+              return p.addedToProfile;
+            }
+            await api.createProposal(id, { title: `${p.kinds[r.kind]} « ${name} »`, ops, baseVersion: child.version });
             return p.proposed;
           }),
         )}
@@ -445,3 +512,27 @@ const styles = StyleSheet.create({
   timerPreview: { alignSelf: 'center', width: 160, height: 160, borderRadius: 80, borderWidth: 10, borderColor: C.accentSoft, alignItems: 'center', justifyContent: 'center' },
 });
 
+const st = StyleSheet.create({
+  search: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1.5, borderColor: C.inputBorder, borderRadius: radius.md, paddingHorizontal: 12, minHeight: 50, backgroundColor: C.surface },
+  searchInput: { flex: 1, minHeight: 46, fontSize: 16, color: C.text },
+  tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  tile: {
+    flexGrow: 1,
+    flexBasis: 280,
+    minHeight: 68,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: C.border,
+    backgroundColor: C.surface,
+  },
+  tileIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: C.accentSoft },
+  forRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
+  forChip: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 12, borderRadius: 22, borderWidth: 1.5, borderColor: C.accent, backgroundColor: C.surface },
+  forChipOn: { backgroundColor: C.accent },
+  forText: { fontSize: 15, fontWeight: '700', color: C.accent },
+});

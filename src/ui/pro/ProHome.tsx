@@ -10,7 +10,7 @@ import { C } from '../theme';
 import { Verification } from './Verification';
 import { Workspace } from './Workspace';
 
-export function ProHome() {
+export function ProHome({ open }: { open?: string }) {
   const { api } = useSession();
   const [v, setV] = useState<V | null | undefined>(undefined);
   const [mode, setMode] = useState<'verify' | 'workspace' | null>(null);
@@ -44,5 +44,5 @@ export function ProHome() {
         }}
       />
     );
-  return <Workspace verification={v} onVerify={() => setMode('verify')} />;
+  return <Workspace verification={v} onVerify={() => setMode('verify')} openUserId={open} />;
 }

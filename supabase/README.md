@@ -68,6 +68,14 @@ website was rebuilt with the same version of the app** (the app and the rules ch
 tablet codes, account type, professionals' requests). `npm run test:db` replays every attack of
 the review against these rules: each one must fail.
 
+## Profiles created by a professional (November 2026)
+
+`supabase/migrations/20261115000000_pro_profiles.sql` lets a verified professional prepare a
+child's profile and hand it to the parents with a code (the rules are explained at the top of the
+file). Run it once in the SQL Editor, after the security file above and **after the website was
+rebuilt** with the same version of the app. `npm run test:db` plays the hand-over and the ways to
+cheat.
+
 ## Adding a database change later
 
 Never edit a migration that already ran on the project: add a new file in `supabase/migrations/`

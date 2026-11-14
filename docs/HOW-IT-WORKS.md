@@ -334,15 +334,48 @@ The full story, the list of what you must do yourself and what is still open are
 | Child voices | `src/lib/voices.ts`: tablets have no children's voices, and a man's voice made higher still sounds like a man. A boy's and a girl's voice now both start from a woman's voice, raised a little (the boy's less). "Voice height" in Settings lets the family tune any voice by ear. |
 | AI on the website | `src/lib/aiPlanner.web.ts`: outside the online demo, the website now asks the app's own server function, like tablets do. One key (see `docs/API-KEYS.md`) then turns the AI on everywhere. |
 
+## Round 19 — Professionals create a child's profile; one library page; notices in your language
+
+**The idea in one sentence:** a therapist can now prepare a child's board *before* the family has
+an account, then give the parents a code; the profile becomes the parents' as soon as they use it.
+
+How the hand-over works (think of handing over the keys of a flat):
+
+1. The therapist (certificate accepted) answers the same set-up questions as a parent. The profile
+   is created with the therapist as "owner".
+2. On the child's page the therapist presses **Create the parents' code**. Behind it, this is an
+   ordinary invitation with the role "parent".
+3. The parents create their account, choose "I have an invitation code" and type the code. The
+   **database** (not the app) sees: "a parent is accepting the parent-invitation written by the
+   professional who owns this profile" and swaps the roles: the parent becomes the owner, the
+   therapist becomes a team member who can still edit.
+
+What protects the child while the therapist holds the profile: nothing about the child's use is
+recorded or shared (those two choices are locked off until the parents arrive), and the caregiver
+code is reset at the hand-over so the parents choose their own.
+
+| What | How it was done |
+|---|---|
+| Rules of the hand-over | `supabase/migrations/20261115000000_pro_profiles.sql` (**SQL**, to run once): a trigger refuses a profile created by a professional who is not verified and forces recording / sharing off; `save_profile` refuses a professional-owner who tries to turn them on; `join_profile` does the swap. `supabase/tests/pro_profiles_scenario.sql` plays the whole story and the ways to cheat (21 checks). |
+| The demo server does the same | `src/backend/local.ts` mirrors those rules so the demo behaves like the real server; `src/__tests__/proProfiles.test.ts` tells the same story through the app's code. |
+| The therapist's screens | `src/ui/pro/Workspace.tsx`: the button "Create a child's profile", the child's page with the card "Connect the parents" (`ParentsCard`), and deleting a profile created by mistake. The set-up journey is the parents' one (`src/ui/onboarding/Onboarding.tsx`) with two differences: it says "the child" instead of "your child" (`forProfessional` in `src/i18n/onboarding.ts`) and it skips the question about recording. |
+| Saving on a profile you created | `ChildDraftBoard` (`src/ui/pro/SandboxBoard.tsx`): for other children a therapist's changes are a draft "sent for approval"; on a profile they created there is nobody to ask, so the banner simply says "Save". |
+| No family code on the therapist's own device | `freeEdit` in `src/state/AppState.tsx`: the caregiver code exists to keep the *child* out of the tools on the child's tablet. In the therapist's workspace, on their own account, it is no longer asked (their changes are checked by the database anyway). |
+| Notices in the language of the menus | `src/lib/notices.ts`: the server stores a notice as one finished sentence, in the language you had at that moment. The app now recognises each kind of sentence (a list of patterns in French, English and Arabic) and rewrites it in the language you read now, keeping the names. An unknown sentence is shown as it was written. |
+| One library page | `src/ui/pro/Materials.tsx`: "Create materials" is no longer a separate page. "My library" has a search bar (by name), one tile per kind of material (one tap starts it) and the lists. No "Title" field and no "reusable template" choice. |
+| Names instead of "Untitled" | `src/lib/resourceNames.ts`: a material is called by what it contains (the activity board's own name, the sequence's name, "First → Then", the first cards). Items saved earlier as "Untitled" are renamed the first time the library opens. |
+| No stand-alone "Visual timer" | It could be saved but not used with a child (timers live in the child's board and inside the steps of a sequence), so it is no longer offered as a material. |
+| No sentence about the AI | When the AI helper is not installed, the app asks the server once (`aiReady` in `src/backend/supabase.ts`) and simply hides the AI buttons; the automatic suggestions work as before, with no message. |
+
 ## How everything is checked
 
 | Check | What it does |
 |---|---|
 | `npm run typecheck` | TypeScript reads the whole code and refuses mistakes such as a missing field or a wrong type. |
-| `npm test` | 191 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office, colour contrast. |
-| `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger, a tablet and a member of our team; then every attack found by the security review, which must fail; 95 checks. |
+| `npm test` | 204 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office, colour contrast. |
+| `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger, a tablet and a member of our team; then every attack found by the security review, which must fail; then a professional who prepares a profile and hands it to the parents; 116 checks. |
 | `npm run test:live` | The same story on a second, empty Supabase project (never the one families use), through the app's own code: 13 steps, including devices, history undo, invitation codes, revisions and materials (needs "Confirm email" off while it runs). Last full run: before the back office (all 13 passed); **to run again once the back-office migration is on the real project**. |
-| `npm run test:a11y` | Accessibility: 158 scans of 43 screens against WCAG 2.2 AA (four sizes, Arabic), then a keyboard-only run. Last run: 0 rule break. |
+| `npm run test:a11y` | Accessibility: 164 scans of 46 screens against WCAG 2.2 AA (four sizes, Arabic), then a keyboard-only run. Last run: 0 rule break. |
 | Browser walkthroughs | Playwright drives the web version like a person: the parent journey, the team (invite, undo, join with a code), the professional journey (verification, tour, request, draft, proposal, approval), and the Arabic screens. |
 
 ## Not done yet (honest list)
@@ -367,8 +400,11 @@ The full story, the list of what you must do yourself and what is still open are
   Gmail account (tested: the e-mail arrived in the inbox and its code confirmed the account).
   Gmail limits how many e-mails can be sent per day; a domain and an e-mail service are better
   once many families sign up.
-- **Notifications** are in-app only (no phone push yet), and their text is written in French by the
-  server (except the certificate decisions, written in the person's language).
+- **Notifications** are in-app only (no phone push yet). The server writes each one as a sentence;
+  the app shows it in the language of the menus (`src/lib/notices.ts`). A free text inside a notice
+  (the reason typed by our team, a proposal's title) stays as it was typed.
+- **A profile created by a professional** can only be handed to a *parent* account, with the code.
+  If the parents never connect, the profile stays with the professional (who can delete it).
 - **Communication data on several devices**: each tablet records its own days; the Suivi page adds
   them up. Days recorded while the follow-up was off are never recorded later.
 - **Function recognition** is a set of simple word rules: a guide for the speech therapist, to be

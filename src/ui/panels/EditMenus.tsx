@@ -38,6 +38,7 @@ import { useSession } from '../../state/Session';
 import { Btn, Field, Panel, useNavRtl } from '../common';
 import { Icon, type IconName } from '../Icon';
 import { SymbolView } from '../SymbolView';
+import { resourceName } from '../../lib/resourceNames';
 import { C, radius } from '../theme';
 
 const RIGHT = { textAlign: 'right' as const, writingDirection: 'rtl' as const };
@@ -533,10 +534,10 @@ export function ImportTla() {
             <View key={r.id} style={[st.tlaRow, { backgroundColor: C.surface }]}>
               {r.data.boards[0] && <SymbolView symbol={symbolOf({ ...app.profile, customConcepts: { ...app.profile.customConcepts, ...r.data.customConcepts }, overrides: { ...r.data.overrides, ...app.profile.overrides } }, r.data.boards[0].concept)} size={36} />}
               <View style={{ flex: 1 }}>
-                <Text style={st.itemText}>{r.title}</Text>
+                <Text style={st.itemText}>{resourceName(r, app.profile.settings.uiLang)}</Text>
                 <Text style={st.note}>{e.from(r.ownerName)}</Text>
               </View>
-              <Btn small icon="plus" label={e.add} onPress={() => add(r.data, r.title)} />
+              <Btn small icon="plus" label={e.add} onPress={() => add(r.data, resourceName(r, app.profile.settings.uiLang))} />
             </View>
           ))}
         </>

@@ -40,6 +40,15 @@ export function SearchBody({ onPen }: { onPen: (down: boolean) => void }) {
   const [q, setQ] = useState('');
   const [drawing, setDrawing] = useState(false);
   const [penDown, setPenDown] = useState(false);
+  // Searching by drawing needs the AI helper: without it the button is simply not there.
+  const [canDraw, setCanDraw] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    void aiAvailable().then((ok) => alive && setCanDraw(ok));
+    return () => {
+      alive = false;
+    };
+  }, []);
   useEffect(() => {
     onPen(penDown);
     return () => onPen(false);
@@ -54,15 +63,17 @@ export function SearchBody({ onPen }: { onPen: (down: boolean) => void }) {
         <View style={{ flexGrow: 1, flexBasis: 200 }}>
           <VoiceButton compact lang={lang} label={t.sayWord} onPartial={setQ} onFinal={setQ} />
         </View>
-        <Btn
-          kind={drawing ? 'primary' : 'secondary'}
-          icon="pencil"
-          label={t.drawWord}
-          onPress={() => setDrawing((d) => !d)}
-          style={{ flexGrow: 1, flexBasis: 160, minHeight: 48 }}
-        />
+        {canDraw && (
+          <Btn
+            kind={drawing ? 'primary' : 'secondary'}
+            icon="pencil"
+            label={t.drawWord}
+            onPress={() => setDrawing((d) => !d)}
+            style={{ flexGrow: 1, flexBasis: 160, minHeight: 48 }}
+          />
+        )}
       </View>
-      {drawing && <DrawSearch onWord={setQ} wordOf={wordOf} onPen={setPenDown} />}
+      {drawing && canDraw && <DrawSearch onWord={setQ} wordOf={wordOf} onPen={setPenDown} />}
       <View style={styles.searchBox}>
         <Icon name="search" size={22} color={C.textMuted} />
         <TextInput

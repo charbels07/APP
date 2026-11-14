@@ -71,6 +71,23 @@ names overwritten; no limits on sizes and numbers; a table export that could bec
 spreadsheet formula; picture links that were not https; Android copying the app's data into
 device backups. All fixed.
 
+### Added later: a professional prepares a child's profile (November 2026)
+
+A therapist can create a child's profile before the family has an account, then hand it over with
+a code. The rules, all decided by the database (`20261115000000_pro_profiles.sql`):
+
+| Risk | Rule |
+|---|---|
+| Anyone could call themselves a therapist and create children's profiles. | Only a professional whose certificate was accepted; one who is no longer accepted loses the profiles they created too (suspended, not erased). |
+| A professional could record or share a child's use without the parents. | Recording and sharing are forced off at creation and cannot be turned on while a professional owns the profile. They are the parents' choices, after the hand-over. |
+| The profile could be handed to the wrong person. | Only with the code the owner wrote for the parents, only to a *parent* account (not another professional, not a tablet). A team member cannot write that code. The app warns the therapist to give it to the parents only; a new code cancels the old one. |
+| The therapist would keep the parents' rights or the caregiver code. | After the hand-over the therapist is an ordinary team member (edits the board, does not see the progress data unless the family allows it, cannot delete the profile), their other invitations are cancelled, and the caregiver code goes back to "not chosen" so the family chooses its own. |
+
+One deliberate relaxation: in the professional workspace, on the professional's own account, the
+family's caregiver code is no longer asked to prepare changes. That code keeps the *child* out of
+the tools on the child's tablet; a signed-in professional's changes are still checked one by one
+by the database (proposal, direct edit or refusal, according to the rights the family gave).
+
 ## 4. What only you can do
 
 ### Now (10 minutes)
@@ -130,8 +147,8 @@ Names move a little between versions of the dashboard; look for the nearest word
 
 | Command | What it proves |
 |---|---|
-| `npm run test:db` | 95 checks on a throw-away database: the normal story, then **every attack of this review, which must fail**. |
-| `npm test` | 191 tests; `security.test.ts` covers links, other people's changes, what stays on the device, the print page, the website protections. |
+| `npm run test:db` | 116 checks on a throw-away database: the normal story, then **every attack of this review, which must fail**, then the hand-over of a profile created by a professional. |
+| `npm test` | 204 tests; `security.test.ts` covers links, other people's changes, what stays on the device, the print page, the website protections. |
 | `npm audit` | Known flaws in libraries. Today: none in what ships to families (4 medium ones in build tools only). |
 | `npm run test:a11y` | The screens still pass the accessibility scan after these changes. |
 

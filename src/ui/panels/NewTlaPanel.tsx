@@ -182,7 +182,6 @@ export function NewTlaPanel() {
   const [plan, setPlan] = useState<TlaPlan | null>(null);
   const [aiOk, setAiOk] = useState(false);
   const [thinking, setThinking] = useState(false);
-  const [aiFailed, setAiFailed] = useState(false);
   const [makeSchedule, setMakeSchedule] = useState(true);
   const [adding, setAdding] = useState<'words' | null>(null);
   // A step is being held (hold then slide to reorder): the panel must not scroll under the finger.
@@ -234,14 +233,14 @@ export function NewTlaPanel() {
     const ctl = new AbortController();
     aiCtl.current = ctl;
     setThinking(true);
-    setAiFailed(false);
     const ai = await askAiForTla(topic, ctl.signal, profile.settings.arabic);
     if (ctl.signal.aborted) return;
     setThinking(false);
+    // No answer: nothing is said about it, the automatic suggestion shows and the AI buttons go away.
+    if (!ai) void aiAvailable().then(setAiOk);
     const p = ai ? planFromAi(lib, topic, ui, ai) : null;
     if (p && p.words.length) setPlan(p);
     else {
-      setAiFailed(true);
       setPlan((cur) => cur ?? planAutomatically(lib, topic, ui));
     }
   };
@@ -249,7 +248,6 @@ export function NewTlaPanel() {
   const suggest = () => {
     if (!lib || !topic.trim()) return;
     setAdding(null);
-    setAiFailed(false);
     const fromLibrary = planFromLibrary(lib, topic, ui);
     if (fromLibrary) setPlan(fromLibrary);
     else if (aiEnabled) {
@@ -375,7 +373,6 @@ export function NewTlaPanel() {
           />
         </View>
       )}
-      {aiFailed && <Text style={[styles.note, styles.warn]}>{t.aiFailed}</Text>}
 
       {plan && !thinking && (
         <>

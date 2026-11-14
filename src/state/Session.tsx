@@ -34,7 +34,8 @@ export type Stage =
   | { name: 'invitations' }
   | { name: 'onboarding' }
   | { name: 'board'; profileId: string }
-  | { name: 'pro' }
+  /** The professional workspace; `open`: the child to show first (a profile just created). */
+  | { name: 'pro'; open?: string }
   /** The app's own team: certificates to accept, figures, messages (src/ui/admin). */
   | { name: 'admin' };
 

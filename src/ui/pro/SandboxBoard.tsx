@@ -7,12 +7,13 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native';
+import type { Backend } from '../../backend/Backend';
 import type { Proposal } from '../../backend/types';
 import { errorText } from '../../i18n/account';
 import { proStrings } from '../../i18n/pro';
 import { settingsStrings } from '../../i18n/settings';
 import { describeOps } from '../../lib/describeOps';
-import { classifyOps } from '../../lib/permissions';
+import { canPrepareChanges, classifyOps } from '../../lib/permissions';
 import { applyOps, diffProfiles, invertOps, type Op } from '../../lib/profileDiff';
 import { migrate } from '../../lib/storage';
 import type { Profile } from '../../model/types';
@@ -114,10 +115,24 @@ export function MaterialBoard({
   );
 }
 
+/** Changes the person may apply themselves: put on top of the latest version (someone may have saved meanwhile). */
+async function applyDirect(api: Backend, profileId: string, ops: Op[], summary: string): Promise<void> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const cur = await api.getProfile(profileId);
+    const merged = applyOps(migrate(cur.data), ops).profile;
+    const r = await api.saveProfile(profileId, merged, cur.version);
+    if (r.ok) {
+      await api.addHistory({ profileId, summary, ops, inverse: invertOps(ops) }).catch(() => {});
+      return;
+    }
+  }
+}
+
 /**
  * A child's board seen by a professional. The board works as usual; changes are kept as a draft
  * and compared with the child's profile. "Send for approval" sorts them with the family's rules:
  * applied directly (editing rights), sent as a proposal, or not allowed.
+ * A profile the professional created (before the family has an account) is simply saved.
  */
 export function ChildDraftBoard({ profileId, resume, onClose }: { profileId: string; resume?: Proposal; onClose: () => void }) {
   const sess = useSession();
@@ -129,6 +144,10 @@ export function ChildDraftBoard({ profileId, resume, onClose }: { profileId: str
   const [sending, setSending] = useState(false);
   const [key, setKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  // A profile created by this professional: saved directly, and closing with changes asks first.
+  const [saving, setSaving] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const [closing, setClosing] = useState(false);
 
   const load = async () => {
     const [r, a] = await Promise.all([api.getProfile(profileId), api.myAccess(profileId)]);
@@ -160,18 +179,45 @@ export function ChildDraftBoard({ profileId, resume, onClose }: { profileId: str
     );
   }
   const useOnly = access.level < 2;
+  const own = !!access.owner;
+  const saveOwn = async (then?: () => void) => {
+    setSaving(true);
+    setNote(null);
+    try {
+      await applyDirect(api, profileId, ops, '');
+      if (then) return then();
+      await load();
+    } catch (e) {
+      setNote(errorText(sess.s, e));
+      setClosing(false);
+    }
+    setSaving(false);
+  };
+  const banner = own ? (
+    closing ? (
+      <Banner icon="pencil" tone="edit" text={p.closeAsk(ops.length)}>
+        <Btn small label={p.dontSave} disabled={saving} onPress={onClose} />
+        <Btn small kind="primary" icon="check" label={p.saveClose} disabled={saving} onPress={() => void saveOwn(onClose)} />
+      </Banner>
+    ) : (
+      <Banner icon="pencil" tone={ops.length ? 'edit' : 'accent'} text={note ?? p.ownBanner(ops.length)}>
+        {ops.length > 0 && <Btn small label={p.discard} disabled={saving} onPress={() => void load()} />}
+        <Btn small kind="primary" icon="check" label={p.saveChanges} disabled={!ops.length || saving} onPress={() => void saveOwn()} />
+        <Btn small icon="x" label={p.close} onPress={() => (ops.length ? setClosing(true) : onClose())} />
+      </Banner>
+    )
+  ) : (
+    <Banner icon={useOnly ? 'eye' : 'pencil'} tone={ops.length ? 'edit' : 'accent'} text={useOnly ? p.draftUseOnly : p.draftBanner(ops.length)}>
+      {!useOnly && ops.length > 0 && <Btn small label={p.discard} onPress={() => void load()} />}
+      {!useOnly && <Btn small kind="primary" icon="mail" label={p.sendForApproval} disabled={!ops.length} onPress={() => setSending(true)} />}
+      <Btn small icon="x" label={p.close} onPress={onClose} />
+    </Banner>
+  );
   return (
     <>
-      <AppProvider key={key} initial={draft} onChange={setDraft} uiLang={uiLang} setUiLang={setUiLang}>
-        <Root
-          banner={
-            <Banner icon={useOnly ? 'eye' : 'pencil'} tone={ops.length ? 'edit' : 'accent'} text={useOnly ? p.draftUseOnly : p.draftBanner(ops.length)}>
-              {!useOnly && ops.length > 0 && <Btn small label={p.discard} onPress={() => void load()} />}
-              {!useOnly && <Btn small kind="primary" icon="mail" label={p.sendForApproval} disabled={!ops.length} onPress={() => setSending(true)} />}
-              <Btn small icon="x" label={p.close} onPress={onClose} />
-            </Banner>
-          }
-        />
+      {/* The caregiver code is the family's, for the child's device: not asked on a professional's own draft. */}
+      <AppProvider key={key} initial={draft} onChange={setDraft} uiLang={uiLang} setUiLang={setUiLang} freeEdit={canPrepareChanges(access)}>
+        <Root banner={banner} />
       </AppProvider>
       {sending && (
         <SendPanel
@@ -223,18 +269,8 @@ function SendPanel({
     setError(null);
     try {
       const name = title.trim() || p.untitled;
-      if (groups.direct.length) {
-        // Editing rights: applied on top of the latest version (someone may have saved meanwhile).
-        for (let attempt = 0; attempt < 3; attempt++) {
-          const cur = await api.getProfile(profileId);
-          const merged = applyOps(migrate(cur.data), groups.direct).profile;
-          const r = await api.saveProfile(profileId, merged, cur.version);
-          if (r.ok) {
-            await api.addHistory({ profileId, summary: name, ops: groups.direct, inverse: invertOps(groups.direct) }).catch(() => {});
-            break;
-          }
-        }
-      }
+      // Editing rights: applied directly.
+      if (groups.direct.length) await applyDirect(api, profileId, groups.direct, name);
       if (groups.approval.length) {
         const input = { title: name, reason: reason.trim() || undefined, ops: groups.approval, baseVersion: base.version };
         if (resume) await api.updateProposal(resume.id, input);

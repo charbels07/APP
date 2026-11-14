@@ -2,20 +2,25 @@
  * The professional workspace: Dashboard · My AAC users · Create materials · My library ·
  * Collaborations · Learning center · Account & licence. One professional account, several
  * children, each reachable only after their family agreed, with the rights the family chose.
+ * A verified professional can also prepare a child's profile before the family has an account,
+ * then give the parents a code: the profile becomes theirs (see "Connect the parents").
  * A short optional tour runs the first time (with "Maybe later").
  */
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { Invitation, Membership, Notice, ProfileSummary, Proposal, Resource, Verification } from '../../backend/types';
 import { APP_NAME, errorText } from '../../i18n/account';
 import { dataStrings } from '../../i18n/data';
+import { onboardingStrings } from '../../i18n/onboarding';
 import { proStrings, type ProSection, type ProStrings } from '../../i18n/pro';
 import { settingsStrings } from '../../i18n/settings';
 import { preset, type AccessLevel, type CollaboratorRole, type PermissionSet } from '../../lib/permissions';
+import { resourceName } from '../../lib/resourceNames';
 import { EDITED_ON_BOARD } from '../../lib/resources';
 import type { Profile } from '../../model/types';
 import type { Overlay } from '../../state/AppState';
+import { forgetLocal } from '../../state/profileSync';
 import { useSession } from '../../state/Session';
 import { WriteTeam } from '../admin/WriteTeam';
 import { Btn, Field, Section, Segmented } from '../common';
@@ -27,15 +32,15 @@ import { Note, ss } from '../settings/SettingsScreen';
 import { PermissionEditor, Row, when } from '../settings/TeamTab';
 import { LangSwitch, Logo } from '../start/StartLayout';
 import { C, radius } from '../theme';
-import { CreateMaterials, KIND_ICON, Library, ResourceEditor, type Editing } from './Materials';
+import { KIND_ICON, Library, ResourceEditor, type Editing } from './Materials';
 import { ChildDraftBoard, DemoBoard } from './SandboxBoard';
 import { selected } from '../a11y';
+import { noticeText } from '../../lib/notices';
 
-const SECTIONS: ProSection[] = ['dashboard', 'users', 'create', 'library', 'collab', 'learn', 'account'];
+const SECTIONS: ProSection[] = ['dashboard', 'users', 'library', 'collab', 'learn', 'account'];
 const SECTION_ICON: Record<ProSection, IconName> = {
   dashboard: 'home',
   users: 'users',
-  create: 'plus',
   library: 'book',
   collab: 'mail',
   learn: 'star',
@@ -44,7 +49,7 @@ const SECTION_ICON: Record<ProSection, IconName> = {
 
 type Full = { k: 'child'; id: string; resume?: Proposal } | { k: 'demo'; start?: Overlay | 'edit' } | { k: 'editor'; editing: Editing };
 
-export function Workspace({ verification, onVerify }: { verification: Verification | null; onVerify: () => void }) {
+export function Workspace({ verification, onVerify, openUserId }: { verification: Verification | null; onVerify: () => void; openUserId?: string }) {
   const sess = useSession();
   const { api, uiLang, account, updatePrefs } = sess;
   const p = proStrings(uiLang);
@@ -61,6 +66,7 @@ export function Workspace({ verification, onVerify }: { verification: Verificati
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [notices, setNotices] = useState<Notice[]>([]);
   const [tour, setTour] = useState<'welcome' | number | null>(account?.prefs.tourDone ? null : 'welcome');
+  const openedRef = useRef(false);
 
   const load = useCallback(async () => {
     const [u, i, pr, n] = await Promise.all([
@@ -69,11 +75,20 @@ export function Workspace({ verification, onVerify }: { verification: Verificati
       api.listProposals({ mine: true }).catch(() => [] as Proposal[]),
       api.listNotices().catch(() => [] as Notice[]),
     ]);
-    setUsers(u.filter((x) => x.access !== 'owner'));
+    setUsers(u);
     setInvites(i);
     setProposals(pr);
     setNotices(n);
-  }, [api]);
+    // Back from creating a child's profile: that child's page first (to give the parents their code).
+    if (openUserId && !openedRef.current) {
+      openedRef.current = true;
+      const created = u.find((x) => x.id === openUserId);
+      if (created) {
+        setSection('users');
+        setUser(created);
+      }
+    }
+  }, [api, openUserId]);
   useEffect(() => {
     void load();
   }, [load, full, section]);
@@ -97,7 +112,7 @@ export function Workspace({ verification, onVerify }: { verification: Verificati
     const kind = 'resource' in e ? e.resource.kind : e.kind;
     if (EDITED_ON_BOARD.includes(kind)) setFull({ k: 'editor', editing: e });
     else {
-      setSection('create');
+      setSection('library');
       setEditing(e);
     }
   };
@@ -169,7 +184,6 @@ export function Workspace({ verification, onVerify }: { verification: Verificati
         </View>
         <View style={st.quick}>
           <Quick icon="users" label={p.nav.users} onPress={() => go('users')} />
-          <Quick icon="plus" label={p.nav.create} onPress={() => go('create')} />
           <Quick icon="book" label={p.nav.library} onPress={() => go('library')} />
           <Quick
             icon="link"
@@ -181,7 +195,7 @@ export function Workspace({ verification, onVerify }: { verification: Verificati
           />
         </View>
         <Section title={p.recent}>
-          {notices.length ? notices.slice(0, 6).map((n) => <Row key={n.id} icon="bell" title={n.text} sub={when(n.createdAt, uiLang)} muted={n.read} />) : <Note text={p.nothingYet} />}
+          {notices.length ? notices.slice(0, 6).map((n) => <Row key={n.id} icon="bell" title={noticeText(n.text, uiLang)} sub={when(n.createdAt, uiLang)} muted={n.read} />) : <Note text={p.nothingYet} />}
         </Section>
       </>
     );
@@ -201,29 +215,33 @@ export function Workspace({ verification, onVerify }: { verification: Verificati
         p={p}
         proposals={proposals.filter((x) => x.profileId === user.id)}
         users={users}
-        onBack={() => setUser(null)}
+        onBack={() => {
+          setUser(null);
+          void load();
+        }}
         onOpen={(resume) => setFull({ k: 'child', id: user.id, resume })}
         onEdit={edit}
         onChanged={load}
       />
     ) : (
-      <UsersList p={p} users={users} sent={invites.sent.filter((i) => i.status === 'pending')} onOpen={setUser} onConnect={() => setConnecting(true)} />
+      <UsersList
+        p={p}
+        users={users}
+        sent={invites.sent.filter((i) => i.status === 'pending')}
+        onOpen={setUser}
+        onConnect={() => setConnecting(true)}
+        // The same set-up journey as a parent's, without the questions that are the family's.
+        onCreate={verified ? () => sess.go({ name: 'onboarding' }) : undefined}
+      />
     );
-  } else if (section === 'create') {
+  } else if (section === 'library') {
+    // Creating and keeping are one page: the tiles start a material, the lists keep them.
     content = editing ? (
       <ResourceEditor editing={editing} onClose={() => setEditing(null)} />
     ) : (
       <>
-        <H text={p.createTitle} />
-        <Tip id="create" p={p} />
-        <CreateMaterials users={users} onEdit={edit} />
-      </>
-    );
-  } else if (section === 'library') {
-    content = (
-      <>
         <H text={p.nav.library} />
-        <Tip id="library" p={p} />
+        <Tip id="items" p={p} />
         <Library users={users} onEdit={edit} />
       </>
     );
@@ -352,12 +370,15 @@ function UsersList({
   sent,
   onOpen,
   onConnect,
+  onCreate,
 }: {
   p: ProStrings;
   users: ProfileSummary[];
   sent: Invitation[];
   onOpen: (u: ProfileSummary) => void;
   onConnect: () => void;
+  /** Missing while the certificate is not accepted yet. */
+  onCreate?: () => void;
 }) {
   const { uiLang } = useSession();
   const x = settingsStrings(uiLang);
@@ -368,7 +389,11 @@ function UsersList({
     <>
       <H text={p.nav.users} />
       <Tip id="users" p={p} />
-      <Btn kind="primary" icon="link" label={p.connectUser} onPress={onConnect} />
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        <Btn kind="primary" icon="link" label={p.connectUser} onPress={onConnect} />
+        <Btn icon="plus" label={p.createChild} disabled={!onCreate} onPress={() => onCreate?.()} />
+      </View>
+      <Note text={onCreate ? p.createChildNote : `${p.createChildNote} ${p.createNeedsVerified}`} />
       <Segmented<'all' | 'active' | 'pending'>
         value={filter}
         onChange={setFilter}
@@ -387,7 +412,7 @@ function UsersList({
               key={u.id}
               icon="user"
               title={u.name}
-              sub={[u.age ? p.ageYears(u.age) : '', u.access !== 'owner' ? x.roles[u.access] : '', p.levelShort[u.level]].filter(Boolean).join(' · ')}
+              sub={(u.access === 'owner' ? [u.age ? p.ageYears(u.age) : '', p.createdByYou] : [u.age ? p.ageYears(u.age) : '', x.roles[u.access], p.levelShort[u.level]]).filter(Boolean).join(' · ')}
               onPress={() => onOpen(u)}
             />
           ))}
@@ -472,6 +497,8 @@ function UserView({
   const { api, uiLang } = useSession();
   const x = settingsStrings(uiLang);
   const d = dataStrings(uiLang);
+  // A profile this professional created, not handed to the family yet.
+  const own = user.access === 'owner';
   const [team, setTeam] = useState<Membership[]>([]);
   // The child's communication data (only if the family allowed it: "See the progress data").
   const [data, setData] = useState<Profile | 'loading' | 'offline' | null>(null);
@@ -491,26 +518,38 @@ function UserView({
     <>
       <Btn small kind="ghost" icon="chevronLeft" label={p.back} onPress={onBack} style={{ alignSelf: 'flex-start' }} />
       <H text={user.name} />
-      <Note text={`${p.yourLevel} : ${user.access !== 'owner' ? x.roles[user.access] : ''} · ${user.level} · ${x.levels[user.level]} — ${x.levelNotes[user.level]}`} />
-      <Note text={p.noPrivate} />
+      {own ? (
+        <Note text={p.ownerIntro} />
+      ) : (
+        <>
+          <Note text={`${p.yourLevel} : ${user.access !== 'owner' ? x.roles[user.access] : ''} · ${user.level} · ${x.levels[user.level]} — ${x.levelNotes[user.level]}`} />
+          <Note text={p.noPrivate} />
+        </>
+      )}
       <View style={ss.card}>
         <Text style={ss.title}>{p.openBoard}</Text>
         <Note text={p.openBoardNote} />
         <Btn kind="primary" icon="grid" label={p.openBoard} onPress={() => onOpen()} />
       </View>
-      <View style={ss.card}>
-        <Text style={ss.title}>{d.title}</Text>
-        <Note text={data === 'offline' ? d.offline : p.dataNote} />
-        <Btn
-          icon="list"
-          label={data === 'loading' ? d.loading : p.openData}
-          disabled={data === 'loading'}
-          onPress={() => {
-            setData('loading');
-            api.getProfile(user.id).then((r) => setData(r.data)).catch(() => setData('offline'));
-          }}
-        />
-      </View>
+      {own && <ParentsCard profileId={user.id} p={p} />}
+      {own ? (
+        <Note text={p.ownerNoData} />
+      ) : (
+        <View style={ss.card}>
+          <Text style={ss.title}>{d.title}</Text>
+          <Note text={data === 'offline' ? d.offline : p.dataNote} />
+          <Btn
+            icon="list"
+            label={data === 'loading' ? d.loading : p.openData}
+            disabled={data === 'loading'}
+            onPress={() => {
+              setData('loading');
+              api.getProfile(user.id).then((r) => setData(r.data)).catch(() => setData('offline'));
+            }}
+          />
+        </View>
+      )}
+      {!own && (
       <Section title={p.myProposals}>
         {proposals.length ? (
           proposals.map((pr) => (
@@ -533,17 +572,116 @@ function UserView({
           <Note text={p.nothingYet} />
         )}
       </Section>
+      )}
       <Section title={p.materialsFor}>
         <Library users={users} onEdit={onEdit} onlyUser={user.id} />
-        <Btn small icon="plus" label={p.createTitle} onPress={() => onEdit({ kind: 'tla', title: p.untitled, profileId: user.id })} />
+        <Btn small icon="plus" label={p.createTitle} onPress={() => onEdit({ kind: 'tla', title: '', profileId: user.id })} />
       </Section>
       <Section title={p.team}>
-        <Row icon="heart" title={x.ownerRole} />
+        <Row icon="heart" title={own ? p.youOwner : x.ownerRole} />
         {team.map((m) => (
           <Row key={m.userId} icon="user" title={m.displayName} sub={`${x.roles[m.role]} · ${x.levels[m.level]}`} />
         ))}
       </Section>
+      {own && <DeleteChild user={user} onDeleted={onBack} />}
     </>
+  );
+}
+
+/**
+ * The code that hands a profile over to the child's parents. It is an invitation with the role
+ * "parent", written by the professional who owns the profile: the server makes the parent who
+ * uses it the owner, and keeps the professional in the team.
+ */
+function ParentsCard({ profileId, p }: { profileId: string; p: ProStrings }) {
+  const { api, s, uiLang } = useSession();
+  const first = onboardingStrings(uiLang).childTitle;
+  const [inv, setInv] = useState<Invitation | null | undefined>(undefined);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    api
+      .profileInvitations(profileId)
+      .then((l) => setInv(l.find((i) => i.direction === 'invite' && i.role === 'parent' && i.status === 'pending') ?? null))
+      .catch(() => setInv(null));
+  }, [api, profileId]);
+  const make = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      // A new code replaces the one given before.
+      if (inv) await api.cancelInvitation(inv.id);
+      setInv(await api.invite(profileId, { role: 'parent', ...preset('parent') }));
+    } catch (e) {
+      setError(errorText(s, e));
+    }
+    setBusy(false);
+  };
+  return (
+    <View style={ss.card}>
+      <Text style={ss.title}>{p.parentsTitle}</Text>
+      <Note text={p.parentsIntro} />
+      {inv ? (
+        <>
+          <Text style={ss.code} selectable>
+            {inv.code}
+          </Text>
+          {p.parentsSteps(s.roleParent, first, s.haveCode).map((t, i) => (
+            <Note key={i} text={`${i + 1}. ${t}`} />
+          ))}
+          <Note text={p.parentsWarn} />
+          <Btn small icon="refresh" label={p.parentsRenew} disabled={busy} onPress={make} style={{ alignSelf: 'flex-start' }} />
+        </>
+      ) : (
+        <Btn kind="primary" icon="users" label={p.parentsMake} disabled={busy || inv === undefined} onPress={make} />
+      )}
+      {error ? <Text style={{ color: C.help, fontWeight: '600' }}>{error}</Text> : null}
+    </View>
+  );
+}
+
+/** A profile created by mistake (or no longer needed) can be deleted while it is still the professional's. */
+function DeleteChild({ user, onDeleted }: { user: ProfileSummary; onDeleted: () => void }) {
+  const { api, s, uiLang } = useSession();
+  const x = settingsStrings(uiLang);
+  const [typing, setTyping] = useState(false);
+  const [word, setWord] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const label = `${x.deleteProfile} ${user.name}`;
+  if (!typing) return <Btn small kind="danger" icon="trash" label={label} onPress={() => setTyping(true)} style={{ alignSelf: 'flex-start' }} />;
+  return (
+    <View style={ss.card}>
+      <Note text={x.deleteProfileNote} />
+      <TextInput value={word} onChangeText={setWord} autoCapitalize="none" style={st.input} accessibilityLabel={user.name} placeholder={user.name} placeholderTextColor={C.placeholder} />
+      {error ? <Text style={{ color: C.help, fontWeight: '600' }}>{error}</Text> : null}
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <Btn
+          small
+          label={x.back}
+          onPress={() => {
+            setTyping(false);
+            setWord('');
+          }}
+        />
+        <Btn
+          small
+          kind="danger"
+          icon="trash"
+          label={x.deleteForever}
+          disabled={word.trim().toLocaleLowerCase() !== user.name.trim().toLocaleLowerCase()}
+          onPress={async () => {
+            setError(null);
+            try {
+              await api.deleteProfile(user.id);
+              await forgetLocal(user.id);
+              onDeleted();
+            } catch (e) {
+              setError(errorText(s, e));
+            }
+          }}
+        />
+      </View>
+    </View>
   );
 }
 
@@ -612,7 +750,7 @@ function Collaborations({
         <SharedList p={p} />
       </Section>
       <Section title={p.collabActivity}>
-        {notices.length ? notices.slice(0, 15).map((n) => <Row key={n.id} icon="bell" title={n.text} sub={when(n.createdAt, uiLang)} muted={n.read} />) : <Note text={p.nothingYet} />}
+        {notices.length ? notices.slice(0, 15).map((n) => <Row key={n.id} icon="bell" title={noticeText(n.text, uiLang)} sub={when(n.createdAt, uiLang)} muted={n.read} />) : <Note text={p.nothingYet} />}
         {unread.length > 0 && <Btn small kind="ghost" icon="check" label={x.markRead} onPress={() => api.markNoticesRead(unread.map((n) => n.id)).then(onChanged).catch(() => {})} />}
       </Section>
     </>
@@ -620,7 +758,7 @@ function Collaborations({
 }
 
 function SharedList({ p }: { p: ProStrings }) {
-  const { api } = useSession();
+  const { api, uiLang } = useSession();
   const [lib, setLib] = useState<{ mine: Resource[]; shared: Resource[] }>({ mine: [], shared: [] });
   useEffect(() => {
     api
@@ -631,10 +769,10 @@ function SharedList({ p }: { p: ProStrings }) {
   return (
     <>
       {lib.shared.map((r) => (
-        <Row key={r.id} icon={KIND_ICON[r.kind]} title={r.title} sub={p.sharedBy(r.ownerName)} />
+        <Row key={r.id} icon={KIND_ICON[r.kind]} title={resourceName(r, uiLang)} sub={p.sharedBy(r.ownerName)} />
       ))}
       {lib.mine.map((r) => (
-        <Row key={r.id} icon={KIND_ICON[r.kind]} title={r.title} sub={`${p.share} · ${r.shares.length}`} />
+        <Row key={r.id} icon={KIND_ICON[r.kind]} title={resourceName(r, uiLang)} sub={`${p.share} · ${r.shares.length}`} />
       ))}
       {!lib.mine.length && !lib.shared.length && <Note text={p.libEmpty} />}
     </>

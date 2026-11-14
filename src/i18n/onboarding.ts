@@ -526,3 +526,27 @@ const ar: Dict = {
 const DICTS: Record<UiLang, Dict> = { fr, en, ar };
 export type OnboardingStrings = Dict;
 export const onboardingStrings = (l: UiLang): Dict => DICTS[l];
+
+/**
+ * The same questions asked to a professional who prepares a profile for a family:
+ * "your child" becomes "the child", in every sentence.
+ */
+export function forProfessional<T>(o: T, lang: UiLang): T {
+  const swap = (t: string) =>
+    lang === 'fr'
+      ? t.replace(/Votre enfant/g, 'L’enfant').replace(/votre enfant/g, 'l’enfant')
+      : lang === 'en'
+        ? t.replace(/Your child/g, 'The child').replace(/your child/g, 'the child')
+        : t.replace(/طفلك/g, 'الطفل');
+  const walk = (v: unknown): unknown =>
+    typeof v === 'string'
+      ? swap(v)
+      : typeof v === 'function'
+        ? (...args: unknown[]) => walk((v as (...a: unknown[]) => unknown)(...args))
+        : Array.isArray(v)
+          ? v.map(walk)
+          : v && typeof v === 'object'
+            ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x)]))
+            : v;
+  return walk(o) as T;
+}

@@ -790,6 +790,33 @@ export class SupabaseBackend implements Backend {
     return rows.map((r) => r.data as UsageDay);
   }
 
+  private aiAnswer: Promise<boolean> | null = null;
+  private aiRetryAt = 0;
+  /**
+   * Is the server function "caa-ai" installed? Asked with the person's session (so the server's
+   * own door check passes): the function refuses this kind of request with an answer of its own
+   * ("wrong method"), which proves it is there; "not found" means it is not. When the browser
+   * gets no readable answer (not installed, or no connection), the answer is "no" for five
+   * minutes, then it is asked again.
+   */
+  aiReady(): Promise<boolean> {
+    if (this.aiAnswer && (!this.aiRetryAt || Date.now() < this.aiRetryAt)) return this.aiAnswer;
+    this.aiRetryAt = 0;
+    const unsure = () => {
+      this.aiRetryAt = Date.now() + 5 * 60 * 1000;
+      return false;
+    };
+    this.aiAnswer = this.sb.functions
+      .invoke('caa-ai', { method: 'GET' })
+      .then(({ error }) => {
+        if (!error) return true;
+        const status = (error.context as { status?: number } | undefined)?.status;
+        return typeof status === 'number' ? status !== 404 : unsure();
+      })
+      .catch(unsure);
+    return this.aiAnswer;
+  }
+
   async askAi(req: AiRequest, signal?: AbortSignal): Promise<unknown> {
     const { data: out, error } = await this.sb.functions.invoke('caa-ai', { body: req, signal, timeout: 120000 });
     if (error) throw new BackendError('offline', error.message);

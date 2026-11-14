@@ -164,6 +164,8 @@ export interface Backend {
   /** AI helper (server function "caa-ai", Claude): words for an activity board from a topic or a
    *  photo, or what a drawing shows. Absent when no server is configured. */
   askAi?(req: AiRequest, signal?: AbortSignal): Promise<unknown>;
+  /** Is the AI helper installed on the server? (When it is not, the app shows nothing about AI.) */
+  aiReady?(): Promise<boolean>;
   /** Demonstration only (local backend): fills the progress pages with an example. */
   demoSeedUsage?(profileId: string, label: (id: string) => string): Promise<void>;
 

@@ -23,6 +23,7 @@ import { SymbolView } from '../SymbolView';
 import { C } from '../theme';
 import { Note, ss } from './SettingsScreen';
 import { checked } from '../a11y';
+import { noticeText } from '../../lib/notices';
 
 type View_ =
   | { k: 'main' }
@@ -102,7 +103,7 @@ export function TeamTab({ board, onChanged }: { board: BoardCtx; onChanged: () =
       {unread.length > 0 && (
         <Section title={x.news}>
           {unread.slice(0, 6).map((n) => (
-            <Row key={n.id} icon="bell" title={n.text} sub={when(n.createdAt, uiLang)} />
+            <Row key={n.id} icon="bell" title={noticeText(n.text, uiLang)} sub={when(n.createdAt, uiLang)} />
           ))}
           <Btn
             small

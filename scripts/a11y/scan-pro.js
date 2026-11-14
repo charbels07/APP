@@ -64,10 +64,48 @@ let bad = 0;
     await scan('06-workspace-tour');
     await btn('Maybe later').click().catch(() => {});
   });
-  for (const [name, label] of [['07-dashboard', 'Dashboard'], ['08-users', 'My AAC users'], ['09-create', 'Create materials'], ['10-library', 'My library'], ['11-collaborations', 'Collaborations'], ['12-learning', 'Learning center'], ['13-account', 'Account & licence']])
+  for (const [name, label] of [['07-dashboard', 'Dashboard'], ['08-users', 'My AAC users'], ['10-library', 'My library'], ['11-collaborations', 'Collaborations'], ['12-learning', 'Learning center'], ['13-account', 'Account & licence']])
     await step(name, async () => { await p.getByRole('tab', { name: label }).first().click(); await scan(name); });
   await step('14-connect', async () => { await p.getByRole('tab', { name: 'My AAC users' }).first().click(); await btn('Connect a user', false).click(); await scan('14-connect-a-user'); });
-  await step('15-material', async () => { await p.getByRole('tab', { name: 'Create materials' }).first().click(); await p.getByRole('radio').first().click(); await p.waitForTimeout(400); await scan('15-material-kind'); });
+  // The library also creates: one tile per kind; the search bar; a small form (First / Then).
+  await step('15-material', async () => {
+    await p.getByRole('tab', { name: 'My library' }).first().click();
+    await p.getByLabel('Search by name').fill('zzz');
+    await p.waitForTimeout(300);
+    await scan('15-library-search');
+    await p.getByLabel('Search by name').fill('');
+    await p.getByRole('button', { name: /Create a material : First/ }).click();
+    await p.waitForTimeout(400);
+    await scan('15-material-form');
+    await btn('Back').click();
+  });
+  // A professional prepares a child's profile, then gets the code for the parents.
+  await step('16-child-profile', async () => {
+    await p.getByRole('tab', { name: 'My AAC users' }).first().click();
+    await btn('Create a child’s profile').click();
+    await p.waitForTimeout(600);
+    await scan('16-child-first-step');
+    await p.getByLabel('Child’s first name').fill('Adam');
+    for (let i = 0; i < 20 && !(await btn('Finish').count()); i++) {
+      await btn('Continue').click();
+      await p.waitForTimeout(350);
+      // the Arabic step needs a choice
+      if (await p.getByText(/Choose an Arabic, or/).count()) {
+        await p.getByRole('radio').last().click();
+        await btn('Continue').click();
+        await p.waitForTimeout(350);
+      }
+    }
+    await btn('Finish').click();
+    await p.waitForTimeout(1500);
+    await btn('Create the parents’ code').click();
+    await p.waitForTimeout(600);
+    await scan('16-child-page-with-code');
+    await btn('Open the board').click();
+    await p.waitForTimeout(1200);
+    await scan('16-own-board');
+    await btn('Close').click();
+  });
   await b.close();
   process.exit(bad ? 1 : 0);
 })().catch((e) => { console.error('FAILED', e.message.split('\n').slice(0, 3).join(' | ')); process.exit(1); });

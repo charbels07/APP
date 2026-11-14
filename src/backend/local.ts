@@ -190,7 +190,11 @@ export class LocalBackend implements Backend {
   private static access(db: DB, profileId: string, userId: string) {
     const p = db.profiles[profileId];
     if (!p) return null;
-    if (p.ownerId === userId) return { owner: true, role: 'owner' as const, level: 3 as AccessLevel, perms: preset('parent').perms };
+    if (p.ownerId === userId) {
+      // A professional who created the profile and is no longer accepted: suspended too.
+      if (!LocalBackend.cleared(db, userId)) return null;
+      return { owner: true, role: 'owner' as const, level: 3 as AccessLevel, perms: preset('parent').perms };
+    }
     const m = db.members.find((x) => x.profileId === profileId && x.userId === userId && x.status === 'active');
     if (!m || (m.expiresAt && m.expiresAt < Date.now())) return null;
     // A professional whose acceptance was withdrawn: access suspended (it comes back if accepted again).
@@ -434,13 +438,21 @@ export class LocalBackend implements Backend {
   async createProfile(input: { name: string; age?: number; intake?: Intake; data: Profile }): Promise<ChildRecord> {
     return this.tx((db, m) => {
       const me = LocalBackend.need(m);
+      const data = clone(input.data);
+      if (me.role === 'pro') {
+        // A professional prepares a child's profile before the family has an account: only once
+        // accepted, and nothing is recorded or shared until the family decides (same as the real server).
+        if (!LocalBackend.cleared(db, me.id)) throw new BackendError('pro_not_verified');
+        data.settings.dataCollection = 'off';
+        data.settings.shareStats = 'none';
+      }
       const rec: StoredProfile = {
         id: uid('p'),
         ownerId: me.id,
         name: input.name.trim(),
         age: input.age,
         intake: input.intake,
-        data: clone(input.data),
+        data,
         version: 1,
         updatedAt: Date.now(),
         updatedBy: me.id,
@@ -472,13 +484,12 @@ export class LocalBackend implements Backend {
         return { ok: false, conflict: clone(rec) };
       }
       // What is recorded, what is shared and the caregiver code are the family's own decisions.
-      if (!manager) {
-        const was = p.data.settings;
-        const now = data.settings;
-        if ((now.dataCollection ?? 'off') !== (was.dataCollection ?? 'off') || (now.shareStats ?? 'none') !== (was.shareStats ?? 'none') || now.pin !== was.pin) {
-          throw new BackendError('consent_protected');
-        }
-      }
+      const was = p.data.settings;
+      const now = data.settings;
+      const consentChanged = (now.dataCollection ?? 'off') !== (was.dataCollection ?? 'off') || (now.shareStats ?? 'none') !== (was.shareStats ?? 'none');
+      if (!manager && (consentChanged || now.pin !== was.pin)) throw new BackendError('consent_protected');
+      // A professional who created the profile edits everything except these two choices.
+      if (a.owner && me.role === 'pro' && consentChanged) throw new BackendError('consent_protected');
       Object.assign(p, { data: clone(data), version: p.version + 1, updatedAt: Date.now(), updatedBy: me.id });
       return { ok: true, version: p.version };
     });
@@ -487,7 +498,8 @@ export class LocalBackend implements Backend {
   async deleteProfile(id: string): Promise<void> {
     await this.tx((db, m) => {
       const me = LocalBackend.need(m);
-      if (db.profiles[id]?.ownerId !== me.id) throw new BackendError('forbidden');
+      // The owner only, and for a professional only while the certificate is accepted (same as the real server).
+      if (db.profiles[id]?.ownerId !== me.id || !LocalBackend.cleared(db, me.id)) throw new BackendError('forbidden');
       delete db.profiles[id];
       const other = <T extends { profileId?: string }>(x: T) => x.profileId !== id;
       db.members = db.members.filter(other);
@@ -604,6 +616,48 @@ export class LocalBackend implements Backend {
     // A professional joins a child's team only once the app's team accepted the certificate.
     if (!LocalBackend.cleared(db, userId)) throw new BackendError('pro_not_verified');
     const acc = db.accounts[userId];
+    // A parent accepts the "parent" invitation written by the professional who created the
+    // profile: the parent becomes the owner, the professional stays on the team (same as the real server).
+    const p = db.profiles[inv.profileId];
+    const was = p ? db.accounts[p.ownerId] : undefined;
+    if (p && was && inv.direction === 'invite' && inv.role === 'parent' && inv.fromUserId === was.id && was.role === 'pro' && acc?.role === 'parent' && acc.provider !== 'device' && acc.id !== was.id) {
+      p.ownerId = userId;
+      // The caregiver code becomes "not chosen yet": the family chooses its own.
+      if (p.data?.settings) p.data.settings.pin = '1234';
+      p.version += 1;
+      p.updatedAt = Date.now();
+      db.members = db.members.filter((x) => !(x.profileId === p.id && (x.userId === userId || x.userId === was.id)));
+      if (LocalBackend.cleared(db, was.id)) {
+        db.members.push({
+          profileId: p.id,
+          userId: was.id,
+          displayName: memberName(was),
+          email: was.email,
+          role: 'therapist',
+          level: 3,
+          perms: { createMaterials: true, proposeVocabulary: true, changeAccess: false, invite: false, manageDevices: false, manager: false, viewData: false },
+          status: 'active',
+          createdAt: Date.now(),
+        });
+      }
+      for (const other of db.invitations) if (other.profileId === p.id && other.fromUserId === was.id && other.status === 'pending' && other.id !== inv.id) other.status = 'cancelled';
+      inv.status = 'accepted';
+      inv.toUserId = userId;
+      const lang = was.prefs?.uiLang ?? 'fr';
+      const who = memberName(acc);
+      LocalBackend.notify(
+        db,
+        was.id,
+        'access',
+        lang === 'en'
+          ? `${who} is now the parent in charge of ${inv.childName}'s profile. You stay on the team.`
+          : lang === 'ar'
+            ? `${who} هو الآن ولي الأمر المسؤول عن ملف ${inv.childName}. تبقى ضمن الفريق.`
+            : `${who} est maintenant le parent responsable du profil de ${inv.childName}. Vous restez dans son équipe.`,
+        { profileId: p.id },
+      );
+      return;
+    }
     db.members = db.members.filter((x) => !(x.profileId === inv.profileId && x.userId === userId));
     db.members.push({
       profileId: inv.profileId,

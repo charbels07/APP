@@ -16,8 +16,16 @@ export interface DrawingGuess {
   ar?: string;
 }
 
+/** After a request that failed, the AI is left alone until the app is opened again (no error sentence). */
+let down = false;
+export const aiWentDown = () => {
+  down = true;
+};
+
 export async function aiAvailable(): Promise<boolean> {
-  return !!backend().askAi;
+  const api = backend();
+  if (down || !api.askAi) return false;
+  return api.aiReady ? api.aiReady() : true;
 }
 
 const asPlan = (data: unknown): AiPlan | null => (data && typeof data === 'object' && Array.isArray((data as AiPlan).words) ? (data as AiPlan) : null);
@@ -29,6 +37,7 @@ export async function askAiForTla(topic: string, signal?: AbortSignal, arabic?: 
   try {
     return asPlan(await api.askAi({ task: 'tla', topic, arabic }, signal));
   } catch {
+    if (!signal?.aborted) aiWentDown();
     return null;
   }
 }
@@ -40,6 +49,7 @@ export async function askAiForPhoto(photo: AiPhoto, hint: string, signal?: Abort
   try {
     return asPlan(await api.askAi({ task: 'photo', hint, arabic, image: { data: photo.data, mediaType: photo.mediaType } }, signal));
   } catch {
+    if (!signal?.aborted) aiWentDown();
     return null;
   }
 }

@@ -33,8 +33,14 @@ function getSample(): Promise<Sample | null> {
   return samplePromise;
 }
 
+/** After a request that failed, the AI is left alone until the page is opened again (no error sentence). */
+let down = false;
+
 export async function aiAvailable(): Promise<boolean> {
-  return (await getSample()) !== null || !!backend().askAi;
+  if ((await getSample()) !== null) return true;
+  const api = backend();
+  if (down || !api.askAi) return false;
+  return api.aiReady ? api.aiReady() : true;
 }
 
 /** The app's own server function (real website), when the page has no Claude access of its own. */
@@ -44,6 +50,7 @@ async function askServer(req: Parameters<NonNullable<ReturnType<typeof backend>[
   try {
     return await api.askAi(req, signal);
   } catch {
+    if (!signal?.aborted) down = true;
     return null;
   }
 }

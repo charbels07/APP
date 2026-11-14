@@ -415,6 +415,15 @@ order, by itself.
 | What changed for invitations | `InvitedView` in `src/ui/settings/TeamTab.tsx`: **Send by email** opens your own mail app with the address, the subject and the whole message ready (`src/lib/inviteMail.ts` builds that link, a `mailto:` link). The text says plainly that the app does not send it by itself, and "Send again" is now called "Remind in the app". |
 | A therapist can type the invitation code | Before, "Connect a user" only understood the family's permanent code, so an invitation code was refused there. `ConnectUser` in `src/ui/pro/Workspace.tsx` now tries the code as an invitation first (joined at once, with the rights the family chose), then as the family's code (a request). |
 
+## Round 24 — Settings and the child lock, straight from the board
+
+| What | How it was done |
+|---|---|
+| Two new buttons in the board's bar | `src/ui/UniversalBar.tsx`: **Settings** and **Lock** (the child lock of this device; shown on a real child's board, lit while the lock is on). |
+| Both ask the caregiver code | The bar does not open them itself: it opens the code keypad with a note saying what comes next (`{ kind: 'pin', then: … }` in `src/state/AppState.tsx`). When the code is right, `PinPanel` (`src/ui/panels/CommPanels.tsx`) opens the settings or the lock **without** switching the board to caregiver mode, so the child's board stays as it was when the panel is closed. In caregiver mode the code was already typed, so they open at once. |
+| The lock in two places, written once | `ChildLock` in `src/ui/panels/CaregiverPanels.tsx` is the switch and its explanations; the settings page and the new `LockPanel` both show it. |
+| The first time | If the family has not chosen a caregiver code yet, the keypad asks to choose one (typed twice), as it does for caregiver mode. |
+
 ## How everything is checked
 
 | Check | What it does |

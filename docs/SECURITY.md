@@ -96,6 +96,12 @@ session is never written on the device: it lives for the visit only and is gone 
 the app is closed; the children's copies kept on that device are erased the next time the app
 opens. A tablet linked with a code always stays connected.
 
+### Added later: Settings and the child lock in the board's bar (November 2026)
+
+Both buttons open the caregiver code keypad first (same code, same pauses after wrong tries);
+nothing of the settings is shown before the code is right, and the board does not switch to
+caregiver mode behind them.
+
 ## 4. What only you can do
 
 ### Now (10 minutes)

@@ -35,9 +35,51 @@ import { Recorder } from './Recorder';
 import { pinTooEasy } from './CommPanels';
 import { stable } from '../../lib/profileDiff';
 
+/** The child lock of this device: the switch and how to stop the child leaving the app. */
+function ChildLock() {
+  const app = useApp();
+  const sess = useSession();
+  const { t } = app;
+  return (
+    <>
+      <Toggle
+        label={t.lockToggle}
+        value={sess.childLock}
+        note={t.lockNote}
+        onChange={(on) => {
+          // Full screen must be asked inside the tap (browsers refuse it otherwise).
+          if (on) enterFullscreen();
+          else exitFullscreen();
+          sess.setChildLock(on);
+          if (on) {
+            app.setEditMode(false);
+            app.setOverlay(null);
+          }
+        }}
+      />
+      <Text style={s.label}>{t.lockSystemTitle}</Text>
+      <Text style={s.note}>{Platform.OS === 'web' ? t.lockWeb : Platform.OS === 'android' ? t.lockAndroid : t.lockIpad}</Text>
+      {Platform.OS === 'web' && <Text style={s.note}>{t.lockIpad}</Text>}
+      {Platform.OS === 'web' && <Text style={s.note}>{t.lockAndroid}</Text>}
+    </>
+  );
+}
+
+/** The child lock on its own, opened from the board's bar (after the caregiver code). */
+function LockPanel() {
+  const app = useApp();
+  return (
+    <Panel title={app.t.lockTitle} onClose={() => app.setOverlay(null)} tone="edit" maxWidth={620}>
+      <ChildLock />
+    </Panel>
+  );
+}
+
 export function CaregiverOverlay() {
   const { overlay } = useApp();
   switch (overlay?.kind) {
+    case 'lock':
+      return <LockPanel />;
     case 'print':
       return <PrintPanel cards={overlay.cards} />;
     case 'editor':
@@ -959,22 +1001,7 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
 
       {board && (
         <Section title={t.lockTitle}>
-          <Toggle
-            label={t.lockToggle}
-            value={sess.childLock}
-            note={t.lockNote}
-            onChange={(on) => {
-              // Full screen must be asked inside the tap (browsers refuse it otherwise).
-              if (on) enterFullscreen();
-              else exitFullscreen();
-              sess.setChildLock(on);
-              if (on) app.setEditMode(false);
-            }}
-          />
-          <Text style={s.label}>{t.lockSystemTitle}</Text>
-          <Text style={s.note}>{Platform.OS === 'web' ? t.lockWeb : Platform.OS === 'android' ? t.lockAndroid : t.lockIpad}</Text>
-          {Platform.OS === 'web' && <Text style={s.note}>{t.lockIpad}</Text>}
-          {Platform.OS === 'web' && <Text style={s.note}>{t.lockAndroid}</Text>}
+          <ChildLock />
         </Section>
       )}
 

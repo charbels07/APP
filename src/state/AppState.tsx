@@ -20,9 +20,14 @@ export type Overlay =
   | { kind: 'keyboard' }
   | { kind: 'help' }
   | { kind: 'lang' }
-  /** Caregiver code. `then`: what opens once the code is right (e.g. the new-board panel). */
-  | { kind: 'pin'; then?: { kind: 'newTla' } }
+  /**
+   * Caregiver code. `then`: what opens once the code is right. The new-board panel opens in
+   * caregiver mode; the settings and the child lock open on their own (the board stays in use mode).
+   */
+  | { kind: 'pin'; then?: { kind: 'newTla' } | { kind: 'settings' } | { kind: 'lock' } }
   | { kind: 'settings' }
+  /** The child lock of this device (also in the settings). */
+  | { kind: 'lock' }
   /** `cards`: print these words as picture cards (multi-selection). */
   | { kind: 'print'; cards?: string[] }
   /** `only`: just the picture or just the recorded pronunciation. */
@@ -186,6 +191,9 @@ export function useApp(): AppCtx {
 let keySeq = 0;
 const newKey = () => `k${Date.now().toString(36)}${(keySeq++).toString(36)}`;
 
+/** After the caregiver code: do these panels open without switching the board to caregiver mode? */
+export const opensAlone = (then: { kind: string } | undefined): boolean => then?.kind === 'settings' || then?.kind === 'lock';
+
 export interface AppProviderProps {
   initial: Profile;
   /** Every change of the profile (saved on the device and sent to the server by the caller). */
@@ -267,7 +275,7 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
   /** Opening a panel; where the caregiver code is not asked (freeEdit), "ask the code" opens the tools at once. */
   const setOverlay = useCallback((o: Overlay) => {
     if (o?.kind === 'pin' && freeEditRef.current) {
-      setEditModeState(true);
+      if (!opensAlone(o.then)) setEditModeState(true);
       setOverlayState(o.then ?? null);
     } else setOverlayState(o);
   }, []);

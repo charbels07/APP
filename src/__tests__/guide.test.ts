@@ -50,7 +50,7 @@ describe('in-app guide', () => {
         // languages now live in Settings; its pages
         t.sCommLang, t.sInterface, st.tabTeam, st.tabAccount, dataStrings(lang).tab,
         // presentation and access, lock
-        ob.presentationAccess, t.lockTitle,
+        ob.presentationAccess, t.lockTitle, t.lockShort, t.settings,
         // sequences (step lists) with suggested steps; settings are saved on demand; voice height; selection
         t.newSchedule, t.suggestSteps, t.createSeq, t.editSchedule, t.save, t.sDiscard, t.sPitch, e.selectAll, e.selectNone,
         // professionals

@@ -1,6 +1,8 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useApp } from '../state/AppState';
+import { useBoard } from '../state/BoardContext';
+import { useSession } from '../state/Session';
 import { Icon, type IconName } from './Icon';
 import { C } from './theme';
 
@@ -30,11 +32,12 @@ interface Item {
 export function UniversalBar({ vertical }: { vertical: boolean }) {
   const app = useApp();
   const { width, height } = useWindowDimensions();
+  const board = useBoard();
+  const { childLock } = useSession();
   const iconsOnly = !vertical && width < 520;
-  // Three tools (search, guide, caregiver): one column with their names when the screen is tall
-  // enough, otherwise icons side by side.
-  const toolColumn = height >= 680;
   const { t, view, path, overlay, profile, timer, editMode } = app;
+  // The adult's panels: straight in while caregiver mode is open, otherwise the caregiver code first.
+  const behindCode = (kind: 'settings' | 'lock') => () => app.setOverlay(editMode ? { kind } : { kind: 'pin', then: { kind } });
   const bar = profile.settings.bar;
   const timerLabel =
     timer.endAt || (timer.remainingMs > 0 && timer.remainingMs < timer.totalMs) ? formatTime(timer.remainingMs) : t.timer;
@@ -75,6 +78,10 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
       active: overlay?.kind === 'search' || overlay?.kind === 'keyboard' || overlay?.kind === 'model' || app.recording,
     },
     { key: 'guide', icon: 'book', label: t.guide, onPress: () => app.setOverlay({ kind: 'guide' }), active: overlay?.kind === 'guide' },
+    // For the parents, from the board itself, each behind the caregiver code: the settings…
+    { key: 'settings', icon: 'settings', label: t.settings, onPress: behindCode('settings'), active: overlay?.kind === 'settings' },
+    // …and the child lock of this device (only on a real child's board; lit while it is on).
+    { key: 'childLock', icon: 'shield', label: t.lockShort, onPress: behindCode('lock'), active: childLock || overlay?.kind === 'lock', show: !!board },
     {
       key: 'lock',
       icon: editMode ? 'unlock' : 'lock',
@@ -84,6 +91,9 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
     },
   ];
   const visible = (items: Item[]) => items.filter((m) => m.show !== false);
+  // The tools (search, guide, settings, child lock, caregiver): one column with their names when
+  // the screen is tall enough for all of them, otherwise icons side by side.
+  const toolColumn = height >= 420 + visible(tools).length * 56;
 
   if (vertical) {
     return (
@@ -97,7 +107,7 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
           ))}
         </View>
         <View style={toolColumn ? styles.colGroup : styles.toolGrid}>
-          {tools.map(({ key, ...m }) => (
+          {visible(tools).map(({ key, ...m }) => (
             <BarButton key={key} {...m} size={toolColumn ? 'toolWide' : 'tool'} iconsOnly={!toolColumn} />
           ))}
         </View>
@@ -106,7 +116,7 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
   }
   return (
     <View style={[styles.bar, styles.horizontal]} role="navigation">
-      {[...visible(main), ...visible(priority), ...tools].map(({ key, ...m }) => (
+      {[...visible(main), ...visible(priority), ...visible(tools)].map(({ key, ...m }) => (
         <BarButton key={key} {...m} size={m.tone ? 'priorityRow' : 'row'} iconsOnly={iconsOnly} />
       ))}
     </View>

@@ -88,4 +88,7 @@
 - E-mails: the only e-mails the server sends are sign-in codes (Supabase Auth). Invitations are not e-mailed
   by the app: "Send by email" opens the person's own mail app (`src/lib/inviteMail.ts`); never word a button
   as if the app had sent an e-mail. A professional's code field accepts an invitation code or the family's code.
+- The board's bar has "Settings" and "Lock" (child lock) for the parents: outside caregiver mode they
+  always go through the code (`{ kind: 'pin', then: { kind: 'settings' | 'lock' } }`), and open without
+  turning caregiver mode on (`opensAlone`). Never open the settings or the lock from the bar without the code.
 - Services and keys: `docs/API-KEYS.md` (keep it up to date when a feature starts needing one).

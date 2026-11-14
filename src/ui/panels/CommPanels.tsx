@@ -8,7 +8,7 @@ import { typedChips } from '../../lib/typedWords';
 import type { Lang, UiLang } from '../../model/types';
 import { UI_LANG_NAMES } from '../../i18n/ui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useApp } from '../../state/AppState';
+import { opensAlone, useApp } from '../../state/AppState';
 import { useBoard } from '../../state/BoardContext';
 import { Btn, Panel, Section } from '../common';
 import { DrawPad } from '../DrawPad';
@@ -415,6 +415,8 @@ export function PinPanel() {
   };
   const open = () => {
     const then = app.overlay?.kind === 'pin' ? app.overlay.then : undefined;
+    // The settings and the child lock open on their own: the board stays as the child uses it.
+    if (then && opensAlone(then)) return app.setOverlay(then);
     app.setEditMode(true);
     if (then) app.setOverlay(then);
   };

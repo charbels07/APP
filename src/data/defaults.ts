@@ -143,6 +143,9 @@ export const TLA_CORE: string[][] = [
   ['help_me', 'what'],
 ];
 
+/** Communication words put first on every activity board the family creates (comment, turns, ask). */
+export const TLA_FUNCTIONS = ['look_at', 'my_turn', 'i_like_it', 'where'];
+
 function tla(id: string, concept: string, specific: string[]): Board {
   const rows = 5;
   const cols = 6;

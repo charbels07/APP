@@ -72,4 +72,8 @@
   (`CreateTiles`) and names a material by what it contains (`src/lib/resourceNames.ts`, shown with
   `resourceName`). AI buttons and messages only show when `aiAvailable()` says yes: never a sentence about
   the AI being unavailable.
+- Activity boards (TLA) order their topic words like the child's main board (`src/lib/boardOrder.ts`:
+  `mainBoardOrder`, `tlaLayout`, `arrangeTla`). Automatic when a board is created; on a board already made
+  it is only done on request ("Arrange like the main board" in the board's menu): never re-order a board
+  the child uses without the caregiver asking. The core block (`TLA_CORE`) and `TLA_FUNCTIONS` never move.
 - Services and keys: `docs/API-KEYS.md` (keep it up to date when a feature starts needing one).

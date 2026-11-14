@@ -38,6 +38,7 @@ import { useSession } from '../../state/Session';
 import { Btn, Field, Panel, useNavRtl } from '../common';
 import { Icon, type IconName } from '../Icon';
 import { SymbolView } from '../SymbolView';
+import { arrangeTla } from '../../lib/boardOrder';
 import { resourceName } from '../../lib/resourceNames';
 import { C, radius } from '../theme';
 
@@ -197,6 +198,16 @@ export function TlaMenu({ id }: { id: string }) {
           });
           setMsg(e.tlaDuplicated);
           if (copy) app.openTla(copy);
+        }}
+      />
+      <Item
+        icon="grid"
+        text={e.arrange}
+        onPress={() => {
+          // The topic words go back to the order of the main board (the fixed words do not move).
+          const cells = arrangeTla(app.profile, b);
+          if (cells) app.update((d) => void (d.boards[id].cells = cells));
+          setMsg(cells ? e.arranged : e.arrangedAlready);
         }}
       />
       <Item icon="link" text={e.share} onPress={() => app.setOverlay({ kind: 'shareTla', id })} />

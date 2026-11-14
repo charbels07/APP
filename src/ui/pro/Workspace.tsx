@@ -1,6 +1,6 @@
 /**
  * The professional workspace: Dashboard · My AAC users · Create materials · My library ·
- * Collaborations · Learning center · Account & licence. One professional account, several
+ * Collaborations · Guide · Account & licence. One professional account, several
  * children, each reachable only after their family agreed, with the rights the family chose.
  * A verified professional can also prepare a child's profile before the family has an account,
  * then give the parents a code: the profile becomes theirs (see "Connect the parents").
@@ -779,7 +779,7 @@ function SharedList({ p }: { p: ProStrings }) {
   );
 }
 
-// ── Learning center ──
+// ── Guide (demo board and tutorials; called "Learning center" before) ──
 
 function Learning({ p, onOpen }: { p: ProStrings; onOpen: (start?: Overlay | 'edit') => void }) {
   const { uiLang } = useSession();

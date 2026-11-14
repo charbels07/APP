@@ -64,7 +64,7 @@ let bad = 0;
     await scan('06-workspace-tour');
     await btn('Maybe later').click().catch(() => {});
   });
-  for (const [name, label] of [['07-dashboard', 'Dashboard'], ['08-users', 'My AAC users'], ['10-library', 'My library'], ['11-collaborations', 'Collaborations'], ['12-learning', 'Learning center'], ['13-account', 'Account & licence']])
+  for (const [name, label] of [['07-dashboard', 'Dashboard'], ['08-users', 'My AAC users'], ['10-library', 'My library'], ['11-collaborations', 'Collaborations'], ['12-learning', 'Guide'], ['13-account', 'Account & licence']])
     await step(name, async () => { await p.getByRole('tab', { name: label }).first().click(); await scan(name); });
   await step('14-connect', async () => { await p.getByRole('tab', { name: 'My AAC users' }).first().click(); await btn('Connect a user', false).click(); await scan('14-connect-a-user'); });
   // The library also creates: one tile per kind; the search bar; a small form (First / Then).

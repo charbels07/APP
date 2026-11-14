@@ -101,7 +101,7 @@ This file grows as each feature is built. Each line says **what** was made, **ho
 | Revisions | When the family asks for a change, *Resume* reopens the draft with the proposal; sending again updates the same proposal. |
 | Materials | `src/lib/resources.ts` (TypeScript, tested): a material is a small piece of a profile. A TLA or schedule is made in a "sandbox" profile with the normal editors, then taken back out. First–Then, timers and picture cards (from words or photos, printable) have small forms. |
 | Library | My templates (no child's data), Shared with me, and each child's materials; duplicate, personalise for a child (a copy, the template stays unchanged), share with a colleague or a child's team (view / edit), propose to a child's profile (the family decides), export, delete. |
-| Learning center | Opens a demonstration board (nothing saved) directly on a tutorial: search ("Show me where"), the guide, modelling, a new TLA, access settings, languages. |
+| Guide (first called "Learning center") | Opens a demonstration board (nothing saved) directly on a tutorial: search ("Show me where"), the guide, modelling, a new TLA, access settings, languages. |
 | Account & licence | Verified status ("free access"), connected users, credentials, account details, preferences; billing stays for later. |
 | Tested | A browser walkthrough plays the whole story: a parent creates a child, a therapist signs up, verifies, connects with the family code, the parent accepts, the therapist drafts a new TLA and sends it, the parent reviews and approves, and the TLA appears on the child's board. |
 
@@ -367,12 +367,28 @@ code is reset at the hand-over so the parents choose their own.
 | No stand-alone "Visual timer" | It could be saved but not used with a child (timers live in the child's board and inside the steps of a sequence), so it is no longer offered as a material. |
 | No sentence about the AI | When the AI helper is not installed, the app asks the server once (`aiReady` in `src/backend/supabase.ts`) and simply hides the AI buttons; the automatic suggestions work as before, with no message. |
 
+## Round 20 — Activity boards in the order of the main board; "Guide" instead of "Learning center"
+
+**The idea:** a child finds a word faster when it is always in the same kind of place. On the main
+board the words are grouped in columns: people, actions, little words, describing words,
+questions, social words, then the folders of things. A new activity board now follows the same
+order, by itself.
+
+| What | How it was done |
+|---|---|
+| The order | `src/lib/boardOrder.ts` (**TypeScript**, no screen in it): it reads the child's own main board column by column (and each folder at the place of its card) and gives every word a number. Then it sorts: first by kind of word (the kinds in the order they first appear on the main board), then by that number; words that are new for the child come after the known ones of the same kind. |
+| Creating a board | `src/ui/panels/NewTlaPanel.tsx`: the list of "Suggested words" is shown in that order, so what you see is what the board will be; a word you add jumps to its place. `tlaLayout` builds the board: the block of core words on the left and the four communication words first (same place on every activity board), then the topic words. |
+| A board already made | Caregiver mode → tap the board's tab twice → **Arrange like the main board** (`arrangeTla`): the topic words exchange their places between themselves; the core words on the left, the empty places and the cards you made bigger stay as they are. It is a button, not automatic, on purpose: moving words under a child who already knows where they are should be your decision. |
+| A word the child already has | `existingConcept` (same file as the panel): when a pictogram belongs both to a word ("dentist", the person) and to the name of a board, the word wins, so it is placed with the people like on the main board. |
+| Tests | `src/__tests__/boardOrder.test.ts`: mixed words come back in the main board's order, new words go after the known ones, a family that changed its main board gets its own order, and arranging does not touch the fixed words. |
+| "Guide" | The professional menu entry "Learning center" is now called "Guide" (French "Guide", Arabic "الدليل"): only the name changed (`src/i18n/pro.ts`). |
+
 ## How everything is checked
 
 | Check | What it does |
 |---|---|
 | `npm run typecheck` | TypeScript reads the whole code and refuses mistakes such as a missing field or a wrong type. |
-| `npm test` | 204 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office, colour contrast. |
+| `npm test` | 212 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office, colour contrast. |
 | `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger, a tablet and a member of our team; then every attack found by the security review, which must fail; then a professional who prepares a profile and hands it to the parents; 116 checks. |
 | `npm run test:live` | The same story on a second, empty Supabase project (never the one families use), through the app's own code: 13 steps, including devices, history undo, invitation codes, revisions and materials (needs "Confirm email" off while it runs). Last full run: before the back office (all 13 passed); **to run again once the back-office migration is on the real project**. |
 | `npm run test:a11y` | Accessibility: 164 scans of 46 screens against WCAG 2.2 AA (four sizes, Arabic), then a keyboard-only run. Last run: 0 rule break. |

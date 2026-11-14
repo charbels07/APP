@@ -421,14 +421,14 @@ const BASE: BaseChapter[] = [
       fr: [
         'TLA → Nouveau TLA (le code accompagnant est demandé si besoin) → tapez le sujet (ex. « préparer un gâteau ») → Proposer des mots.',
         'L’application reconnaît environ 45 situations et propose les mots ET les étapes dans l’ordre. Sujet inconnu : Demander à l’IA (seul le sujet est envoyé).',
-        'Touchez un mot ou une étape pour le retirer, ajoutez-en ; pour changer l’ordre des étapes, appui long sur une étape puis glisser (ou les petites flèches). Puis Créer le TLA.',
+        'Touchez un mot ou une étape pour le retirer, ajoutez-en : les mots se rangent tout seuls comme sur le tableau principal (les mots du même type ensemble, dans le même ordre), un mot ajouté va à sa place. Pour changer l’ordre des étapes, appui long sur une étape puis glisser (ou les petites flèches). Puis Créer le TLA.',
         'Option « Créer aussi la séquence de ces étapes » : la séquence est reliée au TLA, avec minuteurs (ex. four 30 min). Elle apparaît dans Planning.',
         'Autres façons : Créer un TLA vide (vous choisissez chaque mot) ; Créer à partir d’une photo (un menu, une boîte de jeu, des ingrédients : vérifiez les mots proposés avant de créer) ; Importer un fichier ou Partagés avec moi (un TLA qu’on vous a envoyé).',
       ],
       en: [
         'Boards → New board (the caregiver code is asked if needed) → type the topic (e.g. “baking a cake”) → Suggest words.',
         'The app recognises about 45 situations and suggests the words AND the steps in order. Unknown topic: Ask the AI (only the topic is sent).',
-        'Touch a word or a step to remove it, add more; to change the order of the steps, hold a step then slide it (or use the small arrows). Then Create board.',
+        'Touch a word or a step to remove it, add more: the words arrange themselves like the main board (words of the same kind together, in the same order), and a word you add goes to its place. To change the order of the steps, hold a step then slide it (or use the small arrows). Then Create board.',
         'Option “Also create a sequence of these steps”: the sequence is linked to the board, with timers (e.g. oven 30 min). It appears in Schedule.',
         'Other ways: Create an empty board (you choose every word); Create from a photo (a menu, a game box, ingredients: check the suggested words before creating); Import a file or Shared with me (a board someone sent you).',
       ],
@@ -583,14 +583,14 @@ const BASE: BaseChapter[] = [
         'Contribuer : vos changements vont dans un brouillon. Un bandeau indique combien sont prêts ; rien ne change pour l’enfant avant l’accord de la famille.',
         'Envoyer pour approbation : donnez un titre à la proposition et, si vous voulez, la raison. La famille voit l’avant / après et approuve, demande une modification ou refuse.',
         'Modifier directement : vos changements s’appliquent tout de suite et apparaissent dans l’historique. Utiliser : vous pouvez utiliser le tableau et modéliser, sans rien changer.',
-        'Sur votre propre appareil, le code accompagnant de la famille ne vous est pas demandé pour préparer des changements. Ma bibliothèque garde vos supports (TLA, plannings, D’abord / Ensuite, cartes) pour les proposer ensuite à une famille. Centre d’apprentissage : un tableau de démonstration pour s’exercer, où rien n’est enregistré.',
+        'Sur votre propre appareil, le code accompagnant de la famille ne vous est pas demandé pour préparer des changements. Ma bibliothèque garde vos supports (TLA, plannings, D’abord / Ensuite, cartes) pour les proposer ensuite à une famille. Guide (dans votre espace) : un tableau de démonstration pour s’exercer, où rien n’est enregistré, et des tutoriels.',
       ],
       en: [
         'From your workspace, My AAC users opens a child’s board. Your rights are chosen by the family: Use, Contribute or Edit directly.',
         'Contribute: your changes go into a draft. A banner says how many are ready; nothing changes for the child before the family agrees.',
         'Send for approval: give the proposal a title and, if you like, the reason. The family sees before / after and approves, asks for a change or declines.',
         'Edit directly: your changes apply at once and appear in the history. Use: you can use the board and model, without changing anything.',
-        'On your own device, the family’s caregiver code is not asked when you prepare changes. My library keeps your materials (activity boards, schedules, First / Then, cards) so you can propose them to a family later. Learning center: a demonstration board to practise, where nothing is saved.',
+        'On your own device, the family’s caregiver code is not asked when you prepare changes. My library keeps your materials (activity boards, schedules, First / Then, cards) so you can propose them to a family later. Guide (in your workspace): a demonstration board to practise, where nothing is saved, and tutorials.',
       ],
     },
   },
@@ -643,7 +643,7 @@ const BASE: BaseChapter[] = [
       fr: [
         'Touchez deux fois une carte : Modifier, Remplacer l’image, Enregistrer la prononciation, Ajouter aux favoris (« mes mots »), Dupliquer, Supprimer.',
         'Appui long sur une carte, puis glissez-la : elle prend la place où vous la lâchez (deux cartes s’échangent). « Annuler » apparaît quelques secondes. Sans glisser, l’appui long ouvre la carte (pratique pour un dossier).',
-        'Touchez deux fois l’onglet d’un TLA : modifier son titre, Dupliquer, Partager (envoyer à quelqu’un qui a un compte, ou enregistrer un fichier), Imprimer.',
+        'Touchez deux fois l’onglet d’un TLA : modifier son titre, Dupliquer, Ranger comme le tableau principal (remet ses mots dans l’ordre du tableau principal, après en avoir ajouté par exemple ; les mots de base à gauche ne bougent pas), Partager (envoyer à quelqu’un qui a un compte, ou enregistrer un fichier), Imprimer.',
         'Sélectionner : touchez plusieurs cartes (Tout sélectionner, Tout désélectionner), puis Copier / Coller, changer la Taille, les envoyer Vers un tableau d’activité, les Imprimer en cartes, ou les retirer avec la corbeille (sur le tableau principal, elle demande de confirmer). Une case + ajoute toujours un mot. Depuis le tableau principal, les cartes envoyées sont copiées : leur place ne change pas.',
         'Nouveau TLA → Créer à partir d’une photo : photographiez un menu ou une boîte de jeu ; vérifiez et corrigez les mots proposés avant de créer.',
         'En mode utilisation, un appui long sur un dossier montre ses mots les plus demandés sans l’ouvrir.',
@@ -651,7 +651,7 @@ const BASE: BaseChapter[] = [
       en: [
         'Tap a card twice: Edit, Replace the picture, Record the pronunciation, Add to favourites (“my words”), Duplicate, Delete.',
         'Long press a card, then slide it: it takes the place where you let go (two cards swap). “Undo” shows for a few seconds. Without sliding, the long press opens the card (handy for a folder).',
-        'Tap an activity board tab twice: edit its title, Duplicate, Share (send to someone with an account, or save a file), Print.',
+        'Tap an activity board tab twice: edit its title, Duplicate, Arrange like the main board (puts its words back in the main board’s order, after adding some for example; the core words on the left do not move), Share (send to someone with an account, or save a file), Print.',
         'Select: tap several cards (Select all, Deselect all), then Copy / Paste, change the Size, send them To an activity board, Print them as cards, or remove them with the bin (on the main board it asks to confirm). A + case always adds a word. From the main board, cards that are sent are copied: their place does not change.',
         'New activity board → Create from a photo: photograph a menu or a game box; check and correct the suggested words before creating.',
         'In use mode, a long press on a folder shows its most asked-for words without opening it.',
@@ -862,7 +862,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
     steps: [
       '«اللوحات» ← «لوحة جديدة» (يُطلب رمز المرافق عند الحاجة) ← اكتب الموضوع (مثلاً «préparer un gâteau») ← «اقترح كلمات».',
       'يتعرّف التطبيق على نحو 45 موقفاً مكتوباً بالفرنسية أو الإنجليزية، ويقترح الكلمات والخطوات بالترتيب. موضوع غير معروف: «اسأل الذكاء الاصطناعي» (يُرسل الموضوع فقط).',
-      'المس كلمة أو خطوة لإزالتها، أضف غيرها؛ لتغيير ترتيب الخطوات اضغط مطولاً على خطوة ثم اسحبها (أو استعمل الأسهم الصغيرة). ثم «إنشاء اللوحة».',
+      'المس كلمة أو خطوة لإزالتها، أضف غيرها: تترتّب الكلمات تلقائياً كما في اللوحة الرئيسية (الكلمات من النوع نفسه معاً وبالترتيب نفسه)، والكلمة التي تضيفها تذهب إلى مكانها. لتغيير ترتيب الخطوات اضغط مطولاً على خطوة ثم اسحبها (أو استعمل الأسهم الصغيرة). ثم «إنشاء اللوحة».',
       'خيار «إنشاء تسلسل لهذه الخطوات أيضاً»: يرتبط التسلسل باللوحة، مع مؤقتات (مثلاً الفرن 30 دقيقة). يظهر في «الجدول».',
       'طرق أخرى: «إنشاء لوحة فارغة» (تختار كل كلمة بنفسك)؛ «الإنشاء من صورة» (قائمة طعام، علبة لعبة، مكوّنات: تحقّق من الكلمات المقترحة قبل الإنشاء)؛ «استيراد ملف» أو «مُشارَكة معي» (لوحة أرسلها لك شخص).',
     ],
@@ -934,7 +934,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
       '«مساهمة»: تذهب تغييراتك إلى مسودة. شريط يبيّن عدد التغييرات الجاهزة؛ لا يتغيّر شيء للطفل قبل موافقة العائلة.',
       '«إرسال للموافقة»: أعطِ الاقتراح عنواناً، واذكر السبب إن شئت. ترى العائلة ما قبل وما بعد، فتوافق أو تطلب تعديلاً أو ترفض.',
       '«تعديل مباشر»: تُطبَّق تغييراتك فوراً وتظهر في السجلّ. «استعمال»: يمكنك استعمال اللوحة والنمذجة دون تغيير أي شيء.',
-      'على جهازك أنت، لا يُطلب منك رمز المرافق الخاص بالعائلة لتحضير التغييرات. «مكتبتي» تحفظ موادك (لوحات نشاط، جداول، «أولاً / ثم»، بطاقات) لتقترحها لاحقاً على عائلة. «مركز التعلّم»: لوحة تجريبية للتدرّب، لا يُحفظ فيها شيء.',
+      'على جهازك أنت، لا يُطلب منك رمز المرافق الخاص بالعائلة لتحضير التغييرات. «مكتبتي» تحفظ موادك (لوحات نشاط، جداول، «أولاً / ثم»، بطاقات) لتقترحها لاحقاً على عائلة. «الدليل» (في مساحتك): لوحة تجريبية للتدرّب، لا يُحفظ فيها شيء، ودروس.',
     ],
   },
   linkApp: {
@@ -959,7 +959,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
     steps: [
       'المس البطاقة مرتين: تعديل، تغيير الصورة، تسجيل اللفظ، إضافة إلى المفضّلة («كلماتي»)، نسخ، حذف.',
       'اضغط مطوّلاً على بطاقة ثم اسحبها: تأخذ المكان الذي تتركها فيه (تتبادل البطاقتان). يظهر «تراجع» لبضع ثوانٍ. من دون سحب، الضغطة الطويلة تفتح البطاقة (مفيدة للمجلد).',
-      'المس تبويب لوحة النشاط مرتين: تعديل العنوان، نسخ، مشاركة (إرسال إلى شخص لديه حساب، أو حفظ ملف)، طباعة.',
+      'المس تبويب لوحة النشاط مرتين: تعديل العنوان، نسخ، «ترتيب مثل اللوحة الرئيسية» (يعيد كلماتها إلى ترتيب اللوحة الرئيسية، بعد إضافة كلمات مثلاً؛ الكلمات الأساسية على اليسار لا تتحرّك)، مشاركة (إرسال إلى شخص لديه حساب، أو حفظ ملف)، طباعة.',
       'تحديد: المس عدة بطاقات («تحديد الكل»، «إلغاء تحديد الكل») ثم نسخ / لصق، تغيير الحجم، إرسالها إلى لوحة نشاط، طباعتها كبطاقات، أو إزالتها بسلة المهملات (على اللوح الرئيسي تطلب تأكيداً). خانة + تضيف كلمة دائماً. من اللوح الرئيسي تُنسخ البطاقات المُرسلة ولا يتغيّر مكانها.',
       'لوحة نشاط جديدة ← الإنشاء من صورة: صوّر قائمة طعام أو علبة لعبة، وتحقّق من الكلمات المقترحة وصحّحها قبل الإنشاء.',
       'في وضع الاستعمال، الضغطة الطويلة على مجلد تُظهر كلماته الأكثر طلباً من دون فتحه.',

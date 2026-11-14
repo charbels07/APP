@@ -1,16 +1,17 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native';
 import { SYMBOL_DEFAULTS } from '../../data/symbolMap';
-import { TLA_CORE } from '../../data/defaults';
+import { TLA_CORE, TLA_FUNCTIONS } from '../../data/defaults';
 import { editStrings } from '../../i18n/edit';
 import { aiAvailable, askAiForPhoto, askAiForTla } from '../../lib/aiPlanner';
+import { mainBoardOrder, tlaLayout, type Placed } from '../../lib/boardOrder';
 import { pickPhotoForAi, type AiPhoto } from '../../lib/photoForAi';
 import { allConceptIds, getConcept, label, symbolOf } from '../../lib/lexicon';
 import { pictoCredit, pictoToMedia } from '../../lib/pictoLibrary';
 import type { PreparedIndex } from '../../lib/pictoSearch';
 import { normalize } from '../../lib/search';
 import { planAutomatically, planFromAi, planFromLibrary, type PlanItem, type TlaPlan } from '../../lib/tlaPlanner';
-import type { Board, Cell, Concept, Profile, Schedule, WordClass } from '../../model/types';
+import type { Board, Concept, Profile, Schedule, WordClass } from '../../model/types';
 import { useApp } from '../../state/AppState';
 import { Btn, Field, Panel, Section, Toggle, useNavRtl } from '../common';
 import { moveItem, Reorderable } from '../Reorderable';
@@ -19,12 +20,20 @@ import { ImportTla } from './EditMenus';
 import { SymbolView } from '../SymbolView';
 import { C, radius } from '../theme';
 
-/** Communicative functions added to every suggested TLA (TLA-02: comment, ask, share turns). */
-const FUNCTION_WORDS = ['look_at', 'my_turn', 'i_like_it', 'where'];
 const MAX_WORDS = 24;
 const MAX_STEPS = 12;
 
-const byPictoKey = new Map(Object.entries(SYMBOL_DEFAULTS).map(([concept, key]) => [key, concept]));
+/**
+ * Pictogram → the built-in word that uses it. When a word and the name of a board or a sequence
+ * share a picture ("dentist" the person, "dentist" the activity board), the word wins: it is the
+ * one the child has on the main board.
+ */
+const NAME_OF_A_BOARD = /^[tsbf]_/;
+const byPictoKey = new Map<string, string>();
+for (const [concept, key] of Object.entries(SYMBOL_DEFAULTS)) {
+  const had = byPictoKey.get(key);
+  if (!had || (NAME_OF_A_BOARD.test(had) && !NAME_OF_A_BOARD.test(concept))) byPictoKey.set(key, concept);
+}
 
 /** Reuses a word the profile already has (same pictogram or same French label). */
 function existingConcept(profile: Profile, pictoKey: string | undefined, fr: string): string | undefined {
@@ -227,6 +236,20 @@ export function NewTlaPanel() {
 
   const caption = (item: PlanItem) => planCaption(lib, item, ui);
 
+  // The topic words in the order of the child's main board (same kinds together, in the same
+  // order): what the list shows is what the board will be, and an added word goes to its place.
+  const inBoardOrder = useMemo(() => {
+    if (!lib) return (words: PlanItem[]) => words;
+    const { sort } = mainBoardOrder(profile);
+    const describe = (item: PlanItem): Placed => {
+      const it = lib.byId.get(item.id);
+      const known = it ? existingConcept(profile, it[10], labelsFor(lib, item).fr) : undefined;
+      return known ? { concept: known, cls: getConcept(profile, known)?.cls ?? 'noun' } : { cls: item.cls ?? guessClass(it?.[7] ?? []) };
+    };
+    return (words: PlanItem[]) => sort(words, describe);
+  }, [lib, profile]);
+  const topicWords = useMemo(() => (plan ? inBoardOrder(plan.words) : []), [plan, inBoardOrder]);
+
   const askAi = async () => {
     if (!lib || !topic.trim()) return;
     aiCtl.current?.abort();
@@ -265,7 +288,7 @@ export function NewTlaPanel() {
     const { conceptFor, titleConcept, apply } = conceptMaker(lib, profile, stamp);
 
     const words: string[] = [];
-    for (const item of p?.words ?? []) {
+    for (const item of inBoardOrder(p?.words ?? [])) {
       const cid = await conceptFor(item);
       if (cid && !words.includes(cid)) words.push(cid);
     }
@@ -278,21 +301,9 @@ export function NewTlaPanel() {
 
     await titleConcept(titleId, topic.trim() || t.newTlaTitle, p);
 
-    // Core words in the two left columns (same place on every TLA), then functions, then topic words.
-    const specific = [...FUNCTION_WORDS, ...words];
-    const cols = 6;
-    const rows = Math.max(TLA_CORE.length, Math.ceil(specific.length / (cols - 2)));
-    const cells: (Cell | null)[] = new Array(rows * cols).fill(null);
-    for (let r = 0; r < rows; r++) {
-      if (TLA_CORE[r]) {
-        cells[r * cols] = { concept: TLA_CORE[r][0] };
-        cells[r * cols + 1] = { concept: TLA_CORE[r][1] };
-      }
-      for (let c = 2; c < cols; c++) {
-        const w = specific[r * (cols - 2) + (c - 2)];
-        if (w) cells[r * cols + c] = { concept: w };
-      }
-    }
+    // Core words in the two left columns (same place on every TLA), then functions, then the
+    // topic words in the order of the main board.
+    const { rows, cols, cells } = tlaLayout(words);
     const board: Board = { id: boardId, kind: 'tla', concept: titleId, rows, cols, cells };
     const schedule: Schedule | undefined = stepConcepts.length
       ? {
@@ -383,7 +394,7 @@ export function NewTlaPanel() {
           <Text style={styles.note}>{t.suggestHint}</Text>
           <Section title={t.coreBlock}>
             <View style={styles.chips}>
-              {[...TLA_CORE.flat(), ...FUNCTION_WORDS].map((id) => (
+              {[...TLA_CORE.flat(), ...TLA_FUNCTIONS].map((id) => (
                 <View key={id} style={styles.chip}>
                   <SymbolView symbol={symbolOf(profile, id)} size={28} />
                   <Text style={styles.chipText}>{label(profile, id, ui)}</Text>
@@ -393,8 +404,9 @@ export function NewTlaPanel() {
           </Section>
 
           <Section title={`${t.topicWords} (${plan.words.length})`}>
+            <Text style={styles.note}>{t.topicOrderNote}</Text>
             <View style={styles.grid}>
-              {plan.words.map((item) => (
+              {topicWords.map((item) => (
                 <PictoThumb
                   key={item.id}
                   id={item.id}

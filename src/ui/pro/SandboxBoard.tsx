@@ -3,7 +3,7 @@
  *  - a child's board seen by a professional: changes are a draft, sent as a proposal
  *    (or applied directly where the family gave editing rights);
  *  - a material being made (TLA, schedule) in a sandbox profile;
- *  - the learning center's demonstration board.
+ *  - the demonstration board of the workspace's Guide.
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -54,7 +54,7 @@ export function Banner({ icon, text, tone = 'accent', children }: { icon: IconNa
   );
 }
 
-/** Learning center: the full app on a sample profile, nothing saved. */
+/** The workspace's Guide: the full app on a sample profile, nothing saved. */
 export function DemoBoard({ start, onClose }: { start?: Overlay | 'edit'; onClose: () => void }) {
   const { uiLang, setUiLang } = useSession();
   const p = proStrings(uiLang);

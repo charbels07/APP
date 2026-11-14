@@ -43,8 +43,8 @@ describe('in-app guide', () => {
       const pro = proStrings(lang);
       const ob = onboardingStrings(lang);
       const quoted = [
-        // new board: empty, from a photo, imported
-        t.emptyTla, e.photoTitle, e.importFile, e.importShared,
+        // new board: empty, from a photo, imported; a board put back in the main board's order
+        t.emptyTla, e.photoTitle, e.importFile, e.importShared, e.arrange,
         // pictogram library
         t.pictoToReview, t.sAbout, t.sSymbols, t.sShowLabels,
         // languages now live in Settings; its pages

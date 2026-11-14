@@ -116,7 +116,7 @@ export function WebPicturePicker({
           onChangeText={setQ}
           onSubmitEditing={() => run()}
           placeholder={t.webSearch}
-          placeholderTextColor="#98A2B3"
+          placeholderTextColor={C.placeholder}
           returnKeyType="search"
           style={[s.input, { flex: 1 }]}
         />
@@ -160,7 +160,7 @@ export function WebPicturePicker({
           onChangeText={setLink}
           onSubmitEditing={() => link.trim() && fromLink()}
           placeholder={t.imageLink}
-          placeholderTextColor="#98A2B3"
+          placeholderTextColor={C.placeholder}
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="url"
@@ -178,7 +178,7 @@ const s = StyleSheet.create({
   input: {
     minHeight: 44,
     borderWidth: 1.5,
-    borderColor: C.border,
+    borderColor: C.inputBorder,
     borderRadius: radius.md,
     paddingHorizontal: 12,
     fontSize: 16,

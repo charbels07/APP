@@ -34,7 +34,7 @@ export function Root({ banner }: { banner?: React.ReactNode } = {}) {
   const compact = width < 700 || height < 600;
 
   const content = (
-    <View style={styles.content}>
+    <View style={styles.content} role="main">
       {view === 'board' && <BoardScreen />}
       {view === 'tla' && <TlaScreen />}
       {view === 'schedule' && <ScheduleScreen />}

@@ -10,7 +10,9 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useNavRtl } from '../common';
 import { C } from '../theme';
 
-export const SERIES = ['#2a78d6', '#eb6834'] as const;
+export const SERIES = ['#2672cc', '#eb6834'] as const;
+/** Text written inside a bar of each series (4.5:1 at least): white on the blue, dark on the orange. */
+const INSIDE = ['#fff', C.text] as const;
 const GRID = C.border;
 const BASE = '#B8C0CC';
 const RIGHT = { textAlign: 'right' as const, writingDirection: 'rtl' as const };
@@ -27,7 +29,7 @@ export function StatGrid({ children }: { children: React.ReactNode }) {
 export function StatTile({ label, value, sub }: { label: string; value: string; sub?: string }) {
   const rtl = useNavRtl();
   return (
-    <View style={st.tile} accessible accessibilityLabel={`${label}: ${value}${sub ? `, ${sub}` : ''}`}>
+    <View style={st.tile} accessible accessibilityRole="image" accessibilityLabel={`${label}: ${value}${sub ? `, ${sub}` : ''}`}>
       <Text style={[st.tileLabel, rtl && RIGHT]}>{label}</Text>
       <Text style={[st.tileValue, rtl && RIGHT]}>{value}</Text>
       {sub ? <Text style={[st.tileSub, rtl && RIGHT]}>{sub}</Text> : null}
@@ -145,6 +147,7 @@ export function BarList({ items, max, labelWidth = '42%' }: { items: BarItem[]; 
           key={it.key}
           style={[st.barRow, rtl && { flexDirection: 'row-reverse' }]}
           accessible
+          accessibilityRole="image"
           accessibilityLabel={`${it.label}: ${it.valueText ?? it.value}`}
         >
           <View style={[{ width: labelWidth, flexDirection: rtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 6 }]}>
@@ -185,12 +188,13 @@ export function SplitBar({ parts }: { parts: { key: string; label: string; value
         style={[{ flexDirection: rtl ? 'row-reverse' : 'row', height: 28, gap: 2 }]}
         onLayout={(e) => setW(e.nativeEvent.layout.width)}
         accessible
+        accessibilityRole="image"
         accessibilityLabel={parts.map((p) => `${p.label}: ${p.value} (${Math.round((p.value / total) * 100)}%)`).join(', ')}
       >
         {parts.map((p, i) =>
           p.value > 0 ? (
             <View key={p.key} style={{ flex: p.value, backgroundColor: SERIES[i], borderRadius: 4, justifyContent: 'center', paddingHorizontal: 6 }}>
-              {(p.value / total) * w > 44 ? <Text style={st.inside}>{Math.round((p.value / total) * 100)}%</Text> : null}
+              {(p.value / total) * w > 44 ? <Text style={[st.inside, { color: INSIDE[i] ?? '#fff' }]}>{Math.round((p.value / total) * 100)}%</Text> : null}
             </View>
           ) : null,
         )}
@@ -213,6 +217,7 @@ export function PairBarList({ items, series }: { items: { key: string; label: st
           key={it.key}
           style={[st.barRow, rtl && { flexDirection: 'row-reverse' }]}
           accessible
+          accessibilityRole="image"
           accessibilityLabel={`${it.label}: ${series[0]} ${it.a}, ${series[1]} ${it.b}`}
         >
           <View style={{ width: '42%' }}>

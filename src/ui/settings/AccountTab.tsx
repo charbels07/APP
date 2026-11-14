@@ -87,8 +87,8 @@ export function MyAccount({ x }: { x: SettingsStrings }) {
       {hasPassword && (
         <>
           <Note text={x.changePassword} />
-          <TextInput value={cur} onChangeText={setCur} secureTextEntry placeholder={x.currentPassword} placeholderTextColor="#98A2B3" style={input} accessibilityLabel={x.currentPassword} />
-          <TextInput value={next} onChangeText={setNext} secureTextEntry placeholder={x.newPassword} placeholderTextColor="#98A2B3" style={input} accessibilityLabel={x.newPassword} />
+          <TextInput value={cur} onChangeText={setCur} secureTextEntry placeholder={x.currentPassword} placeholderTextColor={C.placeholder} style={input} accessibilityLabel={x.currentPassword} />
+          <TextInput value={next} onChangeText={setNext} secureTextEntry placeholder={x.newPassword} placeholderTextColor={C.placeholder} style={input} accessibilityLabel={x.newPassword} />
           <Btn
             small
             icon="lock"
@@ -113,7 +113,7 @@ export function MyAccount({ x }: { x: SettingsStrings }) {
   );
 }
 
-const input = { borderWidth: 1.5, borderColor: C.border, borderRadius: 12, paddingHorizontal: 12, minHeight: 46, fontSize: 17, color: C.text } as const;
+const input = { borderWidth: 1.5, borderColor: C.inputBorder, borderRadius: 12, paddingHorizontal: 12, minHeight: 46, fontSize: 17, color: C.text } as const;
 
 function Children({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
   const sess = useSession();
@@ -277,7 +277,7 @@ function Privacy({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
       {typing && (
         <View style={ss.card}>
           <Note text={typing === 'profile' ? x.deleteProfileNote : x.deleteAccountNote} />
-          <TextInput value={word} onChangeText={setWord} autoCapitalize="none" style={input} accessibilityLabel={expected} placeholder={expected} placeholderTextColor="#C0C6CF" />
+          <TextInput value={word} onChangeText={setWord} autoCapitalize="none" style={input} accessibilityLabel={expected} placeholder={expected} placeholderTextColor={C.placeholder} />
           <Msg text={error} />
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <Btn
@@ -355,7 +355,7 @@ export function DeleteAccount({ x }: { x: SettingsStrings }) {
       {open && (
         <View style={ss.card}>
           <Note text={x.deleteAccountNote} />
-          <TextInput value={word} onChangeText={setWord} autoCapitalize="none" style={input} accessibilityLabel={x.deleteWord} placeholder={x.deleteWord} placeholderTextColor="#C0C6CF" />
+          <TextInput value={word} onChangeText={setWord} autoCapitalize="none" style={input} accessibilityLabel={x.deleteWord} placeholder={x.deleteWord} placeholderTextColor={C.placeholder} />
           <Msg text={error} />
           <Btn
             small

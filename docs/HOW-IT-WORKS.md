@@ -280,14 +280,28 @@ to Supabase, so the hosting service stores no data and holds no secret.
 | Limit | A recording stays on the device where it was made (like photos): it is not yet copied to the family's other devices. |
 | Tests | 4 new Jest tests on the choice of voice (169 → 173). Nobody has listened to the result yet: a program cannot hear. |
 
+## Round 15 — Accessibility check (WCAG 2.2 level AA)
+
+The full report is in `docs/ACCESSIBILITY.md`. In short:
+
+| What | How it was done |
+|---|---|
+| The scan | A program, **axe-core**, reads each screen like an assistive tool would and lists what breaks a WCAG rule. **Playwright** (a browser driven by a script, **JavaScript**) opens 43 screens at four sizes and in Arabic: `scripts/a11y/`, run with `npm run test:a11y`. |
+| Main finding | The app told screen readers "this switch is on" the React Native way (`accessibilityState`). The web layer (react-native-web) ignores that and wants `aria-checked`. So in a browser no switch, tab or choice said its state. `src/ui/a11y.ts` (**TypeScript**) now gives both. |
+| Keyboard | Panels are real dialogs in a browser (`useDialog` in `src/ui/common.tsx`): the focus goes in, Escape closes, the board behind is set aside with the browser's `inert` attribute, and the focus comes back afterwards. |
+| Colours | Nine colour pairs were under the contrast rule. The blue, red and green are a little darker; fields and switches have a darker edge. A Jest test computes the contrast of 22 pairs and fails if one drops. |
+| Languages | The page declares the language of the menus; each card of the board declares the language of its word, so a screen reader pronounces Arabic words as Arabic even with English menus. |
+| Not done | Listening with a real screen reader, and any test on a tablet. A program finds roughly a third of accessibility problems; the rest needs people. |
+
 ## How everything is checked
 
 | Check | What it does |
 |---|---|
 | `npm run typecheck` | TypeScript reads the whole code and refuses mistakes such as a missing field or a wrong type. |
-| `npm test` | 173 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office. |
+| `npm test` | 177 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office, colour contrast. |
 | `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger, a tablet and a member of our team; 63 checks. |
 | `npm run test:live` | The same story on the real Supabase project, through the app's own code: 13 steps, including devices, history undo, invitation codes, revisions and materials (needs "Confirm email" off while it runs). Last full run: before the back office (all 13 passed); **to run again once the back-office migration is on the real project**. |
+| `npm run test:a11y` | Accessibility: 158 scans of 43 screens against WCAG 2.2 AA (four sizes, Arabic), then a keyboard-only run. Last run: 0 rule break. |
 | Browser walkthroughs | Playwright drives the web version like a person: the parent journey, the team (invite, undo, join with a code), the professional journey (verification, tour, request, draft, proposal, approval), and the Arabic screens. |
 
 ## Not done yet (honest list)
@@ -323,6 +337,8 @@ to Supabase, so the hosting service stores no data and holds no secret.
   the browser demo only for now.
 - **The team's own accounts are counted in the figures** (as a parent account, and its test profile as
   a child). Negligible once real families arrive; to be excluded in the database if exact numbers matter.
+- **Accessibility**: checked by a program against WCAG 2.2 AA on the web version (`docs/ACCESSIBILITY.md`);
+  not yet listened to with a real screen reader, and not tested on a tablet.
 - **Switch access and eye gaze**: not available (the set-up says so).
 - **Arabic texts** are a first version: to be reviewed by a native speaker.
 - **Arabic dialects**: the seven dialect word lists (Syrian, Jordanian / Palestinian, Egyptian, Saudi,

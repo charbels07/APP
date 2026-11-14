@@ -1,5 +1,6 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useRef } from 'react';
 import {
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,6 +14,7 @@ import {
 import { NavLangContext } from '../state/Session';
 import { Icon, type IconName } from './Icon';
 import { C, radius } from './theme';
+import { checked, pressed as pressedState } from './a11y';
 
 /**
  * Arabic navigation: menus read right to left (header, switches, fields, guide rows).
@@ -22,6 +24,63 @@ export function useNavRtl(): boolean {
   return useContext(NavLangContext) === 'ar';
 }
 const RIGHT = { textAlign: 'right' as const, writingDirection: 'rtl' as const };
+
+const CLOSE = { fr: 'Fermer', en: 'Close', ar: 'إغلاق' } as const;
+
+/** The panels open at the moment, the last one on top (only that one answers Escape). */
+const openPanels: (() => void)[] = [];
+
+/** In a browser: the last control that had the focus outside any panel (where to go back when one closes). */
+let lastOutside: HTMLElement | null = null;
+if (Platform.OS === 'web' && typeof document !== 'undefined') {
+  document.addEventListener('focusin', (e) => {
+    const el = e.target as HTMLElement | null;
+    if (el && !el.closest?.('[role="dialog"]')) lastOutside = el;
+  });
+}
+
+/**
+ * In a browser, a panel behaves like a dialog for the keyboard and for screen readers:
+ * the focus goes into it, Escape closes it, what lies behind it (the board) cannot be reached
+ * with Tab while it is open, and the focus goes back where it was afterwards.
+ * The universal bar is outside, so it stays reachable.
+ */
+function useDialog(onClose: () => void) {
+  const ref = useRef<React.ComponentRef<typeof View>>(null);
+  const close = useRef(onClose);
+  close.current = onClose;
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    const node = ref.current as unknown as HTMLElement | null;
+    const before = lastOutside;
+    const behind: Element[] = [];
+    for (let s = node?.parentElement?.previousElementSibling; s; s = s.previousElementSibling) {
+      if (!s.hasAttribute('inert')) {
+        s.setAttribute('inert', '');
+        behind.push(s);
+      }
+    }
+    // A field that asks for the focus itself (search, keyboard) keeps it.
+    const t = setTimeout(() => {
+      if (node && !node.contains(document.activeElement)) node.focus();
+    }, 0);
+    const me = () => close.current();
+    openPanels.push(me);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && openPanels[openPanels.length - 1] === me) me();
+    };
+    // In the capture phase: a text field handles Escape itself and would hide it from us.
+    document.addEventListener('keydown', onKey, true);
+    return () => {
+      clearTimeout(t);
+      document.removeEventListener('keydown', onKey, true);
+      openPanels.splice(openPanels.indexOf(me), 1);
+      for (const s of behind) s.removeAttribute('inert');
+      if (before?.isConnected) before.focus();
+    };
+  }, []);
+  return ref;
+}
 
 export function Panel({
   title,
@@ -45,16 +104,18 @@ export function Panel({
 }) {
   const headerBg = tone === 'help' ? C.helpSoft : tone === 'edit' ? C.editSoft : C.surface;
   const rtl = useNavRtl();
+  const navLang = useContext(NavLangContext);
+  const dialog = useDialog(onClose);
   return (
     <View style={styles.backdrop}>
-      <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessible={false} />
-      <View style={[styles.panel, { maxWidth }]}>
+      <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessible={false} tabIndex={-1} />
+      <View ref={dialog} style={[styles.panel, { maxWidth }]} role="dialog" aria-label={title} tabIndex={-1}>
         <View style={[styles.panelHeader, rtl && styles.headerRtl, { backgroundColor: headerBg }]}>
           <Text style={[styles.panelTitle, rtl && RIGHT]} numberOfLines={1}>
             {title}
           </Text>
           {headerRight}
-          <Pressable onPress={onClose} style={styles.closeBtn} accessibilityRole="button" accessibilityLabel="close">
+          <Pressable onPress={onClose} style={styles.closeBtn} accessibilityRole="button" accessibilityLabel={CLOSE[navLang]}>
             <Icon name="x" size={24} />
           </Pressable>
         </View>
@@ -81,7 +142,10 @@ export function Btn({
   disabled,
   style,
   accessibilityLabel,
+  selected,
 }: {
+  /** For a button that stays on (a choice): said to screen readers as pressed / not pressed. */
+  selected?: boolean;
   label?: string;
   icon?: IconName;
   onPress: () => void;
@@ -105,6 +169,7 @@ export function Btn({
       disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
+      {...(selected !== undefined ? pressedState(selected) : null)}
       style={({ pressed }) => [
         styles.btn,
         small && styles.btnSmall,
@@ -125,7 +190,7 @@ export function Toggle({ label, value, onChange, note }: { label: string; value:
       onPress={() => onChange(!value)}
       style={[styles.row, rtl && { flexDirection: 'row-reverse' }]}
       accessibilityRole="switch"
-      accessibilityState={{ checked: value }}
+      {...checked(value)}
     >
       <View style={{ flex: 1 }}>
         <Text style={[styles.rowLabel, rtl && RIGHT]}>{label}</Text>
@@ -149,7 +214,7 @@ export function Segmented<T extends string | number>({
 }) {
   const rtl = useNavRtl();
   return (
-    <View style={[styles.segmented, rtl && { flexDirection: 'row-reverse' }]}>
+    <View style={[styles.segmented, rtl && { flexDirection: 'row-reverse' }]} accessibilityRole="radiogroup">
       {options.map((o) => {
         const active = o.value === value;
         return (
@@ -157,8 +222,8 @@ export function Segmented<T extends string | number>({
             key={String(o.value)}
             onPress={() => onChange(o.value)}
             style={[styles.segment, active && styles.segmentActive]}
-            accessibilityRole="button"
-            accessibilityState={{ selected: active }}
+            accessibilityRole="radio"
+            {...checked(active)}
           >
             <Text style={[styles.segmentText, active && styles.segmentTextActive]}>{o.label}</Text>
           </Pressable>
@@ -185,7 +250,7 @@ export function Field(props: TextInputProps & { label?: string }) {
     <View style={{ gap: 4 }}>
       {label ? <Text style={[styles.fieldLabel, rtl && RIGHT]}>{label}</Text> : null}
       <TextInput
-        placeholderTextColor="#98A2B3"
+        placeholderTextColor={C.placeholder}
         style={[styles.input, rtl && { textAlign: 'right' }, style]}
         accessibilityLabel={rest.accessibilityLabel ?? label}
         {...rest}
@@ -244,7 +309,7 @@ export const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, minHeight: 48 },
   rowLabel: { fontSize: 16, color: C.text },
   note: { fontSize: 13, color: C.textMuted, marginTop: 2 },
-  switch: { width: 50, height: 30, borderRadius: 15, backgroundColor: '#C9D1DB', padding: 3 },
+  switch: { width: 50, height: 30, borderRadius: 15, backgroundColor: C.inputBorder, padding: 3 },
   switchOn: { backgroundColor: C.accent },
   knob: { width: 24, height: 24, borderRadius: 12, backgroundColor: '#fff' },
   knobOn: { transform: [{ translateX: 20 }] },
@@ -267,7 +332,7 @@ export const styles = StyleSheet.create({
   fieldLabel: { fontSize: 13, color: C.textMuted, fontWeight: '600' },
   input: {
     borderWidth: 1.5,
-    borderColor: C.border,
+    borderColor: C.inputBorder,
     borderRadius: radius.md,
     paddingHorizontal: 12,
     minHeight: 46,

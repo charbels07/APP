@@ -29,7 +29,7 @@ export function BoardScreen() {
             <Icon name="chevronLeft" size={26} />
             <Text style={styles.backText}>{t.back}</Text>
           </Pressable>
-          <Pressable onPress={goHome} accessibilityRole="button">
+          <Pressable onPress={goHome} accessibilityRole="button" style={{ minHeight: 44, minWidth: 44, justifyContent: 'center' }}>
             <Text style={styles.crumb}>{t.home}</Text>
           </Pressable>
           <Icon name="chevronRight" size={18} color={C.textMuted} />

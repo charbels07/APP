@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import type { TimerDisplay } from '../model/types';
 import { useApp } from '../state/AppState';
@@ -22,6 +22,9 @@ export function TimerCard() {
   const app = useApp();
   const { timer, t, profile, lang } = app;
   const [customMin, setCustomMin] = useState(3);
+  // A short screen (small phone, strong zoom): the choices sit on one line that scrolls sideways,
+  // so the board below keeps its room.
+  const short = useWindowDimensions().height < 700;
   const running = !!timer.endAt;
   const paused = !running && timer.remainingMs > 0 && timer.remainingMs < timer.totalMs;
   // Opened without a running timer: the settings show first, to choose a duration.
@@ -102,8 +105,8 @@ export function TimerCard() {
       </View>
 
       {showOptions && (
-        <View style={styles.options}>
-          <View style={styles.quick}>
+        <OptionsBox short={short}>
+          <View style={[styles.quick, short && styles.oneLine]}>
             {QUICK.map((m) => (
               <Btn key={m} small label={`${m} ${t.minutes}`} onPress={() => app.startTimer(m)} style={styles.quickBtn} />
             ))}
@@ -111,15 +114,16 @@ export function TimerCard() {
             <Btn small label={`${t.start} ${customMin} ${t.minutes}`} onPress={() => app.startTimer(customMin)} />
             <Btn small icon="plus" accessibilityLabel="+" onPress={() => setCustomMin((m) => Math.min(120, m + 1))} />
           </View>
-          <View style={styles.quick}>
+          <View style={[styles.quick, short && styles.oneLine]}>
             <Btn small icon="image" label={concept ? t.timerChangePicto : t.timerChoosePicto} onPress={pickPicto} />
             {concept && <Btn small kind="ghost" icon="x" label={t.timerRemovePicto} onPress={() => app.setTimerConcept(null)} />}
             {(['circle', 'bar', 'digits'] as TimerDisplay[]).map((d) => (
-              <Btn key={d} small kind={displays.includes(d) ? 'primary' : 'secondary'} label={t[d]} onPress={() => toggleDisplay(d)} />
+              <Btn key={d} small kind={displays.includes(d) ? 'primary' : 'secondary'} selected={displays.includes(d)} label={t[d]} onPress={() => toggleDisplay(d)} />
             ))}
             <Btn
               small
               kind={profile.settings.timer.sound ? 'primary' : 'secondary'}
+              selected={profile.settings.timer.sound}
               icon="volume"
               label={t.sound}
               onPress={() => app.update((p) => void (p.settings.timer.sound = !p.settings.timer.sound))}
@@ -127,13 +131,23 @@ export function TimerCard() {
             <Btn
               small
               kind={profile.settings.timer.haptic ? 'primary' : 'secondary'}
+              selected={profile.settings.timer.haptic}
               label={t.vibration}
               onPress={() => app.update((p) => void (p.settings.timer.haptic = !p.settings.timer.haptic))}
             />
           </View>
-        </View>
+        </OptionsBox>
       )}
     </View>
+  );
+}
+
+function OptionsBox({ short, children }: { short: boolean; children: React.ReactNode }) {
+  if (!short) return <View style={styles.options}>{children}</View>;
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.optionsShort} contentContainerStyle={styles.optionsShortRow}>
+      {children}
+    </ScrollView>
   );
 }
 
@@ -181,4 +195,7 @@ const styles = StyleSheet.create({
   quick: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
   quickBtn: { paddingHorizontal: 10 },
   options: { gap: 6, paddingTop: 8, borderTopWidth: 1, borderTopColor: C.border },
+  optionsShort: { flexGrow: 0, paddingTop: 8, borderTopWidth: 1, borderTopColor: C.border },
+  optionsShortRow: { gap: 6, alignItems: 'center' },
+  oneLine: { flexWrap: 'nowrap' },
 });

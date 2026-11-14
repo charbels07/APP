@@ -36,6 +36,7 @@ import { Row, when } from '../settings/TeamTab';
 import { SymbolView } from '../SymbolView';
 import { C, radius } from '../theme';
 import { MaterialBoard } from './SandboxBoard';
+import { checked } from '../a11y';
 
 export const KIND_ICON: Record<ResourceKind, IconName> = { tla: 'grid', schedule: 'calendar', firstThen: 'chevronRight', timer: 'timer', cards: 'image' };
 
@@ -60,7 +61,7 @@ export function CreateMaterials({ users, onEdit, presetUser }: { users: ProfileS
           onPress={() => setKind(k)}
           style={[ss.row, kind === k && { borderColor: C.accent, backgroundColor: '#F3F7FF' }]}
           accessibilityRole="radio"
-          accessibilityState={{ selected: kind === k }}
+          {...checked(kind === k)}
         >
           <Icon name={k === 'photo' ? 'camera' : KIND_ICON[k]} size={24} color={C.accent} />
           <View style={{ flex: 1 }}>
@@ -175,7 +176,7 @@ function WordPicker({ profile, onPick, lang }: { profile: Profile; onPick: (id: 
   const results = useMemo(() => (q.trim() ? search(profile, q, 18).map((r) => r.concept) : []), [q, profile]);
   return (
     <View style={{ gap: 8 }}>
-      <TextInput value={q} onChangeText={setQ} placeholder={p.search} placeholderTextColor="#98A2B3" style={styles.input} accessibilityLabel={p.search} />
+      <TextInput value={q} onChangeText={setQ} placeholder={p.search} placeholderTextColor={C.placeholder} style={styles.input} accessibilityLabel={p.search} />
       <View style={styles.grid}>
         {results.map((id) => (
           <Pressable key={id} onPress={() => onPick(id)} style={styles.word} accessibilityRole="button" accessibilityLabel={label(profile, id, lang)}>
@@ -261,7 +262,7 @@ function CardsForm({ data, onChange, p, startWithPhoto, title }: { data: Resourc
       </View>
       <Section title={p.addPhoto}>
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <TextInput value={photoName} onChangeText={setPhotoName} placeholder={p.photoName} placeholderTextColor="#98A2B3" style={[styles.input, { flex: 1 }]} />
+          <TextInput value={photoName} onChangeText={setPhotoName} placeholder={p.photoName} placeholderTextColor={C.placeholder} style={[styles.input, { flex: 1 }]} />
           <Btn icon="camera" label={p.addPhoto} onPress={addPhoto} />
         </View>
       </Section>
@@ -436,7 +437,7 @@ function ResourceActions({
 }
 
 const styles = StyleSheet.create({
-  input: { borderWidth: 1.5, borderColor: C.border, borderRadius: radius.md, paddingHorizontal: 12, minHeight: 46, fontSize: 16, color: C.text, backgroundColor: C.surface },
+  input: { borderWidth: 1.5, borderColor: C.inputBorder, borderRadius: radius.md, paddingHorizontal: 12, minHeight: 46, fontSize: 16, color: C.text, backgroundColor: C.surface },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   word: { width: 96, alignItems: 'center', gap: 4, padding: 6, borderRadius: radius.md, borderWidth: 1.5, borderColor: C.border, backgroundColor: C.surface },
   wordText: { fontSize: 13, fontWeight: '600', color: C.text },

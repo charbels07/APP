@@ -16,6 +16,7 @@ import { Icon } from "../Icon";
 import { SymbolView } from "../SymbolView";
 import { C, radius } from "../theme";
 import { MonthView, WeekView } from "./PlansViews";
+import { checked } from '../a11y';
 
 export const scheduleTitle = (
   s: Schedule,
@@ -284,6 +285,7 @@ export function ScheduleScreen() {
                   <Pressable
                     onPress={() => app.speakConcept(st.concept)}
                     style={styles.stepMain}
+                    accessibilityRole="button"
                     accessibilityLabel={label(profile, st.concept, lang)}
                   >
                     <Text style={styles.stepNum}>{i + 1}</Text>
@@ -311,7 +313,7 @@ export function ScheduleScreen() {
                       },
                     ]}
                     accessibilityRole="checkbox"
-                    accessibilityState={{ checked: st.done }}
+                    {...checked(st.done)}
                     accessibilityLabel={t.markDone}
                   >
                     <Icon
@@ -438,7 +440,7 @@ function BigCard({
         style={[
           styles.bigHeading,
           narrow && { fontSize: 15 },
-          tone === "now" && { color: C.highlight },
+          tone === "now" && { color: C.edit },
         ]}
       >
         {heading}

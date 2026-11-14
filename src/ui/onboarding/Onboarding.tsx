@@ -42,6 +42,7 @@ import { Root } from '../Root';
 import { ErrorText, LinkBtn, StartLayout, T, st, useRtl } from '../start/StartLayout';
 import { SymbolView } from '../SymbolView';
 import { C, CLASS_COLORS, radius } from '../theme';
+import { checked } from '../a11y';
 
 const STEPS = ['child', 'arabic', 'langs', 'voice', 'comm', 'activities', 'visual', 'feedback', 'review', 'vocab', 'layout', 'access', 'plans', 'data', 'try'] as const;
 type StepId = (typeof STEPS)[number];
@@ -247,7 +248,7 @@ function Option({
       onPress={onPress}
       style={({ pressed }) => [s.option, rtl && st.rev, selected && s.optionOn, pressed && { opacity: 0.85 }]}
       accessibilityRole={multi ? 'checkbox' : 'radio'}
-      accessibilityState={multi ? { checked: selected } : { selected }}
+      {...checked(selected)}
       accessibilityLabel={note ? `${text}. ${note}` : text}
     >
       <View style={[multi ? s.box : s.radio, selected && s.markOn]}>{selected && <Icon name="check" size={14} color="#fff" strokeWidth={3} />}</View>
@@ -402,7 +403,7 @@ function ActivitiesStep({ o, a, set }: StepProps) {
               onPress={() => set({ activities: on ? a.activities.filter((x) => x !== id) : [...a.activities, id] })}
               style={[s.chip, on && s.chipOn]}
               accessibilityRole="checkbox"
-              accessibilityState={{ checked: on }}
+              {...checked(on)}
               accessibilityLabel={label(profile, id, lang)}
             >
               <SymbolView symbol={symbolOf(profile, id)} size={44} />
@@ -415,7 +416,7 @@ function ActivitiesStep({ o, a, set }: StepProps) {
       </View>
       <T style={s.label}>{o.actAdd}</T>
       <View style={[{ flexDirection: 'row', gap: 8 }, rtl && { flexDirection: 'row-reverse' }]}>
-        <TextInput value={text} onChangeText={setText} onSubmitEditing={add} placeholder={o.actPlaceholder} placeholderTextColor="#98A2B3" style={[s.input, { flex: 1 }]} />
+        <TextInput value={text} onChangeText={setText} onSubmitEditing={add} placeholder={o.actPlaceholder} placeholderTextColor={C.placeholder} style={[s.input, { flex: 1 }]} />
         <Btn icon="plus" onPress={add} accessibilityLabel={o.actAdd} disabled={!text.trim()} />
       </View>
       {a.customActivities.length > 0 && (
@@ -824,7 +825,7 @@ const s = StyleSheet.create({
   tag: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: C.accentSoft, borderRadius: 16, paddingHorizontal: 12, minHeight: 34 },
   input: {
     borderWidth: 1.5,
-    borderColor: C.border,
+    borderColor: C.inputBorder,
     borderRadius: radius.md,
     paddingHorizontal: 12,
     minHeight: 48,

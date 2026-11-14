@@ -9,6 +9,7 @@ import { Btn, Panel, Segmented, useNavRtl } from '../common';
 import { PictoCredit } from '../PictoCredits';
 import { Icon } from '../Icon';
 import { C, radius } from '../theme';
+import { expanded } from '../a11y';
 
 /** Chapters that happen in caregiver mode (the code is asked first). */
 const NEEDS_CAREGIVER: GuideAction[] = ['settings', 'newTla', 'print'];
@@ -139,7 +140,7 @@ function Chapter({
       <Pressable
         onPress={onToggle}
         accessibilityRole="button"
-        accessibilityState={{ expanded: open }}
+        {...expanded(open)}
         accessibilityLabel={chapter.title[ui]}
         style={({ pressed }) => [s.head, row, pressed && { opacity: 0.7 }]}
       >

@@ -20,6 +20,7 @@ import { settingsStrings } from '../../i18n/settings';
 import { UI_LANG_NAMES } from '../../i18n/ui';
 import type { ArabicDialect, UiLang } from '../../model/types';
 import { useSession } from '../../state/Session';
+import { selected } from '../a11y';
 import { Btn, Field, Section, useNavRtl } from '../common';
 import { BarList, ChartCard, ColumnChart, DataTable, SplitBar, StatGrid, StatTile, compact, type BarItem } from '../data/Charts';
 import { Icon, type IconName } from '../Icon';
@@ -101,11 +102,11 @@ export function BackOffice() {
         <Btn small kind="ghost" icon="logout" label={s.signOut} onPress={() => void signOut()} />
       </View>
       <View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[st.tabs, rtl && st.rev]}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[st.tabs, rtl && st.rev]} accessibilityRole="tablist">
           {TABS.map((t) => {
             const on = tab === t;
             return (
-              <Pressable key={t} onPress={() => setTab(t)} style={[st.tab, rtl && st.rev, on && st.tabOn]} accessibilityRole="tab" accessibilityState={{ selected: on }} accessibilityLabel={a.tabs[t]}>
+              <Pressable key={t} onPress={() => setTab(t)} style={[st.tab, rtl && st.rev, on && st.tabOn]} accessibilityRole="tab" {...selected(on)} accessibilityLabel={a.tabs[t]}>
                 <Icon name={TAB_ICON[t]} size={18} color={on ? '#fff' : C.text} />
                 <Text style={[st.tabText, on && { color: '#fff' }]}>{a.tabs[t]}</Text>
                 {badge[t] ? (
@@ -336,6 +337,7 @@ function RequestView({ a, p, r, onBack, onDecided }: { a: AdminStrings; p: ProSt
 
 function Numbers({ a, p, o }: { a: AdminStrings; p: ProStrings; o: AdminOverview }) {
   const { uiLang } = useSession();
+  const [table, setTable] = useState(false);
   const x = settingsStrings(uiLang);
   const d = dataStrings(uiLang);
   const f = o.families;
@@ -354,6 +356,10 @@ function Numbers({ a, p, o }: { a: AdminStrings; p: ProStrings; o: AdminOverview
   ].map((i) => ({ ...i, valueText: `${LTR}${compact(i.value)} · ${pct(i.value, f.parents)} %` }));
   return (
     <>
+      {/* Columns are narrow on a phone: the same figures can be read as tables. */}
+      <View style={st.filters}>
+        <Btn small kind="ghost" icon={table ? 'grid' : 'list'} label={table ? d.chartView : d.tableView} onPress={() => setTable(!table)} />
+      </View>
       <StatGrid>
         <StatTile label={a.families} value={compact(f.parents)} sub={a.plusWeek(o.accounts.new7)} />
         <StatTile label={a.children} value={compact(f.children)} />
@@ -362,7 +368,7 @@ function Numbers({ a, p, o }: { a: AdminStrings; p: ProStrings; o: AdminOverview
       </StatGrid>
 
       <ChartCard title={a.signups} note={a.signupsNote}>
-        <ColumnChart columns={o.accounts.weeks.map((w) => ({ key: w.week, label: weekLabel(w.week), value: w.parents + w.pros }))} unit={a.accountsUnit} />
+        <ColumnChart table={table} columns={o.accounts.weeks.map((w) => ({ key: w.week, label: weekLabel(w.week), value: w.parents + w.pros }))} unit={a.accountsUnit} />
         <DataTable head={[a.week, a.parents, a.pros]} rows={o.accounts.weeks.slice(-4).map((w) => [weekLabel(w.week), w.parents, w.pros])} />
         {o.accounts.unconfirmed > 0 && <Note text={a.unconfirmed(o.accounts.unconfirmed)} />}
       </ChartCard>
@@ -415,7 +421,7 @@ function Numbers({ a, p, o }: { a: AdminStrings; p: ProStrings; o: AdminOverview
       </ChartCard>
 
       <ChartCard title={a.ai} note={a.aiNote(o.ai.calls30, o.ai.users30, o.ai.mostPerPersonDay)}>
-        {o.ai.days.length > 0 && <ColumnChart columns={o.ai.days.map((x2) => ({ key: x2.day, label: day(Date.parse(x2.day), uiLang), value: x2.calls }))} unit={a.aiUnit} height={110} />}
+        {o.ai.days.length > 0 && <ColumnChart table={table} columns={o.ai.days.map((x2) => ({ key: x2.day, label: day(Date.parse(x2.day), uiLang), value: x2.calls }))} unit={a.aiUnit} height={110} />}
       </ChartCard>
     </>
   );
@@ -425,6 +431,7 @@ function Numbers({ a, p, o }: { a: AdminStrings; p: ProStrings; o: AdminOverview
 
 function Usage({ a, o }: { a: AdminStrings; o: AdminOverview }) {
   const { uiLang } = useSession();
+  const [table, setTable] = useState(false);
   const d = dataStrings(uiLang);
   const u = o.usage;
   const setup = o.setup;
@@ -448,6 +455,10 @@ function Usage({ a, o }: { a: AdminStrings; o: AdminOverview }) {
   );
   return (
     <>
+      {/* Columns are narrow on a phone: the same figures can be read as tables. */}
+      <View style={st.filters}>
+        <Btn small kind="ghost" icon={table ? 'grid' : 'list'} label={table ? d.chartView : d.tableView} onPress={() => setTable(!table)} />
+      </View>
       <View style={ss.card}>
         <Note text={a.usageIntro} />
       </View>
@@ -467,7 +478,7 @@ function Usage({ a, o }: { a: AdminStrings; o: AdminOverview }) {
           </StatGrid>
           {u.weeks && (
             <ChartCard title={a.trend}>
-              <ColumnChart columns={u.weeks.map((w) => ({ key: w.week, label: day(Date.parse(w.week), uiLang), value: w.minutes ?? 0 }))} unit={a.minutesUnit} />
+              <ColumnChart table={table} columns={u.weeks.map((w) => ({ key: w.week, label: day(Date.parse(w.week), uiLang), value: w.minutes ?? 0 }))} unit={a.minutesUnit} />
             </ChartCard>
           )}
           {u.lengths && (
@@ -487,7 +498,7 @@ function Usage({ a, o }: { a: AdminStrings; o: AdminOverview }) {
           )}
           {u.hours && (
             <ChartCard title={a.hours} note={a.hoursNote}>
-              <ColumnChart columns={u.hours.map((v, h) => ({ key: String(h), label: `${h} h`, value: v }))} unit={a.touchesUnit} height={110} />
+              <ColumnChart table={table} columns={u.hours.map((v, h) => ({ key: String(h), label: `${h} h`, value: v }))} unit={a.touchesUnit} height={110} />
             </ChartCard>
           )}
           {u.ages && u.ages.length > 0 && (

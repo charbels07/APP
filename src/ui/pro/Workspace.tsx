@@ -29,6 +29,7 @@ import { LangSwitch, Logo } from '../start/StartLayout';
 import { C, radius } from '../theme';
 import { CreateMaterials, KIND_ICON, Library, ResourceEditor, type Editing } from './Materials';
 import { ChildDraftBoard, DemoBoard } from './SandboxBoard';
+import { selected } from '../a11y';
 
 const SECTIONS: ProSection[] = ['dashboard', 'users', 'create', 'library', 'collab', 'learn', 'account'];
 const SECTION_ICON: Record<ProSection, IconName> = {
@@ -114,7 +115,7 @@ export function Workspace({ verification, onVerify }: { verification: Verificati
           <Text style={st.brandText}>{APP_NAME}</Text>
         </View>
       )}
-      <ScrollView horizontal={!wide} contentContainerStyle={wide ? { gap: 4 } : { gap: 4, paddingHorizontal: 8 }} showsHorizontalScrollIndicator={false}>
+      <ScrollView horizontal={!wide} contentContainerStyle={wide ? { gap: 4 } : { gap: 4, paddingHorizontal: 8 }} showsHorizontalScrollIndicator={false} accessibilityRole="tablist">
         {SECTIONS.map((x) => {
           const on = section === x;
           const badge = x === 'collab' ? receivedPending.length + unread.length : 0;
@@ -124,7 +125,7 @@ export function Workspace({ verification, onVerify }: { verification: Verificati
               onPress={() => go(x)}
               style={[st.navItem, rtl && { flexDirection: 'row-reverse' }, on && st.navOn]}
               accessibilityRole="tab"
-              accessibilityState={{ selected: on }}
+              {...selected(on)}
               accessibilityLabel={p.nav[x]}
             >
               <Icon name={SECTION_ICON[x]} size={20} color={on ? '#fff' : C.railText} />
@@ -377,7 +378,7 @@ function UsersList({
           { value: 'pending', label: p.usersPending },
         ]}
       />
-      <TextInput value={q} onChangeText={setQ} placeholder={p.search} placeholderTextColor="#98A2B3" style={st.input} accessibilityLabel={p.search} />
+      <TextInput value={q} onChangeText={setQ} placeholder={p.search} placeholderTextColor={C.placeholder} style={st.input} accessibilityLabel={p.search} />
       {filter !== 'pending' &&
         users
           .filter((u) => match(u.name))
@@ -723,7 +724,7 @@ const st = StyleSheet.create({
   quickBtn: { flex: 1, minWidth: 150, alignItems: 'center', gap: 8, padding: 16, borderRadius: radius.lg, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border },
   quickIcon: { width: 54, height: 54, borderRadius: 27, backgroundColor: C.accentSoft, alignItems: 'center', justifyContent: 'center' },
   quickText: { fontSize: 15, fontWeight: '700', color: C.text, textAlign: 'center' },
-  input: { borderWidth: 1.5, borderColor: C.border, borderRadius: radius.md, paddingHorizontal: 12, minHeight: 46, fontSize: 16, color: C.text, backgroundColor: C.surface },
+  input: { borderWidth: 1.5, borderColor: C.inputBorder, borderRadius: radius.md, paddingHorizontal: 12, minHeight: 46, fontSize: 16, color: C.text, backgroundColor: C.surface },
   modalBack: { ...StyleSheet.absoluteFill, backgroundColor: C.overlay, alignItems: 'center', justifyContent: 'center', padding: 16 },
   modal: { width: '100%', maxWidth: 460, backgroundColor: C.surface, borderRadius: radius.lg, padding: 24, gap: 12, alignItems: 'stretch' },
   modalText: { fontSize: 18, lineHeight: 26, color: C.text, fontWeight: '600' },

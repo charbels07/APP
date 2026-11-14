@@ -41,3 +41,7 @@
   child's profile only once its verification is `verified` (triggers + `access_of`; the demo server
   mirrors this in `LocalBackend.cleared`). Figures from children's profiles or usage: consenting
   families only (`shareStats = 'anonymous'`), never under 5 children, never a name, word or sentence.
+- Accessibility (WCAG 2.2 AA, `docs/ACCESSIBILITY.md`): react-native-web ignores `accessibilityState`,
+  so give states with the helpers of `src/ui/a11y.ts` (`{...checked(on)}`, `selected`, `pressed`, `expanded`,
+  `spoken(lang)`); a labelled `Pressable` always has a role; overlays go through `Panel` (dialog, focus,
+  Escape); colours come from `src/ui/theme.ts` (contrast is tested). Run `npm run test:a11y` after UI changes.

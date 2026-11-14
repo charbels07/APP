@@ -242,6 +242,13 @@ export function SessionProvider({ children, api = backend() }: { children: React
   );
 
   const uiLang: UiLang = account?.prefs.uiLang ?? device?.uiLang ?? 'fr';
+  // In a browser: the page says which language it is in (a screen reader then pronounces it
+  // properly) and carries the app's name as its title.
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    document.documentElement.lang = uiLang;
+    document.title = 'Empower Communication';
+  }, [uiLang]);
   const setUiLang = useCallback(
     (l: UiLang) => {
       saveDevice({ uiLang: l });

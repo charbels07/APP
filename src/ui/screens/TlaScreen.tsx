@@ -6,6 +6,7 @@ import { Btn } from '../common';
 import { Grid } from '../Grid';
 import { SymbolView } from '../SymbolView';
 import { C, radius } from '../theme';
+import { selected } from '../a11y';
 
 /** Aided language boards (spec §14): contextual extensions, never a separate app. */
 export function TlaScreen() {
@@ -56,7 +57,7 @@ export function TlaScreen() {
   return (
     <View style={{ flex: 1, gap: 6 }}>
       <View style={styles.tabsRow}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flex: 1 }} contentContainerStyle={styles.tabs}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flex: 1 }} contentContainerStyle={styles.tabs} accessibilityRole="tablist">
           {profile.tlaOrder.map((id) => {
             const b = profile.boards[id];
             if (!b) return null;
@@ -67,7 +68,7 @@ export function TlaScreen() {
                 onPress={() => pressTab(id, b.concept, active)}
                 style={({ pressed }) => [styles.tab, active && styles.tabActive, pressed && { opacity: 0.7 }]}
                 accessibilityRole="tab"
-                accessibilityState={{ selected: active }}
+                {...selected(active)}
               >
                 <SymbolView symbol={symbolOf(profile, b.concept)} size={30} />
                 <Text style={[styles.tabText, active && { color: C.accent }, { writingDirection: isRtl(lang) ? 'rtl' : 'ltr' }]}>

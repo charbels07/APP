@@ -22,6 +22,7 @@ import { Icon, type IconName } from '../Icon';
 import { SymbolView } from '../SymbolView';
 import { C } from '../theme';
 import { Note, ss } from './SettingsScreen';
+import { checked } from '../a11y';
 
 type View_ =
   | { k: 'main' }
@@ -265,7 +266,7 @@ export function PermissionEditor({
                 onPress={() => onChange({ role: r, ...preset(r) })}
                 style={[ss.row, { minHeight: 46 }, role === r && { borderColor: C.accent, backgroundColor: '#F3F7FF' }]}
                 accessibilityRole="radio"
-                accessibilityState={{ selected: role === r }}
+                {...checked(role === r)}
               >
                 <Icon name={role === r ? 'check' : 'user'} size={18} color={role === r ? C.accent : C.textMuted} />
                 <Text style={[ss.title, { fontSize: 15 }]}>{x.roles[r]}</Text>
@@ -550,7 +551,7 @@ function ProposalView({ board, p, x, onBack }: { board: BoardCtx; p: Proposal; x
         value={note}
         onChangeText={setNote}
         placeholder={x.notePlaceholder}
-        placeholderTextColor="#98A2B3"
+        placeholderTextColor={C.placeholder}
         multiline
         style={{ borderWidth: 1.5, borderColor: C.border, borderRadius: 12, padding: 10, minHeight: 60, fontSize: 16, color: C.text }}
       />

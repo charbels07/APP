@@ -11,6 +11,7 @@ import { Icon } from './Icon';
 import { SymbolView } from './SymbolView';
 import { C, CLASS_COLORS, isDarkColor, tint } from './theme';
 import { useWiggle } from './wiggle';
+import { pressed, spoken } from './a11y';
 
 const GAP = 6;
 const MIN_CELL_W = 56;
@@ -316,6 +317,7 @@ export function Grid({ board }: { board: Board }) {
                 width={frame.width * k}
                 height={frame.height * k}
                 text={label(profile, cell.concept, lang)}
+                lang={lang}
                 rtl={isRtl(lang)}
                 symbol={symbolOf(profile, cell.concept)}
                 cls={cell.folder ? 'folder' : wordClass(profile, cell.concept)}
@@ -412,6 +414,7 @@ const EmptyCell = React.memo(function EmptyCell({
   return (
     <Pressable
       onPress={() => onPress(index)}
+      accessibilityRole="button"
       accessibilityLabel={t}
       style={({ pressed }) => [
         styles.empty,
@@ -429,6 +432,8 @@ interface CellProps {
   width: number;
   height: number;
   text: string;
+  /** Language of the word (for screen readers). */
+  lang?: string;
   rtl: boolean;
   symbol: SymbolRef;
   cls: WordClass;
@@ -539,7 +544,8 @@ export const CellView = React.memo(function CellView(p: CellProps) {
         onPressOut={p.onPressOut ? () => p.onPressOut!(p.index) : undefined}
         accessibilityRole="button"
         accessibilityLabel={p.text}
-        accessibilityState={p.selected !== undefined ? { selected: p.selected } : undefined}
+        {...(p.lang ? spoken(p.lang) : null)}
+        {...(p.selected !== undefined ? pressed(p.selected) : null)}
         style={({ pressed }) => [
           styles.cell,
           {

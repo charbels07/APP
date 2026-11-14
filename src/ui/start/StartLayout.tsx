@@ -7,6 +7,7 @@ import type { UiLang } from '../../model/types';
 import { useSession } from '../../state/Session';
 import { Icon } from '../Icon';
 import { C, radius } from '../theme';
+import { checked, pressed } from '../a11y';
 
 export const RIGHT: TextStyle = { textAlign: 'right', writingDirection: 'rtl' };
 
@@ -43,7 +44,7 @@ export function LangSwitch() {
           onPress={() => setUiLang(l)}
           style={[st.langBtn, uiLang === l && st.langOn]}
           accessibilityRole="radio"
-          accessibilityState={{ selected: uiLang === l }}
+          {...checked(uiLang === l)}
           accessibilityLabel={{ fr: 'Français', en: 'English', ar: 'العربية' }[l]}
         >
           <Text style={[st.langText, uiLang === l && { color: C.accent }]}>{label}</Text>
@@ -124,7 +125,7 @@ export function ChoiceCard({
       onPress={onPress}
       style={({ pressed }) => [st.choice, rtl && st.rev, selected && st.choiceOn, pressed && { opacity: 0.8 }]}
       accessibilityRole="button"
-      accessibilityState={{ selected }}
+      {...(selected !== undefined ? pressed(selected) : null)}
       accessibilityLabel={text ? `${title}. ${text}` : title}
     >
       {icon && (
@@ -142,9 +143,11 @@ export function ChoiceCard({
 }
 
 /** A link-looking button. */
+/** Looks like a link, acts inside the app: a button for keyboards and screen readers
+ *  (in a browser, a "link" without an address does not answer the Enter key). */
 export function LinkBtn({ label, onPress }: { label: string; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="link" style={st.link} hitSlop={6}>
+    <Pressable onPress={onPress} accessibilityRole="button" style={st.link} hitSlop={6}>
       <Text style={st.linkText}>{label}</Text>
     </Pressable>
   );

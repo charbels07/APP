@@ -254,8 +254,8 @@ function SendPanel({
     );
   return (
     <Panel title={p.sendForApproval} onClose={onClose} maxWidth={720}>
-      <TextInput value={title} onChangeText={setTitle} placeholder={p.proposalTitle} placeholderTextColor="#98A2B3" style={s.input} accessibilityLabel={p.proposalTitle} />
-      <TextInput value={reason} onChangeText={setReason} placeholder={p.proposalReason} placeholderTextColor="#98A2B3" style={[s.input, { minHeight: 70 }]} multiline accessibilityLabel={p.proposalReason} />
+      <TextInput value={title} onChangeText={setTitle} placeholder={p.proposalTitle} placeholderTextColor={C.placeholder} style={s.input} accessibilityLabel={p.proposalTitle} />
+      <TextInput value={reason} onChangeText={setReason} placeholder={p.proposalReason} placeholderTextColor={C.placeholder} style={[s.input, { minHeight: 70 }]} multiline accessibilityLabel={p.proposalReason} />
       <Text style={{ fontWeight: '800', color: C.text }}>{p.impact}</Text>
       {section(p.direct, groups.direct, 'check')}
       {section(p.needsApproval, groups.approval, 'mail')}
@@ -279,5 +279,5 @@ const s = StyleSheet.create({
   },
   bannerText: { flex: 1, fontWeight: '700', fontSize: 14 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, backgroundColor: C.bg },
-  input: { borderWidth: 1.5, borderColor: C.border, borderRadius: radius.md, paddingHorizontal: 12, paddingVertical: 10, minHeight: 46, fontSize: 16, color: C.text },
+  input: { borderWidth: 1.5, borderColor: C.inputBorder, borderRadius: radius.md, paddingHorizontal: 12, paddingVertical: 10, minHeight: 46, fontSize: 16, color: C.text },
 });

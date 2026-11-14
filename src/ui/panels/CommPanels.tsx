@@ -16,6 +16,7 @@ import { Icon } from '../Icon';
 import { SymbolView } from '../SymbolView';
 import { C, radius } from '../theme';
 import { VoiceButton } from '../VoiceButton';
+import { pressed } from '../a11y';
 
 export function pathText(loc: Location, app: ReturnType<typeof useApp>): string {
   const { profile, lang, t } = app;
@@ -60,14 +61,15 @@ export function SearchPanel() {
           value={q}
           onChangeText={setQ}
           placeholder={t.searchPlaceholder}
-          placeholderTextColor="#98A2B3"
+          placeholderTextColor={C.placeholder}
           style={styles.searchInput}
           autoCorrect={false}
           autoCapitalize="none"
           returnKeyType="search"
         />
         {q ? (
-          <Pressable onPress={() => setQ('')} accessibilityLabel={t.clear}>
+          <Pressable onPress={() => setQ('')} accessibilityRole="button"
+accessibilityLabel={t.clear}>
             <Icon name="x" size={20} color={C.textMuted} />
           </Pressable>
         ) : null}
@@ -208,7 +210,7 @@ export function KeyboardPanel() {
         value={text}
         onChangeText={setText}
         placeholder={t.typeHere}
-        placeholderTextColor="#98A2B3"
+        placeholderTextColor={C.placeholder}
         style={[styles.keyboardInput, { textAlign: isRtl(lang) ? 'right' : 'left', writingDirection: isRtl(lang) ? 'rtl' : 'ltr' }]}
       />
       {chips.length > 0 && (
@@ -340,7 +342,7 @@ function LangChoice({ label, active, onPress, compact }: { label: string; active
       onPress={onPress}
       style={({ pressed }) => [styles.langBtn, compact && styles.langCompact, active && styles.langActive, pressed && { opacity: 0.7 }]}
       accessibilityRole="button"
-      accessibilityState={{ selected: active }}
+      {...pressed(active)}
       accessibilityLabel={label}
     >
       <Text style={[styles.langText, active && { color: C.accent }]}>{label}</Text>
@@ -412,7 +414,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     minHeight: 52,
   },
-  searchInput: { flex: 1, fontSize: 18, color: C.text, minHeight: 48, outlineStyle: 'none' } as object,
+  searchInput: { flex: 1, fontSize: 18, color: C.text, minHeight: 48 },
   muted: { color: C.textMuted, fontSize: 14 },
   result: {
     flexDirection: 'row',

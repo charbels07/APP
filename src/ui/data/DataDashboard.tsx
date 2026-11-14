@@ -35,6 +35,7 @@ import { when } from '../settings/TeamTab';
 import { SymbolView } from '../SymbolView';
 import { C, CLASS_NAMES, CLASS_ORDER } from '../theme';
 import { BarList, ChartCard, ColumnChart, DataTable, PairBarList, SplitBar, StatGrid, StatTile } from './Charts';
+import { checked } from '../a11y';
 
 type Section = 'usage' | 'vocabulary' | 'language' | 'functions' | 'observations';
 type Draft = Partial<Omit<Observation, 'createdBy' | 'authorName' | 'createdAt'>>;
@@ -317,7 +318,7 @@ function ConsentCard({
             onPress={() => pick(l)}
             style={[st.option, l === level && st.optionOn, rtl && { flexDirection: 'row-reverse' }]}
             accessibilityRole="radio"
-            accessibilityState={{ checked: l === level }}
+            {...checked(l === level)}
           >
             <View style={[st.radio, l === level && st.radioOn]}>{l === level && <View style={st.radioDot} />}</View>
             <View style={{ flex: 1 }}>
@@ -797,7 +798,7 @@ function Observations({
               onPress={() => (selecting ? toggle(o.id) : canObserve && onEdit(o))}
               style={[ss.row, rtl && ss.rowRev, on && { borderColor: C.accent, backgroundColor: C.accentSoft }]}
               accessibilityRole={selecting ? 'checkbox' : 'button'}
-              accessibilityState={selecting ? { checked: on } : undefined}
+              {...(selecting ? checked(on) : null)}
             >
               {selecting ? (
                 <View style={[st.box, on && st.boxOn]}>{on && <Icon name="check" size={16} color="#fff" strokeWidth={3} />}</View>
@@ -867,7 +868,7 @@ function ObservationForm({
             onPress={() => set({ function: d.function === fn ? undefined : fn })}
             style={[st.chip, d.function === fn && st.chipOn]}
             accessibilityRole="radio"
-            accessibilityState={{ checked: d.function === fn }}
+            {...checked(d.function === fn)}
           >
             <Text style={[st.chipText, d.function === fn && { color: '#fff' }]}>{x.functions[fn]}</Text>
           </Pressable>

@@ -3,6 +3,7 @@ import { Animated, Pressable, ScrollView, StyleSheet, Text, View, type ScrollVie
 import { renderStrip, tokenSegment } from '../lib/grammar';
 import { isRtl, symbolOf } from '../lib/lexicon';
 import { speakSegments } from '../lib/speech';
+import { spoken } from './a11y';
 import type { Profile, SymbolRef } from '../model/types';
 import { useApp } from '../state/AppState';
 import { Icon } from './Icon';
@@ -26,22 +27,24 @@ export function SentenceStrip({ compact }: { compact: boolean }) {
 
   return (
     <View style={[styles.wrap, compact && { minHeight: 70 }]}>
-      <Pressable
-        style={styles.stripArea}
-        onPress={speakStrip}
-        accessibilityRole="button"
-        accessibilityLabel={t.speak}
-      >
-        <ScrollView
-          ref={scroller}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={[styles.chips, rtl && { flexDirection: 'row-reverse', flexGrow: 1 }]}
-        >
-          {tokens.length === 0 ? (
-            <Text style={styles.hint}>{t.stripHint}</Text>
-          ) : (
-            tokens.map((tok) => (
+      {/* Touching the strip says the sentence: a shortcut for the finger. For a keyboard or a screen
+          reader it is not a button (it holds the word buttons): they use Speak, on the right. */}
+      <Pressable style={styles.stripArea} onPress={speakStrip} accessible={false} tabIndex={-1}>
+        {tokens.length === 0 ? (
+          // Outside the scrolling row, so the sentence wraps on a narrow screen instead of being cut.
+          <View style={[styles.chips, { flex: 1, flexDirection: rtl ? 'row-reverse' : 'row' }]}>
+            <Text style={[styles.hint, { flexShrink: 1 }]} numberOfLines={2}>
+              {t.stripHint}
+            </Text>
+          </View>
+        ) : (
+          <ScrollView
+            ref={scroller}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={[styles.chips, rtl && { flexDirection: 'row-reverse', flexGrow: 1 }]}
+          >
+            {tokens.map((tok) => (
               <Pressable
                 key={tok.key}
                 onPress={() => {
@@ -49,7 +52,9 @@ export function SentenceStrip({ compact }: { compact: boolean }) {
                   speakSegments([tokenSegment(tok)], profile.settings);
                 }}
                 style={({ pressed }) => [styles.chip, pressed && { opacity: 0.6 }]}
+                accessibilityRole="button"
                 accessibilityLabel={tok.text}
+                {...spoken(tok.lang)}
               >
                 {tok.concept || tok.picture ? (
                   <ChipSymbol
@@ -64,9 +69,9 @@ export function SentenceStrip({ compact }: { compact: boolean }) {
                   {tok.text}
                 </Text>
               </Pressable>
-            ))
-          )}
-        </ScrollView>
+            ))}
+          </ScrollView>
+        )}
       </Pressable>
       <View style={styles.actions}>
         <StripButton icon="undo" label={t.undo} caption={t.undo} onPress={undo} disabled={!canUndo} compact={compact} />

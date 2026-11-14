@@ -327,7 +327,7 @@ function ConceptEditorBody({ conceptId, only }: { conceptId: string; only?: 'ima
           )}
           <View style={s.row}>
             <Btn small icon="undo" label={t.resetSymbol} onPress={() => setSymbol(undefined)} />
-            <TextInput value={emoji} onChangeText={setEmoji} placeholder={t.emojiPlaceholder} style={[s.input, { width: 110 }]} maxLength={8} />
+            <TextInput placeholderTextColor={C.placeholder} value={emoji} onChangeText={setEmoji} placeholder={t.emojiPlaceholder} style={[s.input, { width: 110 }]} maxLength={8} />
             <Btn small label={t.emoji} disabled={!emoji.trim()} onPress={() => setSymbol({ kind: 'emoji', value: emoji.trim() })} />
           </View>
         </Section>
@@ -672,7 +672,7 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
           />
         </View>
       )}
-      <TextInput autoFocus value={q} onChangeText={setQ} placeholder={t.searchPlaceholder} style={s.input} placeholderTextColor="#98A2B3" />
+      <TextInput autoFocus value={q} onChangeText={setQ} placeholder={t.searchPlaceholder} style={s.input} placeholderTextColor={C.placeholder} />
       <View style={s.pickGrid}>
         {ids.slice(0, 120).map((id) => (
           <Pressable
@@ -1242,7 +1242,7 @@ const s = StyleSheet.create({
   previewText: { fontSize: 16, fontWeight: '700', color: C.text, textAlign: 'center' },
   input: {
     borderWidth: 1.5,
-    borderColor: C.border,
+    borderColor: C.inputBorder,
     borderRadius: radius.md,
     paddingHorizontal: 12,
     minHeight: 46,

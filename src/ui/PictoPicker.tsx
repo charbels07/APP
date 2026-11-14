@@ -8,6 +8,7 @@ import type { Lang } from '../model/types';
 import { useApp } from '../state/AppState';
 import { Icon } from './Icon';
 import { C, radius } from './theme';
+import { checked } from './a11y';
 
 /** Loads the offline library once; `null` while loading, `false` if unavailable. */
 export function usePictoLibrary(): PreparedIndex | null | false {
@@ -160,7 +161,7 @@ export function PictoSearch({
             value={own}
             onChangeText={setOwn}
             placeholder={t.pictoLibrary}
-            placeholderTextColor="#98A2B3"
+            placeholderTextColor={C.placeholder}
             style={styles.input}
             autoCorrect={false}
           />
@@ -175,7 +176,7 @@ export function PictoSearch({
               key={id ?? 'all'}
               onPress={() => setOnly(id)}
               accessibilityRole="radio"
-              accessibilityState={{ checked: only === id }}
+              {...checked(only === id)}
               style={[styles.lib, only === id && styles.libOn]}
             >
               <Text style={[styles.libText, only === id && { color: '#fff' }]}>{id ? LIBRARY_NAMES[id] ?? id : t.pictoAllLibraries}</Text>
@@ -200,12 +201,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     borderWidth: 1.5,
-    borderColor: C.border,
+    borderColor: C.inputBorder,
     borderRadius: radius.md,
     paddingHorizontal: 10,
     minHeight: 46,
   },
-  input: { flex: 1, fontSize: 16, color: C.text, minHeight: 44, outlineStyle: 'none' } as object,
+  input: { flex: 1, fontSize: 16, color: C.text, minHeight: 44 },
   note: { fontSize: 13, color: C.textMuted },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   thumb: {

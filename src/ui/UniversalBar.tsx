@@ -80,7 +80,7 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
 
   if (vertical) {
     return (
-      <View style={[styles.bar, styles.vertical]}>
+      <View style={[styles.bar, styles.vertical]} role="navigation">
         <View style={styles.colGroup}>
           {visible(main).map(({ key, ...m }) => (
             <BarButton key={key} {...m} size="main" />
@@ -98,7 +98,7 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
     );
   }
   return (
-    <View style={[styles.bar, styles.horizontal]}>
+    <View style={[styles.bar, styles.horizontal]} role="navigation">
       {[...visible(main), ...visible(priority), ...tools].map(({ key, ...m }) => (
         <BarButton key={key} {...m} size={m.tone ? 'priorityRow' : 'row'} iconsOnly={iconsOnly} />
       ))}

@@ -6,7 +6,7 @@
  * Licences that must be reproduced in full (MIT, ISC, Apache, OFL, Unicode) can be opened here.
  */
 import React, { useState } from 'react';
-import { Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { pictoCreditLine } from '../data/pictoCredit';
 import { PICTO_BUILT, PICTO_LIBRARIES, PICTO_LICENSE_TEXTS, PICTO_TOTAL, PICTO_WORDS_SOURCE, type PictoLibraryInfo } from '../data/pictoLibraries';
@@ -86,8 +86,10 @@ const T = {
 const open = (url: string) => Linking.openURL(url).catch(() => {});
 
 function Link({ url }: { url: string }) {
+  // In a browser: a real link (it answers the keyboard and opens in a new tab). On tablets: a press.
+  const web = Platform.OS === 'web' ? ({ href: url, hrefAttrs: { target: '_blank', rel: 'noopener noreferrer' } } as object) : null;
   return (
-    <Text style={st.link} onPress={() => open(url)} accessibilityRole="link">
+    <Text style={st.link} onPress={web ? undefined : () => open(url)} accessibilityRole="link" {...web}>
       {url.replace(/^https?:\/\//, '')}
     </Text>
   );

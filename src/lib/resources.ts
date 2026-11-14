@@ -10,7 +10,8 @@ import { randomUUID } from 'expo-crypto';
 import { createDefaultProfile } from '../data/defaults';
 import type { Board, Profile, Schedule } from '../model/types';
 import type { ResourceData, ResourceKind } from '../backend/types';
-import type { Op } from './profileDiff';
+import { foreignOps, type Op } from './profileDiff';
+import { plain } from './safety';
 
 export const RESOURCE_KINDS: ResourceKind[] = ['tla', 'schedule', 'firstThen', 'timer', 'cards'];
 
@@ -43,8 +44,8 @@ export function emptyResource(kind: ResourceKind): ResourceData {
 /** A profile holding only this material, for the normal editors. */
 export function sandboxFor(kind: ResourceKind, data: ResourceData): Profile {
   const p = createDefaultProfile();
-  Object.assign(p.customConcepts, JSON.parse(JSON.stringify(data.customConcepts ?? {})));
-  Object.assign(p.overrides, JSON.parse(JSON.stringify(data.overrides ?? {})));
+  Object.assign(p.customConcepts, plain(JSON.parse(JSON.stringify(data.customConcepts ?? {}))));
+  Object.assign(p.overrides, plain(JSON.parse(JSON.stringify(data.overrides ?? {}))));
   if (kind === 'tla') {
     for (const b of data.boards) p.boards[b.id] = JSON.parse(JSON.stringify(b));
     p.tlaOrder = data.boards.map((b) => b.id);
@@ -104,10 +105,10 @@ export function withConcepts(data: ResourceData, from: Pick<Profile, 'customConc
 export function resourceToOps(profile: Profile, kind: ResourceKind, data: ResourceData, suffix = Date.now().toString(36)): Op[] {
   const ops: Op[] = [];
   const free = (id: string, taken: (x: string) => boolean) => (taken(id) ? `${id}_${suffix}` : id);
-  for (const [id, c] of Object.entries(data.customConcepts)) {
+  for (const [id, c] of Object.entries(plain(data.customConcepts))) {
     if (!profile.customConcepts[id]) ops.push({ path: ['concept', id], before: undefined, after: c });
   }
-  for (const [id, o] of Object.entries(data.overrides)) {
+  for (const [id, o] of Object.entries(plain(data.overrides))) {
     // A word that already has the child's own picture or name keeps it.
     if (!profile.overrides[id]) ops.push({ path: ['override', id], before: undefined, after: o });
   }
@@ -129,7 +130,9 @@ export function resourceToOps(profile: Profile, kind: ResourceKind, data: Resour
   if (kind === 'firstThen' && data.firstThen) {
     ops.push({ path: ['firstThen'], before: profile.firstThen, after: data.firstThen });
   }
-  return ops;
+  // A material can come from someone else (shared, imported file): links to apps or sites do
+  // not travel with it. The family adds its own on the card.
+  return foreignOps(ops).ops;
 }
 
 /** A copy for another use (template → one child's material, or a colleague's copy). */

@@ -8,6 +8,8 @@ export function PrintPreview({ html, landscape }: { html: string; landscape: boo
     <View style={{ width: '100%', aspectRatio: ratio, maxHeight: 520, alignSelf: 'center', borderWidth: 1, borderColor: '#D5DBE3', borderRadius: 8, overflow: 'hidden', backgroundColor: '#fff' }}>
       {React.createElement('iframe', {
         title: 'preview',
+        // The page is only looked at: it may not run scripts (it is built from the profile's words).
+        sandbox: 'allow-same-origin',
         srcDoc: html,
         style: { width: '100%', height: '100%', border: 0, background: '#fff' },
       })}

@@ -12,7 +12,7 @@ import { settingsStrings, type SettingsStrings } from '../../i18n/settings';
 import { describeOps, type ChangeItem } from '../../lib/describeOps';
 import { symbolOf } from '../../lib/lexicon';
 import { preset, type AccessLevel, type CollaboratorRole, type PermissionSet } from '../../lib/permissions';
-import { applyOps } from '../../lib/profileDiff';
+import { applyOps, foreignOps } from '../../lib/profileDiff';
 import type { Profile } from '../../model/types';
 import { useApp } from '../../state/AppState';
 import type { BoardCtx } from '../../state/BoardContext';
@@ -451,7 +451,9 @@ function MemberView({ board, m, x, onBack }: { board: BoardCtx; m: Membership; x
 
 function RequestView({ inv, x, onBack }: { inv: Invitation; x: SettingsStrings; onBack: () => void }) {
   const { api, s } = useSession();
-  const [v, setV] = useState({ role: inv.role, level: inv.level, perms: inv.perms });
+  // Only the switches this screen shows are passed on: a request cannot carry "acts as a parent"
+  // or any right the family does not see here (the database refuses them too).
+  const [v, setV] = useState({ role: inv.role, level: inv.level, perms: { ...inv.perms, manager: false, invite: false, manageDevices: false, changeAccess: false } });
   const [error, setError] = useState<string | null>(null);
   return (
     <>
@@ -520,8 +522,10 @@ function ProposalView({ board, p, x, onBack }: { board: BoardCtx; p: Proposal; x
   const [note, setNote] = useState('');
   const [coreOk, setCoreOk] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const preview = useMemo(() => applyOps(app.profile, p.ops), [app.profile, p.ops]);
-  const items = useMemo(() => describeOps(p.ops, app.profile, uiLang, app.lang), [p.ops, app.profile, uiLang, app.lang]);
+  // Never applied from a proposal: recording / sharing choices, the caregiver code, links to apps or sites.
+  const safe = useMemo(() => foreignOps(p.ops), [p.ops]);
+  const preview = useMemo(() => applyOps(app.profile, safe.ops), [app.profile, safe]);
+  const items = useMemo(() => describeOps(safe.ops, app.profile, uiLang, app.lang), [safe, app.profile, uiLang, app.lang]);
   const touchesCore = items.some((i) => i.core);
   const decide = async (status: 'approved' | 'declined' | 'revision') => {
     setError(null);
@@ -546,6 +550,7 @@ function ProposalView({ board, p, x, onBack }: { board: BoardCtx; p: Proposal; x
         <ChangeList items={items} profileBefore={app.profile} profileAfter={preview.profile} x={x} />
       </Section>
       {preview.conflicts.length > 0 && <Text style={{ color: C.edit, fontWeight: '700' }}>{x.conflictWarn(preview.conflicts.length)}</Text>}
+      {safe.leftOut > 0 && <Note text={x.leftOut(safe.leftOut)} />}
       {touchesCore && <Toggle label={x.coreConfirm} value={coreOk} onChange={setCoreOk} />}
       <TextInput
         value={note}

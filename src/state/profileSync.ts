@@ -15,6 +15,7 @@ import type { ChildRecord } from '../backend/types';
 import { applyOps, diffProfiles, type Op } from '../lib/profileDiff';
 import { migrate } from '../lib/storage';
 import type { Profile } from '../model/types';
+import { forgetChild, isForgotten, remember } from '../lib/deviceData';
 
 export interface LocalCopy {
   data: Profile;
@@ -45,7 +46,7 @@ export async function readLocal(id: string): Promise<LocalCopy | null> {
 }
 
 export async function forgetLocal(id: string) {
-  await AsyncStorage.removeItem(key(id)).catch(() => {});
+  await forgetChild(id);
 }
 
 const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v));
@@ -75,6 +76,7 @@ export class ProfileSync {
 
   /** Opens a profile: the device copy at once if there is one, refreshed from the server when online. */
   static async open(api: Backend, id: string, opts: { pushDelay?: number } = {}): Promise<ProfileSync> {
+    remember(id);
     const local = await readLocal(id);
     let server: ChildRecord | null = null;
     try {
@@ -130,6 +132,8 @@ export class ProfileSync {
 
   async writeNow() {
     clearTimeout(this.writeTimer);
+    // The child left this device (sign-out, access removed): an open board must not write it back.
+    if (isForgotten(this.id)) return;
     await AsyncStorage.setItem(key(this.id), JSON.stringify(this.copy)).catch(() => {});
   }
 

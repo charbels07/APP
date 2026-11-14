@@ -23,6 +23,7 @@ import { SymbolView } from './SymbolView';
 import { C, radius } from './theme';
 import { TimerCard } from './TimerCard';
 import { UniversalBar } from './UniversalBar';
+import { linkTarget } from '../lib/safety';
 
 /** `banner`: shown above the sentence strip (e.g. the preview's "nothing is saved"). */
 export function Root({ banner }: { banner?: React.ReactNode } = {}) {
@@ -182,11 +183,14 @@ function AppLaunchBanner() {
     );
   }
   const seconds = Math.max(1, Math.ceil((appLaunch.at - now) / 1000));
+  // Where the link goes ("youtube.com", "whatsapp"): the adult sees it before it opens.
+  const target = linkTarget(appLaunch.url ?? '');
   return (
     <View style={[styles.banner, styles.playBanner]} accessibilityRole="alert">
       <SymbolView symbol={symbolOf(profile, appLaunch.concept)} size={36} />
       <Text style={[styles.bannerText, styles.captionText]} numberOfLines={1}>
         {t.appOpening} {name}… {seconds}
+        {target ? `  ·  ${target}` : ''}
       </Text>
       <Btn small label={t.cancel} onPress={app.cancelAppLaunch} />
       <Btn small kind="primary" icon="external" label={t.openNow} onPress={app.openAppNow} />

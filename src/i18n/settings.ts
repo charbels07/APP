@@ -95,6 +95,7 @@ const fr = {
   askRevision: 'Demander une modification',
   notePlaceholder: 'Message pour l’auteur (facultatif)',
   approvedReason: (title: string, author: string) => `Proposition « ${title} » de ${author}`,
+  leftOut: (n: number) => `${n} changement${n > 1 ? 's' : ''} laissé${n > 1 ? 's' : ''} de côté : les choix sur les données, le code accompagnant et les liens vers des applications ne se proposent pas.`,
   noneWaiting: 'Rien en attente.',
 
   history: 'Historique des changements',
@@ -116,6 +117,8 @@ const fr = {
   newPassword: 'Nouveau mot de passe',
   passwordChanged: 'Mot de passe changé.',
   signOut: 'Se déconnecter',
+  signOutNote: 'Les tableaux des enfants quittent cet appareil ; ils restent dans votre compte.',
+  signOutErase: 'Effacer aussi les photos et les enregistrements gardés sur cet appareil (ils ne sont pas sauvegardés en ligne)',
 
   children: 'Enfants',
   open: 'Ouvrir',
@@ -274,6 +277,7 @@ const en: Dict = {
   askRevision: 'Ask for a change',
   notePlaceholder: 'Message for the author (optional)',
   approvedReason: (title, author) => `Proposal “${title}” by ${author}`,
+  leftOut: (n) => `${n} change${n > 1 ? 's' : ''} left out: choices about data, the caregiver code and links to apps cannot be proposed.`,
   noneWaiting: 'Nothing waiting.',
 
   history: 'Change history',
@@ -294,6 +298,8 @@ const en: Dict = {
   newPassword: 'New password',
   passwordChanged: 'Password changed.',
   signOut: 'Sign out',
+  signOutNote: 'The children’s boards leave this device; they stay in your account.',
+  signOutErase: 'Also erase the photos and recordings kept on this device (they are not saved online)',
 
   children: 'Children',
   open: 'Open',
@@ -450,6 +456,7 @@ const ar: Dict = {
   askRevision: 'طلب تعديل',
   notePlaceholder: 'رسالة للكاتب (اختياري)',
   approvedReason: (title, author) => `اقتراح «${title}» من ${author}`,
+  leftOut: (n) => `تم استبعاد ${n} من التغييرات: خيارات البيانات ورمز المرافق وروابط التطبيقات لا تُقترح.`,
   noneWaiting: 'لا شيء بالانتظار.',
 
   history: 'سجل التغييرات',
@@ -470,6 +477,8 @@ const ar: Dict = {
   newPassword: 'كلمة مرور جديدة',
   passwordChanged: 'تمّ تغيير كلمة المرور.',
   signOut: 'تسجيل الخروج',
+  signOutNote: 'تغادر لوحات الأطفال هذا الجهاز وتبقى في حسابكم.',
+  signOutErase: 'امسح أيضاً الصور والتسجيلات المحفوظة على هذا الجهاز (غير محفوظة على الإنترنت)',
 
   children: 'الأطفال',
   open: 'فتح',

@@ -98,7 +98,7 @@ function toPictures(labels: GsLabel[], credits: Map<number, string>): WebPicture
   for (const l of labels) {
     const p = l.picto;
     // React Native's Image cannot show SVG: keep PNG / JPEG only.
-    if (!p?.image_url || !/\.(png|jpe?g)$/i.test(p.image_url) || !credits.has(p.symbolset_id) || seen.has(p.id)) continue;
+    if (!p?.image_url || !/^https:\/\//i.test(p.image_url) || !/\.(png|jpe?g)$/i.test(p.image_url) || !credits.has(p.symbolset_id) || seen.has(p.id)) continue;
     seen.add(p.id);
     out.push({
       key: `gs${p.id}`,
@@ -131,7 +131,7 @@ async function searchOpenverse(q: string, kind: 'photos' | 'drawings', signal?: 
     // 20 is the most Openverse gives without an account.
     `&page_size=20&license_type=commercial&mature=false&category=${category}`;
   const data = await getJson<{ results?: OvImage[] }>(url, signal);
-  return (data.results ?? []).map((r) => {
+  return (data.results ?? []).filter((r) => /^https:\/\//i.test(r.thumbnail ?? '')).map((r) => {
     const licence = r.license === 'cc0' ? 'CC0' : r.license === 'pdm' ? 'Public Domain' : `CC ${r.license.toUpperCase()} ${r.license_version ?? ''}`.trim();
     return {
       key: `ov${r.id}`,
@@ -158,6 +158,9 @@ export function saveWebPicture(p: WebPicture): Promise<string> {
 
 /** A picture link pasted by the family. */
 export function saveImageLink(url: string): Promise<string> {
-  const ext = /\.png(\?|$)/i.test(url) ? 'png' : 'jpg';
-  return saveMedia(url.trim(), ext);
+  const link = url.trim();
+  // A web address only (https), or a picture pasted as data: never a file or another kind of link.
+  if (!/^https:\/\/\S+$/i.test(link) && !/^data:image\/(png|jpe?g|webp);base64,/i.test(link)) return Promise.reject(new Error('bad_link'));
+  const ext = /\.png(\?|$)/i.test(link) || /^data:image\/png/i.test(link) ? 'png' : 'jpg';
+  return saveMedia(link, ext);
 }

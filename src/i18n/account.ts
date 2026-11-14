@@ -76,7 +76,7 @@ const fr = {
   pairTitle: 'Relier cette tablette',
   pairIntro:
     'Sur l’appareil du parent : Réglages → Compte → Appareils → « Relier un appareil ». Entrez ici le code affiché (valable 10 minutes).',
-  pairCode: 'Code à 6 chiffres',
+  pairCode: 'Code à 8 caractères',
   deviceName: 'Nom de cette tablette',
   deviceNameDefault: 'Tablette',
   pairButton: 'Relier',
@@ -194,7 +194,7 @@ const en: Dict = {
   pairTitle: 'Link this tablet',
   pairIntro:
     'On the parent’s device: Settings → Account → Devices → “Link a device”. Enter the code shown there (valid for 10 minutes).',
-  pairCode: '6-digit code',
+  pairCode: '8-character code',
   deviceName: 'Name of this tablet',
   deviceNameDefault: 'Tablet',
   pairButton: 'Link',
@@ -305,7 +305,7 @@ const ar: Dict = {
 
   pairTitle: 'ربط هذا الجهاز اللوحي',
   pairIntro: 'على جهاز الأهل: الإعدادات ← الحساب ← الأجهزة ← «ربط جهاز». أدخل هنا الرمز الظاهر (صالح لمدة 10 دقائق).',
-  pairCode: 'رمز من 6 أرقام',
+  pairCode: 'رمز من 8 أحرف وأرقام',
   deviceName: 'اسم هذا الجهاز',
   deviceNameDefault: 'جهاز لوحي',
   pairButton: 'ربط',

@@ -10,6 +10,7 @@ import type { AppLink, Profile, StripItem } from '../model/types';
 import { allConceptIds, getConcept, label } from './lexicon';
 import { normalize } from './search';
 import { LANGS } from '../model/types';
+import { safeLink } from './safety';
 
 export function appLinkOf(profile: Profile, conceptId: string): AppLink | undefined {
   const o = profile.overrides[conceptId]?.app;
@@ -27,12 +28,13 @@ export const APP_PRESETS: { name: string; url: string }[] = [
   { name: 'Netflix', url: 'https://www.netflix.com/' },
 ];
 
-/** "wa.me/961…" → "https://wa.me/961…"; keeps app schemes ("spotify:") as they are. */
+/**
+ * "wa.me/961…" → "https://wa.me/961…"; keeps known app links ("spotify:") as they are.
+ * Anything that is not a web page or a known app comes back empty: a card never opens it
+ * (see safeLink: a link can arrive from someone else, in a shared board or a team member's change).
+ */
 export function cleanUrl(url: string): string {
-  const u = url.trim();
-  if (!u) return '';
-  if (/^[a-z][a-z0-9+.-]*:/i.test(u)) return u;
-  return `https://${u}`;
+  return safeLink(url);
 }
 
 /** A WhatsApp link needs the person's number: "https://wa.me/" alone opens nothing useful. */
@@ -49,6 +51,7 @@ export function isIncomplete(link: AppLink | undefined): boolean {
  */
 export async function openAppUrl(url: string): Promise<boolean> {
   const target = cleanUrl(url);
+  if (!target) return false;
   if (Platform.OS === 'web') {
     // Called synchronously (no await before this line), so it still counts as the tap.
     const w = typeof window !== 'undefined' ? window.open(target, '_blank') : null;

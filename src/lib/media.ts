@@ -43,6 +43,12 @@ export async function deleteMedia(name: string): Promise<void> {
   if (f.exists) f.delete();
 }
 
+/** Erases every photo and recording kept on this device (account deleted, or asked at sign-out). */
+export async function clearMedia(): Promise<void> {
+  const d = new Directory(Paths.document, 'media');
+  if (d.exists) d.delete();
+}
+
 /** Stores raw bytes (e.g. a pictogram from the offline library) in the media store. */
 export async function saveMediaBytes(bytes: Uint8Array, ext: string): Promise<string> {
   const name = newMediaName(ext);

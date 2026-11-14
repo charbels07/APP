@@ -10,6 +10,7 @@ import type { CommFunction, Observation, UsageDay, UtteranceSample } from '../ba
 import { TLA_CORE } from '../data/defaults';
 import type { Profile, WordClass } from '../model/types';
 import { getConcept, wordClass } from './lexicon';
+import { csvSafe } from './safety';
 
 // ── Period ──────────────────────────────────────────────────
 
@@ -625,7 +626,7 @@ export function functionsSummary(
 // ── Export ──────────────────────────────────────────────────
 
 const csvCell = (v: unknown) => {
-  const s = v == null ? '' : String(v);
+  const s = typeof v === 'string' ? csvSafe(v) : v == null ? '' : String(v);
   return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 export const toCsv = (rows: unknown[][]) => rows.map((r) => r.map(csvCell).join(',')).join('\n');

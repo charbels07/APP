@@ -45,3 +45,13 @@
   so give states with the helpers of `src/ui/a11y.ts` (`{...checked(on)}`, `selected`, `pressed`, `expanded`,
   `spoken(lang)`); a labelled `Pressable` always has a role; overlays go through `Panel` (dialog, focus,
   Escape); colours come from `src/ui/theme.ts` (contrast is tested). Run `npm run test:a11y` after UI changes.
+- Security (`docs/SECURITY.md`): the database decides, never the app. A function that receives rights,
+  a status or an owner from the app must clean or ignore them (`clean_perms`, column grants); anything
+  a person can repeat goes through `rate_limit`; nothing is executable by `anon`. A new rule comes
+  with its attack in `supabase/tests/security_scenario.sql`. In the app, data that can come from
+  someone else (synced profile, shared material, proposal, file) goes through `src/lib/safety.ts`
+  (`safeLink`, `plain`, `foreignOps` in `profileDiff.ts`); links never travel with shared content.
+- A profile leaves a device through `src/lib/deviceData.ts` (`forgetEverything`, `forgetChild`), never
+  by removing one storage key by hand. Photos and recordings exist only on the device that made them.
+- Demo builds are asked for on purpose: `EXPO_PUBLIC_APP_MODE=demo` (a release build with no server
+  address shows "not connected"). Web headers: `public/_headers` (a test checks the policy).

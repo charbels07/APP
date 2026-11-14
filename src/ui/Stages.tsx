@@ -28,6 +28,7 @@ import { RoleChoice } from './start/RoleChoice';
 import { StartLayout, T } from './start/StartLayout';
 import { Welcome } from './start/Welcome';
 import { C, radius } from './theme';
+import { pendingSaves } from '../lib/deviceData';
 
 export function Stages() {
   const { stage } = useSession();
@@ -112,10 +113,16 @@ function BoardStage({ profileId }: { profileId: string }) {
     let alive = true;
     let opened: ProfileSync | null = null;
     let usage: UsageTracker | null = null;
+    const sendNow = async () => {
+      await opened?.flush();
+      await usage?.flush();
+    };
     ProfileSync.open(api, profileId).then(
       (sy) => {
         if (!alive) return;
         opened = sy;
+        // Called before a sign-out: what is not sent yet goes first.
+        pendingSaves.add(sendNow);
         rememberLocal(profileId);
         sy.onConflict = () => setNote(s.conflictNote);
         // Every change that reaches the server goes into the change history (with undo).
@@ -143,6 +150,7 @@ function BoardStage({ profileId }: { profileId: string }) {
     );
     return () => {
       alive = false;
+      pendingSaves.delete(sendNow);
       void opened?.flush();
       if (usage) {
         void usage.flush();

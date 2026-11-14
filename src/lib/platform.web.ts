@@ -12,6 +12,8 @@ export async function bundledImageSrc(mod: number): Promise<string> {
 export async function printDocument(html: string): Promise<void> {
   const frame = document.createElement('iframe');
   frame.setAttribute('aria-hidden', 'true');
+  // No script runs in the printed page; "allow-modals" is what lets the print dialog open.
+  frame.setAttribute('sandbox', 'allow-same-origin allow-modals');
   Object.assign(frame.style, { position: 'fixed', right: '0', bottom: '0', width: '0', height: '0', border: '0' });
   document.body.appendChild(frame);
   await new Promise<void>((resolve) => {
@@ -77,3 +79,6 @@ export async function bytesToImageUri(bytes: Uint8Array, key: string): Promise<s
   }
   return url;
 }
+
+/** Nothing to erase in a browser: exported files go straight to the person's downloads. */
+export async function clearExports(): Promise<void> {}

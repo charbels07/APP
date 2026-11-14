@@ -1,0 +1,14 @@
+# Browser protections for the web version. Cloudflare reads this file (it is not served) and adds
+# these lines to every answer. Explained in docs/SECURITY.md; checked by `npm test`.
+#  - Content-Security-Policy: the page only runs its own scripts and only talks to its own
+#    server (Supabase) and the two picture libraries ("blob:" and "data:" are files chosen on the
+#    device itself: a photo, a recording). A script slipped in from elsewhere does not run.
+#  - frame-ancestors / X-Frame-Options: no other site can show the app inside its own page.
+#  - Permissions-Policy: camera and microphone for the app itself only; no location.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data: https://*.supabase.co wss://*.supabase.co https://globalsymbols.com https://api.openverse.org; frame-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(self), microphone=(self), geolocation=(), payment=(), usb=(), bluetooth=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains

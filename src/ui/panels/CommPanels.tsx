@@ -7,7 +7,10 @@ import { speakText } from '../../lib/speech';
 import { typedChips } from '../../lib/typedWords';
 import type { Lang, UiLang } from '../../model/types';
 import { UI_LANG_NAMES } from '../../i18n/ui';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { serverMode } from '../../backend';
 import { useApp } from '../../state/AppState';
+import { useBoard } from '../../state/BoardContext';
 import { Btn, Panel, Section } from '../common';
 import { DrawPad } from '../DrawPad';
 import { usePictoLibrary } from '../PictoPicker';
@@ -358,30 +361,94 @@ function LangChoice({ label, active, onPress, compact }: { label: string; active
   );
 }
 
-/** Caregiver mode is protected so the user can't modify the board by accident (NAV-04). */
+/** After 5 wrong codes: a pause of 30 s, then 1, 2 and 5 minutes for each further wrong code. */
+const PIN_LOCK = 'caa.pinlock';
+export const pinPause = (fails: number) => (fails < 5 ? 0 : [30, 60, 120, 300][Math.min(fails - 5, 3)] * 1000);
+/** 1234, 0000, 1111…: refused when the family chooses its code. */
+export const pinTooEasy = (code: string) => code === '1234' || /^(\d)\1{3}$/.test(code);
+
+/**
+ * Caregiver mode is protected so the user can't modify the board by accident (NAV-04).
+ * The code starts as 1234: the first time the family enters it (real accounts, not the demo)
+ * the app asks for a code of their own. Wrong codes are counted on this device.
+ */
 export function PinPanel() {
   const app = useApp();
+  const board = useBoard();
   const { t, profile } = app;
   const [code, setCode] = useState('');
-  const [error, setError] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [step, setStep] = useState<'enter' | 'choose' | 'repeat'>('enter');
+  const [chosen, setChosen] = useState('');
+  const [lock, setLock] = useState({ fails: 0, until: 0 });
+  const [now, setNow] = useState(Date.now());
+  const demo = serverMode() === 'demo';
+  // Only the family can change the code: they are the ones asked to replace 1234.
+  const mustChoose = !demo && !!board?.manager && profile.settings.pin === '1234';
+  useEffect(() => {
+    AsyncStorage.getItem(PIN_LOCK)
+      .then((raw) => raw && setLock(JSON.parse(raw)))
+      .catch(() => {});
+  }, []);
+  const wait = Math.max(0, Math.ceil((lock.until - now) / 1000));
+  const waiting = wait > 0;
+  useEffect(() => {
+    if (!waiting) return;
+    const id = setInterval(() => setNow(Date.now()), 500);
+    return () => clearInterval(id);
+  }, [waiting]);
+  const saveLock = (l: { fails: number; until: number }) => {
+    setLock(l);
+    setNow(Date.now());
+    void AsyncStorage.setItem(PIN_LOCK, JSON.stringify(l)).catch(() => {});
+  };
+  const open = () => {
+    const then = app.overlay?.kind === 'pin' ? app.overlay.then : undefined;
+    app.setEditMode(true);
+    if (then) app.setOverlay(then);
+  };
+  const again = (text: string) => {
+    setMsg(text);
+    setTimeout(() => setCode(''), 400);
+  };
   const press = (d: string) => {
+    if (waiting) return;
     const next = (code + d).slice(0, 4);
-    setError(false);
+    setMsg(null);
     setCode(next);
-    if (next.length === 4) {
-      if (next === profile.settings.pin) {
-        const then = app.overlay?.kind === 'pin' ? app.overlay.then : undefined;
-        app.setEditMode(true);
-        if (then) app.setOverlay(then);
-      } else {
-        setError(true);
-        setTimeout(() => setCode(''), 400);
+    if (next.length < 4) return;
+    if (step === 'enter') {
+      if (next !== profile.settings.pin) {
+        const fails = lock.fails + 1;
+        saveLock({ fails, until: Date.now() + pinPause(fails) });
+        return again(t.pinWrong);
       }
+      if (lock.fails) saveLock({ fails: 0, until: 0 });
+      if (!mustChoose) return open();
+      setStep('choose');
+      setCode('');
+    } else if (step === 'choose') {
+      if (pinTooEasy(next)) return again(t.pinTooEasy);
+      setChosen(next);
+      setStep('repeat');
+      setCode('');
+    } else if (next === chosen) {
+      app.update((p) => {
+        p.settings.pin = next;
+      });
+      open();
+    } else {
+      setStep('choose');
+      again(t.pinMismatch);
     }
   };
+  const hint = msg ?? (waiting ? t.pinLocked.replace('{n}', String(wait)) : step === 'choose' ? t.pinChoose : step === 'repeat' ? t.pinRepeat : demo ? `${t.pinHint} ${t.pinDemo}` : t.pinHint);
+  const error = !!msg;
   return (
     <Panel title={t.pinTitle} onClose={() => app.setOverlay(null)} maxWidth={380} tone="edit">
-      <Text style={[styles.muted, { textAlign: 'center' }]}>{error ? t.pinWrong : t.pinHint}</Text>
+      <Text style={[styles.muted, { textAlign: 'center' }, (error || waiting) && { color: C.help, fontWeight: '700' }]} accessibilityLiveRegion="polite">
+        {hint}
+      </Text>
       <View style={styles.dots}>
         {[0, 1, 2, 3].map((i) => (
           <View key={i} style={[styles.dot, i < code.length && styles.dotOn, error && { borderColor: C.help }]} />

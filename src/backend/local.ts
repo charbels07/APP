@@ -471,6 +471,14 @@ export class LocalBackend implements Backend {
         const { connectionCode: _c, ...rec } = p;
         return { ok: false, conflict: clone(rec) };
       }
+      // What is recorded, what is shared and the caregiver code are the family's own decisions.
+      if (!manager) {
+        const was = p.data.settings;
+        const now = data.settings;
+        if ((now.dataCollection ?? 'off') !== (was.dataCollection ?? 'off') || (now.shareStats ?? 'none') !== (was.shareStats ?? 'none') || now.pin !== was.pin) {
+          throw new BackendError('consent_protected');
+        }
+      }
       Object.assign(p, { data: clone(data), version: p.version + 1, updatedAt: Date.now(), updatedBy: me.id });
       return { ok: true, version: p.version };
     });
@@ -535,6 +543,20 @@ export class LocalBackend implements Backend {
       const me = LocalBackend.need(m);
       const a = LocalBackend.requireAccess(db, profileId, me);
       if (!(a.owner || a.perms.invite || a.perms.manager)) throw new BackendError('forbidden');
+      // Someone who may only invite gives at most what they hold, and never the family's own rights.
+      const boss = a.owner || a.perms.manager;
+      const level = boss ? input.level : (Math.min(input.level, a.level) as AccessLevel);
+      const perms: PermissionSet = boss
+        ? input.perms
+        : {
+            createMaterials: input.perms.createMaterials && a.perms.createMaterials,
+            proposeVocabulary: input.perms.proposeVocabulary && a.perms.proposeVocabulary,
+            viewData: !!input.perms.viewData && !!a.perms.viewData,
+            changeAccess: false,
+            invite: false,
+            manageDevices: false,
+            manager: false,
+          };
       const email = normEmail(input.email);
       const to = email ? LocalBackend.findAccount(db, { email }) : undefined;
       const inv: Invitation = {
@@ -549,8 +571,8 @@ export class LocalBackend implements Backend {
         name: input.name?.trim() || undefined,
         code: friendlyCode(),
         role: input.role,
-        level: input.level,
-        perms: input.perms,
+        level,
+        perms,
         status: 'pending',
         createdAt: Date.now(),
       };
@@ -604,8 +626,9 @@ export class LocalBackend implements Backend {
       if (!inv) throw new BackendError('not_found');
       if (inv.direction === 'request') {
         LocalBackend.requireManager(db, inv.profileId, me);
-        if (accept) LocalBackend.join(db, inv, inv.fromUserId);
-        else inv.status = 'declined';
+        // The family accepts a request through approveRequest (where it chooses the rights).
+        if (accept) throw new BackendError('forbidden');
+        inv.status = 'declined';
         LocalBackend.notify(db, inv.fromUserId, 'access', accept ? `Votre demande pour ${inv.childName} a été acceptée.` : `Votre demande pour ${inv.childName} a été refusée.`, { profileId: inv.profileId });
         return;
       }
@@ -619,8 +642,10 @@ export class LocalBackend implements Backend {
   async acceptInvitationCode(code: string): Promise<Invitation> {
     return this.tx((db, m) => {
       const me = LocalBackend.need(m);
-      const inv = db.invitations.find((i) => i.direction === 'invite' && i.status === 'pending' && i.code === code.trim().toUpperCase());
+      const inv = db.invitations.find((i) => i.direction === 'invite' && i.status === 'pending' && i.code === code.toUpperCase().replace(/[^A-Z0-9]/g, ''));
       if (!inv) throw new BackendError('code_invalid');
+      // Nobody accepts an invitation they wrote themselves.
+      if (inv.fromUserId === me.id) throw new BackendError('forbidden');
       LocalBackend.join(db, inv, me.id);
       LocalBackend.notify(db, inv.fromUserId, 'access', `${memberName(me)} a rejoint l’équipe de ${inv.childName}.`, { profileId: inv.profileId });
       return clone(inv);
@@ -680,7 +705,8 @@ export class LocalBackend implements Backend {
         code: friendlyCode(),
         role: input.role,
         level: input.level,
-        perms: input.perms,
+        // A request never carries the family's own rights.
+        perms: { ...input.perms, manager: false, invite: false, manageDevices: false, changeAccess: false },
         message: input.message?.trim() || undefined,
         status: 'pending',
         createdAt: Date.now(),
@@ -698,7 +724,8 @@ export class LocalBackend implements Backend {
       const inv = db.invitations.find((i) => i.id === id && i.direction === 'request' && i.status === 'pending');
       if (!inv) throw new BackendError('not_found');
       LocalBackend.requireManager(db, inv.profileId, me);
-      LocalBackend.join(db, inv, inv.fromUserId, grant);
+      // Approving a request never makes the person a parent, whatever was sent.
+      LocalBackend.join(db, inv, inv.fromUserId, { level: grant.level, perms: { ...grant.perms, manager: false } });
       LocalBackend.notify(db, inv.fromUserId, 'access', `Votre demande pour ${inv.childName} a été acceptée.`, { profileId: inv.profileId });
     });
   }
@@ -862,9 +889,9 @@ export class LocalBackend implements Backend {
   async createPairingCode(profileId: string, access: 'full' | 'use'): Promise<{ code: string; expiresAt: number }> {
     return this.tx((db, m) => {
       LocalBackend.requireManager(db, profileId, LocalBackend.need(m));
-      const code = digits(6);
+      const code = friendlyCode();
       const expiresAt = Date.now() + CODE_TTL;
-      db.pairings = db.pairings.filter((p) => p.expiresAt > Date.now());
+      db.pairings = db.pairings.filter((p) => p.expiresAt > Date.now() && p.profileId !== profileId);
       db.pairings.push({ code, profileId, access, expiresAt });
       return { code, expiresAt };
     });
@@ -872,7 +899,8 @@ export class LocalBackend implements Backend {
 
   async redeemPairingCode(code: string, device: { id: string; name: string; platform: string }): Promise<string> {
     const deviceAccount = await this.tx((db, m) => {
-      const pairing = db.pairings.find((p) => p.code === code.trim() && p.expiresAt > Date.now());
+      const typed = code.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      const pairing = db.pairings.find((p) => p.code === typed && p.expiresAt > Date.now());
       if (!pairing) throw new BackendError('code_invalid');
       db.pairings = db.pairings.filter((p) => p !== pairing);
       // The new device gets its own account, limited to this child's profile.

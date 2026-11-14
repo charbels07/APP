@@ -44,8 +44,14 @@ Deno.serve(async (req) => {
   });
   const { data: who } = await sb.auth.getUser();
   if (!who.user) return json({ error: 'unauthorized' }, 401);
+  // The database also checks that this account looks after a child here (a sign-in alone is
+  // not enough) and that the whole service stays under its daily ceiling.
   const { data: calls, error: countError } = await sb.rpc('count_ai_call');
-  if (countError) return json({ error: 'unavailable' }, 503);
+  if (countError) {
+    if (/forbidden/.test(countError.message ?? '')) return json({ error: 'forbidden' }, 403);
+    if (/ai_busy/.test(countError.message ?? '')) return json({ error: 'busy' }, 429);
+    return json({ error: 'unavailable' }, 503);
+  }
   if ((calls as number) > DAILY_LIMIT) return json({ error: 'limit' }, 429);
 
   // 2. What is asked.
@@ -53,6 +59,9 @@ Deno.serve(async (req) => {
   try {
     body = await req.json();
   } catch {
+    return json({ error: 'bad_request' }, 400);
+  }
+  if (!body || typeof body !== 'object' || (body.topic !== undefined && typeof body.topic !== 'string') || (body.hint !== undefined && typeof body.hint !== 'string')) {
     return json({ error: 'bad_request' }, 400);
   }
   const image = body.image;
@@ -81,7 +90,8 @@ Deno.serve(async (req) => {
   try {
     const msg = await anthropic.beta.messages.create({
       model: MODEL,
-      max_tokens: 16000,
+      // Enough for the longest plan the app asks for; a ceiling on what one call can cost.
+      max_tokens: 8000,
       // If a safety check declines, the request is re-run on Anthropic's recommended model.
       betas: ['server-side-fallback-2026-07-01'],
       fallbacks: 'default',

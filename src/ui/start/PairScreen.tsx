@@ -1,5 +1,6 @@
 /**
- * A new tablet joins a child's profile with the 6-digit code shown on the parent's device.
+ * A new tablet joins a child's profile with the 8-character code shown on the parent's device
+ * (letters and digits; typed in any case, with or without the space).
  * The tablet gets its own nameless account (no email), limited to that child.
  */
 import React, { useState } from 'react';
@@ -8,6 +9,12 @@ import { errorText } from '../../i18n/account';
 import { useSession } from '../../state/Session';
 import { Btn, Field } from '../common';
 import { ErrorText, StartLayout, T, st } from './StartLayout';
+
+/** "abcd2345" → "ABCD 2345": easier to read and to compare with the other screen. */
+export const groupCode = (v: string) => {
+  const c = v.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
+  return c.length > 4 ? `${c.slice(0, 4)} ${c.slice(4)}` : c;
+};
 
 export function PairScreen() {
   const { s, go, api, deviceId, enter } = useSession();
@@ -20,7 +27,7 @@ export function PairScreen() {
     setError(null);
     setBusy(true);
     try {
-      const profileId = await api.redeemPairingCode(code.replace(/\s/g, ''), {
+      const profileId = await api.redeemPairingCode(code.replace(/[^A-Za-z0-9]/g, ''), {
         id: deviceId,
         name: name.trim() || s.deviceNameDefault,
         platform: Platform.OS,
@@ -39,16 +46,16 @@ export function PairScreen() {
       <Field
         label={s.pairCode}
         value={code}
-        onChangeText={(v) => setCode(v.replace(/[^\d ]/g, '').slice(0, 7))}
-        keyboardType="number-pad"
-        autoComplete="one-time-code"
-        textContentType="oneTimeCode"
-        style={{ fontSize: 28, letterSpacing: 6, textAlign: 'center' }}
+        onChangeText={(v) => setCode(groupCode(v))}
+        autoCapitalize="characters"
+        autoCorrect={false}
+        autoComplete="off"
+        style={{ fontSize: 26, letterSpacing: 4, textAlign: 'center' }}
         accessibilityLabel={s.pairCode}
       />
       <Field label={s.deviceName} value={name} onChangeText={setName} accessibilityLabel={s.deviceName} />
       <ErrorText text={error} />
-      <Btn kind="primary" icon="link" label={s.pairButton} onPress={submit} disabled={busy || code.replace(/\s/g, '').length < 6} />
+      <Btn kind="primary" icon="link" label={s.pairButton} onPress={submit} disabled={busy || code.replace(/[^A-Za-z0-9]/g, '').length < 6} />
     </StartLayout>
   );
 }

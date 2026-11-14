@@ -9,6 +9,7 @@
  *  - undo: swapping `before` and `after` gives the opposite change.
  */
 import type { Board, Cell, Profile, Schedule } from '../model/types';
+import { badKey } from './safety';
 
 export type OpPath =
   | ['cell', string, number]
@@ -36,6 +37,44 @@ export interface Op {
 
 /** Settings that are personal (each person's menu language) or secret: never part of a change set. */
 const PRIVATE_SETTINGS = new Set(['pin', 'uiLang']);
+/** Settings only the family decides: what is recorded about the child, what is shared, the caregiver code. */
+const FAMILY_ONLY_SETTINGS = new Set(['dataCollection', 'shareStats', 'pin', 'uiLang']);
+
+/**
+ * Someone else's changes (a proposal, a shared material, an imported file) before they are
+ * applied to a child's profile. Left out: what only the family decides, anything that is not a
+ * known kind of change, and links to apps or sites (a card that opens a page or calls a number
+ * is set up by the family itself, never received from someone).
+ */
+export function foreignOps(ops: unknown): { ops: Op[]; leftOut: number } {
+  const kept: Op[] = [];
+  let leftOut = 0;
+  for (const op of Array.isArray(ops) ? (ops as Op[]) : []) {
+    const path = op?.path as unknown;
+    if (!Array.isArray(path) || path.some((k) => typeof k === 'string' && badKey(k))) {
+      leftOut++;
+      continue;
+    }
+    if (path[0] === 'setting' && FAMILY_ONLY_SETTINGS.has(String(path[1]))) {
+      leftOut++;
+      continue;
+    }
+    if ((path[0] === 'concept' || path[0] === 'override') && op.after && typeof op.after === 'object') {
+      const was = op.before && typeof op.before === 'object' ? (op.before as { app?: unknown }).app : undefined;
+      const after = { ...(op.after as Record<string, unknown>) };
+      if (stable(after.app) !== stable(was)) {
+        if (was === undefined) delete after.app;
+        else after.app = was;
+        leftOut++;
+        if (stable(after) === stable(op.before)) continue;
+        kept.push({ ...op, after });
+        continue;
+      }
+    }
+    kept.push(op);
+  }
+  return { ops: kept, leftOut };
+}
 
 /** JSON with sorted keys, so two equal objects always compare equal. */
 export function stable(v: unknown): string {
@@ -126,6 +165,7 @@ export function getAt(p: Profile, path: OpPath): unknown {
 
 /** Writes one value into a profile (mutates it). */
 export function setAt(p: Profile, path: OpPath, value: unknown): void {
+  if (path.some((k) => typeof k === 'string' && badKey(k))) return;
   const v = clone(value);
   switch (path[0]) {
     case 'cell': {
@@ -160,7 +200,7 @@ export function setAt(p: Profile, path: OpPath, value: unknown): void {
       p.activeSchedule = v as string | undefined;
       return;
     case 'setting':
-      (p.settings as unknown as Record<string, unknown>)[path[1]] = v;
+      if (!badKey(path[1])) (p.settings as unknown as Record<string, unknown>)[path[1]] = v;
       return;
     case 'firstThen':
       p.firstThen = v as Profile['firstThen'];

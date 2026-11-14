@@ -12,6 +12,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Backend } from '../backend/Backend';
 import type { UsageDay, UsageSession } from '../backend/types';
 import { limitToConsent, LEVEL_RANK, type CollectLevel } from '../lib/usageConsent';
+import { isForgotten } from '../lib/deviceData';
 
 export type UsageMode = UsageDay['modes'] extends Record<infer K, number> ? K : never;
 
@@ -231,6 +232,7 @@ export class UsageTracker {
   }
 
   private async writeLocal() {
+    if (isForgotten(this.profileId)) return;
     const keys = Object.keys(this.store.days).sort();
     for (const k of keys.slice(0, Math.max(0, keys.length - KEEP_DAYS))) delete this.store.days[k];
     await AsyncStorage.setItem(this.key, JSON.stringify(this.store)).catch(() => {});

@@ -18,9 +18,11 @@ import { forgetLocal } from '../../state/profileSync';
 import { useSession } from '../../state/Session';
 import { WriteTeam } from '../admin/WriteTeam';
 import { Btn, Field, Section, Segmented, Toggle } from '../common';
+import { groupCode } from '../start/PairScreen';
 import { C } from '../theme';
 import { Note, ss } from './SettingsScreen';
 import { Row, when } from './TeamTab';
+import { eraseMediaOf } from '../../lib/deviceData';
 
 export function AccountTab({ board, openTeam }: { board: BoardCtx; openTeam: () => void }) {
   const sess = useSession();
@@ -61,6 +63,8 @@ export function MyAccount({ x }: { x: SettingsStrings }) {
   const sess = useSession();
   const { api, account, s } = sess;
   const [name, setName] = useState(account?.displayName ?? '');
+  const [leaving, setLeaving] = useState(false);
+  const [erase, setErase] = useState(false);
   const [cur, setCur] = useState('');
   const [next, setNext] = useState('');
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -108,7 +112,18 @@ export function MyAccount({ x }: { x: SettingsStrings }) {
         </>
       )}
       <Msg ok={msg?.ok} text={msg?.text ?? null} />
-      <Btn icon="logout" label={x.signOut} onPress={sess.signOut} />
+      {leaving ? (
+        <View style={ss.card}>
+          <Note text={x.signOutNote} />
+          <Toggle label={x.signOutErase} value={erase} onChange={setErase} />
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Btn small label={x.back} onPress={() => setLeaving(false)} />
+            <Btn small kind="danger" icon="logout" label={x.signOut} onPress={() => void sess.signOut({ eraseMedia: erase })} />
+          </View>
+        </View>
+      ) : (
+        <Btn icon="logout" label={x.signOut} onPress={() => setLeaving(true)} />
+      )}
     </Section>
   );
 }
@@ -228,7 +243,7 @@ function SyncSection({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
           {pair && (
             <View style={ss.card}>
               <Text style={ss.code} selectable>
-                {pair.code}
+                {groupCode(pair.code)}
               </Text>
               <Note text={`${x.codeValid} ${new Date(pair.expiresAt).toLocaleTimeString()}. ${x.linkSteps}`} />
             </View>
@@ -300,11 +315,12 @@ function Privacy({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
                   if (typing === 'profile') {
                     await api.deleteProfile(board.profileId);
                     await forgetLocal(board.profileId);
+                    await eraseMediaOf(app.profile);
                     await sess.updatePrefs({ activeProfileId: undefined });
                     await sess.enter();
                   } else {
                     await api.deleteAccount();
-                    await sess.signOut();
+                    await sess.signOut({ eraseMedia: true });
                   }
                 } catch (e) {
                   setError(errorText(s, e));
@@ -366,7 +382,7 @@ export function DeleteAccount({ x }: { x: SettingsStrings }) {
             onPress={async () => {
               try {
                 await sess.api.deleteAccount();
-                await sess.signOut();
+                await sess.signOut({ eraseMedia: true });
               } catch (e) {
                 setError(errorText(sess.s, e));
               }

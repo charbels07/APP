@@ -19,3 +19,5 @@ for f in supabase/migrations/*.sql; do $P -d aac -f "$f"; done
 $P -d aac -f supabase/tests/scenario.sql 2>&1 | grep -E "ok —|PASSED|ERROR"
 $P -d aac -c "delete from profiles; delete from auth.users;"
 $P -d aac -f supabase/tests/storage_scenario.sql 2>&1 | grep -E "ok —|PASSED|ERROR"
+$P -d aac -c "delete from profiles; delete from auth.users; delete from storage.objects;"
+$P -d aac -f supabase/tests/security_scenario.sql 2>&1 | grep -E "ok —|PASSED|ERROR"

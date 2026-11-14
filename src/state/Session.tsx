@@ -22,6 +22,7 @@ import { adminStrings } from '../i18n/admin';
 import { strings, type UiStrings } from '../i18n/ui';
 import type { UiLang } from '../model/types';
 import { forgetLocal } from './profileSync';
+import { forgetEverything } from '../lib/deviceData';
 
 export type Stage =
   | { name: 'loading' }
@@ -69,7 +70,8 @@ interface SessionCtx {
   enter: (opts?: { profileId?: string; app?: boolean }) => Promise<void>;
   /** This account belongs to the app's team (the server decides; this only shows the way in). */
   isAdmin: boolean;
-  signOut: () => Promise<void>;
+  /** `eraseMedia`: also erase the photos and recordings kept on this device (they are not saved online). */
+  signOut: (opts?: { eraseMedia?: boolean }) => Promise<void>;
   /** Reads the account again (after changing the name, for example). */
   refreshAccount: () => Promise<void>;
   updatePrefs: (p: Partial<AccountPrefs>) => Promise<void>;
@@ -184,7 +186,13 @@ export function SessionProvider({ children, api = backend() }: { children: React
           a = d.account;
         }
       }
-      if (!a) return setStage({ name: 'welcome' });
+      if (!a) {
+        // No session any more without a sign-out here (ended elsewhere, expired): what the last
+        // account left on this device goes, except a board whose changes were never sent.
+        await forgetEverything({ keepUnsent: true });
+        if (d.account) saveDevice({ account: undefined });
+        return setStage({ name: 'welcome' });
+      }
       setAccount(a);
       saveDevice({ account: a });
       await route(a).catch(() => setStage({ name: 'welcome' }));
@@ -211,10 +219,11 @@ export function SessionProvider({ children, api = backend() }: { children: React
     [api, route, saveDevice],
   );
 
-  const signOut = useCallback(async () => {
+  const signOut = useCallback(async (opts?: { eraseMedia?: boolean }) => {
+    // Changes not sent yet go first (the session still works); then everything about the
+    // children leaves this device with the account, and no open board can write it back.
+    await forgetEverything({ beforeSignOut: true, media: opts?.eraseMedia === true });
     await api.signOut().catch(() => {});
-    // The children's copies leave this device with the account.
-    for (const id of deviceRef.current?.localProfiles ?? []) await forgetLocal(id);
     saveDevice({ account: undefined, localProfiles: [] });
     setAccount(null);
     setIsAdmin(false);

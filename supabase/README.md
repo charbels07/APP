@@ -27,7 +27,8 @@ everything works on one device. Follow these steps to switch to the real server.
 - **Google:** create an OAuth client in Google Cloud Console and paste its ID and secret.
 - **Apple:** needs the Apple Developer account (Sign in with Apple service ID and key).
 - **Anonymous sign-ins:** on. A new tablet linked with a pairing code uses one.
-- *Redirect URLs:* add `caa://auth` (the app) and the demo website's address.
+- *Redirect URLs:* only `empowercommunication://**` (the app) and your website's address followed
+  by `/**`. Nothing wider: a sign-in must only be able to come back to your app.
 
 ## 3. Connect the app
 
@@ -47,13 +48,25 @@ each person can do. **Never** put the "service_role" key in the app.
 (a parent, a therapist, a teacher, a stranger, a tablet) to check that everyone sees and changes
 only what they are allowed to.
 
-## 5. Test the real project (optional)
+## 5. Test on a second project (optional)
 
-`npm run test:live` plays the same story against the project named in `.env`, through the
-app's own code, with short-lived test accounts that delete themselves at the end. While it runs,
-turn **off** *Authentication → Sign In / Providers → Email → Confirm email* (test addresses cannot
-receive codes; the test refuses to start otherwise, so no email is ever sent to them), then turn it
-back **on**. Anonymous sign-ins must be on.
+`npm run test:live` plays the same story through the app's own code, with short-lived test
+accounts that delete themselves at the end. It needs *Confirm email* turned **off** (test addresses
+cannot receive codes; the test refuses to start otherwise, so no email is ever sent to them).
+
+**Never turn *Confirm email* off on the project families use**, even for a few minutes: while it is
+off, anyone can create an account with someone else's address and pick up the invitation waiting
+for it. Create a second, empty Supabase project for tests (free), run the migrations on it, put
+its address and key in `.env` only while testing, then put the real ones back. Anonymous
+sign-ins must be on there.
+
+## Security rules added in November 2026
+
+`supabase/migrations/20261114000000_security.sql` closes what the security review found (the list
+and the reasons are in `docs/SECURITY.md`). Run it once in the SQL Editor, **right after the
+website was rebuilt with the same version of the app** (the app and the rules changed together:
+tablet codes, account type, professionals' requests). `npm run test:db` replays every attack of
+the review against these rules: each one must fail.
 
 ## Adding a database change later
 

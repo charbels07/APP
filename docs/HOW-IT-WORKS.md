@@ -305,14 +305,30 @@ that opens one panel with three tabs. Nothing was removed.
 | The bar | `src/ui/UniversalBar.tsx` now lists three tools (Search, Guide, Caregiver) instead of five. With fewer buttons their names fit on shorter screens too. While a demonstration is being recorded, the magnifying glass opens directly on the Model tab. |
 | The guide | `src/data/guide.ts`: the chapters about the screen, search, the keyboard and modelling now say "Search (the magnifying glass), then the tab", in French, English and Arabic. |
 
+## Round 17 — Security review
+
+The full story, the list of what you must do yourself and what is still open are in
+`docs/SECURITY.md`. In short:
+
+| What | How it was done |
+|---|---|
+| The review | Two separate readings (one of the database rules, one of the app's code), plus trying the real server as a stranger. Every finding was confirmed before being fixed: read in the code, or replayed on a throw-away copy of the database. |
+| Database fixes | One new file, `supabase/migrations/20261114000000_security.sql` (**SQL**, PostgreSQL). It replaces the functions that trusted what the app sent (rights in an invitation, the type of an account, the code of a tablet) by versions that decide themselves, and uses "column permissions": the app may write a profile's name but not its owner, a request's text but not its status. |
+| Limits | A small table, `rate_log`, notes who did what recently. A function refuses when someone repeats an action too often (5 wrong codes in 15 minutes, 30 invitations a day…). |
+| Guards in the app | `src/lib/safety.ts` (**TypeScript**): one place that decides what a link may be (https or a known app), cleans identifiers, numbers and file names. Every profile that enters the app goes through it (`migrate` in `src/lib/storage.ts`). |
+| Leaving a device | `src/lib/deviceData.ts`: signing out first sends what is not sent, then erases the children's copies, and remembers they were erased so an open board cannot write them back. |
+| Caregiver code | `PinPanel` in `src/ui/panels/CommPanels.tsx` counts wrong tries on the device (30 s, then 1, 2 and 5 minutes) and makes the family choose its own code the first time. |
+| Website | `public/_headers`: a text file that Cloudflare reads and turns into "browser protections" (a Content-Security-Policy and a few others). Expo copies the `public` folder into the built site. |
+| Tests | `supabase/tests/security_scenario.sql` plays each attack and expects a refusal; `src/__tests__/security.test.ts` does the same for the app's guards. |
+
 ## How everything is checked
 
 | Check | What it does |
 |---|---|
 | `npm run typecheck` | TypeScript reads the whole code and refuses mistakes such as a missing field or a wrong type. |
-| `npm test` | 177 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office, colour contrast. |
-| `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger, a tablet and a member of our team; 63 checks. |
-| `npm run test:live` | The same story on the real Supabase project, through the app's own code: 13 steps, including devices, history undo, invitation codes, revisions and materials (needs "Confirm email" off while it runs). Last full run: before the back office (all 13 passed); **to run again once the back-office migration is on the real project**. |
+| `npm test` | 191 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office, colour contrast. |
+| `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger, a tablet and a member of our team; then every attack found by the security review, which must fail; 95 checks. |
+| `npm run test:live` | The same story on a second, empty Supabase project (never the one families use), through the app's own code: 13 steps, including devices, history undo, invitation codes, revisions and materials (needs "Confirm email" off while it runs). Last full run: before the back office (all 13 passed); **to run again once the back-office migration is on the real project**. |
 | `npm run test:a11y` | Accessibility: 158 scans of 43 screens against WCAG 2.2 AA (four sizes, Arabic), then a keyboard-only run. Last run: 0 rule break. |
 | Browser walkthroughs | Playwright drives the web version like a person: the parent journey, the team (invite, undo, join with a code), the professional journey (verification, tour, request, draft, proposal, approval), and the Arabic screens. |
 

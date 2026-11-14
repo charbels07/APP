@@ -68,7 +68,7 @@ select test.ok((select count(*) = 0 from profiles), 'no access before accepting'
 select test.expect_error(format('select respond_invitation(%L, true)', (select v from test.ids where k = 'inv')), 'pro_not_verified');
 select test.ok(true, 'a professional cannot join a team before her certificate is accepted');
 insert into verifications (user_id, full_name, country, profession) values (:'sarah', 'Sarah K', 'France', 'slp');
-select test.expect_error('update verifications set status = ''verified'' where user_id = auth.uid()', 'new row violates row-level security policy for table "verifications"');
+select test.expect_error('update verifications set status = ''verified'' where user_id = auth.uid()', 'permission denied for table verifications');
 select test.expect_error('select submit_verification()', 'incomplete');
 update verifications set documents = format('[{"name":"diplome.pdf","kind":"diploma","ref":"%s/1-diplome.pdf"},{"name":"passeport.jpg","kind":"id","ref":"%s/2-passeport.jpg"}]', :'sarah', :'sarah')::jsonb where user_id = auth.uid();
 select test.ok((select (submit_verification()).status = 'pending'), 'verification submitted');
@@ -140,10 +140,10 @@ select test.ok((select (save_profile((select v::uuid from test.ids where k = 'ad
 select set_config('request.jwt.claim.sub', :'rita', false);
 insert into test.ids select 'code', connection_code((select v::uuid from test.ids where k = 'adam'));
 select set_config('request.jwt.claim.sub', :'marc', false);
-select test.expect_error('select request_connection(''NOPE1234'', ''teacher'', 1, ''{}'', null)', 'code_invalid');
+select test.ok((select request_connection('NOPE1234', 'teacher', 1, '{}', null) is null), 'a wrong family code gives nothing');
 select test.expect_error(format('select request_connection(%L, ''teacher'', 1, ''{}'', null)', (select v from test.ids where k = 'code')), 'pro_not_verified');
 select test.ok(true, 'a professional cannot ask a family for a connection before being accepted');
-insert into verifications (user_id, full_name, country, profession, documents) values (:'marc', 'Marc T', 'Liban', 'teacher', '[{"name":"carte.pdf","kind":"licence","ref":"x"}]');
+insert into verifications (user_id, full_name, country, profession, documents) values (:'marc', 'Marc T', 'Liban', 'teacher', format('[{"name":"carte.pdf","kind":"licence","ref":"%s/1-carte.pdf"}]', :'marc')::jsonb);
 select submit_verification();
 select set_config('request.jwt.claim.sub', :'zoe', false);
 select admin_decide_verification(:'marc', 'verified');
@@ -167,7 +167,7 @@ insert into auth.users (id, is_anonymous) values (:'tablet', true);
 set role authenticated;
 select set_config('request.jwt.claim.sub', :'tablet', false);
 select set_config('request.jwt.claims', '{"is_anonymous": true}', false);
-select test.expect_error('select redeem_pairing_code(''000000x'', ''d1'', ''x'', ''ios'')', 'code_invalid');
+select test.ok((select redeem_pairing_code('000000x', 'd1', 'x', 'ios') is null), 'a wrong tablet code links nothing');
 select redeem_pairing_code((select v from test.ids where k = 'pair'), 'school-1', 'Tablette école', 'ios');
 select test.ok((select level = 1 and role = 'device' from access_of((select v::uuid from test.ids where k = 'adam'))), 'tablet linked with use-only access');
 select test.expect_error(format('select save_profile(%L, ''{}'', 3)', (select v from test.ids where k = 'adam')), 'forbidden');
@@ -198,9 +198,12 @@ select test.ok((select title = 'Dentiste' from resources), 'view-only share cann
 
 -- Communication data: only with the family's consent, seen only by those they allow.
 select set_config('request.jwt.claim.sub', :'rita', false);
-select test.expect_error(format('select save_usage_day(%L, ''ipad'', ''2026-11-11'', ''{"selections":3}'')', (select v from test.ids where k = 'adam')), 'forbidden');
-update profiles set data = jsonb_set(data, '{settings,dataCollection}', '"usage"') where id = (select v::uuid from test.ids where k = 'adam');
-select save_usage_day((select v::uuid from test.ids where k = 'adam'), 'ipad', '2026-11-11',
+select test.expect_error(format('select save_usage_day(%L, ''ipad'', current_date - 3, ''{"selections":3}'')', (select v from test.ids where k = 'adam')), 'forbidden');
+select test.expect_error('update profiles set data = jsonb_set(data, ''{settings,dataCollection}'', ''"usage"'')', 'permission denied for table profiles');
+select test.ok((select (save_profile(id, jsonb_set(data, '{settings,dataCollection}', '"usage"'), version)) ->> 'ok' = 'true' from profiles
+                 where id = (select v::uuid from test.ids where k = 'adam')), 'the family turns recording on (through the app''s save, not by writing the row)');
+select register_device((select v::uuid from test.ids where k = 'adam'), 'ipad', 'iPad', 'companion', 'ios');
+select save_usage_day((select v::uuid from test.ids where k = 'adam'), 'ipad', current_date - 3,
   '{"selections":3,"concepts":{"want":2},"samples":[{"t":1}],"stats":{"distinctConcepts":1}}');
 select test.ok((select not (data ? 'concepts') and not (data ? 'samples') and data ->> 'level' = 'usage' from usage_days),
   'only what the consent allows is kept (no words at "usage")');
@@ -280,13 +283,38 @@ insert into usage_days (profile_id, device_id, day, data) select id, 'ipad', cur
 insert into profiles (owner_id, name, age, data) values (:'eve', 'Secret', 9, '{"settings":{"dataCollection":"usage"}}');
 insert into usage_days (profile_id, device_id, day, data) select id, 'ipad', current_date - 1, '{"sessions":[{"activeMs":6000000}],"selections":4000}' from profiles where name = 'Secret';
 set role authenticated;
-select test.ok((select (o -> 'usage' ->> 'enough')::boolean and (o -> 'usage' ->> 'children')::int = 5
-                   and (o -> 'usage' ->> 'minutes')::numeric = 10 and (o -> 'usage' ->> 'selections')::numeric = 40
-                   and (o -> 'usage' -> 'places' ->> 'core')::int = 150 and (o -> 'usage' -> 'hours' ->> 9)::int = 175
-                   and (o -> 'usage' -> 'lengths' ->> 'two')::int = 15
-                   and (o -> 'setup' -> 'choices' -> 'arabic' ->> 'sa')::int = 4
-                   and (o -> 'setup' -> 'averages' ->> 'activityBoards')::numeric = 1.6
-                  from admin_overview() o), 'from 5 children up: averages of the families who agreed, and only theirs');
+select test.ok((select (o -> 'usage' ->> 'children')::int = 5 and not (o -> 'usage' ->> 'enough')::boolean
+                   and not (o -> 'usage') ? 'minutes' and not (o -> 'setup') ? 'choices'
+                  from admin_overview() o), '5 children of only 2 families are not enough either');
+-- Four more families, one child each: 9 children of 6 families.
+reset role;
+insert into auth.users (id, email, email_confirmed_at, raw_user_meta_data)
+select ('00000000-0000-0000-0000-0000000001f' || g)::uuid, 'fam' || g || '@example.com', now(), '{"role":"parent"}' from generate_series(1, 4) g;
+insert into profiles (owner_id, name, age, data)
+select ('00000000-0000-0000-0000-0000000001f' || g)::uuid, 'Enfant F' || g, 5,
+       '{"settings":{"shareStats":"anonymous","lang":"ar","arabic":"sa","langs":["ar","en"]},"tlaOrder":["a","b"]}'
+  from generate_series(1, 4) g;
+insert into usage_days (profile_id, device_id, day, data) select id, 'ipad', current_date - 1,
+  '{"platform":"ios · iPad","sessions":[{"activeMs":600000}],"selections":40,"utterances":10,"stats":{"distinctConcepts":12,"len1":6,"len2":3,"len3plus":1},"modes":{"core":30,"folder":10},"hours":[0,0,0,0,0,0,0,0,5,35]}'
+  from profiles where name like 'Enfant F%';
+-- One odd row (text where a number is expected, a sentence where a place is expected) must not break or leak.
+insert into usage_days (profile_id, device_id, day, data) select id, 'other', current_date - 2,
+  '{"platform":"Adam-Beyrouth x","sessions":"abc","selections":"abc","modes":{"Adam aime la pizza":5},"hours":"x"}'
+  from profiles where name = 'Enfant F1';
+set role authenticated;
+select test.ok((select (o -> 'usage' ->> 'enough')::boolean and (o -> 'usage' ->> 'children')::int = 9
+                   and (o -> 'usage' ->> 'selections')::numeric = 36
+                   and (o -> 'usage' -> 'places' ->> 'core')::int = 270 and (o -> 'usage' -> 'hours' ->> 9)::int = 315
+                   and (o -> 'usage' -> 'lengths' ->> 'two')::int = 27
+                   and (o -> 'setup' -> 'choices' -> 'arabic' ->> 'sa')::int = 8
+                   and (o -> 'setup' -> 'averages' ->> 'activityBoards')::numeric = 1.8
+                  from admin_overview() o), 'from 5 children of 5 families up: averages of the families who agreed, and only theirs');
+select test.ok((select not (o -> 'setup' -> 'choices' -> 'arabic') ? 'lb' and not (o -> 'usage' -> 'platforms') ? '?'
+                   and (o -> 'usage' -> 'platforms' ->> 'ios')::int = 9 and not (o -> 'families' -> 'collection') ? 'usage'
+                   and o::text not like '%Beyrouth%'
+                  from admin_overview() o), 'a choice, a platform or a setting shared by fewer than 5 children is left out');
+select test.ok((select bool_and(w ->> 'minutes' is null) from admin_overview() o, jsonb_array_elements(o -> 'usage' -> 'weeks') w
+                 where (w ->> 'children')::int < 5), 'a week with fewer than 5 children shows no average');
 select test.ok((select o::text not like '%Adam%' and o::text not like '%Enfant%' and o::text not like '%pizza%' from admin_overview() o),
   'no name and no word in the figures');
 select test.expect_error('select count(*) from bo_child_days', 'permission denied for view bo_child_days');

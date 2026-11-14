@@ -33,6 +33,7 @@ import { SymbolView, useMediaUri } from '../SymbolView';
 import { scheduleTitle } from '../screens/ScheduleScreen';
 import { CellMenu, MoveToTlaPanel, ShareTlaPanel, TlaMenu } from './EditMenus';
 import { Recorder } from './Recorder';
+import { pinTooEasy } from './CommPanels';
 
 export function CaregiverOverlay() {
   const { overlay } = useApp();
@@ -1073,7 +1074,7 @@ export function BoardSettingsBody() {
           <View style={{ flex: 1 }}>
             <Field label={t.sPin} value={pin} keyboardType="number-pad" maxLength={4} onChangeText={(v) => setPin(v.replace(/\D/g, ''))} />
           </View>
-          <Btn small kind="primary" label={t.save} disabled={pin.length !== 4 || pin === st.pin} onPress={() => set((x) => void (x.pin = pin))} style={{ alignSelf: 'flex-end' }} />
+          <Btn small kind="primary" label={t.save} disabled={!/^\d{4}$/.test(pin) || pinTooEasy(pin) || pin === st.pin} onPress={() => set((x) => void (x.pin = pin))} style={{ alignSelf: 'flex-end' }} />
         </View>
       </Section>
 

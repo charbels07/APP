@@ -275,8 +275,10 @@ export class SupabaseBackend implements Backend {
     let row = await data<Row | null>(this.sb.from('accounts').select('*').eq('id', u.id).maybeSingle());
     // Google / Apple accounts are created without a role: apply the one chosen before signing in.
     const pending = await AsyncStorage.getItem(PENDING_ROLE);
-    if (row && pending && row.role !== pending && Date.now() - (ms(row.created_at) ?? 0) < 10 * 60 * 1000) {
-      row = await data<Row>(this.sb.from('accounts').update({ role: pending }).eq('id', u.id).select().single());
+    if (row && (pending === 'parent' || pending === 'pro') && row.role !== pending && Date.now() - (ms(row.created_at) ?? 0) < 10 * 60 * 1000) {
+      // Accepted by the database only for a brand-new account that has done nothing yet.
+      const { data: chosen } = await this.sb.rpc('choose_role', { p_role: pending });
+      if (chosen && (chosen as Row).id) row = chosen as Row;
     }
     if (pending) await AsyncStorage.removeItem(PENDING_ROLE);
     // Google gives the person's name with the sign-in: it becomes the account's name, once.
@@ -396,7 +398,15 @@ export class SupabaseBackend implements Backend {
   }
 
   async signOut(): Promise<void> {
-    await this.sb.auth.signOut();
+    // "local": this device forgets the session even when the server cannot be reached (a tablet
+    // without Wi-Fi must not stay signed in), and the person's other devices stay signed in.
+    const { error } = await this.sb.auth.signOut({ scope: 'local' });
+    if (error) {
+      // Last resort: remove the stored session ourselves.
+      const keys = await AsyncStorage.getAllKeys().catch(() => [] as readonly string[]);
+      await AsyncStorage.multiRemove(keys.filter((k) => /^sb-.*-auth-token/.test(k) || k === this.opts.storageKey)).catch(() => {});
+    }
+    await AsyncStorage.removeItem(PENDING_ROLE).catch(() => {});
   }
 
   async requestPasswordReset(target: { email?: string; phone?: string }): Promise<CodeSent> {
@@ -443,8 +453,13 @@ export class SupabaseBackend implements Backend {
   }
 
   async deleteAccount(): Promise<void> {
+    // The person's own documents (diploma, identity) are deleted first: files are not rows,
+    // they would stay behind.
+    const uid = await this.uid();
+    const { data: files } = await this.sb.storage.from('verification-docs').list(uid, { limit: 100 });
+    if (files?.length) await this.sb.storage.from('verification-docs').remove(files.map((f) => `${uid}/${f.name}`));
     await data(this.sb.rpc('delete_account'));
-    await this.sb.auth.signOut();
+    await this.signOut();
   }
 
   // ── Profiles ──
@@ -532,7 +547,9 @@ export class SupabaseBackend implements Backend {
   }
 
   async acceptInvitationCode(code: string): Promise<Invitation> {
-    return toInvitation(await data<Row>(this.sb.rpc('accept_invitation_code', { p_code: code })));
+    const r = await data<Row | null>(this.sb.rpc('accept_invitation_code', { p_code: code }));
+    if (!r?.id) throw new BackendError('code_invalid');
+    return toInvitation(r);
   }
 
   async cancelInvitation(id: string): Promise<void> {
@@ -548,9 +565,11 @@ export class SupabaseBackend implements Backend {
   }
 
   async requestConnection(code: string, input: { role: CollaboratorRole; level: AccessLevel; perms: PermissionSet; message?: string }): Promise<Invitation> {
-    return toInvitation(
-      await data<Row>(this.sb.rpc('request_connection', { p_code: code, p_role: input.role, p_level: input.level, p_perms: input.perms, p_message: input.message ?? null })),
+    const r = await data<Row | null>(
+      this.sb.rpc('request_connection', { p_code: code, p_role: input.role, p_level: input.level, p_perms: input.perms, p_message: input.message ?? null }),
     );
+    if (!r?.id) throw new BackendError('code_invalid');
+    return toInvitation(r);
   }
 
   async approveRequest(id: string, grant: { level: AccessLevel; perms: PermissionSet }): Promise<void> {
@@ -632,7 +651,9 @@ export class SupabaseBackend implements Backend {
       const { error } = await this.sb.auth.signInAnonymously();
       if (error) fail(error);
     }
-    return data<string>(this.sb.rpc('redeem_pairing_code', { p_code: code, p_dev: device.id, p_name: device.name, p_platform: device.platform }));
+    const id = await data<string | null>(this.sb.rpc('redeem_pairing_code', { p_code: code, p_dev: device.id, p_name: device.name, p_platform: device.platform }));
+    if (!id) throw new BackendError('code_invalid');
+    return id;
   }
 
   // ── Verification ──
@@ -653,8 +674,11 @@ export class SupabaseBackend implements Backend {
       profession: v.profession,
       organization: v.organization ?? null,
       documents: v.documents,
-      status: cur?.status === 'more_info' ? 'more_info' : 'draft',
     };
+    // A file taken out of the list is deleted from the storage too (it would stay there for ever).
+    const kept = new Set(v.documents.map((d) => d.ref));
+    const gone = (cur?.documents ?? []).map((d) => d.ref).filter((ref) => !kept.has(ref) && ref.startsWith(`${uid}/`));
+    if (gone.length) await this.sb.storage.from('verification-docs').remove(gone);
     return toVerification(await data<Row>(this.sb.from('verifications').upsert(row).select().single()));
   }
 
@@ -662,7 +686,10 @@ export class SupabaseBackend implements Backend {
     const uid = await this.uid();
     const path = `${uid}/${Date.now()}-${file.name.replace(/[^\w.-]/g, '_')}`;
     const body = await (await fetch(file.uri)).arrayBuffer();
-    const { error } = await this.sb.storage.from('verification-docs').upload(path, body, { contentType: file.mimeType ?? 'application/octet-stream' });
+    // The storage only accepts pictures and PDF: the kind is read from the name when the picker did not give it.
+    const byName: Record<string, string> = { pdf: 'application/pdf', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', heic: 'image/heic', heif: 'image/heif' };
+    const contentType = file.mimeType && file.mimeType !== 'application/octet-stream' ? file.mimeType : (byName[file.name.split('.').pop()?.toLowerCase() ?? ''] ?? 'application/octet-stream');
+    const { error } = await this.sb.storage.from('verification-docs').upload(path, body, { contentType });
     if (error) fail(error);
     return path;
   }
@@ -828,10 +855,10 @@ export class SupabaseBackend implements Backend {
   async saveResource(r: Omit<Resource, 'ownerId' | 'ownerName' | 'createdAt' | 'updatedAt' | 'shares'> & { shares?: ResourceShare[] }): Promise<Resource> {
     const me = await this.me();
     const exists = await data<Row | null>(this.sb.from('resources').select('id').eq('id', r.id).maybeSingle());
-    const row: Row = { id: r.id, kind: r.kind, title: r.title, profile_id: r.profileId ?? null, data: r.data, updated_at: new Date().toISOString() };
+    const row: Row = { kind: r.kind, title: r.title, profile_id: r.profileId ?? null, data: r.data, updated_at: new Date().toISOString() };
     const saved = exists
       ? await data<Row>(this.sb.from('resources').update(row).eq('id', r.id).select().single())
-      : await data<Row>(this.sb.from('resources').insert({ ...row, owner_id: me.id, owner_name: me.displayName }).select().single());
+      : await data<Row>(this.sb.from('resources').insert({ ...row, id: r.id, owner_id: me.id, owner_name: me.displayName }).select().single());
     return toResource(saved, []);
   }
 

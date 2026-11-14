@@ -9,6 +9,18 @@ import { LocalBackend } from './local';
 
 let instance: Backend | null = null;
 
+/**
+ * 'online': the real server. 'demo': the demo server inside the app, asked for on purpose
+ * (EXPO_PUBLIC_APP_MODE=demo) or while developing. 'missing': a finished build that was made
+ * without the server's address — it must say so instead of quietly becoming a demo where
+ * accounts are not real and nothing is saved online.
+ */
+export function serverMode(): 'online' | 'demo' | 'missing' {
+  if (process.env.EXPO_PUBLIC_SUPABASE_URL && process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY) return 'online';
+  if (process.env.EXPO_PUBLIC_APP_MODE === 'demo' || (typeof __DEV__ !== 'undefined' && __DEV__)) return 'demo';
+  return 'missing';
+}
+
 export function backend(): Backend {
   if (instance) return instance;
   // Expo copies EXPO_PUBLIC_* values into the app when it is built.

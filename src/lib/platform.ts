@@ -40,6 +40,13 @@ export async function exportJson(filename: string, data: unknown): Promise<void>
   await Sharing.shareAsync(file.uri, { mimeType: 'application/json' });
 }
 
+/** Exported files (a profile, a table of figures) wait in the cache folder for the share sheet: erased with the account. */
+export async function clearExports(): Promise<void> {
+  for (const item of Paths.cache.list()) {
+    if (item instanceof File && /\.(json|csv|pdf|caa)$/i.test(item.name)) item.delete();
+  }
+}
+
 /** A text file (CSV…) through the share sheet. CSV gets a byte-order mark so spreadsheets read accents and Arabic. */
 export async function exportText(filename: string, text: string, mimeType: string): Promise<void> {
   const file = new File(Paths.cache, filename);

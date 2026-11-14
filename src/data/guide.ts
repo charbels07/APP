@@ -288,14 +288,14 @@ const BASE: BaseChapter[] = [
     title: { fr: 'Le mode accompagnant', en: 'Caregiver mode' },
     steps: {
       fr: [
-        'Accompagnant (cadenas), puis le code : 1234 au départ — changez-le dans Réglages → Sécurité.',
+        'Accompagnant (cadenas), puis le code. La première fois c’est 1234 : l’application vous demande alors de choisir le vôtre (4 chiffres). Après 5 codes faux, il faut attendre un peu. Vous pouvez le changer dans Réglages → Sécurité.',
         'Le bandeau jaune indique qu’on peut modifier : toucher une case ouvre ses réglages ; pour un dossier, appui long.',
         'Réglages et Imprimer / PDF sont dans le bandeau. Terminer revient au mode enfant.',
         'Tout est gardé sur l’appareil, même après l’avoir éteint ; avec un compte, c’est aussi sauvegardé en ligne et les autres appareils de la famille se mettent à jour.',
         'Réglages → Tableau → Mode verrouillé : l’enfant ne peut plus ouvrir d’autres applis ni revenir en arrière ; pour l’empêcher de quitter l’application, activez aussi l’Accès guidé (iPad) ou l’épinglage d’écran (Android).',
       ],
       en: [
-        'Caregiver (padlock), then the code: 1234 at first — change it in Settings → Security.',
+        'Caregiver (padlock), then the code. The first time it is 1234: the app then asks you to choose your own (4 digits). After 5 wrong codes you have to wait a little. You can change it in Settings → Security.',
         'The yellow banner means you can edit: touching a card opens its settings; for a folder, long press.',
         'Settings and Print / PDF are in the banner. Done goes back to child mode.',
         'Everything is kept on the device, even after switching it off; with an account it is also saved online and the family’s other devices update themselves.',
@@ -532,16 +532,16 @@ const BASE: BaseChapter[] = [
     title: { fr: 'Votre compte, vos enfants, vos appareils', en: 'Your account, children and devices' },
     steps: {
       fr: [
-        'Réglages (mode accompagnant) → Compte → Mon compte : votre nom, Changer le mot de passe, Se déconnecter.',
+        'Réglages (mode accompagnant) → Compte → Mon compte : votre nom, Changer le mot de passe, Se déconnecter. En vous déconnectant, les tableaux des enfants quittent l’appareil (ils restent dans votre compte) ; sur un ordinateur partagé, cochez aussi l’effacement des photos et des enregistrements.',
         'Enfants : un seul compte pour plusieurs enfants. Ajouter un enfant crée son profil ; touchez un enfant de la liste pour ouvrir son tableau.',
-        'Appareils et synchronisation : les appareils reliés, la dernière synchronisation, Synchroniser maintenant, et retirer un appareil perdu. Relier un appareil donne un code à 6 chiffres à saisir sur l’autre appareil (« Relier cette tablette avec un code », sur la première page) : Accès complet (tablette de l’enfant) ou Utiliser seulement (école, nounou…). Sur une tablette reliée : Délier cette tablette.',
+        'Appareils et synchronisation : les appareils reliés, la dernière synchronisation, Synchroniser maintenant, et retirer un appareil perdu. Relier un appareil donne un code à 8 caractères (lettres et chiffres) à saisir sur l’autre appareil (« Relier cette tablette avec un code », sur la première page) : Accès complet (tablette de l’enfant) ou Utiliser seulement (école, nounou…). Sur une tablette reliée : Délier cette tablette.',
         'Vie privée et données : Exporter le profil (fichier), supprimer le profil de l’enfant ou Supprimer mon compte. Une suppression est définitive : il faut l’écrire pour confirmer.',
         'Préférences : Langue des menus et Notifications dans l’application. Écrire à l’équipe : une idée ou un problème à nous signaler (n’écrivez jamais le nom d’un enfant). Ouvrir le guide ramène ici.',
       ],
       en: [
-        'Settings (caregiver mode) → Account → My account: your name, Change password, Sign out.',
+        'Settings (caregiver mode) → Account → My account: your name, Change password, Sign out. When you sign out, the children’s boards leave the device (they stay in your account); on a shared computer, also tick erasing the photos and recordings.',
         'Children: one account for several children. Add a child creates their profile; touch a child in the list to open their board.',
-        'Devices and sync: the linked devices, the last sync, Sync now, and removing a lost device. Link a device gives a 6-digit code to type on the other device (“Link this tablet with a code”, on the first page): Full access (the child’s tablet) or Use only (school, nanny…). On a linked tablet: Unlink this tablet.',
+        'Devices and sync: the linked devices, the last sync, Sync now, and removing a lost device. Link a device gives an 8-character code (letters and digits) to type on the other device (“Link this tablet with a code”, on the first page): Full access (the child’s tablet) or Use only (school, nanny…). On a linked tablet: Unlink this tablet.',
         'Privacy and data: Export the profile (file), delete the child’s profile or Delete my account. Deleting is for good: you have to type it to confirm.',
         'Preferences: Menu language and In-app notifications. Write to the team: an idea or a problem to tell us about (never write a child’s name). Open the guide brings you back here.',
       ],
@@ -600,13 +600,13 @@ const BASE: BaseChapter[] = [
     steps: {
       fr: [
         'Mode accompagnant → dossier applis → touchez l’appli → section Application.',
-        'Choisissez un modèle (YouTube Kids, Netflix…) ou collez un lien. WhatsApp : https://wa.me/ suivi du numéro avec l’indicatif (ex. https://wa.me/96170123456).',
+        'Choisissez un modèle (YouTube Kids, Netflix…) ou collez un lien. WhatsApp : https://wa.me/ suivi du numéro avec l’indicatif (ex. https://wa.me/96170123456). Seuls les liens de pages web (https) et d’applications connues sont acceptés, et un lien ne voyage pas avec un tableau partagé : chaque famille ajoute les siens.',
         '« Mots qui l’ouvrent dans une phrase » : ajoutez ou retirez des mots (ex. « chanson » pour Anghami).',
         'N’importe quel mot peut devenir une appli. L’ouverture depuis une phrase se coupe dans les Réglages.',
       ],
       en: [
         'Caregiver mode → apps folder → touch the app → App section.',
-        'Pick a preset (YouTube Kids, Netflix…) or paste a link. WhatsApp: https://wa.me/ followed by the number with country code (e.g. https://wa.me/96170123456).',
+        'Pick a preset (YouTube Kids, Netflix…) or paste a link. WhatsApp: https://wa.me/ followed by the number with country code (e.g. https://wa.me/96170123456). Only links to web pages (https) and known apps are accepted, and a link does not travel with a shared board: each family adds its own.',
         '“Words that open it in a sentence”: add or remove words (e.g. “song” for Anghami).',
         'Any word can become an app. Opening from a sentence can be turned off in Settings.',
       ],
@@ -802,7 +802,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   caregiver: {
     title: 'وضع المرافق',
     steps: [
-      '«المرافق» (القفل)، ثم الرمز: 1234 في البداية — غيّره في الإعدادات ← الأمان.',
+      '«المرافق» (القفل)، ثم الرمز. في المرة الأولى هو 1234: يطلب منك التطبيق عندها اختيار رمزك الخاص (4 أرقام). بعد 5 رموز خاطئة يجب الانتظار قليلاً. يمكنك تغييره في الإعدادات ← الأمان.',
       'الشريط الأصفر يعني أنك تستطيع التعديل: لمس بطاقة يفتح إعداداتها؛ وللمجلد، ضغطة طويلة.',
       '«الإعدادات» و«طباعة / PDF» في الشريط الأصفر. «إنهاء» يعيد إلى وضع الطفل.',
       'يُحفظ كل شيء على الجهاز، حتى بعد إطفائه؛ ومع حساب يُحفظ أيضاً على الإنترنت وتتحدّث أجهزة العائلة الأخرى تلقائياً.',
@@ -907,9 +907,9 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   account: {
     title: 'حسابك وأطفالك وأجهزتك',
     steps: [
-      'الإعدادات (وضع المرافق) ← الحساب ← «حسابي»: اسمك، «تغيير كلمة المرور»، «تسجيل الخروج».',
+      'الإعدادات (وضع المرافق) ← الحساب ← «حسابي»: اسمك، «تغيير كلمة المرور»، «تسجيل الخروج». عند تسجيل الخروج تغادر لوحات الأطفال الجهاز (وتبقى في حسابكم)؛ على حاسوب مشترك، اختر أيضاً مسح الصور والتسجيلات.',
       '«الأطفال»: حساب واحد لعدة أطفال. «إضافة طفل» ينشئ ملفه؛ المس طفلاً في القائمة لفتح لوحته.',
-      '«الأجهزة والمزامنة»: الأجهزة المربوطة، آخر مزامنة، «مزامنة الآن»، وسحب جهاز مفقود. «ربط جهاز» يعطي رمزاً من 6 أرقام يُكتب على الجهاز الآخر («ربط هذا الجهاز اللوحي برمز» في الصفحة الأولى): «صلاحية كاملة (جهاز الطفل)» أو «استعمال فقط (المدرسة، المربية…)». على جهاز مربوط: «فكّ ربط هذا الجهاز».',
+      '«الأجهزة والمزامنة»: الأجهزة المربوطة، آخر مزامنة، «مزامنة الآن»، وسحب جهاز مفقود. «ربط جهاز» يعطي رمزاً من 8 أحرف وأرقام يُكتب على الجهاز الآخر («ربط هذا الجهاز اللوحي برمز» في الصفحة الأولى): «صلاحية كاملة (جهاز الطفل)» أو «استعمال فقط (المدرسة، المربية…)». على جهاز مربوط: «فكّ ربط هذا الجهاز».',
       '«الخصوصية والبيانات»: «تصدير الملف (ملف)»، حذف ملف الطفل أو «حذف حسابي». الحذف نهائي: يجب كتابته للتأكيد.',
       '«التفضيلات»: «لغة القوائم» و«الإشعارات داخل التطبيق». «الكتابة إلى الفريق»: فكرة أو مشكلة تريد إبلاغنا بها (لا تكتب اسم طفل أبداً). «فتح الدليل» يعيدك إلى هنا.',
     ],
@@ -938,7 +938,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
     title: 'ربط تطبيق',
     steps: [
       'وضع المرافق ← مجلد «تطبيقات» ← المس التطبيق ← قسم «التطبيق».',
-      'اختر نموذجاً (YouTube Kids، Netflix…) أو الصق رابطاً. واتساب: https://wa.me/ متبوعاً بالرقم مع رمز البلد (مثلاً https://wa.me/96170123456).',
+      'اختر نموذجاً (YouTube Kids، Netflix…) أو الصق رابطاً. واتساب: https://wa.me/ متبوعاً بالرقم مع رمز البلد (مثلاً https://wa.me/96170123456). تُقبل فقط روابط صفحات الويب (https) والتطبيقات المعروفة، ولا ينتقل الرابط مع لوحة مشتركة: كل عائلة تضيف روابطها.',
       '«كلمات تفتحه في جملة»: أضف كلمات أو أزلها (مثلاً «غنية» لأنغامي).',
       'يمكن لأي كلمة أن تصبح تطبيقاً. ويمكن إيقاف الفتح من جملة في الإعدادات.',
     ],

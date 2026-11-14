@@ -7,7 +7,7 @@ cd "$(dirname "$0")/../.."
 OUT=$(mktemp -d)
 PORT=${A11Y_PORT:-8771}
 export A11Y_OUT="$OUT/results"
-EXPO_NO_DOTENV=1 EXPO_OFFLINE=1 npx expo export -p web --output-dir "$OUT/site" >/dev/null 2>&1 || { echo "the web build failed"; exit 1; }
+EXPO_NO_DOTENV=1 EXPO_PUBLIC_APP_MODE=demo EXPO_OFFLINE=1 npx expo export -p web --output-dir "$OUT/site" >/dev/null 2>&1 || { echo "the web build failed"; exit 1; }
 # "exec": the process we stop at the end is the server itself, not a shell around it.
 (cd "$OUT/site" && exec python3 -m http.server "$PORT" >/dev/null 2>&1) &
 SERVER=$!

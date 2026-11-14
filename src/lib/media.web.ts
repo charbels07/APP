@@ -55,6 +55,26 @@ async function get(name: string): Promise<Blob | undefined> {
   });
 }
 
+/** Erases every photo and recording kept in this browser (account deleted, or asked at sign-out). */
+export async function clearMedia(): Promise<void> {
+  memory.clear();
+  for (const u of urlCache.values()) URL.revokeObjectURL(u);
+  urlCache.clear();
+  const db = await openDb();
+  if (!db) return;
+  await new Promise<void>((resolve) => {
+    try {
+      const tx = db.transaction(STORE, 'readwrite');
+      tx.objectStore(STORE).clear();
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => resolve();
+      tx.onabort = () => resolve();
+    } catch {
+      resolve();
+    }
+  });
+}
+
 export function newMediaName(ext: string): string {
   return `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
 }

@@ -6,11 +6,12 @@
 import { pictoCreditLine } from '../data/pictoCredit';
 import { SYMBOL_IMAGES } from '../data/symbolMap';
 import { pictoImageUriByKey } from './pictoLibrary';
-import type { Board, Lang, Profile } from '../model/types';
+import { LANGS, type Board, type Lang, type Profile } from '../model/types';
 import { CLASS_COLORS } from '../ui/theme';
 import { isRtl, label, symbolOf, wordClass } from './lexicon';
 import { mediaDataUrl } from './media';
 import { bundledImageSrc } from './platform';
+import { intBetween } from './safety';
 
 export interface PrintOptions {
   paper: 'A4' | 'A3';
@@ -84,6 +85,10 @@ export function buildPrintHtml(
       }</div>`;
     })
     .join('');
+  // Values written into the page as they are: made harmless first (a profile is edited by a team).
+  lang = LANGS.includes(lang) ? lang : 'fr';
+  cols = intBetween(cols, 1, 40, 1);
+  rows = intBetween(rows, 1, 40, 1);
   return `<!doctype html><html lang="${lang}" dir="${isRtl(lang) ? 'rtl' : 'ltr'}"><head><meta charset="utf-8"/>
 <title>${escape(title)}</title>
 <style>

@@ -18,7 +18,7 @@ import { applyOps, diffProfiles, invertOps, type Op } from '../../lib/profileDif
 import { migrate } from '../../lib/storage';
 import type { Profile } from '../../model/types';
 import { AppProvider, useApp, type Overlay } from '../../state/AppState';
-import type { MyAccess } from '../../state/BoardContext';
+import { ProBoardContext, type MyAccess } from '../../state/BoardContext';
 import { useSession } from '../../state/Session';
 import { Btn, Panel, Section } from '../common';
 import { Icon, type IconName } from '../Icon';
@@ -27,13 +27,17 @@ import { ChangeList } from '../settings/TeamTab';
 import { C, radius } from '../theme';
 
 /** Opens a place of the app once the board is shown (edit mode, a TLA, a panel…). */
-function StartAt({ edit, view, overlay }: { edit?: boolean; view?: 'tla' | 'schedule'; overlay?: Overlay }) {
+function StartAt({ edit, view, overlay, onStarted }: { edit?: boolean; view?: 'tla' | 'schedule'; overlay?: Overlay; onStarted?: () => void }) {
   const app = useApp();
   useEffect(() => {
     if (edit) app.setEditMode(true);
     if (view === 'tla') app.openTla();
     if (view === 'schedule') app.openSchedule();
-    if (overlay) setTimeout(() => app.setOverlay(overlay), 50);
+    if (overlay)
+      setTimeout(() => {
+        app.setOverlay(overlay);
+        onStarted?.();
+      }, 50);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return null;
@@ -134,7 +138,18 @@ async function applyDirect(api: Backend, profileId: string, ops: Op[], summary: 
  * applied directly (editing rights), sent as a proposal, or not allowed.
  * A profile the professional created (before the family has an account) is simply saved.
  */
-export function ChildDraftBoard({ profileId, resume, onClose }: { profileId: string; resume?: Proposal; onClose: () => void }) {
+export function ChildDraftBoard({
+  profileId,
+  resume,
+  openSettings,
+  onClose,
+}: {
+  profileId: string;
+  resume?: Proposal;
+  /** Open straight on the Settings (the shortcut beside a child in "My AAC users"). */
+  openSettings?: boolean;
+  onClose: () => void;
+}) {
   const sess = useSession();
   const { api, uiLang, setUiLang } = sess;
   const p = proStrings(uiLang);
@@ -148,6 +163,8 @@ export function ChildDraftBoard({ profileId, resume, onClose }: { profileId: str
   const [saving, setSaving] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [closing, setClosing] = useState(false);
+  // The settings shortcut: once (the board is rebuilt after each save).
+  const [toSettings, setToSettings] = useState(!!openSettings);
 
   const load = async () => {
     const [r, a] = await Promise.all([api.getProfile(profileId), api.myAccess(profileId)]);
@@ -193,32 +210,48 @@ export function ChildDraftBoard({ profileId, resume, onClose }: { profileId: str
     }
     setSaving(false);
   };
-  const banner = own ? (
+  // Nothing changed yet: no sentence, only whose board this is and the way out. The explanation
+  // comes with the first change.
+  const quiet = (
+    <View style={[s.quiet, uiLang === 'ar' && { flexDirection: 'row-reverse' }]}>
+      <Icon name={useOnly ? 'eye' : 'user'} size={18} color={C.textMuted} />
+      <Text style={[s.quietText, uiLang === 'ar' && { textAlign: 'right' }]} numberOfLines={1}>
+        {own ? base.name : `${base.name} · ${p.levelShort[access.level]}`}
+      </Text>
+      <Btn small icon="x" label={p.close} onPress={onClose} />
+    </View>
+  );
+  const banner = !ops.length && !note ? (
+    quiet
+  ) : own ? (
     closing ? (
       <Banner icon="pencil" tone="edit" text={p.closeAsk(ops.length)}>
         <Btn small label={p.dontSave} disabled={saving} onPress={onClose} />
         <Btn small kind="primary" icon="check" label={p.saveClose} disabled={saving} onPress={() => void saveOwn(onClose)} />
       </Banner>
     ) : (
-      <Banner icon="pencil" tone={ops.length ? 'edit' : 'accent'} text={note ?? p.ownBanner(ops.length)}>
+      <Banner icon="pencil" tone="edit" text={note ?? p.ownBanner(ops.length)}>
         {ops.length > 0 && <Btn small label={p.discard} disabled={saving} onPress={() => void load()} />}
         <Btn small kind="primary" icon="check" label={p.saveChanges} disabled={!ops.length || saving} onPress={() => void saveOwn()} />
         <Btn small icon="x" label={p.close} onPress={() => (ops.length ? setClosing(true) : onClose())} />
       </Banner>
     )
   ) : (
-    <Banner icon={useOnly ? 'eye' : 'pencil'} tone={ops.length ? 'edit' : 'accent'} text={useOnly ? p.draftUseOnly : p.draftBanner(ops.length)}>
-      {!useOnly && ops.length > 0 && <Btn small label={p.discard} onPress={() => void load()} />}
-      {!useOnly && <Btn small kind="primary" icon="mail" label={p.sendForApproval} disabled={!ops.length} onPress={() => setSending(true)} />}
+    <Banner icon={useOnly ? 'eye' : 'pencil'} tone="edit" text={useOnly ? p.draftUseOnly : p.draftBanner(ops.length)}>
+      {!useOnly && <Btn small label={p.discard} onPress={() => void load()} />}
+      {!useOnly && <Btn small kind="primary" icon="mail" label={p.sendForApproval} onPress={() => setSending(true)} />}
       <Btn small icon="x" label={p.close} onPress={onClose} />
     </Banner>
   );
   return (
     <>
       {/* The caregiver code is the family's, for the child's device: not asked on a professional's own draft. */}
-      <AppProvider key={key} initial={draft} onChange={setDraft} uiLang={uiLang} setUiLang={setUiLang} freeEdit={canPrepareChanges(access)}>
-        <Root banner={banner} />
-      </AppProvider>
+      <ProBoardContext.Provider value={{ profileId, childName: base.name, access }}>
+        <AppProvider key={key} initial={draft} onChange={setDraft} uiLang={uiLang} setUiLang={setUiLang} freeEdit={canPrepareChanges(access)}>
+          <Root banner={banner} />
+          {toSettings && <StartAt edit={canPrepareChanges(access)} overlay={{ kind: 'settings' }} onStarted={() => setToSettings(false)} />}
+        </AppProvider>
+      </ProBoardContext.Provider>
       {sending && (
         <SendPanel
           profileId={profileId}
@@ -314,6 +347,8 @@ const s = StyleSheet.create({
     paddingVertical: 5,
   },
   bannerText: { flex: 1, fontWeight: '700', fontSize: 14 },
+  quiet: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 8 },
+  quietText: { flex: 1, fontWeight: '700', fontSize: 14, color: C.textMuted },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, backgroundColor: C.bg },
   input: { borderWidth: 1.5, borderColor: C.inputBorder, borderRadius: radius.md, paddingHorizontal: 12, paddingVertical: 10, minHeight: 46, fontSize: 16, color: C.text },
 });

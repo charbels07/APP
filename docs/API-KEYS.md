@@ -80,7 +80,6 @@ day, only people who look after a child, and only the topic, the photo or the dr
 | Feature | Key | Today |
 |---|---|---|
 | The 24,000 pictograms | None: they are inside the app | Done |
-| Pictures from the internet (Global Symbols, Openverse) | None. Openverse gives more results per search to registered apps (a free key) | Works without a key |
 
 ## 6. Publishing on the stores
 

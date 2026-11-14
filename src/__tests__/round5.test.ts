@@ -2,7 +2,6 @@ import { APPS_FOLDER_SLOT, createDefaultProfile } from '../data/defaults';
 import { appLinkOf, cleanUrl, findAppInSentence, isIncomplete } from '../lib/appLinks';
 import { toSpeechPlan, type Token } from '../lib/grammar';
 import { migrate } from '../lib/storage';
-import { searchWebPictures, symbolQueries } from '../lib/webPictures';
 import type { Lang, Profile, StripItem } from '../model/types';
 
 const profile = createDefaultProfile();
@@ -79,56 +78,5 @@ describe('following the words while speaking (wiggle)', () => {
       { token: 3, start: 10 },
     ]);
     expect(marks[1]).toEqual([{ token: 4, start: 0 }]);
-  });
-});
-
-describe('pictures from the internet', () => {
-  const realFetch = global.fetch;
-  afterEach(() => {
-    global.fetch = realFetch;
-  });
-  const answer = (body: unknown) => Promise.resolve({ ok: true, json: () => Promise.resolve(body) } as Response);
-
-  it('keeps PNG pictograms of the verified collections only, with their licence', async () => {
-    global.fetch = jest.fn((url: string) =>
-      answer(
-        String(url).includes('symbolsets')
-          ? [
-              { id: 13, slug: 'mulberry', name: 'Mulberry Symbols', licence: { name: 'Creative Commons BY SA 4.0' } },
-              { id: 17, slug: 'arasaac', name: 'ARASAAC', licence: { name: 'Creative Commons BY NC SA 4.0' } },
-              { id: 21, slug: 'tawasol', name: 'Tawasol', licence: { name: 'Creative Commons BY SA 4.0' } },
-            ]
-          : [
-              { text: 'ballon', picto: { id: 1, symbolset_id: 13, image_url: 'https://globalsymbols.com/a.png' } },
-              { text: 'ballon', picto: { id: 2, symbolset_id: 17, image_url: 'https://globalsymbols.com/b.png' } },
-              { text: 'ballon', picto: { id: 3, symbolset_id: 13, image_url: 'https://globalsymbols.com/c.svg' } },
-              { text: 'ballon', picto: { id: 4, symbolset_id: 21, image_url: 'https://globalsymbols.com/d.png' } },
-            ],
-      ),
-    ) as unknown as typeof fetch;
-    const r = await searchWebPictures('ballon', 'symbols', 'fr');
-    expect(r.map((p) => p.key)).toEqual(['gs1']);
-    expect(r[0].credit).toBe('Mulberry Symbols — Creative Commons BY SA 4.0');
-    expect(String((global.fetch as jest.Mock).mock.calls.find((call) => /labels/.test(call[0]))[0])).toContain('language=fra');
-  });
-
-  it('retries a phrase with its main word for pictogram sets', () => {
-    expect(symbolQueries('bulles de savon')).toEqual(['bulles de savon', 'bulles', 'bulle']);
-    expect(symbolQueries('ballon')).toEqual(['ballon']);
-    expect(symbolQueries('the swimming pool')).toEqual(['the swimming pool', 'swimming']);
-  });
-
-  it('asks Openverse for commercially usable photos only', async () => {
-    global.fetch = jest.fn(() =>
-      answer({
-        results: [{ id: 'x', title: 'Ballon', thumbnail: 'https://api.openverse.org/v1/images/x/thumb/', creator: 'Groume', license: 'by-sa', license_version: '2.0', provider: 'flickr' }],
-      }),
-    ) as unknown as typeof fetch;
-    const r = await searchWebPictures('ballon', 'photos', 'fr');
-    expect(r[0]).toMatchObject({ full: 'https://api.openverse.org/v1/images/x/thumb/', credit: 'Groume — CC BY-SA 2.0 — flickr', ext: 'jpg' });
-    const url = String((global.fetch as jest.Mock).mock.calls[0][0]);
-    expect(url).toContain('license_type=commercial');
-    expect(url).toContain('category=photograph');
-    expect(url).toContain('page_size=20'); // the anonymous maximum
   });
 });

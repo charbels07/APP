@@ -53,7 +53,7 @@ then fixed, then covered by an automatic test.
 
 | Problem | Fix |
 |---|---|
-| The website sent no browser protections. | `public/_headers` (Cloudflare adds them): own scripts only, cannot be shown inside another site, camera and microphone for the app only. One side effect on the website only: pasting the *address* of a picture from another site is refused by the browser (pasting the picture itself, or choosing a file, works; the tablet app is not affected). |
+| The website sent no browser protections. | `public/_headers` (Cloudflare adds them): own scripts only, cannot be shown inside another site, camera and microphone for the app only. Since pictures searched on the internet were removed (November 2026), the website only talks to its own server: two outside sites were taken off the list of allowed addresses. |
 | Uploaded documents had no size or type limit; a tablet sign-in could upload. | Pictures or PDF, 10 MB, 20 files, real accounts only. A document removed from the list, and all documents when an account is deleted, are deleted from the storage too. |
 | Back-office figures could show groups of fewer than 5 (one week, one platform, one choice), counted children instead of families, and included a setting of families who did not agree to share. | Every figure from children needs 5 children **of 5 families**; a week, platform or choice under 5 is left out; sharing families only. |
 | A use-only tablet could write the history or overwrite figures; one odd value broke the back-office page; free text could travel inside figures. | History is written by people who can edit. Figures keep numbers and six known places only; an odd value counts as 0. |
@@ -148,7 +148,7 @@ Names move a little between versions of the dashboard; look for the nearest word
 | Command | What it proves |
 |---|---|
 | `npm run test:db` | 116 checks on a throw-away database: the normal story, then **every attack of this review, which must fail**, then the hand-over of a profile created by a professional. |
-| `npm test` | 212 tests; `security.test.ts` covers links, other people's changes, what stays on the device, the print page, the website protections. |
+| `npm test` | 209 tests; `security.test.ts` covers links, other people's changes, what stays on the device, the print page, the website protections. |
 | `npm audit` | Known flaws in libraries. Today: none in what ships to families (4 medium ones in build tools only). |
 | `npm run test:a11y` | The screens still pass the accessibility scan after these changes. |
 

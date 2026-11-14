@@ -22,8 +22,9 @@
 - Speech recognition uses `expo-speech-recognition` (native module): test on a dev/EAS build, not Expo Go.
 - Two languages: `settings.lang` (words: labels, speech) and `settings.uiLang` (navigation: `src/i18n/ui.ts`,
   `src/data/guide.ts`, FR/EN/AR). Arabic navigation mirrors menus via `useNavRtl()`; never mirror boards.
-- Pictures from the internet (`src/lib/webPictures.ts`): Global Symbols (labels match whole words only;
-  only the sets in `VERIFIED_SETS`) and Openverse (anonymous requests: `page_size` ≤ 20). The artifact demo has no network: paste works there.
+- A word's picture has two sources only: "App's library" (the offline pictograms) and "Your library" (a
+  picture saved on the device, or a photo). Pictures searched on the internet were removed on purpose
+  (November 2026): do not add an online picture search or a "paste a link" option back unless asked.
 - Arabic: the family chooses a dialect or none (`settings.arabic`). `src/data/concepts.ts` holds the Lebanese
   words; `src/data/dialectWords.ts` lists what differs per dialect (data only: also read by the build script).
   Always read Arabic labels through `getConcept` / `label`, languages through `availableLangs`, and the
@@ -76,4 +77,8 @@
   `mainBoardOrder`, `tlaLayout`, `arrangeTla`). Automatic when a board is created; on a board already made
   it is only done on request ("Arrange like the main board" in the board's menu): never re-order a board
   the child uses without the caregiver asking. The core block (`TLA_CORE`) and `TLA_FUNCTIONS` never move.
+- The Settings panel on a professional's draft board gets its information from `ProBoardContext` (no sync
+  engine there): Team / Follow-up / Account are `ProSettingsTab` (`src/ui/pro/ProSettings.tsx`). Do not hand
+  a fake `BoardCtx` to `TeamTab` / `AccountTab` (they write through `board.sync`). On that board the banner
+  only shows once something changed; without changes only the child's name and "Close".
 - Services and keys: `docs/API-KEYS.md` (keep it up to date when a feature starts needing one).

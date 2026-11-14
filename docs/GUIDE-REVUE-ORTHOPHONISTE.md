@@ -40,7 +40,7 @@ données). Chaque chapitre a un bouton *Essayer* qui ouvre l’endroit dont il p
    pour chaque langue.
 9. *Accompagnant* → *TLA* → *Nouveau TLA* → « préparer un gâteau » → *Proposer des mots* :
    ingrédients, ustensiles et étapes ; créer avec le planning.
-10. *Accompagnant* → toucher une case → *Internet* → *Coller l’image* (copiée sur un site) ;
+10. *Accompagnant* → toucher une case → *Votre bibliothèque* → *Choisir une image* (enregistrée sur l’appareil) ;
     *Voix enregistrée* en libanais.
 11. *Modèle* → écrire « je veux jouer au ballon » → *Montrer sur la grille* : la main ouvre le
     dossier *activités* puis touche *ballon*.
@@ -101,12 +101,10 @@ données). Chaque chapitre a un bouton *Essayer* qui ouvre l’endroit dont il p
       ligne ; sur l’iPad il faudra un petit serveur). Touchez un mot ou une étape pour le retirer,
       ajoutez-en, puis créez. Option : *Créer aussi le planning de ces étapes* (relié au TLA, avec
       minuteur, ex. four 30 min).
-    - Image d’un mot : *Pictogrammes* (bibliothèque hors ligne : Mulberry, OpenMoji et huit autres banques
-      libres d’usage commercial ; un filtre choisit la banque), *Photo* (galerie ou appareil photo) ou
-      *Internet* : pictogrammes des banques dont la licence a été vérifiée (Mulberry, OpenMoji),
-      photos et dessins libres, *Coller l’image* copiée sur un site, ou le lien d’une image. L’auteur
-      et la licence s’affichent sous l’image. (Dans la démo en ligne, la page n’a pas accès à
-      Internet : utilisez *Coller l’image*.)
+    - Image d’un mot, deux choix : *Bibliothèque de l’application* (hors ligne : Mulberry, OpenMoji et
+      huit autres banques libres d’usage commercial ; un filtre choisit la banque ; l’auteur et la
+      licence s’affichent sous l’image) ou *Votre bibliothèque* (une image enregistrée sur l’appareil,
+      ou une photo prise sur le moment). La recherche d’images sur Internet a été retirée.
     - Sur une case : section *Application* pour transformer n’importe quel mot en lien vers une appli
       (YouTube Kids, Netflix…) et choisir les mots qui l’ouvrent dans une phrase.
     - Nouveau mot (case vide → *Créer un nouveau mot*) : le pictogramme est choisi

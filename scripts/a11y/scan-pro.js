@@ -105,6 +105,17 @@ let bad = 0;
     await p.waitForTimeout(1200);
     await scan('16-own-board');
     await btn('Close').click();
+    // The shortcut beside a child: straight to that child's settings (team, follow-up, account).
+    await btn('Back').click();
+    await p.waitForTimeout(500);
+    await p.getByRole('button', { name: 'Settings · Adam' }).click();
+    await p.waitForTimeout(1500);
+    for (const tab of ['Team', 'Progress', 'Account']) {
+      await p.getByRole('radio', { name: new RegExp('^' + tab) }).first().click();
+      await p.waitForTimeout(700);
+      await scan(`17-child-settings-${tab.toLowerCase()}`);
+    }
+    await p.getByRole('dialog').getByRole('button', { name: /Close/ }).first().click();
   });
   await b.close();
   process.exit(bad ? 1 : 0);

@@ -353,14 +353,14 @@ const BASE: BaseChapter[] = [
     steps: {
       fr: [
         'En mode accompagnant, touchez la case : libellés en français, en anglais et dans l’arabe choisi.',
-        'Image : Pictogrammes (bibliothèque hors ligne d’environ 24 000 images ; cherchez en français, en anglais ou en arabe, et touchez le nom d’une banque — Mulberry, OpenMoji… — pour ne voir que la sienne), Photo (galerie ou appareil photo), ou Internet (pictogrammes Mulberry et OpenMoji en ligne, photos et dessins libres, Coller l’image, lien d’une image). La source et la licence sont gardées avec le mot.',
+        'Image, deux choix : Bibliothèque de l’application (environ 24 000 pictogrammes hors ligne ; cherchez en français, en anglais ou en arabe, et touchez le nom d’une banque — Mulberry, OpenMoji… — pour ne voir que la sienne) ou Votre bibliothèque (Choisir une image enregistrée sur l’appareil, ou Prendre une photo). La source et la licence d’un pictogramme sont gardées avec le mot.',
         'Voix enregistrée : enregistrez votre voix ou celle d’un proche pour ce mot, une fois par langue (français, anglais, arabe ; une coche montre les langues déjà enregistrées). L’enregistrement remplace alors la voix de l’appareil chaque fois que le mot est touché ou dit dans une phrase ; quand la grammaire change le mot (« vouloir » dit « veux »), c’est la voix de l’appareil qui le dit. Idéal pour les prénoms et pour l’arabe parlé à la maison. L’enregistrement reste sur l’appareil où il a été fait.',
         'Catégorie (couleur) et Affichage de la case (image + texte, image seule, texte seul).',
         'Carte : taille, agrandir sur les cases vides voisines, intensité de la couleur pour attirer l’attention.',
       ],
       en: [
         'In caregiver mode, touch the card: labels in French, English and the Arabic you chose.',
-        'Picture: Pictograms (offline library of about 24,000 pictures; search in French, English or Arabic, and touch a library’s name — Mulberry, OpenMoji… — to see only its pictures), Photo (library or camera), or Internet (Mulberry and OpenMoji pictograms online, free photos and drawings, Paste picture, picture link). The source and licence are kept with the word.',
+        'Picture, two choices: App’s library (about 24,000 offline pictograms; search in French, English or Arabic, and touch a library’s name — Mulberry, OpenMoji… — to see only its pictures) or Your library (Choose a picture saved on the device, or Take a photo). A pictogram’s source and licence are kept with the word.',
         'Recorded voice: record your voice or a relative’s for this word, once per language (French, English, Arabic; a tick shows the languages already recorded). The recording then replaces the device’s voice every time the word is touched or said in a sentence; when grammar changes the word (“want” said “wants”), the device’s voice says it. Ideal for names and for the Arabic spoken at home. The recording stays on the device where it was made.',
         'Category (colour) and Cell display (picture + text, picture only, text only).',
         'Card: size, spread over empty neighbouring slots, colour strength to draw attention.',
@@ -398,13 +398,13 @@ const BASE: BaseChapter[] = [
     title: { fr: 'Ajouter, remplacer, déplacer, retirer', en: 'Adding, replacing, moving, removing' },
     steps: {
       fr: [
-        'Case vide → Créer un nouveau mot (le pictogramme est proposé tout seul, ou choisissez Photo / Internet) ou choisissez un mot existant.',
+        'Case vide → Créer un nouveau mot (le pictogramme est proposé tout seul, ou choisissez Votre bibliothèque pour une image à vous) ou choisissez un mot existant.',
         'Sur une case : Remplacer par un autre mot, ou Retirer de ce tableau.',
         'Déplacer cette case, puis touchez la nouvelle place (une case vide, ou un mot pour les échanger). Pour les mots de base : à décider avec l’orthophoniste.',
         'Le dossier « mes mots » est prévu pour les mots de l’enfant : prénoms, jeux préférés, lieux familiers.',
       ],
       en: [
-        'Empty card → Create a new word (the pictogram is suggested automatically, or choose Photo / Internet) or choose an existing word.',
+        'Empty card → Create a new word (the pictogram is suggested automatically, or choose Your library for a picture of your own) or choose an existing word.',
         'On a card: Replace with another word, or Remove from this board.',
         'Move this card, then touch the new place (an empty slot, or a word to swap them). For core words: decide with the speech therapist.',
         'The “my words” folder is meant for the child’s own words: names, favourite games, familiar places.',
@@ -579,15 +579,15 @@ const BASE: BaseChapter[] = [
     title: { fr: 'Professionnels : proposer des changements', en: 'Professionals: proposing changes' },
     steps: {
       fr: [
-        'Depuis votre espace, Mes utilisateurs ouvre le tableau d’un enfant. Vos droits sont choisis par la famille : Utiliser, Contribuer ou Modifier directement.',
-        'Contribuer : vos changements vont dans un brouillon. Un bandeau indique combien sont prêts ; rien ne change pour l’enfant avant l’accord de la famille.',
+        'Depuis votre espace, Mes utilisateurs ouvre le tableau d’un enfant. Vos droits sont choisis par la famille : Utiliser, Contribuer ou Modifier directement. Le bouton Réglages à côté d’un enfant ouvre directement ses réglages : Tableau, Équipe, Suivi (si la famille vous y autorise) et votre Compte.',
+        'Contribuer : vos changements vont dans un brouillon. Dès le premier changement, un bandeau indique combien sont prêts ; rien ne change pour l’enfant avant l’accord de la famille.',
         'Envoyer pour approbation : donnez un titre à la proposition et, si vous voulez, la raison. La famille voit l’avant / après et approuve, demande une modification ou refuse.',
         'Modifier directement : vos changements s’appliquent tout de suite et apparaissent dans l’historique. Utiliser : vous pouvez utiliser le tableau et modéliser, sans rien changer.',
         'Sur votre propre appareil, le code accompagnant de la famille ne vous est pas demandé pour préparer des changements. Ma bibliothèque garde vos supports (TLA, plannings, D’abord / Ensuite, cartes) pour les proposer ensuite à une famille. Guide (dans votre espace) : un tableau de démonstration pour s’exercer, où rien n’est enregistré, et des tutoriels.',
       ],
       en: [
-        'From your workspace, My AAC users opens a child’s board. Your rights are chosen by the family: Use, Contribute or Edit directly.',
-        'Contribute: your changes go into a draft. A banner says how many are ready; nothing changes for the child before the family agrees.',
+        'From your workspace, My AAC users opens a child’s board. Your rights are chosen by the family: Use, Contribute or Edit directly. The Settings button beside a child opens that child’s settings directly: Board, Team, Progress (if the family allows you) and your Account.',
+        'Contribute: your changes go into a draft. From the first change, a banner says how many are ready; nothing changes for the child before the family agrees.',
         'Send for approval: give the proposal a title and, if you like, the reason. The family sees before / after and approves, asks for a change or declines.',
         'Edit directly: your changes apply at once and appear in the history. Use: you can use the board and model, without changing anything.',
         'On your own device, the family’s caregiver code is not asked when you prepare changes. My library keeps your materials (activity boards, schedules, First / Then, cards) so you can propose them to a family later. Guide (in your workspace): a demonstration board to practise, where nothing is saved, and tutorials.',
@@ -832,7 +832,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
     title: 'تعديل كلمة',
     steps: [
       'في وضع المرافق، المس البطاقة: التسميات بالفرنسية والإنجليزية وبالعربية التي اخترتها.',
-      'الصورة: «رموز» (مكتبة دون إنترنت فيها نحو 24 ألف صورة؛ ابحث بالفرنسية أو الإنجليزية أو العربية، والمس اسم مكتبة — Mulberry أو OpenMoji… — لترى صورها فقط)، «صورة» (المعرض أو الكاميرا)، أو «الإنترنت» (رموز Mulberry و OpenMoji على الإنترنت، صور ورسومات حرة، «لصق الصورة»، رابط صورة). يُحفظ المصدر والترخيص مع الكلمة.',
+      'الصورة، خياران: «مكتبة التطبيق» (نحو 24 ألف رمز دون إنترنت؛ ابحث بالفرنسية أو الإنجليزية أو العربية، والمس اسم مكتبة — Mulberry أو OpenMoji… — لترى صورها فقط) أو «مكتبتك» («اختيار صورة» محفوظة على الجهاز، أو «التقاط صورة»). يُحفظ مصدر الرمز وترخيصه مع الكلمة.',
       '«صوت مسجّل»: سجّل صوتك أو صوت أحد الأقارب لهذه الكلمة، مرة لكل لغة (الفرنسية، الإنجليزية، العربية؛ علامة ✓ تبيّن اللغات المسجّلة). يحلّ التسجيل عندها محلّ صوت الجهاز كلما لُمست الكلمة أو قيلت في جملة؛ وعندما تغيّر القواعد شكل الكلمة يقولها صوت الجهاز. مثالي للأسماء وللعربية المحكية في البيت. يبقى التسجيل على الجهاز الذي سُجّل عليه.',
       '«الفئة (اللون)» و«عرض الخانة» (صورة + نص، صورة فقط، نص فقط).',
       'البطاقة: الحجم، التوسّع على الخانات الفارغة المجاورة، شدّة اللون لجذب الانتباه.',
@@ -851,7 +851,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   addWord: {
     title: 'إضافة، استبدال، نقل، إزالة',
     steps: [
-      'خانة فارغة ← «إنشاء كلمة جديدة» (يُقترح الرمز تلقائياً، أو اختر «صورة» / «الإنترنت») أو اختر كلمة موجودة.',
+      'خانة فارغة ← «إنشاء كلمة جديدة» (يُقترح الرمز تلقائياً، أو اختر «مكتبتك» لصورة من عندك) أو اختر كلمة موجودة.',
       'على البطاقة: «استبدال بكلمة أخرى» أو «إزالة من هذه اللوحة».',
       '«نقل هذه البطاقة»، ثم المس المكان الجديد (خانة فارغة، أو كلمة لتبديل مكانيهما). بالنسبة للكلمات الأساسية: يُقرَّر ذلك مع أخصائية النطق.',
       'مجلد «كلماتي» مخصّص لكلمات الطفل الخاصة: الأسماء، الألعاب المفضلة، الأماكن المألوفة.',
@@ -930,8 +930,8 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   proposals: {
     title: 'للمختصين: اقتراح تغييرات',
     steps: [
-      'من مساحتك، «المستخدمون» يفتح لوحة طفل. العائلة هي التي تختار صلاحياتك: «استعمال»، «مساهمة» أو «تعديل مباشر».',
-      '«مساهمة»: تذهب تغييراتك إلى مسودة. شريط يبيّن عدد التغييرات الجاهزة؛ لا يتغيّر شيء للطفل قبل موافقة العائلة.',
+      'من مساحتك، «المستخدمون» يفتح لوحة طفل. العائلة هي التي تختار صلاحياتك: «استعمال»، «مساهمة» أو «تعديل مباشر». زر «الإعدادات» بجانب الطفل يفتح إعداداته مباشرة: اللوحة، الفريق، المتابعة (إذا سمحت لك العائلة) وحسابك.',
+      '«مساهمة»: تذهب تغييراتك إلى مسودة. منذ أول تغيير، يظهر شريط يبيّن عدد التغييرات الجاهزة؛ لا يتغيّر شيء للطفل قبل موافقة العائلة.',
       '«إرسال للموافقة»: أعطِ الاقتراح عنواناً، واذكر السبب إن شئت. ترى العائلة ما قبل وما بعد، فتوافق أو تطلب تعديلاً أو ترفض.',
       '«تعديل مباشر»: تُطبَّق تغييراتك فوراً وتظهر في السجلّ. «استعمال»: يمكنك استعمال اللوحة والنمذجة دون تغيير أي شيء.',
       'على جهازك أنت، لا يُطلب منك رمز المرافق الخاص بالعائلة لتحضير التغييرات. «مكتبتي» تحفظ موادك (لوحات نشاط، جداول، «أولاً / ثم»، بطاقات) لتقترحها لاحقاً على عائلة. «الدليل» (في مساحتك): لوحة تجريبية للتدرّب، لا يُحفظ فيها شيء، ودروس.',

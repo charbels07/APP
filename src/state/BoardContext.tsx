@@ -29,3 +29,17 @@ export interface BoardCtx {
 
 export const BoardContext = createContext<BoardCtx | null>(null);
 export const useBoard = () => useContext(BoardContext);
+
+/**
+ * A child's board opened by a professional in the workspace: a draft compared with the child's
+ * profile (no sync engine). The settings pages then show what a professional may see: the team,
+ * the follow-up if the family allows it, and their own account.
+ */
+export interface ProBoardCtx {
+  profileId: string;
+  childName: string;
+  access: MyAccess;
+}
+
+export const ProBoardContext = createContext<ProBoardCtx | null>(null);
+export const useProBoard = () => useContext(ProBoardContext);

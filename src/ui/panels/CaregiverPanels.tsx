@@ -27,7 +27,6 @@ import type { AppLink, ArabicDialect, CellDisplay, Lang, Profile, UiLang, WordCl
 import { useApp } from '../../state/AppState';
 import { Btn, Field, Panel, Section, Segmented, Toggle } from '../common';
 import { PictoSearch } from '../PictoPicker';
-import { WebPicturePicker } from '../WebPictures';
 import { PrintPreview } from '../PrintPreview';
 import { SymbolView, useMediaUri } from '../SymbolView';
 import { scheduleTitle } from '../screens/ScheduleScreen';
@@ -315,17 +314,12 @@ function ConceptEditorBody({ conceptId, only }: { conceptId: string; only?: 'ima
               />
             </>
           )}
+          {source === 'photo' && <Text style={s.note}>{t.ownLibraryNote}</Text>}
           {source === 'photo' && (
             <View style={s.wrapRow}>
-              <Btn small icon="image" label={t.photoLibrary} onPress={() => photo('library')} />
+              <Btn small icon="image" label={t.pickPicture} onPress={() => photo('library')} />
               <Btn small icon="camera" label={t.takePhoto} onPress={() => photo('camera')} />
             </View>
-          )}
-          {source === 'web' && (
-            <WebPicturePicker
-              initialQuery={label(profile, conceptId, profile.settings.uiLang)}
-              onPicked={(name, credit) => setSymbol({ kind: 'media', name }, credit)}
-            />
           )}
           <View style={s.row}>
             <Btn small icon="undo" label={t.resetSymbol} onPress={() => setSymbol(undefined)} />
@@ -430,9 +424,9 @@ function VoicesUsed({ st }: { st: Profile['settings'] }) {
   );
 }
 
-type PictureSource = 'pictos' | 'photo' | 'web';
+type PictureSource = 'pictos' | 'photo';
 
-/** Where a word's picture comes from: offline pictograms, a photo, or the internet. */
+/** Where a word's picture comes from: the app's library of pictograms, or the person's own pictures. */
 function PictureSources({ value, onChange }: { value: PictureSource; onChange: (v: PictureSource) => void }) {
   const { t } = useApp();
   return (
@@ -442,7 +436,6 @@ function PictureSources({ value, onChange }: { value: PictureSource; onChange: (
       options={[
         { value: 'pictos', label: t.srcPictos },
         { value: 'photo', label: t.srcPhoto },
-        { value: 'web', label: t.srcWeb },
       ]}
     />
   );
@@ -548,7 +541,7 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
   const [picto, setPicto] = useState<number | undefined>();
   const [pictoTouched, setPictoTouched] = useState(false);
   const [busy, setBusy] = useState(false);
-  // …or a photo / a picture from the internet chosen instead.
+  // …or a picture of the person's own ("Your library") chosen instead.
   const [source, setSource] = useState<PictureSource>('pictos');
   const [ownPicture, setOwnPicture] = useState<{ name: string; credit?: string } | null>(null);
   const chooseOwn = (name: string, credit?: string) => {
@@ -638,13 +631,13 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
               />
             </View>
           )}
+          {source === 'photo' && <Text style={s.note}>{t.ownLibraryNote}</Text>}
           {source === 'photo' && (
             <View style={s.wrapRow}>
-              <Btn small icon="image" label={t.photoLibrary} onPress={async () => { const n = await pickPhoto('library'); if (n) chooseOwn(n); }} />
+              <Btn small icon="image" label={t.pickPicture} onPress={async () => { const n = await pickPhoto('library'); if (n) chooseOwn(n); }} />
               <Btn small icon="camera" label={t.takePhoto} onPress={async () => { const n = await pickPhoto('camera'); if (n) chooseOwn(n); }} />
             </View>
           )}
-          {source === 'web' && <WebPicturePicker initialQuery={pictoQuery} onPicked={chooseOwn} />}
           {source === 'pictos' && !ownPicture && pictoQuery ? (
             <View style={{ gap: 6 }}>
               <Text style={s.note}>{t.suggestedPicto}</Text>

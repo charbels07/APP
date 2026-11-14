@@ -12,7 +12,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { Invitation, Membership, Notice, ProfileSummary, Proposal, Resource, Verification } from '../../backend/types';
 import { APP_NAME, errorText } from '../../i18n/account';
 import { dataStrings } from '../../i18n/data';
-import { onboardingStrings } from '../../i18n/onboarding';
 import { proStrings, type ProSection, type ProStrings } from '../../i18n/pro';
 import { settingsStrings } from '../../i18n/settings';
 import { preset, type AccessLevel, type CollaboratorRole, type PermissionSet } from '../../lib/permissions';
@@ -33,6 +32,7 @@ import { PermissionEditor, Row, when } from '../settings/TeamTab';
 import { LangSwitch, Logo } from '../start/StartLayout';
 import { C, radius } from '../theme';
 import { KIND_ICON, Library, ResourceEditor, type Editing } from './Materials';
+import { ParentsCard } from './ProSettings';
 import { ChildDraftBoard, DemoBoard } from './SandboxBoard';
 import { selected } from '../a11y';
 import { noticeText } from '../../lib/notices';
@@ -47,7 +47,7 @@ const SECTION_ICON: Record<ProSection, IconName> = {
   account: 'shield',
 };
 
-type Full = { k: 'child'; id: string; resume?: Proposal } | { k: 'demo'; start?: Overlay | 'edit' } | { k: 'editor'; editing: Editing };
+type Full = { k: 'child'; id: string; resume?: Proposal; settings?: boolean } | { k: 'demo'; start?: Overlay | 'edit' } | { k: 'editor'; editing: Editing };
 
 export function Workspace({ verification, onVerify, openUserId }: { verification: Verification | null; onVerify: () => void; openUserId?: string }) {
   const sess = useSession();
@@ -105,7 +105,7 @@ export function Workspace({ verification, onVerify, openUserId }: { verification
     void updatePrefs({ tourDone: true });
   };
 
-  if (full?.k === 'child') return <ChildDraftBoard profileId={full.id} resume={full.resume} onClose={() => setFull(null)} />;
+  if (full?.k === 'child') return <ChildDraftBoard profileId={full.id} resume={full.resume} openSettings={full.settings} onClose={() => setFull(null)} />;
   if (full?.k === 'demo') return <DemoBoard start={full.start} onClose={() => setFull(null)} />;
   if (full?.k === 'editor') return <ResourceEditor editing={full.editing} onClose={() => setFull(null)} />;
   const edit = (e: Editing) => {
@@ -220,6 +220,7 @@ export function Workspace({ verification, onVerify, openUserId }: { verification
           void load();
         }}
         onOpen={(resume) => setFull({ k: 'child', id: user.id, resume })}
+        onSettings={() => setFull({ k: 'child', id: user.id, settings: true })}
         onEdit={edit}
         onChanged={load}
       />
@@ -229,6 +230,7 @@ export function Workspace({ verification, onVerify, openUserId }: { verification
         users={users}
         sent={invites.sent.filter((i) => i.status === 'pending')}
         onOpen={setUser}
+        onSettings={(u) => setFull({ k: 'child', id: u.id, settings: true })}
         onConnect={() => setConnecting(true)}
         // The same set-up journey as a parent's, without the questions that are the family's.
         onCreate={verified ? () => sess.go({ name: 'onboarding' }) : undefined}
@@ -369,6 +371,7 @@ function UsersList({
   users,
   sent,
   onOpen,
+  onSettings,
   onConnect,
   onCreate,
 }: {
@@ -376,12 +379,15 @@ function UsersList({
   users: ProfileSummary[];
   sent: Invitation[];
   onOpen: (u: ProfileSummary) => void;
+  /** Straight to this child's settings (board, team, follow-up). */
+  onSettings: (u: ProfileSummary) => void;
   onConnect: () => void;
   /** Missing while the certificate is not accepted yet. */
   onCreate?: () => void;
 }) {
   const { uiLang } = useSession();
   const x = settingsStrings(uiLang);
+  const narrow = useWindowDimensions().width < 600;
   const [filter, setFilter] = useState<'all' | 'active' | 'pending'>('all');
   const [q, setQ] = useState('');
   const match = (name: string) => !q.trim() || name.toLowerCase().includes(q.trim().toLowerCase());
@@ -408,13 +414,18 @@ function UsersList({
         users
           .filter((u) => match(u.name))
           .map((u) => (
-            <Row
-              key={u.id}
-              icon="user"
-              title={u.name}
-              sub={(u.access === 'owner' ? [u.age ? p.ageYears(u.age) : '', p.createdByYou] : [u.age ? p.ageYears(u.age) : '', x.roles[u.access], p.levelShort[u.level]]).filter(Boolean).join(' · ')}
-              onPress={() => onOpen(u)}
-            />
+            // The row opens the child's page; the button beside it goes straight to the settings.
+            <View key={u.id} style={[st.userRow, uiLang === 'ar' && { flexDirection: 'row-reverse' }]}>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Row
+                  icon="user"
+                  title={u.name}
+                  sub={(u.access === 'owner' ? [u.age ? p.ageYears(u.age) : '', p.createdByYou] : [u.age ? p.ageYears(u.age) : '', x.roles[u.access], p.levelShort[u.level]]).filter(Boolean).join(' · ')}
+                  onPress={() => onOpen(u)}
+                />
+              </View>
+              <Btn icon="settings" label={narrow ? undefined : p.userSettings} accessibilityLabel={`${p.userSettings} · ${u.name}`} onPress={() => onSettings(u)} style={st.userGear} />
+            </View>
           ))}
       {filter !== 'active' &&
         sent
@@ -482,6 +493,7 @@ function UserView({
   users,
   onBack,
   onOpen,
+  onSettings,
   onEdit,
   onChanged,
 }: {
@@ -491,6 +503,7 @@ function UserView({
   users: ProfileSummary[];
   onBack: () => void;
   onOpen: (resume?: Proposal) => void;
+  onSettings: () => void;
   onEdit: (e: Editing) => void;
   onChanged: () => void;
 }) {
@@ -530,6 +543,7 @@ function UserView({
         <Text style={ss.title}>{p.openBoard}</Text>
         <Note text={p.openBoardNote} />
         <Btn kind="primary" icon="grid" label={p.openBoard} onPress={() => onOpen()} />
+        <Btn icon="settings" label={p.userSettings} onPress={onSettings} />
       </View>
       {own && <ParentsCard profileId={user.id} p={p} />}
       {own ? (
@@ -585,58 +599,6 @@ function UserView({
       </Section>
       {own && <DeleteChild user={user} onDeleted={onBack} />}
     </>
-  );
-}
-
-/**
- * The code that hands a profile over to the child's parents. It is an invitation with the role
- * "parent", written by the professional who owns the profile: the server makes the parent who
- * uses it the owner, and keeps the professional in the team.
- */
-function ParentsCard({ profileId, p }: { profileId: string; p: ProStrings }) {
-  const { api, s, uiLang } = useSession();
-  const first = onboardingStrings(uiLang).childTitle;
-  const [inv, setInv] = useState<Invitation | null | undefined>(undefined);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  useEffect(() => {
-    api
-      .profileInvitations(profileId)
-      .then((l) => setInv(l.find((i) => i.direction === 'invite' && i.role === 'parent' && i.status === 'pending') ?? null))
-      .catch(() => setInv(null));
-  }, [api, profileId]);
-  const make = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      // A new code replaces the one given before.
-      if (inv) await api.cancelInvitation(inv.id);
-      setInv(await api.invite(profileId, { role: 'parent', ...preset('parent') }));
-    } catch (e) {
-      setError(errorText(s, e));
-    }
-    setBusy(false);
-  };
-  return (
-    <View style={ss.card}>
-      <Text style={ss.title}>{p.parentsTitle}</Text>
-      <Note text={p.parentsIntro} />
-      {inv ? (
-        <>
-          <Text style={ss.code} selectable>
-            {inv.code}
-          </Text>
-          {p.parentsSteps(s.roleParent, first, s.haveCode).map((t, i) => (
-            <Note key={i} text={`${i + 1}. ${t}`} />
-          ))}
-          <Note text={p.parentsWarn} />
-          <Btn small icon="refresh" label={p.parentsRenew} disabled={busy} onPress={make} style={{ alignSelf: 'flex-start' }} />
-        </>
-      ) : (
-        <Btn kind="primary" icon="users" label={p.parentsMake} disabled={busy || inv === undefined} onPress={make} />
-      )}
-      {error ? <Text style={{ color: C.help, fontWeight: '600' }}>{error}</Text> : null}
-    </View>
   );
 }
 
@@ -862,6 +824,8 @@ const st = StyleSheet.create({
   quickBtn: { flex: 1, minWidth: 150, alignItems: 'center', gap: 8, padding: 16, borderRadius: radius.lg, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border },
   quickIcon: { width: 54, height: 54, borderRadius: 27, backgroundColor: C.accentSoft, alignItems: 'center', justifyContent: 'center' },
   quickText: { fontSize: 15, fontWeight: '700', color: C.text, textAlign: 'center' },
+  userRow: { flexDirection: 'row', alignItems: 'stretch', gap: 6 },
+  userGear: { alignSelf: 'stretch', justifyContent: 'center' },
   input: { borderWidth: 1.5, borderColor: C.inputBorder, borderRadius: radius.md, paddingHorizontal: 12, minHeight: 46, fontSize: 16, color: C.text, backgroundColor: C.surface },
   modalBack: { ...StyleSheet.absoluteFill, backgroundColor: C.overlay, alignItems: 'center', justifyContent: 'center', padding: 16 },
   modal: { width: '100%', maxWidth: 460, backgroundColor: C.surface, borderRadius: radius.lg, padding: 24, gap: 12, alignItems: 'stretch' },

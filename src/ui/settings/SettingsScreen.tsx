@@ -14,13 +14,14 @@ import type { Invitation, Proposal } from '../../backend/types';
 import { dataStrings } from '../../i18n/data';
 import { settingsStrings } from '../../i18n/settings';
 import { useApp } from '../../state/AppState';
-import { useBoard } from '../../state/BoardContext';
+import { useBoard, useProBoard } from '../../state/BoardContext';
 import { useSession } from '../../state/Session';
 import { Btn, Panel, Segmented, useNavRtl } from '../common';
 import { BoardSettingsBody, useSettingsDraft } from '../panels/CaregiverPanels';
 import { DataDashboard } from '../data/DataDashboard';
 import { C } from '../theme';
 import { AccountTab } from './AccountTab';
+import { ProSettingsTab } from '../pro/ProSettings';
 import { TeamTab } from './TeamTab';
 
 type Tab = 'board' | 'team' | 'data' | 'account';
@@ -28,6 +29,8 @@ type Tab = 'board' | 'team' | 'data' | 'account';
 export function SettingsScreen() {
   const app = useApp();
   const board = useBoard();
+  // A professional looking at a child's board from the workspace (a draft, no sync engine).
+  const pro = useProBoard();
   const { uiLang, account, api, s, go } = useSession();
   const x = settingsStrings(uiLang);
   const [tab, setTab] = useState<Tab>('board');
@@ -103,7 +106,8 @@ export function SettingsScreen() {
     >
       <Segmented<Tab> value={tab} onChange={(next) => go2(() => setTab(next))} options={tabs.map((t) => ({ value: t, label: label(t) }))} />
       {tab === 'board' && <BoardSettingsBody draft={draft} />}
-      {!board && tab !== 'board' && (
+      {pro && tab !== 'board' && <ProSettingsTab tab={tab} pro={pro} profile={app.profile} />}
+      {!board && !pro && tab !== 'board' && (
         <View style={{ gap: 12 }}>
           <Note text={tab === 'team' ? x.previewTeam : tab === 'data' ? x.previewData : x.previewAccount} />
           <Note text={x.previewOnly} />

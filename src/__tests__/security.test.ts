@@ -191,6 +191,6 @@ describe('the website', () => {
   it('talks only to its server and the two picture libraries', () => {
     const connect = /connect-src ([^;]*)/.exec(csp)?.[1].split(' ') ?? [];
     // "blob:" and "data:" are files picked on the device itself (a photo, a recording, a document).
-    expect(connect.sort()).toEqual(["'self'", 'blob:', 'data:', 'https://*.supabase.co', 'https://api.openverse.org', 'https://globalsymbols.com', 'wss://*.supabase.co'].sort());
+    expect(connect.sort()).toEqual(["'self'", 'blob:', 'data:', 'https://*.supabase.co', 'wss://*.supabase.co'].sort());
   });
 });

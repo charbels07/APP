@@ -56,3 +56,33 @@ describe('keep me logged in', () => {
     expect(sameVisit()).toBe(true);
   });
 });
+
+describe('the real server\'s client writes through that store', () => {
+  // Starting a "Continue with Google" stores a one-time secret for the way back: no network needed,
+  // and it shows where the client writes.
+  const client = () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { createClient } = require('@supabase/supabase-js') as typeof import('@supabase/supabase-js');
+    return createClient('https://example.supabase.co', 'public-key', {
+      auth: { storage: sessionStore, storageKey: 'sb-test', flowType: 'pkce', persistSession: true, autoRefreshToken: false, detectSessionInUrl: false },
+    });
+  };
+  const verifier = 'sb-test-code-verifier';
+  afterEach(() => visitStore.remove(verifier));
+
+  it('ticked: on the device', async () => {
+    const { error } = await client().auth.signInWithOAuth({ provider: 'google', options: { skipBrowserRedirect: true } });
+    expect(error).toBeNull();
+    expect(await AsyncStorage.getItem(verifier)).toBeTruthy();
+    expect(visitStore.get(verifier)).toBeNull();
+  });
+
+  it('not ticked: in the visit only', async () => {
+    await setKeepSignedIn(false);
+    const { error } = await client().auth.signInWithOAuth({ provider: 'google', options: { skipBrowserRedirect: true } });
+    expect(error).toBeNull();
+    expect(visitStore.get(verifier)).toBeTruthy();
+    expect(await AsyncStorage.getItem(verifier)).toBeNull();
+    expect(await client().auth.getSession()).toMatchObject({ data: { session: null }, error: null });
+  });
+});

@@ -156,7 +156,7 @@ Names move a little between versions of the dashboard; look for the nearest word
 | Command | What it proves |
 |---|---|
 | `npm run test:db` | 116 checks on a throw-away database: the normal story, then **every attack of this review, which must fail**, then the hand-over of a profile created by a professional. |
-| `npm test` | 214 tests; `security.test.ts` covers links, other people's changes, what stays on the device, the print page, the website protections. |
+| `npm test` | 216 tests; `security.test.ts` covers links, other people's changes, what stays on the device, the print page, the website protections. |
 | `npm audit` | Known flaws in libraries. Today: none in what ships to families (4 medium ones in build tools only). |
 | `npm run test:a11y` | The screens still pass the accessibility scan after these changes. |
 

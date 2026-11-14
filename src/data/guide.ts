@@ -510,14 +510,14 @@ const BASE: BaseChapter[] = [
     steps: {
       fr: [
         'Réglages (mode accompagnant) → Équipe : les personnes qui ont accès, leur rôle et ce qu’elles peuvent faire.',
-        'Inviter quelqu’un : nom, rôle, niveau (Utiliser, Contribuer, Modifier directement) et droits, puis donnez le code. Un professionnel peut aussi demander à rejoindre avec le code pour les professionnels : vous choisissez ses droits avant d’accepter.',
+        'Inviter quelqu’un : nom, rôle, niveau (Utiliser, Contribuer, Modifier directement) et droits, puis envoyez le code avec Envoyer par e-mail (votre messagerie s’ouvre, le message est déjà écrit), Partager ou Copier : l’application n’envoie pas d’e-mail toute seule. Un professionnel peut aussi demander à rejoindre avec le code pour les professionnels : vous choisissez ses droits avant d’accepter.',
         'Propositions : chaque changement proposé s’affiche avant / après ; approuvez, demandez une modification ou refusez. Changer la place d’un mot de base demande une confirmation.',
         'Historique : qui a changé quoi et quand (jamais ce que l’enfant a dit), avec Annuler.',
         'Sur une personne de l’équipe : Fin de l’accès (1 semaine, 1 mois, 3 mois ou sans fin) et Retirer l’accès, qui s’applique tout de suite. Nouveautés rassemble ce qui s’est passé (invitation acceptée, demande, proposition reçue) ; Changer le code remplace le code pour les professionnels.',
       ],
       en: [
         'Settings (caregiver mode) → Team: the people who have access, their role and what they can do.',
-        'Invite someone: name, role, level (Use, Contribute, Edit directly) and rights, then give the code. A professional can also ask to join with the code for professionals: you choose their rights before accepting.',
+        'Invite someone: name, role, level (Use, Contribute, Edit directly) and rights, then send the code with Send by email (your mail app opens, the message is already written), Share or Copy: the app does not send emails by itself. A professional can also ask to join with the code for professionals: you choose their rights before accepting.',
         'Proposals: each suggested change shows before / after; approve, ask for a change or decline. Moving a core word asks for confirmation.',
         'History: who changed what and when (never what the child said), with Undo.',
         'On a person of the team: Access ends (1 week, 1 month, 3 months or no end) and Remove access, which applies at once. What’s new gathers what happened (invitation accepted, request, proposal received); Change the code replaces the code for professionals.',
@@ -557,7 +557,7 @@ const BASE: BaseChapter[] = [
       fr: [
         'Vérification professionnelle (à la création du compte, puis dans Compte et licence) : votre pratique, un diplôme ou une autorisation d’exercer, puis une pièce d’identité, supprimée dès que la vérification est terminée. Envoyer pour vérification : notre équipe accepte, demande un complément ou refuse, et vous êtes prévenu dans l’application. En attendant, vous pouvez explorer votre espace et préparer des supports, mais pas encore rejoindre l’équipe d’un enfant.',
         'Accueil : vos utilisateurs connectés, les propositions en attente, les invitations, et des raccourcis.',
-        'Mes utilisateurs → Connecter un utilisateur : le Code de la famille (donné par les parents), votre rôle, les Droits demandés et un message, puis Envoyer la demande. La famille accepte avec les droits qu’elle choisit. Une invitation reçue d’une famille s’accepte au même endroit.',
+        'Mes utilisateurs → Connecter un utilisateur : tapez dans « Code de la famille ou d’une invitation » le code donné par les parents. Avec le code d’une invitation, vous rejoignez l’équipe tout de suite ; avec le code de la famille, indiquez votre rôle, les Droits demandés et un message, puis Envoyer la demande : la famille accepte avec les droits qu’elle choisit. Une invitation envoyée à votre adresse e-mail s’accepte au même endroit.',
         'Mes utilisateurs → Créer le profil d’un enfant (une fois votre certificat accepté) : pour un enfant dont la famille n’a pas encore de compte. Vous répondez aux mêmes questions qu’un parent et vous préparez le tableau. Sur la page de l’enfant, Relier les parents → Créer le code des parents : les parents créent leur compte, choisissent J’ai un code d’invitation sur le premier écran (Votre enfant) et tapent le code. Le profil devient le leur : ils choisissent leur code accompagnant et ce qui est enregistré ; vous restez dans l’équipe.',
         'Ma bibliothèque : sous Créer un support, touchez ce que vous voulez préparer (TLA, planning, D’abord / Ensuite, cartes à imprimer, ou à partir d’une photo) ; le support prend le nom de ce qu’il contient. Rechercher par nom retrouve un support. Les listes : Éléments créés, Partagés avec moi et Supports des utilisateurs. Touchez un support pour le personnaliser pour un enfant (Personnaliser pour…), le proposer à une famille (Proposer au profil de…) ou le partager Avec un collègue (e-mail) ou l’équipe d’un enfant.',
         'Collaborations : Mes connexions, Demandes envoyées, Ressources partagées et Activité récente.',
@@ -565,7 +565,7 @@ const BASE: BaseChapter[] = [
       en: [
         'Professional verification (when the account is created, then in Account & licence): your practice, a diploma or a licence to practise, then an identity document, deleted as soon as the check is finished. Submit for verification: our team accepts, asks for something more or refuses, and you are told in the app. Meanwhile you can explore your workspace and prepare materials, but not yet join a child’s team.',
         'Dashboard: your connected users, the pending proposals, the invitations, and shortcuts.',
-        'My AAC users → Connect a user: the Family code (given by the parents), your role, the Rights requested and a message, then Send the request. The family accepts with the rights it chooses. An invitation received from a family is accepted in the same place.',
+        'My AAC users → Connect a user: type the code the parents gave you in “Family code or invitation code”. With an invitation’s code you join the team at once; with the family’s code, give your role, the Rights requested and a message, then Send the request: the family accepts with the rights it chooses. An invitation sent to your email address is accepted in the same place.',
         'My AAC users → Create a child’s profile (once your certificate is accepted): for a child whose family has no account yet. You answer the same questions as a parent and prepare the board. On the child’s page, Connect the parents → Create the parents’ code: the parents create their account, choose I have an invitation code on the first screen (Your child) and type the code. The profile becomes theirs: they choose their caregiver code and what is recorded; you stay in the team.',
         'My library: under Create a material, tap what you want to prepare (activity board, schedule, First / Then, picture cards, or from a photo); the material is named after what it contains. Search by name finds a material again. The lists: Created items, Shared with me and AAC user materials. Tap a material to personalise it for a child (Personalise for…), propose it to a family (Propose to the profile of…) or share it With a colleague (email) or a child’s team.',
         'Collaborations: My connections, Sent requests, Shared resources and Recent activity.',
@@ -900,7 +900,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
     title: 'فريق الطفل',
     steps: [
       'الإعدادات (وضع المرافق) ← الفريق: الأشخاص الذين لديهم صلاحية، دورهم وما يمكنهم فعله.',
-      'دعوة شخص: الاسم، الدور، المستوى (استعمال، مساهمة، تعديل مباشر) والصلاحيات، ثم أعطِ الرمز. يمكن لمختصّ أيضاً أن يطلب الانضمام برمز المختصّين: تختار صلاحياته قبل القبول.',
+      'دعوة شخص: الاسم، الدور، المستوى (استعمال، مساهمة، تعديل مباشر) والصلاحيات، ثم أرسل الرمز عبر «إرسال بالبريد الإلكتروني» (يفتح بريدك والرسالة مكتوبة)، أو «مشاركة» أو «نسخ»: التطبيق لا يرسل بريداً إلكترونياً من تلقاء نفسه. يمكن لمختصّ أيضاً أن يطلب الانضمام برمز المختصّين: تختار صلاحياته قبل القبول.',
       'الاقتراحات: يظهر كل تغيير مقترح قبل / بعد؛ وافق، أو اطلب تعديلاً، أو ارفض. تغيير مكان كلمة أساسية يحتاج إلى تأكيد.',
       'السجل: من غيّر ماذا ومتى (أبداً ما قاله الطفل)، مع «تراجع».',
       'على شخص من الفريق: «انتهاء الصلاحية» (أسبوع، شهر، 3 أشهر أو بلا نهاية) و«سحب الصلاحية» الذي يُطبَّق فوراً. «الجديد» يجمع ما حدث (دعوة قُبلت، طلب، اقتراح وارد)؛ «تغيير الرمز» يستبدل رمز المختصّين.',
@@ -921,7 +921,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
     steps: [
       '«التحقق المهني» (عند إنشاء الحساب، ثم في «الحساب والترخيص»): ممارستك، شهادة أو ترخيص مهني، ثم وثيقة هوية تُحذف فور انتهاء التحقق. «إرسال للتحقق»: فريقنا يقبل أو يطلب معلومات إضافية أو يرفض، ونخبرك داخل التطبيق. في الانتظار يمكنك استكشاف مساحتك وتحضير المواد، لكن لا يمكنك بعد الانضمام إلى فريق طفل.',
       '«الرئيسية»: مستخدموك المرتبطون، الاقتراحات قيد الانتظار، الدعوات، واختصارات.',
-      '«المستخدمون» ← «ربط مستخدم»: «رمز العائلة» (يعطيه الأهل)، دورك، «الصلاحيات المطلوبة» ورسالة، ثم «إرسال الطلب». تقبل العائلة بالصلاحيات التي تختارها. الدعوة الواردة من عائلة تُقبل في المكان نفسه.',
+      '«المستخدمون» ← «ربط مستخدم»: اكتب في «رمز العائلة أو رمز دعوة» الرمز الذي أعطاك إياه الأهل. برمز دعوة تنضمّ إلى الفريق فوراً؛ برمز العائلة، حدّد دورك و«الصلاحيات المطلوبة» ورسالة، ثم «إرسال الطلب»: تقبل العائلة بالصلاحيات التي تختارها. الدعوة المرسلة إلى بريدك الإلكتروني تُقبل في المكان نفسه.',
       '«المستخدمون» ← «إنشاء ملف طفل» (بعد قبول شهادتك): لطفل ليس لعائلته حساب بعد. تجيب عن الأسئلة نفسها التي يجيب عنها الأهل وتحضّر اللوحة. في صفحة الطفل، «ربط الأهل» ← «إنشاء رمز الأهل»: ينشئ الأهل حسابهم، ويختارون «لديّ رمز دعوة» في الشاشة الأولى («طفلك») ويكتبون الرمز. يصبح الملف ملفهم: يختارون رمز المرافق وما يُسجَّل؛ وتبقى أنت ضمن الفريق.',
       '«مكتبتي»: تحت «إنشاء مادة»، اضغط على ما تريد تحضيره (لوحة نشاط، جدول، «أولاً / ثم»، بطاقات للطباعة، أو من صورة)؛ تأخذ المادة اسم ما تحتويه. «البحث بالاسم» يجد مادة من جديد. القوائم: «العناصر المُنشأة»، «مشترك معي» و«مواد المستخدمين». اضغط على مادة لتخصيصها لطفل («تخصيص لـ…»)، أو اقتراحها على عائلة («اقتراح على ملف…»)، أو مشاركتها «مع زميل (بريد إلكتروني) أو فريق طفل».',
       '«التعاون»: «اتصالاتي»، «الطلبات المرسلة»، «الموارد المشتركة» و«النشاط الأخير».',

@@ -72,6 +72,8 @@ function fail(error: { message?: string } | null | undefined): never {
   if (/token.*invalid|invalid.*otp/i.test(m)) throw new BackendError('code_invalid', m);
   if (/already registered|already exists/i.test(m)) throw new BackendError('account_exists', m);
   if (/password should be|weak password/i.test(m)) throw new BackendError('weak_password', m);
+  // "For security purposes, you can only request this after 43 seconds": not a failure, a pause.
+  if (/only request this after/i.test(m)) throw new BackendError('wait', m);
   if (/rate limit|too many/i.test(m)) throw new BackendError('too_many', m);
   if (/provider is not enabled|unsupported provider/i.test(m)) throw new BackendError('provider_off', m);
   if (/signups not allowed|anonymous sign-ins are disabled/i.test(m)) throw new BackendError('signup_off', m);

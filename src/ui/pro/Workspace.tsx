@@ -473,8 +473,20 @@ function ConnectUser({ p, received, onBack }: { p: ProStrings; received: Invitat
         disabled={code.trim().length < 6}
         onPress={async () => {
           setMsg(null);
+          const typed = code.trim();
           try {
-            await api.requestConnection(code.trim(), { ...v, message: message.trim() || undefined });
+            // A code can be an invitation's (the family already chose the rights: joined at once)…
+            const joined = await api.acceptInvitationCode(typed).catch((e) => {
+              if ((e as { code?: string }).code === 'code_invalid') return null;
+              throw e;
+            });
+            if (joined) {
+              setMsg({ ok: true, text: p.joinedTeam(joined.childName) });
+              setCode('');
+              return;
+            }
+            // …or the family's own code: a request the family reviews.
+            await api.requestConnection(typed, { ...v, message: message.trim() || undefined });
             setMsg({ ok: true, text: p.requestSent });
             setCode('');
           } catch (e) {

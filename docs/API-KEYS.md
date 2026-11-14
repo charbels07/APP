@@ -93,6 +93,7 @@ day, only people who look after a child, and only the topic, the photo or the dr
 
 | Idea | Service |
 |---|---|
+| **Invitation e-mails sent by the app itself** | An e-mail sending service (Brevo, Resend, Mailgun…) and a small server function holding its key. The e-mail sender of section 1 only serves sign-in codes: Supabase does not let the app use it for other messages. Today the parent sends the invitation from their own mail app ("Send by email": the message is already written), or shares / copies the code |
 | Subscriptions and payment | Apple / Google in-app purchases, usually through RevenueCat; Stripe on the website |
 | Notifications on the phone (an invitation, a proposal) | Apple and Google push services, through Expo |
 | A robot check on sign-up | Cloudflare Turnstile (free): a site key in the app, a secret in Supabase |

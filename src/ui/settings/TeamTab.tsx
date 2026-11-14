@@ -5,11 +5,13 @@
  */
 import * as Clipboard from 'expo-clipboard';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, Share, Text, TextInput, View } from 'react-native';
+import { Linking, Platform, Pressable, Share, Text, TextInput, View } from 'react-native';
 import type { HistoryEntry, Invitation, Membership, Notice, Proposal } from '../../backend/types';
-import { errorText } from '../../i18n/account';
+import { serverMode } from '../../backend';
+import { APP_NAME, errorText } from '../../i18n/account';
 import { settingsStrings, type SettingsStrings } from '../../i18n/settings';
 import { describeOps, type ChangeItem } from '../../lib/describeOps';
+import { inviteMailLink } from '../../lib/inviteMail';
 import { symbolOf } from '../../lib/lexicon';
 import { preset, type AccessLevel, type CollaboratorRole, type PermissionSet } from '../../lib/permissions';
 import { applyOps, foreignOps } from '../../lib/profileDiff';
@@ -339,7 +341,9 @@ function InvitedView({ inv, x, onBack }: { inv: Invitation; x: SettingsStrings; 
   const { api } = useSession();
   const [copied, setCopied] = useState(false);
   const [confirm, setConfirm] = useState(false);
-  const message = x.inviteMessage(inv.fromName, inv.childName, inv.code);
+  // On the website the message also says where the app is (not in the demo page, which has no address of its own).
+  const site = Platform.OS === 'web' && serverMode() === 'online' && typeof window !== 'undefined' ? window.location.origin : '';
+  const message = x.inviteMessage(inv.fromName, inv.childName, inv.code, APP_NAME, site);
   return (
     <>
       <Btn small kind="ghost" icon="chevronLeft" label={x.back} onPress={onBack} style={{ alignSelf: 'flex-start' }} />
@@ -351,6 +355,15 @@ function InvitedView({ inv, x, onBack }: { inv: Invitation; x: SettingsStrings; 
         </Text>
         <Note text={x.inviteShare} />
         <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+          {/* The app does not send invitation e-mails itself: this opens the person's own mail app, message ready. */}
+          <Btn
+            kind="primary"
+            icon="mail"
+            label={x.inviteByMail}
+            onPress={() => {
+              Linking.openURL(inviteMailLink(inv.email, x.inviteSubject(inv.childName, APP_NAME), message)).catch(() => {});
+            }}
+          />
           <Btn
             icon="external"
             label={x.share}
@@ -368,7 +381,8 @@ function InvitedView({ inv, x, onBack }: { inv: Invitation; x: SettingsStrings; 
           />
         </View>
       </View>
-      {inv.email ? <Btn icon="refresh" label={x.resend} onPress={() => void api.resendInvitation(inv.id).catch(() => {})} /> : null}
+      {inv.email ? <Note text={x.inviteInApp(inv.email)} /> : null}
+      {inv.email ? <Btn icon="bell" label={x.resend} onPress={() => void api.resendInvitation(inv.id).catch(() => {})} /> : null}
       <Btn
         kind="danger"
         icon="x"

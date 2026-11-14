@@ -404,12 +404,23 @@ order, by itself.
 | The child's tablet | A tablet linked with a code always stays connected, whatever was chosen before (`PairScreen.tsx`): a child must never meet a log-in page. |
 | Tests | `src/__tests__/keepSignedIn.test.ts`; and a browser run that signs up both ways, closes the tab and comes back. |
 
+## Round 23 — Codes by e-mail: junk reminder, a calm "send again", and invitations that reach people
+
+| What | How it was done |
+|---|---|
+| Why a red error appeared on "send the code again" | The app let you ask again after 30 seconds, but the server (Supabase) refuses a second code to the same address before 60 seconds, with a sentence the app did not know, so it showed its general red error. The countdown is now 60 seconds, and that sentence has its own meaning in the app (`wait`, in `src/backend/supabase.ts`): no error, the countdown simply starts again (`AuthScreen.tsx`). |
+| Junk reminder | Under "We sent a code to…", one line says to look in the junk (spam) folder. |
+| "Do not record any data" | The first choice of the follow-up (`levels.off` in `src/i18n/data.ts`), in the three languages. |
+| Why the therapist received no e-mail | The app has only ever sent one kind of e-mail: sign-in codes, through Supabase's own sender, which cannot be used for other messages. An invitation was stored in the app and shown as a code; the button "Send again" only repeated a notice inside the app. Sending invitation e-mails automatically needs an e-mail service of our own (see `docs/API-KEYS.md`, section 7). |
+| What changed for invitations | `InvitedView` in `src/ui/settings/TeamTab.tsx`: **Send by email** opens your own mail app with the address, the subject and the whole message ready (`src/lib/inviteMail.ts` builds that link, a `mailto:` link). The text says plainly that the app does not send it by itself, and "Send again" is now called "Remind in the app". |
+| A therapist can type the invitation code | Before, "Connect a user" only understood the family's permanent code, so an invitation code was refused there. `ConnectUser` in `src/ui/pro/Workspace.tsx` now tries the code as an invitation first (joined at once, with the rights the family chose), then as the family's code (a request). |
+
 ## How everything is checked
 
 | Check | What it does |
 |---|---|
 | `npm run typecheck` | TypeScript reads the whole code and refuses mistakes such as a missing field or a wrong type. |
-| `npm test` | 216 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office, colour contrast. |
+| `npm test` | 221 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office, colour contrast. |
 | `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger, a tablet and a member of our team; then every attack found by the security review, which must fail; then a professional who prepares a profile and hands it to the parents; 116 checks. |
 | `npm run test:live` | The same story on a second, empty Supabase project (never the one families use), through the app's own code: 13 steps, including devices, history undo, invitation codes, revisions and materials (needs "Confirm email" off while it runs). Last full run: before the back office (all 13 passed); **to run again once the back-office migration is on the real project**. |
 | `npm run test:a11y` | Accessibility: 170 scans of 49 screens against WCAG 2.2 AA (four sizes, Arabic), then a keyboard-only run. Last run: 0 rule break. |

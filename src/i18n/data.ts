@@ -16,7 +16,7 @@ const fr = {
   consentOwnerNote: 'Vous choisissez. Rien n’est enregistré tant que vous n’avez pas choisi un niveau. Vous pouvez changer ou tout arrêter à tout moment.',
   consentReadOnly: 'Seuls les parents (ou un membre autorisé à gérer l’équipe) choisissent ce qui est enregistré.',
   levels: {
-    off: 'Rien (arrêté)',
+    off: 'Ne pas enregistrer de données',
     usage: 'L’utilisation',
     vocabulary: 'L’utilisation et les mots',
     language: 'L’utilisation, les mots et les phrases',
@@ -243,7 +243,7 @@ const en: Dict = {
   consentOwnerNote: 'You choose. Nothing is recorded until you choose a level. You can change it or stop everything at any time.',
   consentReadOnly: 'Only the parents (or a member allowed to manage the team) choose what is recorded.',
   levels: {
-    off: 'Nothing (stopped)',
+    off: 'Do not record any data',
     usage: 'Use',
     vocabulary: 'Use and words',
     language: 'Use, words and sentences',
@@ -445,7 +445,7 @@ const ar: Dict = {
   consentOwnerNote: 'أنتم تختارون. لا يُسجَّل شيء قبل أن تختاروا مستوى. يمكنكم التغيير أو إيقاف كل شيء في أي وقت.',
   consentReadOnly: 'الأهل فقط (أو عضو مسموح له بإدارة الفريق) يختارون ما يُسجَّل.',
   levels: {
-    off: 'لا شيء (متوقّف)',
+    off: 'عدم تسجيل أي بيانات',
     usage: 'الاستعمال',
     vocabulary: 'الاستعمال والكلمات',
     language: 'الاستعمال والكلمات والجمل',

@@ -85,4 +85,7 @@
   in" (`src/lib/keepSignedIn.ts`, ticked by default) decides where the session is written: on the device,
   or in the visit's store (`src/lib/visit(.web).ts`). The Supabase client must keep `storage: sessionStore`;
   a tablet linked with a code always keeps its session (`PairScreen` forces the choice to yes).
+- E-mails: the only e-mails the server sends are sign-in codes (Supabase Auth). Invitations are not e-mailed
+  by the app: "Send by email" opens the person's own mail app (`src/lib/inviteMail.ts`); never word a button
+  as if the app had sent an e-mail. A professional's code field accepts an invitation code or the family's code.
 - Services and keys: `docs/API-KEYS.md` (keep it up to date when a feature starts needing one).

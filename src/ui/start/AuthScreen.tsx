@@ -28,6 +28,8 @@ type Step =
   | { kind: 'reset'; target: Target; sent: CodeSent };
 
 const MIN_PASSWORD = 8;
+/** Seconds before "send the code again" (the server refuses an earlier request). */
+const RESEND_WAIT = 60;
 
 export function AuthScreen({ mode: initialMode, role: initialRole }: { mode: Mode; role: Role }) {
   const { s, go, api, enter, keep, setKeep } = useSession();
@@ -43,6 +45,8 @@ export function AuthScreen({ mode: initialMode, role: initialRole }: { mode: Mod
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  // How long before another code can be asked for (the server's own pause is one minute).
+  const [resendWait, setResendWait] = useState(RESEND_WAIT);
   // Nothing extra is offered until the server said what it accepts (the demo server plays them all).
   const [ways, setWays] = useState<SignInMethods | null>(api.signInMethods ? null : { google: true, apple: true, phone: true });
   useEffect(() => {
@@ -120,13 +124,30 @@ export function AuthScreen({ mode: initialMode, role: initialRole }: { mode: Mod
           setStep({ kind: 'form' });
           setError(null);
         }}
-        onResend={() =>
-          run(async () => {
+        waitSeconds={resendWait}
+        onResend={async () => {
+          setError(null);
+          setInfo(null);
+          setBusy(true);
+          try {
             const sent = step.kind === 'code' ? await api.resendCode(step.target) : await api.requestPasswordReset(step.target);
+            setResendWait(RESEND_WAIT);
             setStep({ ...step, sent });
             setInfo(s.codeResent);
-          })
-        }
+          } catch (e) {
+            const code = (e as { code?: string }).code;
+            if (code === 'wait' || code === 'too_many') {
+              // The server sends a new code only after a pause: no error, the countdown starts again
+              // (with the time the server gives, when it says it).
+              const asked = Number(/(\d+)\s*sec/i.exec((e as Error).message ?? '')?.[1]);
+              setResendWait(asked > 0 && asked <= 600 ? asked + 1 : RESEND_WAIT);
+              setStep({ ...step, sent: { ...step.sent } });
+              setInfo(s.codeWait);
+            } else setError(errorText(s, e));
+          } finally {
+            setBusy(false);
+          }
+        }}
         onSubmit={(code, newPassword) =>
           run(async () => {
             if (step.kind === 'code') {
@@ -319,6 +340,7 @@ function CodeStep({
   busy,
   error,
   info,
+  waitSeconds,
   onBack,
   onResend,
   onSubmit,
@@ -327,6 +349,7 @@ function CodeStep({
   busy: boolean;
   error: string | null;
   info: string | null;
+  waitSeconds: number;
   onBack: () => void;
   onResend: () => void;
   onSubmit: (code: string, newPassword?: string) => void;
@@ -334,19 +357,21 @@ function CodeStep({
   const { s } = useSession();
   const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
-  // A new code can be asked for after 30 seconds.
-  const [wait, setWait] = useState(30);
+  // A new code can be asked for when the countdown ends; it starts again each time one is asked.
+  const [wait, setWait] = useState(waitSeconds);
   useEffect(() => {
-    setWait(30);
+    setWait(waitSeconds);
     const id = setInterval(() => setWait((w) => Math.max(0, w - 1)), 1000);
     return () => clearInterval(id);
-  }, [step.sent]);
+  }, [step.sent, waitSeconds]);
   const ready = code.length >= 6 && (step.kind === 'code' || password.length > 0);
   return (
     <StartLayout title={step.kind === 'code' ? s.codeTitle : s.resetTitle} onBack={onBack}>
       <T>
         {s.codeSentTo} <T style={{ fontWeight: '700', writingDirection: 'ltr' }}>{step.sent.sentTo}</T>
       </T>
+      {/* A real e-mail can land in the junk folder. */}
+      {!step.sent.demoCode && step.target.email ? <T style={styles.hint}>{s.codeJunk}</T> : null}
       {step.sent.demoCode ? (
         <Pressable onPress={() => setCode(step.sent.demoCode!)} style={styles.demo} accessibilityRole="button">
           <Icon name="sparkles" size={18} color={C.edit} />

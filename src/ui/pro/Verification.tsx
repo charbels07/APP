@@ -118,7 +118,10 @@ export function Verification({ initial, onExplore }: { initial: V | null; onExpl
     );
   }
   if (step === 2 || step === 3) {
+    // One "Add a document" button per step. Step 2 takes a licence or a diploma, whichever the
+    // person has: it is stored as one kind ("licence"); a request made before may still hold a "diploma".
     const kinds: VerificationDoc['kind'][] = step === 2 ? ['licence', 'diploma'] : ['id'];
+    const kind: VerificationDoc['kind'] = step === 2 ? 'licence' : 'id';
     const has = d.documents.some((x) => kinds.includes(x.kind));
     return (
       <StartLayout onBack={() => setStep(step - 1)}>
@@ -126,11 +129,7 @@ export function Verification({ initial, onExplore }: { initial: V | null; onExpl
         <T style={st.title}>{step === 2 ? p.s2Title : p.s3Title}</T>
         <T style={st.muted}>{step === 2 ? p.s2Intro : p.s3Intro}</T>
         {docs(kinds)}
-        <View style={{ flexDirection: rtl ? 'row-reverse' : 'row', flexWrap: 'wrap', gap: 8 }}>
-          {kinds.map((k) => (
-            <Btn key={k} icon="plus" label={`${p.addFile} · ${p.docKinds[k]}`} onPress={() => addDoc(k)} disabled={busy} />
-          ))}
-        </View>
+        <Btn icon="plus" label={p.addFile} onPress={() => addDoc(kind)} disabled={busy} />
         <ErrorText text={error} />
         {footer(has, () => setStep(step + 1))}
       </StartLayout>

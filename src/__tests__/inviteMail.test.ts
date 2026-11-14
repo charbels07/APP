@@ -5,7 +5,7 @@ import { createDefaultProfile } from '../data/defaults';
 import { accountStrings, errorText } from '../i18n/account';
 import { dataStrings } from '../i18n/data';
 import { settingsStrings } from '../i18n/settings';
-import { inviteMailLink } from '../lib/inviteMail';
+import { inviteMailLink, MAIL_SERVICES, mailLinks } from '../lib/inviteMail';
 import { preset } from '../lib/permissions';
 
 describe('the invitation e-mail', () => {
@@ -24,6 +24,48 @@ describe('the invitation e-mail', () => {
   it('never puts anything but a plain address in the link', () => {
     for (const bad of ['', undefined, 'not an address', 'a@b.fr?cc=x@y.z', 'a@b.fr,c@d.fr', 'a@b.fr&body=x']) {
       expect(inviteMailLink(bad, 's', 'b').startsWith('mailto:?subject=')).toBe(true);
+    }
+  });
+  it('asks which mail service to use: each one opens a new message already written', () => {
+    const x = settingsStrings('en');
+    const body = x.inviteMessage('Rita', 'Adam', 'MEW22JD5', 'Empower Communication', 'https://app.example');
+    const subject = x.inviteSubject('Adam', 'Empower Communication');
+    expect(MAIL_SERVICES).toEqual(['gmail', 'outlook', 'yahoo', 'device']);
+    const starts: Record<string, string> = {
+      gmail: 'https://mail.google.com/mail/?view=cm&fs=1&to=sarah%40clinic.fr&su=',
+      outlook: 'https://outlook.live.com/mail/0/deeplink/compose?to=sarah%40clinic.fr&subject=',
+      yahoo: 'https://compose.mail.yahoo.com/?to=sarah%40clinic.fr&subject=',
+      device: 'mailto:sarah@clinic.fr?subject=',
+    };
+    for (const service of MAIL_SERVICES) {
+      const links = mailLinks(service, 'sarah@clinic.fr', subject, body);
+      expect(links.web.startsWith(starts[service])).toBe(true);
+      // The whole message travels in the link, line breaks included, in every service.
+      for (const link of [links.web, links.app].filter(Boolean) as string[]) {
+        const read = decodeURIComponent(link);
+        expect(read).toContain('MEW22JD5');
+        expect(read).toContain('Rita invites you to join Adam’s team');
+        expect(link).toContain('%0A');
+        expect(link).not.toContain(' ');
+      }
+      // The three languages have a name for it.
+      for (const lang of ['fr', 'en', 'ar'] as const) expect(settingsStrings(lang).mailServices[service].length).toBeGreaterThan(3);
+    }
+    // On a tablet the service's own app is tried first; the device's mail app has no other link.
+    expect(mailLinks('gmail', 'sarah@clinic.fr', subject, body).app!.startsWith('googlegmail://co?to=')).toBe(true);
+    expect(mailLinks('device', 'sarah@clinic.fr', subject, body).app).toBeUndefined();
+  });
+  it('a strange address or text can never add something to a mail link', () => {
+    for (const service of MAIL_SERVICES) {
+      for (const bad of ['a@b.fr&bcc=x@y.z', 'a@b.fr?cc=x@y.z', 'not an address', 'a@b.fr,c@d.fr']) {
+        const { web, app } = mailLinks(service, bad, 's&bcc=evil@x.y', 'b&cc=evil@x.y#frag');
+        for (const link of [web, app].filter(Boolean) as string[]) {
+          expect(link).not.toContain('evil@');
+          expect(link).not.toContain('x@y.z');
+          expect(link).not.toContain('c@d.fr');
+          expect(link).not.toContain('#frag');
+        }
+      }
     }
   });
   it('the message exists in the three languages, with the code and where to type it', () => {

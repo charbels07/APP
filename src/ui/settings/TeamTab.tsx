@@ -5,13 +5,12 @@
  */
 import * as Clipboard from 'expo-clipboard';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Linking, Platform, Pressable, Share, Text, TextInput, View } from 'react-native';
+import { Platform, Pressable, Share, Text, TextInput, View } from 'react-native';
 import type { HistoryEntry, Invitation, Membership, Notice, Proposal } from '../../backend/types';
 import { serverMode } from '../../backend';
 import { APP_NAME, errorText } from '../../i18n/account';
 import { settingsStrings, type SettingsStrings } from '../../i18n/settings';
 import { describeOps, type ChangeItem } from '../../lib/describeOps';
-import { inviteMailLink } from '../../lib/inviteMail';
 import { symbolOf } from '../../lib/lexicon';
 import { preset, type AccessLevel, type CollaboratorRole, type PermissionSet } from '../../lib/permissions';
 import { applyOps, foreignOps } from '../../lib/profileDiff';
@@ -21,6 +20,7 @@ import type { BoardCtx } from '../../state/BoardContext';
 import { useSession } from '../../state/Session';
 import { Btn, Field, Section, Segmented, Toggle, useNavRtl } from '../common';
 import { Icon, type IconName } from '../Icon';
+import { MailChoice } from '../MailChoice';
 import { SymbolView } from '../SymbolView';
 import { C } from '../theme';
 import { Note, ss } from './SettingsScreen';
@@ -341,6 +341,8 @@ function InvitedView({ inv, x, onBack }: { inv: Invitation; x: SettingsStrings; 
   const { api } = useSession();
   const [copied, setCopied] = useState(false);
   const [confirm, setConfirm] = useState(false);
+  // "Send by email" first asks which mail service to use.
+  const [mailOpen, setMailOpen] = useState(false);
   // On the website the message also says where the app is (not in the demo page, which has no address of its own).
   const site = Platform.OS === 'web' && serverMode() === 'online' && typeof window !== 'undefined' ? window.location.origin : '';
   const message = x.inviteMessage(inv.fromName, inv.childName, inv.code, APP_NAME, site);
@@ -355,15 +357,8 @@ function InvitedView({ inv, x, onBack }: { inv: Invitation; x: SettingsStrings; 
         </Text>
         <Note text={x.inviteShare} />
         <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-          {/* The app does not send invitation e-mails itself: this opens the person's own mail app, message ready. */}
-          <Btn
-            kind="primary"
-            icon="mail"
-            label={x.inviteByMail}
-            onPress={() => {
-              Linking.openURL(inviteMailLink(inv.email, x.inviteSubject(inv.childName, APP_NAME), message)).catch(() => {});
-            }}
-          />
+          {/* The app does not send invitation e-mails itself: the person picks their mail service, the message opens there ready. */}
+          <Btn kind="primary" icon="mail" label={x.inviteByMail} selected={mailOpen} onPress={() => setMailOpen((v) => !v)} />
           <Btn
             icon="external"
             label={x.share}
@@ -380,6 +375,7 @@ function InvitedView({ inv, x, onBack }: { inv: Invitation; x: SettingsStrings; 
             }}
           />
         </View>
+        {mailOpen && <MailChoice to={inv.email} subject={x.inviteSubject(inv.childName, APP_NAME)} body={message} x={x} />}
       </View>
       {inv.email ? <Note text={x.inviteInApp(inv.email)} /> : null}
       {inv.email ? <Btn icon="bell" label={x.resend} onPress={() => void api.resendInvitation(inv.id).catch(() => {})} /> : null}

@@ -4,14 +4,14 @@
  */
 import * as Clipboard from 'expo-clipboard';
 import React, { useEffect, useState } from 'react';
-import { Linking, Platform, Share, Text, View } from 'react-native';
+import { Platform, Share, Text, View } from 'react-native';
 import { serverMode } from '../../backend';
 import type { Invitation, Membership } from '../../backend/types';
 import { APP_NAME, errorText } from '../../i18n/account';
 import { onboardingStrings } from '../../i18n/onboarding';
 import { proStrings, type ProStrings } from '../../i18n/pro';
 import { settingsStrings } from '../../i18n/settings';
-import { inviteMailLink } from '../../lib/inviteMail';
+import { MailChoice } from '../MailChoice';
 import { preset } from '../../lib/permissions';
 import type { Profile } from '../../model/types';
 import type { ProBoardCtx } from '../../state/BoardContext';
@@ -39,6 +39,8 @@ export function ParentsCard({ profileId, p }: { profileId: string; p: ProStrings
   // the invitation also shows by itself in the account they create with that address.
   const [email, setEmail] = useState('');
   const [copied, setCopied] = useState(false);
+  // "Send by email" first asks which mail service to use.
+  const [mailOpen, setMailOpen] = useState(false);
   useEffect(() => {
     api
       .profileInvitations(profileId)
@@ -74,16 +76,9 @@ export function ParentsCard({ profileId, p }: { profileId: string; p: ProStrings
           <Text style={ss.code} selectable>
             {inv.code}
           </Text>
-          {/* The app does not send e-mails itself: this opens the professional's own mail app, message ready. */}
+          {/* The app does not send e-mails itself: the professional picks a mail service, the message opens there ready. */}
           <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-            <Btn
-              kind="primary"
-              icon="mail"
-              label={x.inviteByMail}
-              onPress={() => {
-                Linking.openURL(inviteMailLink(email || inv.email, p.parentsSubject(inv.childName, APP_NAME), message)).catch(() => {});
-              }}
-            />
+            <Btn kind="primary" icon="mail" label={x.inviteByMail} selected={mailOpen} onPress={() => setMailOpen((v) => !v)} />
             <Btn icon="external" label={x.share} onPress={() => void Share.share({ message }).catch(() => {})} />
             <Btn
               icon="clipboard"
@@ -94,6 +89,7 @@ export function ParentsCard({ profileId, p }: { profileId: string; p: ProStrings
               }}
             />
           </View>
+          {mailOpen && <MailChoice to={email || inv.email} subject={p.parentsSubject(inv.childName, APP_NAME)} body={message} x={x} />}
           {p.parentsSteps(s.roleParent, first, s.haveCode).map((t, i) => (
             <Note key={i} text={`${i + 1}. ${t}`} />
           ))}

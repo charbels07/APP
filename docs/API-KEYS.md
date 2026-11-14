@@ -16,6 +16,12 @@ Supabase values are allowed inside the app.
 | **Cloudflare** | Hosts the website | Your Cloudflare account | Connected to the GitHub repository | Done |
 | **E-mail sender** (confirmation codes, password reset) | Sends the app's e-mails | SMTP user + password | Supabase → Authentication → SMTP settings | Done with a Gmail app password. For real families, a mail service (Resend, Brevo, SendGrid…) delivers better and sends more per hour |
 
+### E-mails to the team (optional)
+
+| Service | What it does | Key | Where it goes | Today |
+|---|---|---|---|---|
+| **Server function `caa-mail`** | Sends the team an e-mail when a professional applies, and the figures of the week every Monday | The same Gmail address and an app password of its own (`SMTP_USER`, `SMTP_PASS`), plus the team's address (`MAIL_TO`) | Supabase → Edge Functions → Secrets (never in the app) | Written and tested here; to switch on once (`supabase/README.md`, section 10) |
+
 ## 2. Sign-in
 
 | Service | What it does | Key | Where it goes | Today |
@@ -93,7 +99,7 @@ day, only people who look after a child, and only the topic, the photo or the dr
 
 | Idea | Service |
 |---|---|
-| **Invitation e-mails sent by the app itself** | An e-mail sending service (Brevo, Resend, Mailgun…) and a small server function holding its key. The e-mail sender of section 1 only serves sign-in codes: Supabase does not let the app use it for other messages. Today the parent sends the invitation from their own mail app ("Send by email": the message is already written), or shares / copies the code |
+| **Invitation e-mails sent by the app itself** | An e-mail sending service (Brevo, Resend, Mailgun…) and a small server function holding its key. The e-mail sender of section 1 only serves sign-in codes: Supabase does not let the app use it for other messages. Today the person sends the invitation from their own mailbox ("Send by email" asks which one — Gmail, Outlook, Yahoo or the device's mail app — and opens the message already written), or shares / copies the code |
 | Subscriptions and payment | Apple / Google in-app purchases, usually through RevenueCat; Stripe on the website |
 | Notifications on the phone (an invitation, a proposal) | Apple and Google push services, through Expo |
 | A robot check on sign-up | Cloudflare Turnstile (free): a site key in the app, a secret in Supabase |

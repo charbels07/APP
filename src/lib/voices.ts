@@ -6,7 +6,9 @@
  * Maged…), and Siri voices carry "male"/"female" in their identifier.
  * Tablets have no real child voices. A child's voice is nearest to a woman's voice, a little
  * higher: a girl's and a boy's voice both start from a woman's voice of the language (a man's
- * voice made higher still sounds like a man), the boy's a little lower than the girl's.
+ * voice made higher still sounds like a man). To tell them apart, the girl's is clearly higher
+ * than the boy's, and when the device has two women's voices of the same country the boy gets
+ * the other one (another timbre, not only another height).
  * When a language has no voice of the chosen kind, the device voice is pitched towards it
  * ("approximate" — shown in Settings).
  */
@@ -96,14 +98,19 @@ export interface VoiceChoice {
  * "voice height" in Settings.
  */
 const CHILD = {
-  /** from a woman's voice */
-  girl: 1.25,
+  /** from a woman's voice: the same voice for both must still sound like two children */
+  girl: 1.4,
   boy: 1.1,
+  /** the boy, when he has a woman's voice of his own (the timbre already differs) */
+  boyOwnVoice: 1.2,
   /** from the device's own voice (woman or man: unknown) */
   device: 1.3,
   /** from a man's voice, when the language has no woman's voice */
-  girlFromMan: 1.6,
-  boyFromMan: 1.45,
+  girlFromMan: 1.65,
+  boyFromMan: 1.4,
+  /** no named voice at all for the language */
+  girlUnknown: 1.45,
+  boyUnknown: 1.15,
 };
 const clamp = (p: number) => Math.min(2, Math.max(0.5, +p.toFixed(2)));
 
@@ -137,14 +144,23 @@ export function chooseVoice(
     const up = child ? CHILD.device : 1;
     return own ? { id: own.id, name: own.name, pitch: clamp(up), exact: true } : { pitch: clamp(up), exact: true };
   }
-  const best = (g: VoiceGender) => forLang.filter((v) => voiceGender(v) === g).sort((a, b) => score(b) - score(a) || a.name.localeCompare(b.name))[0];
+  const ranked = (g: VoiceGender) => forLang.filter((v) => voiceGender(v) === g).sort((a, b) => score(b) - score(a) || a.name.localeCompare(b.name));
+  const best = (g: VoiceGender): VoiceInfo | undefined => ranked(g)[0];
   if (child) {
-    // Girl or boy: a woman's voice, a little higher (see CHILD); a man's voice only without one.
-    const woman = best('f');
-    if (woman) return { id: woman.id, name: woman.name, pitch: clamp(kind === 'm' ? CHILD.boy : CHILD.girl), exact: true };
+    // Girl or boy: a woman's voice, higher (see CHILD); a man's voice only without one.
+    const women = ranked('f');
+    const woman = women[0];
+    if (woman && kind === 'f') return { id: woman.id, name: woman.name, pitch: clamp(CHILD.girl), exact: true };
+    if (woman) {
+      // The boy: another woman's voice of the same country when the device has one (never a
+      // machine-like one, never another accent); otherwise the girl's voice, clearly lower.
+      const own = women.find((v) => v.id !== woman.id && locale(v) === locale(woman) && !isRobotic(v));
+      const v = own ?? woman;
+      return { id: v.id, name: v.name, pitch: clamp(own ? CHILD.boyOwnVoice : CHILD.boy), exact: true };
+    }
     const man = best('m');
     if (man) return { id: man.id, name: man.name, pitch: clamp(kind === 'm' ? CHILD.boyFromMan : CHILD.girlFromMan), exact: false };
-    return { pitch: clamp(kind === 'm' ? 1.35 : 1.5), exact: false };
+    return { pitch: clamp(kind === 'm' ? CHILD.boyUnknown : CHILD.girlUnknown), exact: false };
   }
   const match = best(kind);
   if (match) return { id: match.id, name: match.name, pitch: 1, exact: true };

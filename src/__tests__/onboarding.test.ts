@@ -51,4 +51,14 @@ describe('set-up journey → first board', () => {
     expect(p.customConcepts.c_tata.labels.fr).toBe('Tata Rita');
     expect(p.guide).toMatchObject({ openOnStart: true, tailored: { newToAac: true } });
   });
+  it('Arabic not ticked among the languages: no Arabic in the app; ticked: the Arabic that was chosen', () => {
+    const base = createDefaultProfile();
+    const without = applyAnswers(base, { ...emptyAnswers('fr'), name: 'Lea', langs: ['fr', 'en'] });
+    expect(without.settings).toMatchObject({ arabic: 'none', langs: ['fr', 'en'], lang: 'fr' });
+    // A dialect picked earlier does not bring Arabic back once Arabic is unticked.
+    const unticked = applyAnswers(base, { ...emptyAnswers('fr'), name: 'Lea', langs: ['en'], arabic: 'eg' });
+    expect(unticked.settings).toMatchObject({ arabic: 'none', langs: ['en'] });
+    const withArabic = applyAnswers(base, { ...emptyAnswers('fr'), name: 'Lea', langs: ['fr', 'ar'], arabic: 'eg' });
+    expect(withArabic.settings).toMatchObject({ arabic: 'eg', langs: ['fr', 'ar'] });
+  });
 });

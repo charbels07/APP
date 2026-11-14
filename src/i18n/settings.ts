@@ -63,6 +63,9 @@ const fr = {
   inviteReady: 'Invitation prête',
   inviteShare: 'Envoyez ce code à la personne : l’application ne l’envoie pas toute seule. Elle l’entre dans l’application, connectée à son compte.',
   inviteByMail: 'Envoyer par e-mail',
+  mailWith: 'Avec quelle messagerie voulez-vous l’envoyer ?',
+  mailServices: { gmail: 'Gmail', outlook: 'Outlook / Hotmail', yahoo: 'Yahoo Mail', device: 'L’application Mail de cet appareil' },
+  mailOpens: 'Un nouveau message s’ouvre dans votre messagerie, déjà écrit : vérifiez-le, puis appuyez sur « Envoyer ».',
   inviteSubject: (child: string, app: string) => `Invitation à rejoindre l’équipe de ${child} (${app})`,
   inviteInApp: (email: string) => `Si la personne a un compte avec l’adresse ${email}, l’invitation s’affiche aussi dans son application.`,
   inviteMessage: (from: string, child: string, code: string, app: string, site: string) =>
@@ -249,6 +252,9 @@ const en: Dict = {
   inviteReady: 'Invitation ready',
   inviteShare: 'Send this code to the person: the app does not send it by itself. They enter it in the app, signed in to their account.',
   inviteByMail: 'Send by email',
+  mailWith: 'Which mail do you want to send it with?',
+  mailServices: { gmail: 'Gmail', outlook: 'Outlook / Hotmail', yahoo: 'Yahoo Mail', device: 'This device’s mail app' },
+  mailOpens: 'A new message opens in your mailbox, already written: check it, then press “Send”.',
   inviteSubject: (child, app) => `Invitation to join ${child}’s team (${app})`,
   inviteInApp: (email) => `If the person has an account with the address ${email}, the invitation also shows in their app.`,
   inviteMessage: (from, child, code, app, site) =>
@@ -432,6 +438,9 @@ const ar: Dict = {
   inviteReady: 'الدعوة جاهزة',
   inviteShare: 'أرسل هذا الرمز إلى الشخص: التطبيق لا يرسله تلقائياً. يُدخله في التطبيق بعد تسجيل دخوله.',
   inviteByMail: 'إرسال بالبريد الإلكتروني',
+  mailWith: 'بأي بريد تريد إرساله؟',
+  mailServices: { gmail: 'Gmail', outlook: 'Outlook / Hotmail', yahoo: 'Yahoo Mail', device: 'تطبيق البريد في هذا الجهاز' },
+  mailOpens: 'تُفتح رسالة جديدة في بريدك، مكتوبة مسبقاً: راجعها ثم اضغط «إرسال».',
   inviteSubject: (child, app) => `دعوة للانضمام إلى فريق ${child} (${app})`,
   inviteInApp: (email) => `إذا كان للشخص حساب بالعنوان ${email}، تظهر الدعوة أيضاً في تطبيقه.`,
   inviteMessage: (from, child, code, app, site) =>

@@ -102,6 +102,7 @@ const SETTING_NAMES: Record<string, Record<UiLang, string>> = {
   arabic: { fr: 'arabe de l’application', en: 'Arabic used in the app', ar: 'العربية المستعملة في التطبيق' },
   dialectVoice: { fr: 'voix du dialecte', en: 'dialect voice', ar: 'صوت اللهجة' },
   revealLevel: { fr: 'vocabulaire révélé', en: 'revealed vocabulary', ar: 'المفردات الظاهرة' },
+  wordPlaces: { fr: 'place des mots affichés', en: 'place of the words shown', ar: 'مكان الكلمات الظاهرة' },
   speechRate: { fr: 'vitesse de la voix', en: 'speech rate', ar: 'سرعة الصوت' },
   voiceKind: { fr: 'voix', en: 'voice', ar: 'الصوت' },
   voiceAge: { fr: 'âge de la voix', en: 'voice age', ar: 'عمر الصوت' },

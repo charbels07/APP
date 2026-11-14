@@ -22,7 +22,9 @@ everything works on one device. Follow these steps to switch to the real server.
   Brevo…) deliver better than Gmail.
 - **Templates:** *Emails → Templates → Source*: paste `email-templates/confirm-signup.html` into
   *Confirm signup* and `email-templates/reset-password.html` into *Reset password*
-  (`{{ .Token }}` is where Supabase writes the code).
+  (`{{ .Token }}` is where Supabase writes the code). **Paste both again after 14 November 2026**:
+  the code is now written so that mail apps no longer turn it into a phone link (copying it
+  used to copy a link instead of the digits).
 - **Phone:** on, with an SMS provider (Twilio or MessageBird account; SMS are paid).
 - **Google:** create an OAuth client in Google Cloud Console and paste its ID and secret.
 - **Apple:** needs the Apple Developer account (Sign in with Apple service ID and key).
@@ -200,6 +202,74 @@ In a browser the Apple button is not shown: that way needs a "Services ID" and a
 to be renewed every six months. To offer it later, do that set-up, put the Services ID first in
 *Client IDs*, and remove the `Platform.OS === 'ios'` condition in `src/ui/start/AuthScreen.tsx`.
 
+## 10. E-mails to the team (a professional applied; the figures of the week)
+
+Two e-mails arrive in the team's mailbox by themselves:
+
+- **when a professional sends their documents** for verification (profession, country, how many
+  requests are waiting — no name, no document);
+- **every Monday at 06:00 UTC**, the figures of the week (new accounts, profiles, requests waiting,
+  messages, use of the boards). Counts only; the use of the boards only covers families who share
+  anonymous statistics, and only from 5 children up — the same rule as the back office.
+
+The database writes these messages; a small server function, `caa-mail`, sends them through the
+Gmail account that already sends the sign-in codes. Nothing in the app changes.
+
+**1. The function.** Supabase → *Edge Functions* → *Deploy a new function* → *Via Editor*.
+Name it exactly `caa-mail`, replace the example by the whole content of
+`supabase/functions/caa-mail/index.ts`, and deploy. Then open the function's settings and turn
+**off** the switch called *Verify JWT* (the database has no sign-in to show; it shows a key of its
+own instead). With the command line, the same in one go:
+
+```bash
+npx supabase functions deploy caa-mail --no-verify-jwt
+```
+
+**2. The secrets.** *Edge Functions → Secrets*, three lines (typed there, never in a chat or a file):
+
+| Name | Value |
+|---|---|
+| `SMTP_USER` | the Gmail address that sends the sign-in codes |
+| `SMTP_PASS` | an **app password** of that Gmail account (Google Account → Security → 2-Step Verification → App passwords; make a new one, called for example "team mail") |
+| `MAIL_TO` | the address where the team reads its e-mails (leave it out to use the same address) |
+
+**3. The database.** *SQL Editor*: run the file `supabase/migrations/20261116000000_team_mail.sql`,
+then this line with your own project address (*Project Settings → API → Project URL*):
+
+```sql
+select public.team_mail_connect('https://YOUR-PROJECT.supabase.co');
+```
+
+**4. Try it.**
+
+```sql
+select public.team_mail_test();
+```
+
+An e-mail "the team e-mails work" arrives within a minute (look in the junk folder the first
+time). If it does not:
+
+```sql
+select * from public.team_mail_check();
+```
+
+| What the check says | What to do |
+|---|---|
+| Connected: no | run step 3 again |
+| pg_net or pg_cron: missing | *Database → Extensions*: turn on `pg_net` and `pg_cron`, then run `select public.team_mail_plan();` |
+| Weekly job planned: no | run `select public.team_mail_plan();` |
+| Last answers of the function: 401 | *Verify JWT* is still on (step 1) |
+| … 404 | the function is not deployed, or is not called `caa-mail` |
+| … 503 | a secret of step 2 is missing |
+| Last error from the mailbox: "Invalid login" | the app password is wrong: make a new one and replace `SMTP_PASS` |
+
+To read the weekly e-mail without waiting for Monday: `select public.team_mail_weekly();` (one a
+week at most). To stop everything: `delete from public.team_mail_config;` (messages then wait in
+`team_mail`, nothing is sent).
+
+`npm run test:db` plays the whole story on a throw-away database: who can touch these messages
+(nobody from the app), what they say, and what they never say.
+
 ## What is where
 
 | Table | Contents |
@@ -222,6 +292,7 @@ to be renewed every six months. To offer it later, do that set-up, put the Servi
 | `observations` | adults' notes on communication moments (function, context, partner, autonomy, result) |
 | `research_usage` (view) | anonymous daily numbers for the app's team, consenting families only |
 | `ai_calls` | how many AI requests each account made today (daily limit) |
+| `team_mail`, `team_mail_config` | the e-mails written for the app's team and where the sending function is; not reachable from the app |
 
 Storage buckets: `verification-docs` (diplomas, private to their owner and the app's team) and `profile-media`
 (a child's photos and recordings, private to the child's team).

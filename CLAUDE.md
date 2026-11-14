@@ -8,6 +8,10 @@
   (`src/ui/Root.tsx`); overlays live inside the content area so the bar is always reachable.
 - Vocabulary is concept-based (`src/data/concepts.ts`); never move core cells
   (`src/data/defaults.ts`) when editing: positions are the user's motor plan.
+- Part of the words shown (levels 1 and 2): outside caregiver mode the main board is drawn without
+  holes, each word sliding up in its own column (`compactPlaces` in `src/lib/boardOps.ts`; also print
+  and the set-up preview). Display only: never change the stored cells for it. The family can keep
+  "Final places" instead (`settings.wordPlaces`); caregiver mode always shows the real places.
 - Platform-specific code uses `.web.ts(x)` siblings (media store, printing, preview).
 - Pictograms: only libraries verified as free for commercial use (`docs/PICTOGRAM-LICENSES.md`,
   `pictograms/libraries.json`). Never add ARASAAC or any NC / unclear-licence set. A pictogram is
@@ -25,7 +29,9 @@
 - A word's picture has two sources only: "App's library" (the offline pictograms) and "Your library" (a
   picture saved on the device, or a photo). Pictures searched on the internet were removed on purpose
   (November 2026): do not add an online picture search or a "paste a link" option back unless asked.
-- Arabic: the family chooses a dialect or none (`settings.arabic`). `src/data/concepts.ts` holds the Lebanese
+- Arabic: the family chooses a dialect or none (`settings.arabic`). In the set-up the languages come first;
+  "Which Arabic?" is only asked when Arabic is ticked, and no Arabic among the languages means
+  `arabic = 'none'` (`applyAnswers`). `src/data/concepts.ts` holds the Lebanese
   words; `src/data/dialectWords.ts` lists what differs per dialect (data only: also read by the build script).
   Always read Arabic labels through `getConcept` / `label`, languages through `availableLangs`, and the
   language name through `langName` — never `BUILTIN_CONCEPTS[id].labels.ar` or `LANGS` directly in screens.
@@ -35,6 +41,8 @@
   off by the empty index (`npm run build:voices`, `src/lib/dialectVoice.ts`, `src/data/voicePackIndex.ts`).
 - A man's / woman's voice is chosen by name in `src/lib/voices.ts`: machine-like and joke voices (`ROBOTIC`)
   come last. A family's own recording of a word (`overrides[id].audio[lang]`) always wins over any voice.
+  Child voices are a woman's voice raised (`CHILD`): the girl clearly higher than the boy, and the boy on
+  another woman's voice of the same country when there is one. Keep both sounding like children.
 - App pictograms live in `src/data/concepts.ts` (`app: { url, triggers }`); new built-in folders are added
   to saved profiles by a one-time migration in `src/lib/storage.ts` (only into an empty slot).
 - Back office (`src/ui/admin/`, stage `admin`): only accounts in the database table `admins`; every
@@ -85,9 +93,15 @@
   in" (`src/lib/keepSignedIn.ts`, ticked by default) decides where the session is written: on the device,
   or in the visit's store (`src/lib/visit(.web).ts`). The Supabase client must keep `storage: sessionStore`;
   a tablet linked with a code always keeps its session (`PairScreen` forces the choice to yes).
-- E-mails: the only e-mails the server sends are sign-in codes (Supabase Auth). Invitations are not e-mailed
-  by the app: "Send by email" opens the person's own mail app (`src/lib/inviteMail.ts`); never word a button
-  as if the app had sent an e-mail. A professional's code field accepts an invitation code or the family's code.
+- E-mails: to users, the server only sends sign-in codes (Supabase Auth). Invitations are not e-mailed
+  by the app: "Send by email" asks which mail service to use and opens a new message already written there
+  (`src/ui/MailChoice.tsx`, `src/lib/inviteMail.ts`); never word a button as if the app had sent an e-mail.
+  A professional's code field accepts an invitation code or the family's code.
+- E-mails to the app's own team (a professional applied; the figures of the week): written by the database
+  (`team_mail`, migration `20261116000000_team_mail.sql`), sent by the function `caa-mail`, which is only a
+  postman. Counts only: no name, word, sentence or document, and the back-office rule for usage (consenting
+  families, 5 children or more). Nothing of it is reachable from the app; a new kind of message is written
+  in SQL with its checks in `supabase/tests/team_mail_scenario.sql`.
 - The board's bar has "Settings" and "Lock" (child lock) for the parents: outside caregiver mode they
   always go through the code (`{ kind: 'pin', then: { kind: 'settings' | 'lock' } }`), and open without
   turning caregiver mode on (`opensAlone`). Never open the settings or the lock from the bar without the code.

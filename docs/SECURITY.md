@@ -102,6 +102,24 @@ Both buttons open the caregiver code keypad first (same code, same pauses after 
 nothing of the settings is shown before the code is right, and the board does not switch to
 caregiver mode behind them.
 
+### Added later: e-mails to the app's team (November 2026)
+
+The database writes the messages (a professional applied; the figures of the week) and a server
+function sends them. What keeps it safe:
+
+- the tables `team_mail` and `team_mail_config`, and every `team_mail_*` function, are closed to
+  the app (signed in or not): they cannot be read, written, sent or pointed somewhere else;
+- the function is called by the database only, which shows a key it made itself; the key is
+  checked **by the database** (`team_mail_take`), and it can only ever be shown to the project's
+  own `…supabase.co/functions/v1/caa-mail` address;
+- the function cannot choose what is sent or to whom: subject and text come from the database,
+  the address is a secret of the function;
+- the messages hold counts only: no name, no word, no sentence, no document; the use of the
+  boards follows the back-office rule (consenting families, 5 children or more);
+- one e-mail a day for the same professional, 30 a day in all; a failure never blocks the request.
+
+`supabase/tests/team_mail_scenario.sql` plays each of these.
+
 ## 4. What only you can do
 
 ### Now (10 minutes)
@@ -161,8 +179,8 @@ Names move a little between versions of the dashboard; look for the nearest word
 
 | Command | What it proves |
 |---|---|
-| `npm run test:db` | 116 checks on a throw-away database: the normal story, then **every attack of this review, which must fail**, then the hand-over of a profile created by a professional. |
-| `npm test` | 221 tests; `security.test.ts` covers links, other people's changes, what stays on the device, the print page, the website protections. |
+| `npm run test:db` | 140 checks on a throw-away database: the normal story, then **every attack of this review, which must fail**, then the hand-over of a profile created by a professional, then the e-mails to the team. |
+| `npm test` | 243 tests; `security.test.ts` covers links, other people's changes, what stays on the device, the print page, the website protections. |
 | `npm audit` | Known flaws in libraries. Today: none in what ships to families (4 medium ones in build tools only). |
 | `npm run test:a11y` | The screens still pass the accessibility scan after these changes. |
 

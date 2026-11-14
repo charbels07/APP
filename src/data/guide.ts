@@ -334,12 +334,12 @@ const BASE: BaseChapter[] = [
     steps: {
       fr: [
         'Réglages → Vocabulaire révélé : niveau 1 (premiers mots), 2, ou 3 (tout).',
-        'Les mots masqués gardent leur place : on agrandit le vocabulaire sans rien déplacer.',
+        'Place des mots affichés → « Sans trous » : les mots se rangent en haut de leur colonne (certains descendront quand vous en afficherez plus). « Places définitives » : chaque mot est déjà à sa place du tableau complet, rien ne bougera.',
         'Le niveau de chaque mot se règle sur sa case (mode accompagnant, tableau principal : badge N1, N2, N3).',
       ],
       en: [
         'Settings → Revealed vocabulary: level 1 (first words), 2, or 3 (everything).',
-        'Hidden words keep their place: vocabulary grows without moving anything.',
+        'Place of the words shown → “No gaps”: the words line up at the top of their column (some move down when you show more). “Final places”: each word is already where it is on the complete board, nothing will move.',
         'Each word’s level is set on its card (caregiver mode, main board: badge N1, N2, N3).',
       ],
     },
@@ -510,14 +510,14 @@ const BASE: BaseChapter[] = [
     steps: {
       fr: [
         'Réglages (mode accompagnant) → Équipe : les personnes qui ont accès, leur rôle et ce qu’elles peuvent faire.',
-        'Inviter quelqu’un : nom, rôle, niveau (Utiliser, Contribuer, Modifier directement) et droits, puis envoyez le code avec Envoyer par e-mail (votre messagerie s’ouvre, le message est déjà écrit), Partager ou Copier : l’application n’envoie pas d’e-mail toute seule. Un professionnel peut aussi demander à rejoindre avec le code pour les professionnels : vous choisissez ses droits avant d’accepter.',
+        'Inviter quelqu’un : nom, rôle, niveau (Utiliser, Contribuer, Modifier directement) et droits, puis envoyez le code avec Envoyer par e-mail (choisissez votre messagerie : Gmail, Outlook, Yahoo ou celle de l’appareil ; un message déjà écrit s’y ouvre), Partager ou Copier : l’application n’envoie pas d’e-mail toute seule. Un professionnel peut aussi demander à rejoindre avec le code pour les professionnels : vous choisissez ses droits avant d’accepter.',
         'Propositions : chaque changement proposé s’affiche avant / après ; approuvez, demandez une modification ou refusez. Changer la place d’un mot de base demande une confirmation.',
         'Historique : qui a changé quoi et quand (jamais ce que l’enfant a dit), avec Annuler.',
         'Sur une personne de l’équipe : Fin de l’accès (1 semaine, 1 mois, 3 mois ou sans fin) et Retirer l’accès, qui s’applique tout de suite. Nouveautés rassemble ce qui s’est passé (invitation acceptée, demande, proposition reçue) ; Changer le code remplace le code pour les professionnels.',
       ],
       en: [
         'Settings (caregiver mode) → Team: the people who have access, their role and what they can do.',
-        'Invite someone: name, role, level (Use, Contribute, Edit directly) and rights, then send the code with Send by email (your mail app opens, the message is already written), Share or Copy: the app does not send emails by itself. A professional can also ask to join with the code for professionals: you choose their rights before accepting.',
+        'Invite someone: name, role, level (Use, Contribute, Edit directly) and rights, then send the code with Send by email (choose your mail: Gmail, Outlook, Yahoo or the device’s own; a message already written opens there), Share or Copy: the app does not send emails by itself. A professional can also ask to join with the code for professionals: you choose their rights before accepting.',
         'Proposals: each suggested change shows before / after; approve, ask for a change or decline. Moving a core word asks for confirmation.',
         'History: who changed what and when (never what the child said), with Undo.',
         'On a person of the team: Access ends (1 week, 1 month, 3 months or no end) and Remove access, which applies at once. What’s new gathers what happened (invitation accepted, request, proposal received); Change the code replaces the code for professionals.',
@@ -824,7 +824,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
     title: 'إظهار المفردات تدريجياً',
     steps: [
       'الإعدادات ← «المفردات الظاهرة»: المستوى 1 (الكلمات الأولى)، 2، أو 3 (الكل).',
-      'تحتفظ الكلمات المخفية بمكانها: تكبر المفردات دون نقل أي شيء.',
+      '«مكان الكلمات الظاهرة» ← «بلا فراغات»: تصطفّ الكلمات في أعلى عمودها (ينزل بعضها عند إظهار المزيد). «الأماكن النهائية»: كل كلمة في مكانها على اللوحة الكاملة، ولن يتحرك شيء.',
       'يُضبط مستوى كل كلمة على بطاقتها (وضع المرافق، اللوحة الرئيسية: الشارة N1، N2، N3).',
     ],
   },
@@ -900,7 +900,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
     title: 'فريق الطفل',
     steps: [
       'الإعدادات (وضع المرافق) ← الفريق: الأشخاص الذين لديهم صلاحية، دورهم وما يمكنهم فعله.',
-      'دعوة شخص: الاسم، الدور، المستوى (استعمال، مساهمة، تعديل مباشر) والصلاحيات، ثم أرسل الرمز عبر «إرسال بالبريد الإلكتروني» (يفتح بريدك والرسالة مكتوبة)، أو «مشاركة» أو «نسخ»: التطبيق لا يرسل بريداً إلكترونياً من تلقاء نفسه. يمكن لمختصّ أيضاً أن يطلب الانضمام برمز المختصّين: تختار صلاحياته قبل القبول.',
+      'دعوة شخص: الاسم، الدور، المستوى (استعمال، مساهمة، تعديل مباشر) والصلاحيات، ثم أرسل الرمز عبر «إرسال بالبريد الإلكتروني» (اختر بريدك: Gmail أو Outlook أو Yahoo أو بريد الجهاز؛ تُفتح فيه رسالة مكتوبة مسبقاً)، أو «مشاركة» أو «نسخ»: التطبيق لا يرسل بريداً إلكترونياً من تلقاء نفسه. يمكن لمختصّ أيضاً أن يطلب الانضمام برمز المختصّين: تختار صلاحياته قبل القبول.',
       'الاقتراحات: يظهر كل تغيير مقترح قبل / بعد؛ وافق، أو اطلب تعديلاً، أو ارفض. تغيير مكان كلمة أساسية يحتاج إلى تأكيد.',
       'السجل: من غيّر ماذا ومتى (أبداً ما قاله الطفل)، مع «تراجع».',
       'على شخص من الفريق: «انتهاء الصلاحية» (أسبوع، شهر، 3 أشهر أو بلا نهاية) و«سحب الصلاحية» الذي يُطبَّق فوراً. «الجديد» يجمع ما حدث (دعوة قُبلت، طلب، اقتراح وارد)؛ «تغيير الرمز» يستبدل رمز المختصّين.',

@@ -22,9 +22,9 @@ export function tailoredChapter(p: Profile): GuideChapter | null {
   lines.push(
     st.revealLevel < 3
       ? {
-          fr: `Le tableau montre ${shown} mots pour commencer. Les autres attendent, cachés à leur place : quand l’enfant est prêt, montrez-en plus dans Réglages → « Vocabulaire révélé ». Rien ne bouge.`,
-          en: `The board shows ${shown} words to start with. The others wait, hidden in their place: when the child is ready, show more in Settings → “Revealed vocabulary”. Nothing moves.`,
-          ar: `تعرض اللوحة ${shown} كلمة للبداية. الكلمات الأخرى مخفية في مكانها: عندما يكون الطفل جاهزاً، أظهر المزيد في الإعدادات ← «المفردات الظاهرة». لا يتحرك شيء.`,
+          fr: `Le tableau montre ${shown} mots pour commencer. Les autres attendent, cachés : quand l’enfant est prêt, montrez-en plus dans Réglages → « Vocabulaire révélé ». Chaque mot reste dans sa colonne.`,
+          en: `The board shows ${shown} words to start with. The others wait, hidden: when the child is ready, show more in Settings → “Revealed vocabulary”. Each word stays in its column.`,
+          ar: `تعرض اللوحة ${shown} كلمة للبداية. الكلمات الأخرى مخفية: عندما يكون الطفل جاهزاً، أظهر المزيد في الإعدادات ← «المفردات الظاهرة». تبقى كل كلمة في عمودها.`,
         }
       : {
           fr: `Le tableau complet est affiché (${shown} mots), toujours à la même place.`,

@@ -51,3 +51,37 @@ export function moveCell(board: Board, from: number, to: number): void {
     }
   }
 }
+
+/**
+ * Where the cards of the main board are drawn while only part of its words is shown
+ * (levels 1 and 2). Each word keeps its own column and slides up until no hole is left above
+ * it, so the words of a kind stay together, in the order of the complete board.
+ *
+ * Stored places never change (they are the child's final motor plan): this is only the picture
+ * on screen, used outside caregiver mode and for printing.
+ *
+ * Returns card index → slot where it is drawn, or `null` when every card stays where it is:
+ * another kind of board, every word shown, the family chose "final places", or a shown card is
+ * spread over several slots (its neighbours could not slide around it).
+ */
+export function compactPlaces(board: Board, level: number, places: 'compact' | 'final' | undefined): Map<number, number> | null {
+  if (board.kind !== 'core' || places === 'final') return null;
+  const shown = (i: number) => !!board.cells[i] && (board.cells[i]!.level ?? 1) <= level;
+  let hiddenCards = false;
+  for (let i = 0; i < board.cells.length; i++) {
+    const cell = board.cells[i];
+    if (!cell) continue;
+    if (!shown(i)) hiddenCards = true;
+    else if (cell.span && (cell.span[0] !== 1 || cell.span[1] !== 1)) return null;
+  }
+  if (!hiddenCards) return null;
+  const at = new Map<number, number>();
+  for (let c = 0; c < board.cols; c++) {
+    let row = 0;
+    for (let r = 0; r < board.rows; r++) {
+      const i = r * board.cols + c;
+      if (shown(i)) at.set(i, row++ * board.cols + c);
+    }
+  }
+  return at;
+}

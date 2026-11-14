@@ -1060,6 +1060,20 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
           onChange={(v) => set((x) => void (x.revealLevel = v as 1 | 2 | 3))}
           options={[1, 2, 3].map((n) => ({ value: n, label: `${t.levelN} ${n}` }))}
         />
+        {st.revealLevel < 3 && (
+          <>
+            <Text style={s.label}>{t.sWordPlaces}</Text>
+            <Segmented
+              value={st.wordPlaces ?? 'compact'}
+              onChange={(v) => set((x) => void (x.wordPlaces = v))}
+              options={[
+                { value: 'compact', label: t.sWordPlacesCompact },
+                { value: 'final', label: t.sWordPlacesFinal },
+              ]}
+            />
+            <Text style={s.note}>{(st.wordPlaces ?? 'compact') === 'compact' ? t.sWordPlacesCompactNote : t.sWordPlacesFinalNote}</Text>
+          </>
+        )}
         <Text style={s.label}>{t.sSymbols}</Text>
         <Segmented
           value={st.symbolSet}

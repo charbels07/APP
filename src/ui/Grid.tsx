@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Animated, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 import { editStrings } from '../i18n/edit';
 import { appLinkOf } from '../lib/appLinks';
-import { coveredSlots, moveCell } from '../lib/boardOps';
+import { compactPlaces, coveredSlots, moveCell } from '../lib/boardOps';
 import { display, isRtl, label, symbolOf, wordClass } from '../lib/lexicon';
 import type { Board, CellDisplay, SymbolRef, WordClass } from '../model/types';
 import { useApp } from '../state/AppState';
@@ -263,6 +263,16 @@ export function Grid({ board }: { board: Board }) {
   );
 
   const covered = useMemo(() => coveredSlots(board), [board]);
+  // Part of the words shown: outside caregiver mode they are drawn without holes (each word
+  // slides up in its column). Caregiver mode always shows the real places, where cards are moved.
+  const wordPlaces = profile.settings.wordPlaces;
+  const revealed = profile.settings.revealLevel;
+  const places = useMemo(() => (editMode ? null : compactPlaces(board, revealed, wordPlaces)), [board, editMode, revealed, wordPlaces]);
+  // Drawn (and reached with the keyboard) in the order seen on screen.
+  const order = useMemo(
+    () => (places ? [...places.entries()].sort((a, b) => a[1] - b[1]).map(([i]) => i) : board.cells.map((_, i) => i)),
+    [places, board.cells],
+  );
   const cols = board.cols;
   const rows = board.rows;
   let cellW = size.w ? (size.w - GAP * (cols - 1)) / cols : 0;
@@ -287,10 +297,12 @@ export function Grid({ board }: { board: Board }) {
   const grid =
     size.w > 0 ? (
       <View style={{ width: totalW, height: size.h }}>
-        {board.cells.map((cell, index) => {
+        {order.map((index) => {
+          const cell = board.cells[index];
           if (covered.has(index)) return null;
-          const r = Math.floor(index / cols);
-          const c = index % cols;
+          const slot = places?.get(index) ?? index;
+          const r = Math.floor(slot / cols);
+          const c = slot % cols;
           const [sw, sh] = cell?.span ?? [1, 1];
           const frame = {
             position: 'absolute' as const,

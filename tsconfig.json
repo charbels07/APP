@@ -12,6 +12,6 @@
     "scripts",
     "dist",
     "jest.setup.js",
-    "supabase/functions/caa-ai"
+    "supabase/functions"
   ]
 }

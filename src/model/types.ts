@@ -134,6 +134,12 @@ export interface Settings {
   uiLang: UiLang;
   gender: Gender;
   revealLevel: 1 | 2 | 3;
+  /**
+   * While only part of the words is shown (levels 1 and 2). 'compact' (also when undefined):
+   * each word slides up in its column, no holes. 'final': each word is already at the place it
+   * has on the complete board. Only the picture on screen changes, never the stored places.
+   */
+  wordPlaces?: 'compact' | 'final';
   symbolSet: 'pictos' | 'emoji';
   showLabels: boolean;
   /** Speak each word when it is touched. */

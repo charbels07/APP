@@ -116,6 +116,8 @@ export function applyAnswers(base: Profile, a: Answers, custom: { id: string; la
   const p: Profile = JSON.parse(JSON.stringify(base));
   const st = p.settings;
   if (a.arabic) st.arabic = a.arabic;
+  // Arabic was not ticked among the languages: no Arabic in the app at all.
+  if (!a.langs.includes('ar')) st.arabic = 'none';
   // "No Arabic": it is not one of the child's languages either.
   const chosen = a.langs.filter((l) => l !== 'ar' || st.arabic !== 'none');
   st.langs = chosen.length ? chosen : [st.lang === 'ar' && st.arabic === 'none' ? 'fr' : st.lang];

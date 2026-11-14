@@ -55,6 +55,11 @@ const results = [];
       const code = (await p.getByText(/Your code is/).first().textContent()).match(/\d{6}/)[0];
       await p.getByLabel('Code', { exact: true }).fill(code); await btn(L.verify).click(); await p.waitForTimeout(1500); await scan('05-setup-child');
     });
+    // The languages, then which Arabic (asked only once Arabic is ticked).
+    await step('05b-languages', async () => {
+      await p.getByLabel('Child’s first name').fill('Adam'); await btn('Continue').click(); await p.getByText('Communication languages').first().waitFor(); await scan('05b-setup-languages');
+      await p.getByRole('checkbox', { name: /Arabic/ }).click(); await btn('Continue').click(); await p.getByText('Which Arabic?').first().waitFor(); await scan('05c-setup-arabic');
+    });
     await p.evaluate(() => localStorage.removeItem('caa.session.v1')); await p.reload(); await p.getByRole('button').first().waitFor();
   }
   // The board, through the demo team account (a ready-made profile, no questions).

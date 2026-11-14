@@ -88,8 +88,8 @@ let bad = 0;
     for (let i = 0; i < 20 && !(await btn('Finish').count()); i++) {
       await btn('Continue').click();
       await p.waitForTimeout(350);
-      // the Arabic step needs a choice
-      if (await p.getByText(/Choose an Arabic, or/).count()) {
+      // the Arabic step (only there when Arabic is one of the languages) needs a choice
+      if (await p.getByText(/Choose (your|the) child’s Arabic/).count()) {
         await p.getByRole('radio').last().click();
         await btn('Continue').click();
         await p.waitForTimeout(350);

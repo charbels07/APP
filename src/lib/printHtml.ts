@@ -8,6 +8,7 @@ import { SYMBOL_IMAGES } from '../data/symbolMap';
 import { pictoImageUriByKey } from './pictoLibrary';
 import { LANGS, type Board, type Lang, type Profile } from '../model/types';
 import { CLASS_COLORS } from '../ui/theme';
+import { compactPlaces } from './boardOps';
 import { isRtl, label, symbolOf, wordClass } from './lexicon';
 import { mediaDataUrl } from './media';
 import { bundledImageSrc } from './platform';
@@ -54,13 +55,19 @@ export async function conceptCell(profile: Profile, conceptId: string, lang: Lan
 
 export async function boardCells(profile: Profile, board: Board, lang: Lang): Promise<(PrintCell | null)[]> {
   const level = profile.settings.revealLevel;
-  return Promise.all(
+  const cells = await Promise.all(
     board.cells.map((cell) => {
       if (!cell) return null;
       if (board.kind === 'core' && (cell.level ?? 1) > level) return null;
       return conceptCell(profile, cell.concept, lang, undefined, !!cell.folder);
     }),
   );
+  // The paper board looks like the one on screen: without holes when only part of the words is shown.
+  const places = compactPlaces(board, level, profile.settings.wordPlaces);
+  if (!places) return cells;
+  const drawn: (PrintCell | null)[] = cells.map(() => null);
+  places.forEach((slot, index) => (drawn[slot] = cells[index]));
+  return drawn;
 }
 
 export function buildPrintHtml(

@@ -13,6 +13,7 @@ import { errorText } from '../../i18n/account';
 import { dataStrings } from '../../i18n/data';
 import { forProfessional, onboardingStrings, type OnboardingStrings } from '../../i18n/onboarding';
 import { proStrings } from '../../i18n/pro';
+import { compactPlaces } from '../../lib/boardOps';
 import { availableLangs, getConcept, label, langName, symbolOf, wordClass } from '../../lib/lexicon';
 import {
   AAC_BEFORE,
@@ -34,7 +35,7 @@ import { exactPicto, searchPictos } from '../../lib/pictoSearch';
 import { loadPictoLibrary, pictoCredit, pictoToMedia } from '../../lib/pictoLibrary';
 import { prepareVoices, speakText } from '../../lib/speech';
 import { forgetLegacyProfile, loadLegacyProfile, migrate } from '../../lib/storage';
-import type { ArabicDialect, Lang, Profile } from '../../model/types';
+import type { Lang, Profile } from '../../model/types';
 import { AppProvider } from '../../state/AppState';
 import { useSession } from '../../state/Session';
 import { Btn, Field, Segmented } from '../common';
@@ -45,7 +46,7 @@ import { SymbolView } from '../SymbolView';
 import { C, CLASS_COLORS, radius } from '../theme';
 import { checked } from '../a11y';
 
-const STEPS = ['child', 'arabic', 'langs', 'voice', 'comm', 'activities', 'visual', 'feedback', 'review', 'vocab', 'layout', 'access', 'plans', 'data', 'try'] as const;
+const STEPS = ['child', 'langs', 'arabic', 'voice', 'comm', 'activities', 'visual', 'feedback', 'review', 'vocab', 'layout', 'access', 'plans', 'data', 'try'] as const;
 type StepId = (typeof STEPS)[number];
 /** Name of a language of the child, with the Arabic the family chose. */
 const langLabel = (a: Answers, l: Lang) => langName({ arabic: a.arabic ?? 'lb' }, l);
@@ -62,12 +63,18 @@ export function Onboarding() {
   // questions, said about "the child"; what is recorded is not asked (the parents decide once connected).
   const pro = account?.role === 'pro';
   const o = useMemo(() => (pro ? forProfessional(onboardingStrings(uiLang), uiLang) : onboardingStrings(uiLang)), [pro, uiLang]);
-  const steps = useMemo<readonly StepId[]>(() => (pro ? STEPS.filter((x) => x !== 'data') : STEPS), [pro]);
-  const setupFrom = steps.indexOf('vocab');
   // Other children this account already opens: "Back" on the first step returns there.
   const [hasBoard, setHasBoard] = useState(false);
   const draftKey = `caa.onboarding.v1.${account?.id ?? 'anon'}`;
   const [draft, setDraft] = useState<Draft | null>(null);
+  // The languages come first; which Arabic is only asked when Arabic is one of them. A
+  // professional is not asked what is recorded (the parents decide once connected).
+  const wantsArabic = !!draft?.answers.langs.includes('ar');
+  const steps = useMemo<readonly StepId[]>(
+    () => STEPS.filter((x) => (x !== 'data' || !pro) && (x !== 'arabic' || wantsArabic)),
+    [pro, wantsArabic],
+  );
+  const setupFrom = steps.indexOf('vocab');
   const [resumed, setResumed] = useState(false);
   const [legacy, setLegacy] = useState<Profile | null>(null);
   const [siblings, setSiblings] = useState<{ id: string; name: string }[]>([]);
@@ -108,8 +115,8 @@ export function Onboarding() {
   };
   const next = () => {
     if (stepId === 'child' && !a.name.trim()) return setError(o.needName);
-    if (stepId === 'arabic' && !a.arabic) return setError(o.needArabic);
     if (stepId === 'langs' && !a.langs.length) return setError(o.needLang);
+    if (stepId === 'arabic' && (!a.arabic || a.arabic === 'none')) return setError(o.needArabic);
     goto(draft.step + 1);
   };
   // Leaving at the first step: back to the workspace (professional), to the child already open, or out.
@@ -175,7 +182,7 @@ export function Onboarding() {
           onChange={(feedback) => set({ feedback })}
         />
       )}
-      {stepId === 'review' && <ReviewStep o={o} a={a} goto={goto} />}
+      {stepId === 'review' && <ReviewStep o={o} a={a} goto={(step) => goto(steps.indexOf(step))} />}
       {stepId === 'vocab' && (
         <VocabStep
           o={o}
@@ -307,29 +314,36 @@ function ChildStep({ o, a, set }: StepProps) {
   );
 }
 
-/** Which Arabic the family wants (asked, nothing pre-chosen), or none at all. */
+/** Which Arabic (asked only when Arabic is one of the child's languages). */
 function ArabicStep({ o, a, set }: StepProps) {
   const { uiLang } = useSession();
-  const choose = (arabic: ArabicDialect) =>
-    // "None": Arabic cannot stay among the child's languages.
-    set({ arabic, langs: arabic === 'none' ? a.langs.filter((l) => l !== 'ar') : a.langs });
   return (
     <>
       <Title text={o.arabicTitle} intro={o.arabicIntro} />
-      {([...DIALECT_ORDER, 'none'] as ArabicDialect[]).map((d) => (
-        <Option key={d} label={dialectName(d, uiLang)} note={d === 'none' ? undefined : DIALECTS[d].langName} selected={a.arabic === d} onPress={() => choose(d)} />
+      {DIALECT_ORDER.map((d) => (
+        <Option key={d} label={dialectName(d, uiLang)} note={DIALECTS[d].langName} selected={a.arabic === d} onPress={() => set({ arabic: d })} />
       ))}
     </>
   );
 }
 
+/** The child's languages. Arabic not ticked: no Arabic anywhere in the app; ticked: the next step asks which one. */
 function LangStep({ o, a, set }: StepProps) {
+  // Only the languages change here: without Arabic among them the app gets none (`applyAnswers`),
+  // and a dialect chosen earlier is remembered if Arabic is ticked again.
   const toggle = (l: Lang) => set({ langs: a.langs.includes(l) ? a.langs.filter((x) => x !== l) : [...a.langs, l] });
   return (
     <>
       <Title text={o.langTitle} intro={o.langIntro} />
-      {availableLangs({ arabic: a.arabic ?? 'lb' }).map((l) => (
-        <Option key={l} multi label={langLabel(a, l)} selected={a.langs.includes(l)} onPress={() => toggle(l)} badge={a.langs[0] === l ? o.langMain : undefined} />
+      {availableLangs({ arabic: 'lb' }).map((l) => (
+        <Option
+          key={l}
+          multi
+          label={l === 'ar' ? o.langArabic : langLabel(a, l)}
+          selected={a.langs.includes(l)}
+          onPress={() => toggle(l)}
+          badge={a.langs[0] === l ? o.langMain : undefined}
+        />
       ))}
       <T style={{ color: C.textMuted, fontSize: 14 }}>{o.langNavNote}</T>
     </>
@@ -514,13 +528,14 @@ function LookPreview({ visual }: { visual: VisualChoice }) {
   );
 }
 
-function ReviewStep({ o, a, goto }: { o: OnboardingStrings; a: Answers; goto: (i: number) => void }) {
+function ReviewStep({ o, a, goto }: { o: OnboardingStrings; a: Answers; goto: (step: StepId) => void }) {
   const rtl = useRtl();
   const { uiLang } = useSession();
   const rows: { label: string; value: string; step: StepId }[] = [
     { label: o.rName, value: [a.name, a.age ? `${a.age} ${o.years}` : '', a.gender === 'f' ? o.girl : o.boy].filter(Boolean).join(' · '), step: 'child' },
-    { label: o.rArabic, value: dialectName(a.arabic, uiLang), step: 'arabic' },
     { label: o.rLangs, value: a.langs.map((l) => langLabel(a, l)).join(', '), step: 'langs' },
+    // Which Arabic: only when Arabic is one of the child's languages.
+    ...(a.langs.includes('ar') ? [{ label: o.rArabic, value: dialectName(a.arabic, uiLang), step: 'arabic' as StepId }] : []),
     {
       label: o.rVoice,
       value: `${a.voiceKind === 'f' ? o.voiceF : a.voiceKind === 'm' ? o.voiceM : o.voiceDevice} · ${a.voiceAge === 'child' ? o.voiceChild : o.voiceAdult}`,
@@ -544,7 +559,7 @@ function ReviewStep({ o, a, goto }: { o: OnboardingStrings; a: Answers; goto: (i
             <T style={s.label}>{r.label}</T>
             <T>{r.value}</T>
           </View>
-          <Btn small kind="ghost" icon="pencil" label={o.edit} onPress={() => goto(STEPS.indexOf(r.step))} />
+          <Btn small kind="ghost" icon="pencil" label={o.edit} onPress={() => goto(r.step)} />
         </View>
       ))}
     </>
@@ -629,12 +644,16 @@ function LayoutStep({ o, a, set }: StepProps) {
 /** The main board in miniature: coloured squares are the words shown at this level. */
 function MiniBoard({ profile, level }: { profile: Profile; level: 1 | 2 | 3 }) {
   const b = profile.boards.core;
+  // Drawn like the real board: the words shown slide up in their column, without holes.
+  const places = compactPlaces(b, level, profile.settings.wordPlaces);
+  const drawn = b.cells.map((cell, i) => (places ? null : cell));
+  places?.forEach((slot, i) => (drawn[slot] = b.cells[i]));
   return (
     <View style={s.mini} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       {Array.from({ length: b.rows }).map((_, r) => (
         <View key={r} style={{ flexDirection: 'row', gap: 3 }}>
           {Array.from({ length: b.cols }).map((__, c) => {
-            const cell = b.cells[r * b.cols + c];
+            const cell = drawn[r * b.cols + c];
             const shown = !!cell && (cell.level ?? 1) <= level;
             const color = shown && cell ? CLASS_COLORS[cell.folder ? 'folder' : wordClass(profile, cell.concept)] : null;
             return (

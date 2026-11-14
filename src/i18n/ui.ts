@@ -177,6 +177,13 @@ const fr = {
   masculine: 'Masculin',
   feminine: 'Féminin',
   sLevel: 'Vocabulaire révélé (progressive reveal)',
+  sWordPlaces: 'Place des mots affichés',
+  sWordPlacesCompact: 'Sans trous',
+  sWordPlacesFinal: 'Places définitives',
+  sWordPlacesCompactNote:
+    'Les mots affichés se rangent en haut de leur colonne, sans trous. Quand vous afficherez plus de mots, certains descendront dans leur colonne. En mode accompagnant, vous voyez toujours les vraies places.',
+  sWordPlacesFinalNote:
+    'Chaque mot est déjà à la place qu’il aura sur le tableau complet : des trous restent, mais aucun mot ne bougera quand vous en afficherez plus.',
   sSymbols: 'Bibliothèque de symboles',
   sShowLabels: 'Afficher le texte sous les images',
   sSpeakOnTap: 'Prononcer chaque mot touché',
@@ -201,7 +208,7 @@ const fr = {
   voiceAdult: 'Adulte',
   voiceChild: 'Enfant',
   voiceChildNote:
-    'Voix d’enfant : les tablettes n’ont pas de vraies voix d’enfant. L’application part d’une voix de femme et la rend un peu plus aiguë (un peu moins pour un garçon) ; réglez-la à l’oreille avec « Hauteur de la voix ». Pour une vraie voix d’enfant, enregistrez un frère, une sœur ou un cousin sur les mots (Voix enregistrée).',
+    'Voix d’enfant : les tablettes n’ont pas de vraies voix d’enfant. L’application part d’une voix de femme et la rend plus aiguë : nettement plus pour une fille que pour un garçon, et, si l’appareil a deux voix de femme, le garçon reçoit l’autre ; réglez-la à l’oreille avec « Hauteur de la voix ». Pour une vraie voix d’enfant, enregistrez un frère, une sœur ou un cousin sur les mots (Voix enregistrée).',
   voiceUsed: 'Voix utilisée',
   voiceDefaultUsed: 'voix de l’appareil',
   voiceApprox: 'voix approchée : pas de voix de ce type pour cette langue sur cet appareil',
@@ -549,6 +556,13 @@ const en: Dict = {
   masculine: 'Masculine',
   feminine: 'Feminine',
   sLevel: 'Revealed vocabulary (progressive reveal)',
+  sWordPlaces: 'Place of the words shown',
+  sWordPlacesCompact: 'No gaps',
+  sWordPlacesFinal: 'Final places',
+  sWordPlacesCompactNote:
+    'The words shown line up at the top of their column, with no gaps. When you show more words, some will move down in their column. In caregiver mode you always see the real places.',
+  sWordPlacesFinalNote:
+    'Each word is already at the place it has on the complete board: gaps are left, but no word will move when you show more.',
   sSymbols: 'Symbol library',
   sShowLabels: 'Show text under images',
   sSpeakOnTap: 'Speak each touched word',
@@ -573,7 +587,7 @@ const en: Dict = {
   voiceAdult: 'Adult',
   voiceChild: 'Child',
   voiceChildNote:
-    'Child voice: tablets have no real child voices. The app starts from a woman’s voice and makes it a little higher (a little less for a boy); tune it by ear with “Voice height”. For a real child’s voice, record a brother, sister or cousin on the words (Recorded voice).',
+    'Child voice: tablets have no real child voices. The app starts from a woman’s voice and makes it higher: clearly more for a girl than for a boy, and when the device has two women’s voices the boy gets the other one; tune it by ear with “Voice height”. For a real child’s voice, record a brother, sister or cousin on the words (Recorded voice).',
   voiceUsed: 'Voice used',
   voiceDefaultUsed: 'device voice',
   voiceApprox: 'approximate voice: no voice of this type for this language on this device',
@@ -916,6 +930,13 @@ const ar: Dict = {
   masculine: 'مذكّر',
   feminine: 'مؤنّث',
   sLevel: 'المفردات الظاهرة (إظهار تدريجي)',
+  sWordPlaces: 'مكان الكلمات الظاهرة',
+  sWordPlacesCompact: 'بلا فراغات',
+  sWordPlacesFinal: 'الأماكن النهائية',
+  sWordPlacesCompactNote:
+    'تصطفّ الكلمات الظاهرة في أعلى عمودها بلا فراغات. عند إظهار كلمات أكثر، ينزل بعضها في عموده. في وضع المرافق ترى دائماً الأماكن الحقيقية.',
+  sWordPlacesFinalNote:
+    'كل كلمة موجودة منذ الآن في مكانها على اللوحة الكاملة: تبقى فراغات، لكن لن تتحرك أي كلمة عند إظهار المزيد.',
   sSymbols: 'مكتبة الرموز',
   sShowLabels: 'إظهار النص تحت الصور',
   sSpeakOnTap: 'نطق كل كلمة يتم لمسها',
@@ -939,7 +960,7 @@ const ar: Dict = {
   voiceAdult: 'بالغ',
   voiceChild: 'طفل',
   voiceChildNote:
-    'صوت الطفل: لا تحتوي الأجهزة اللوحية على أصوات أطفال حقيقية. ينطلق التطبيق من صوت امرأة ويجعله أحدّ قليلاً (أقل قليلاً للصبي)؛ اضبطه بالسمع من «طبقة الصوت». لصوت طفل حقيقي، سجّل صوت أخ أو أخت أو قريب على الكلمات («صوت مسجّل»).',
+    'صوت الطفل: لا تحتوي الأجهزة اللوحية على أصوات أطفال حقيقية. ينطلق التطبيق من صوت امرأة ويجعله أحدّ: أكثر بوضوح للبنت منه للصبي، وإذا كان في الجهاز صوتان نسائيان يأخذ الصبي الصوت الآخر؛ اضبطه بالسمع من «طبقة الصوت». لصوت طفل حقيقي، سجّل صوت أخ أو أخت أو قريب على الكلمات («صوت مسجّل»).',
   voiceUsed: 'الصوت المستخدم',
   voiceDefaultUsed: 'صوت الجهاز',
   voiceApprox: 'صوت تقريبي: لا يوجد صوت من هذا النوع لهذه اللغة على هذا الجهاز',

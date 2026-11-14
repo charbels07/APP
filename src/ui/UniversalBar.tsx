@@ -31,8 +31,9 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
   const app = useApp();
   const { width, height } = useWindowDimensions();
   const iconsOnly = !vertical && width < 520;
-  // Tall screens (iPad landscape): tools in one column with full labels; otherwise two columns of icons.
-  const toolColumn = height >= 790;
+  // Three tools (search, guide, caregiver): one column with their names when the screen is tall
+  // enough, otherwise icons side by side.
+  const toolColumn = height >= 680;
   const { t, view, path, overlay, profile, timer, editMode } = app;
   const bar = profile.settings.bar;
   const timerLabel =
@@ -64,9 +65,15 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
     { key: 'help', icon: 'help', label: t.help, onPress: app.pressHelp, active: overlay?.kind === 'help', tone: 'help' },
   ];
   const tools: Item[] = [
-    { key: 'search', icon: 'search', label: t.search, onPress: () => app.setOverlay({ kind: 'search' }), active: overlay?.kind === 'search' },
-    { key: 'keyboard', icon: 'keyboard', label: t.keyboard, onPress: () => app.setOverlay({ kind: 'keyboard' }), active: overlay?.kind === 'keyboard' },
-    { key: 'model', icon: 'pointer', label: t.model, onPress: () => app.setOverlay({ kind: 'model' }), active: overlay?.kind === 'model' || app.recording },
+    // One button for three tools (tabs of the same panel): find a word, write, model a sentence.
+    {
+      key: 'search',
+      icon: 'search',
+      label: t.search,
+      // While a demonstration is being recorded, it opens on the Model tab (where the recording is).
+      onPress: () => app.setOverlay({ kind: app.recording ? 'model' : 'search' }),
+      active: overlay?.kind === 'search' || overlay?.kind === 'keyboard' || overlay?.kind === 'model' || app.recording,
+    },
     { key: 'guide', icon: 'book', label: t.guide, onPress: () => app.setOverlay({ kind: 'guide' }), active: overlay?.kind === 'guide' },
     {
       key: 'lock',

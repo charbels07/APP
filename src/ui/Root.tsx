@@ -9,8 +9,8 @@ import { Btn } from './common';
 import { Icon } from './Icon';
 import { CaregiverOverlay } from './panels/CaregiverPanels';
 import { SettingsScreen } from './settings/SettingsScreen';
-import { HelpPanel, KeyboardPanel, LangPanel, PinPanel, SearchPanel } from './panels/CommPanels';
-import { ModelPanel } from './panels/ModelPanel';
+import { HelpPanel, LangPanel, PinPanel } from './panels/CommPanels';
+import { ToolsPanel } from './panels/ToolsPanel';
 import { GuidePanel, WelcomeCard } from './panels/GuidePanel';
 import { NewTlaPanel } from './panels/NewTlaPanel';
 import { FolderPeek, SelectionBar, useCurrentBoard } from './panels/EditMenus';
@@ -38,12 +38,10 @@ export function Root({ banner }: { banner?: React.ReactNode } = {}) {
       {view === 'board' && <BoardScreen />}
       {view === 'tla' && <TlaScreen />}
       {view === 'schedule' && <ScheduleScreen />}
-      {overlay?.kind === 'search' && <SearchPanel />}
-      {overlay?.kind === 'keyboard' && <KeyboardPanel />}
+      {(overlay?.kind === 'search' || overlay?.kind === 'keyboard' || overlay?.kind === 'model') && <ToolsPanel tool={overlay.kind} />}
       {overlay?.kind === 'help' && <HelpPanel />}
       {overlay?.kind === 'lang' && <LangPanel />}
       {overlay?.kind === 'pin' && <PinPanel />}
-      {overlay?.kind === 'model' && <ModelPanel />}
       {overlay?.kind === 'newTla' && <NewTlaPanel />}
       {overlay?.kind === 'guide' && <GuidePanel />}
       {overlay?.kind === 'settings' && <SettingsScreen />}

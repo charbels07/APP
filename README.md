@@ -69,7 +69,8 @@ Done: core board with stable positions and progressive reveal · Fitzgerald
 colour code · folders · sentence strip (speak all / per word, delete, clear with
 undo) · FR/EN grammar · instant language switch FR ↔ EN ↔ Lebanese Arabic with
 the same motor plan · code-switching inside one sentence · universal bar (CAA,
-TLA, Schedule, Timer, Help + search, keyboard, caregiver lock) ·
+TLA, Schedule, Timer, Help + one magnifying glass for search / keyboard /
+model, guide, caregiver lock) ·
 search with typo tolerance, synonyms and "show me where" · keyboard · 4 TLAs ·
 2 schedules (now / next / done, linked TLA and timer) · First–Then · timer
 (circle / bar / digits, keeps running, sound + haptics) · 3-level Help button ·

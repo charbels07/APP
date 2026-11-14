@@ -68,13 +68,13 @@ const BASE: BaseChapter[] = [
     title: { fr: 'L’écran en un coup d’œil', en: 'The screen at a glance' },
     steps: {
       fr: [
-        'À gauche, la barre universelle, toujours au même endroit : CAA (accueil), TLA, Planning, Minuteur, le gros bouton rouge Aide, puis les outils Chercher, Clavier, Modèle, Guide et Accompagnant.',
+        'À gauche, la barre universelle, toujours au même endroit : CAA (accueil), TLA, Planning, Minuteur, le gros bouton rouge Aide, puis les outils Chercher (la loupe), Guide et Accompagnant. La loupe ouvre trois onglets : Chercher (trouver un mot), Clavier (écrire) et Modèle (montrer une phrase sur le tableau).',
         'En haut, la bande de phrase : chaque mot touché s’y ajoute.',
         'Au centre, la grille de mots. Chaque mot garde toujours sa place : c’est ce qui permet à l’enfant d’apprendre les gestes par cœur.',
         'Les couleurs indiquent le type de mot : jaune = personnes, vert = actions, bleu = descriptions, orange = objets, violet = questions, rose = mots sociaux, rouge = négation, gris = petits mots.',
       ],
       en: [
-        'On the left, the universal bar, always in the same place: AAC (home), Boards, Schedule, Timer, the big red Help button, then the tools Search, Keyboard, Model, Guide and Caregiver.',
+        'On the left, the universal bar, always in the same place: AAC (home), Boards, Schedule, Timer, the big red Help button, then the tools Search (the magnifying glass), Guide and Caregiver. The magnifying glass opens three tabs: Search (find a word), Keyboard (write) and Model (show a sentence on the board).',
         'At the top, the sentence strip: every word you touch is added to it.',
         'In the middle, the word grid. Each word always keeps its place: that is how the child learns the movements by heart.',
         'Colours show the kind of word: yellow = people, green = actions, blue = describing, orange = things, purple = questions, pink = social words, red = negation, grey = little words.',
@@ -136,12 +136,12 @@ const BASE: BaseChapter[] = [
     title: { fr: 'Trouver un mot', en: 'Finding a word' },
     steps: {
       fr: [
-        'Chercher, puis au choix : tapez le mot (les fautes sont comprises : « pome » trouve « pomme »), touchez Dire le mot et dites-le, ou Dessiner : dessinez l’objet avec le doigt puis Trouver.',
+        'Chercher (la loupe), premier onglet, puis au choix : tapez le mot (les fautes sont comprises : « pome » trouve « pomme »), touchez Dire le mot et dites-le, ou Dessiner : dessinez l’objet avec le doigt puis Trouver.',
         'Montre-moi où fait clignoter le chemin : d’abord le dossier, puis le mot. L’enfant apprend ainsi où il se trouve.',
         'Le bouton + ajoute le mot directement à la phrase ; le haut-parleur le dit.',
       ],
       en: [
-        'Search, then either type the word (typos are fine: “aple” finds “apple”), touch Say the word and say it, or Draw: draw the thing with a finger, then Find.',
+        'Search (the magnifying glass), first tab, then either type the word (typos are fine: “aple” finds “apple”), touch Say the word and say it, or Draw: draw the thing with a finger, then Find.',
         'Show me where lights up the way: first the folder, then the word. This is how the child learns where it is.',
         'The + button adds the word straight to the sentence; the speaker button says it.',
       ],
@@ -276,8 +276,8 @@ const BASE: BaseChapter[] = [
     icon: 'keyboard',
     title: { fr: 'Le clavier', en: 'The keyboard' },
     steps: {
-      fr: ['Pour ceux qui savent écrire : Clavier, écrivez, puis Parler ou Ajouter à la phrase. Chaque mot écrit arrive dans la phrase avec son pictogramme (celui du tableau, sinon celui de la bibliothèque) et il est dit tel qu’il est écrit.'],
-      en: ['For those who can write: Keyboard, type, then Speak or Add to sentence. Each typed word goes into the sentence with its pictogram (the one of the board, else one from the library) and is said exactly as written.'],
+      fr: ['Pour ceux qui savent écrire : Chercher (la loupe), onglet Clavier, écrivez, puis Parler ou Ajouter à la phrase. Chaque mot écrit arrive dans la phrase avec son pictogramme (celui du tableau, sinon celui de la bibliothèque) et il est dit tel qu’il est écrit.'],
+      en: ['For those who can write: Search (the magnifying glass), Keyboard tab, type, then Speak or Add to sentence. Each typed word goes into the sentence with its pictogram (the one of the board, else one from the library) and is said exactly as written.'],
     },
     action: 'keyboard',
   },
@@ -463,12 +463,12 @@ const BASE: BaseChapter[] = [
     title: { fr: 'Modéliser (Modèle)', en: 'Modelling (Model)' },
     steps: {
       fr: [
-        'Dicter une phrase, ou l’écrire, puis Montrer sur la grille : une main animée appuie sur chaque mot, dossiers compris, et le bandeau dit où elle va. Puis la phrase est lue.',
+        'Chercher (la loupe), onglet Modèle. Dicter une phrase, ou l’écrire, puis Montrer sur la grille : une main animée appuie sur chaque mot, dossiers compris, et le bandeau dit où elle va. Puis la phrase est lue.',
         'Enregistrer une démonstration : touchez les mots comme l’enfant devrait le faire, puis Terminer et garder. Rejouer la montre autant de fois que nécessaire.',
         'Vitesse : lente, normale ou rapide.',
       ],
       en: [
-        'Dictate a sentence, or type it, then Show on the board: an animated hand presses each word, folders included, and the banner says where it goes. Then the sentence is read.',
+        'Search (the magnifying glass), Model tab. Dictate a sentence, or type it, then Show on the board: an animated hand presses each word, folders included, and the banner says where it goes. Then the sentence is read.',
         'Record a demonstration: touch the words the way the child should, then Finish and keep. Replay shows it as often as needed.',
         'Speed: slow, normal or fast.',
       ],
@@ -711,7 +711,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   screen: {
     title: 'الشاشة بلمحة',
     steps: [
-      'على اليسار، الشريط الدائم، دائماً في المكان نفسه: التواصل (الرئيسية)، اللوحات، الجدول، المؤقت، زر «مساعدة» الأحمر الكبير، ثم الأدوات: بحث، لوحة المفاتيح، نموذج، الدليل، المرافق.',
+      'على اليسار، الشريط الدائم، دائماً في المكان نفسه: التواصل (الرئيسية)، اللوحات، الجدول، المؤقت، زر «مساعدة» الأحمر الكبير، ثم الأدوات: «بحث» (العدسة المكبّرة)، الدليل، المرافق. تفتح العدسة ثلاثة تبويبات: «بحث» (إيجاد كلمة)، «لوحة المفاتيح» (الكتابة) و«نموذج» (إظهار جملة على اللوحة).',
       'في الأعلى، شريط الجملة: تُضاف إليه كل كلمة تلمسها.',
       'في الوسط، شبكة الكلمات. تبقى كل كلمة دائماً في مكانها: هكذا يتعلّم الطفل الحركات عن ظهر قلب.',
       'تدلّ الألوان على نوع الكلمة: الأصفر = الأشخاص، الأخضر = الأفعال، الأزرق = الصفات، البرتقالي = الأشياء، البنفسجي = الأسئلة، الوردي = الكلمات الاجتماعية، الأحمر = النفي، الرمادي = الكلمات الصغيرة.',
@@ -739,7 +739,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   search: {
     title: 'البحث عن كلمة',
     steps: [
-      '«بحث»، ثم اختر: اكتب الكلمة (الأخطاء الإملائية مقبولة)، أو المس «قل الكلمة» وقلها، أو «ارسم»: ارسم الشيء بإصبعك ثم «ابحث».',
+      '«بحث» (العدسة المكبّرة)، التبويب الأول، ثم اختر: اكتب الكلمة (الأخطاء الإملائية مقبولة)، أو المس «قل الكلمة» وقلها، أو «ارسم»: ارسم الشيء بإصبعك ثم «ابحث».',
       '«أرني المكان» يضيء الطريق: المجلد أولاً، ثم الكلمة. هكذا يتعلّم الطفل مكانها.',
       'زر + يضيف الكلمة مباشرة إلى الجملة، وزر مكبّر الصوت يقولها.',
     ],
@@ -797,7 +797,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   },
   keyboard: {
     title: 'لوحة المفاتيح',
-    steps: ['لمن يعرف الكتابة: «لوحة المفاتيح»، اكتب، ثم «تكلّم» أو «أضف إلى الجملة». تدخل كل كلمة مكتوبة إلى الجملة مع رمزها (رمز اللوحة، وإلا رمز من المكتبة) وتُقال كما كُتبت.'],
+    steps: ['لمن يعرف الكتابة: «بحث» (العدسة المكبّرة)، تبويب «لوحة المفاتيح»، اكتب، ثم «تكلّم» أو «أضف إلى الجملة». تدخل كل كلمة مكتوبة إلى الجملة مع رمزها (رمز اللوحة، وإلا رمز من المكتبة) وتُقال كما كُتبت.'],
   },
   caregiver: {
     title: 'وضع المرافق',
@@ -877,7 +877,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   model: {
     title: 'النمذجة («نموذج»)',
     steps: [
-      '«إملاء جملة» أو كتابتها، ثم «أظهر على اللوحة»: يد متحركة تضغط على كل كلمة، بما في ذلك المجلدات، ويقول الشريط إلى أين تذهب. ثم تُقرأ الجملة.',
+      '«بحث» (العدسة المكبّرة)، تبويب «نموذج». «إملاء جملة» أو كتابتها، ثم «أظهر على اللوحة»: يد متحركة تضغط على كل كلمة، بما في ذلك المجلدات، ويقول الشريط إلى أين تذهب. ثم تُقرأ الجملة.',
       '«تسجيل عرض»: المس الكلمات كما يجب أن يفعل الطفل، ثم «إنهاء وحفظ». «إعادة العرض» يُظهره كلما احتجت.',
       'السرعة: بطيئة، عادية أو سريعة.',
     ],

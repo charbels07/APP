@@ -293,6 +293,18 @@ The full report is in `docs/ACCESSIBILITY.md`. In short:
 | Languages | The page declares the language of the menus; each card of the board declares the language of its word, so a screen reader pronounces Arabic words as Arabic even with English menus. |
 | Not done | Listening with a real screen reader, and any test on a tablet. A program finds roughly a third of accessibility problems; the rest needs people. |
 
+## Round 16 — One magnifying glass instead of three buttons
+
+Search, Keyboard and Model were three buttons of the bar. They are now one button (the magnifying glass)
+that opens one panel with three tabs. Nothing was removed.
+
+| What | How it was done |
+|---|---|
+| One panel, three tabs | `src/ui/panels/ToolsPanel.tsx` (**React Native**, **TypeScript**) draws the window, its title and the three tabs. The content of each tab is the same code as before: `SearchBody` and `KeyboardBody` in `CommPanels.tsx`, `ModelBody` in `ModelPanel.tsx`. Only the frame around them changed. |
+| Which tab is open | The app already remembered "which panel is open" as one of three words: `search`, `keyboard`, `model`. Those words are kept. So the guide's "Try it" buttons and the therapist's shortcuts still open the right tab, without changing them. |
+| The bar | `src/ui/UniversalBar.tsx` now lists three tools (Search, Guide, Caregiver) instead of five. With fewer buttons their names fit on shorter screens too. While a demonstration is being recorded, the magnifying glass opens directly on the Model tab. |
+| The guide | `src/data/guide.ts`: the chapters about the screen, search, the keyboard and modelling now say "Search (the magnifying glass), then the tab", in French, English and Arabic. |
+
 ## How everything is checked
 
 | Check | What it does |

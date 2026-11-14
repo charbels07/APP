@@ -22,7 +22,8 @@ Run it again at any time: `npm run test:a11y` (about 10 minutes; needs Playwrigh
 ## What was scanned
 
 - **Family side** (28 screens): welcome, who are you, sign-up, code, set-up of the child, the board,
-  a folder, search, keyboard, help, activity boards, schedule, timer, model, guide, caregiver code,
+  a folder, the three tabs of the magnifying glass (search, keyboard, model), help, activity boards,
+  schedule, timer, guide, caregiver code,
   caregiver mode, word editor, settings (Board, Team, Progress, Account), and the six back-office pages.
 - **Professional side** (15 screens): the four verification steps, the status page, the tour, and
   every section of the workspace (dashboard, users, create, library, collaborations, learning, account).

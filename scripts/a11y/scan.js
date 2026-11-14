@@ -69,8 +69,9 @@ const results = [];
   await scan('06-board');
   if (locale === 'en-GB') {
     await step('07-folder', async () => { const c = await centerOf('food'); await p.mouse.click(c.x, c.y); await p.waitForTimeout(400); await p.mouse.click(c.x, c.y); await p.waitForTimeout(600); await scan('07-folder'); await btn('AAC').click(); });
-    for (const [label, n] of [[L.search, '08-search'], [L.keyboard, '09-keyboard'], [L.help, '10-help'], [L.boards, '11-boards'], [L.schedule, '12-schedule'], [L.timer, '13-timer'], [L.model, '14-model'], [L.guide, '15-guide']])
-      await step(n, async () => { await btn(label).click(); await p.waitForTimeout(700); await scan(n); await p.keyboard.press('Escape').catch(() => {}); const x = p.getByRole('button', { name: /^(close|Close)$/ }).first(); if (await x.count()) await x.click().catch(() => {}); await btn('AAC').click().catch(() => {}); });
+    // Search, Keyboard and Model share one panel, opened by the magnifying glass: the last two are its tabs.
+    for (const [label, n, tab] of [[L.search, '08-search'], [L.search, '09-keyboard', L.keyboard], [L.help, '10-help'], [L.boards, '11-boards'], [L.schedule, '12-schedule'], [L.timer, '13-timer'], [L.search, '14-model', L.model], [L.guide, '15-guide']])
+      await step(n, async () => { await btn(label).click(); await p.waitForTimeout(700); if (tab) { await p.getByRole('tab', { name: tab, exact: true }).click(); await p.waitForTimeout(500); } await scan(n); await p.keyboard.press('Escape').catch(() => {}); const x = p.getByRole('button', { name: /^(close|Close)$/ }).first(); if (await x.count()) await x.click().catch(() => {}); await btn('AAC').click().catch(() => {}); });
     await step('16-pin', async () => { await btn(L.caregiver).click(); await p.waitForTimeout(400); await scan('16-pin'); for (const k of ['1', '2', '3', '4']) await btn(k).click(); await p.waitForTimeout(500); await scan('17-caregiver-mode'); });
     await step('18-editor', async () => { const c = await centerOf('want'); await p.mouse.click(c.x, c.y); await p.waitForTimeout(900); await scan('18-word-editor'); const x = p.getByRole('button', { name: /^(close|Close)$/ }).first(); if (await x.count()) await x.click(); });
     await step('19-settings', async () => {

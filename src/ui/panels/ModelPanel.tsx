@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { parseSentence } from '../../lib/parseSentence';
 import { useApp } from '../../state/AppState';
-import { Btn, Field, Panel, Section, Segmented } from '../common';
+import { Btn, Field, Section, Segmented } from '../common';
 import { Icon } from '../Icon';
 import { C, radius } from '../theme';
 import { VoiceButton } from '../VoiceButton';
@@ -10,8 +10,9 @@ import { VoiceButton } from '../VoiceButton';
 /**
  * Partner modelling (spec §29 "je modèle"): dictate a sentence and watch the app
  * press each word on the board, or record a demonstration and replay it.
+ * Third tab of the tools panel (ToolsPanel).
  */
-export function ModelPanel() {
+export function ModelBody() {
   const app = useApp();
   const { t, profile, lang } = app;
   const [text, setText] = useState('');
@@ -23,7 +24,7 @@ export function ModelPanel() {
   };
 
   return (
-    <Panel title={t.modelTitle} onClose={() => app.setOverlay(null)}>
+    <>
       <Section title={t.dictate}>
         <Text style={styles.note}>{t.dictateHint}</Text>
         <VoiceButton lang={lang} onFinal={show} />
@@ -79,7 +80,7 @@ export function ModelPanel() {
           ]}
         />
       </Section>
-    </Panel>
+    </>
   );
 }
 

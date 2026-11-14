@@ -28,18 +28,25 @@ export function pathText(loc: Location, app: ReturnType<typeof useApp>): string 
   return `${t.tla} › ${label(profile, profile.boards[loc.board]?.concept ?? '', lang)}`;
 }
 
-/** Universal search (spec §11), 1 action from anywhere. */
-export function SearchPanel() {
+/**
+ * Universal search (spec §11), 1 action from anywhere. First tab of the tools panel (ToolsPanel).
+ * `onPen`: tells the panel a finger is drawing, so it stops scrolling meanwhile.
+ */
+export function SearchBody({ onPen }: { onPen: (down: boolean) => void }) {
   const app = useApp();
   const { profile, lang, t } = app;
   const [q, setQ] = useState('');
   const [drawing, setDrawing] = useState(false);
   const [penDown, setPenDown] = useState(false);
+  useEffect(() => {
+    onPen(penDown);
+    return () => onPen(false);
+  }, [penDown, onPen]);
   const results = useMemo(() => search(profile, q), [profile, q]);
   const wordOf = (g: DrawingGuess) => g[lang] || g.fr || g.en || g.ar || '';
 
   return (
-    <Panel title={t.search} onClose={() => app.setOverlay(null)} scrollLocked={penDown}>
+    <>
       {/* Three ways in: type, say the word, or draw it. */}
       <View style={styles.ways}>
         <View style={{ flexGrow: 1, flexBasis: 200 }}>
@@ -107,7 +114,7 @@ accessibilityLabel={t.clear}>
           </View>
         );
       })}
-    </Panel>
+    </>
   );
 }
 
@@ -196,14 +203,14 @@ function DrawSearch({
  * Keyboard always available for literate users (spec §10). What is typed goes into the sentence
  * as picture cards: each word with the pictogram of the boards or of the offline library.
  */
-export function KeyboardPanel() {
+export function KeyboardBody() {
   const app = useApp();
   const { t, lang, profile } = app;
   const [text, setText] = useState('');
   const lib = usePictoLibrary();
   const chips = useMemo(() => typedChips(profile, text, lang, lib || null), [profile, text, lang, lib]);
   return (
-    <Panel title={t.keyboard} onClose={() => app.setOverlay(null)}>
+    <>
       <TextInput
         autoFocus
         multiline
@@ -241,7 +248,7 @@ export function KeyboardPanel() {
         <Btn kind="success" icon="volume" label={t.speak} disabled={!text.trim()} onPress={() => speakText(text, lang, profile.settings)} style={styles.keyboardBtn} />
         <Btn kind="danger" icon="trash" label={t.clear} disabled={!text} onPress={() => setText('')} style={styles.keyboardBtn} />
       </View>
-    </Panel>
+    </>
   );
 }
 

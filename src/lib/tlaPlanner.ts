@@ -5,6 +5,7 @@
  *   3. otherwise suggestions from the library's categories.
  * Everything stays a proposal: the family removes, adds and edits before creating.
  */
+import { situationWordKind } from '../data/situationKinds';
 import { SITUATIONS, type Situation } from '../data/situations';
 import type { Lang, WordClass } from '../model/types';
 import { exactPicto, keywordWords, searchPictos, suggestForTopic, type PreparedIndex } from './pictoSearch';
@@ -72,14 +73,15 @@ export function planFromLibrary(index: PreparedIndex, topic: string, lang: Lang)
   const words: PlanItem[] = [];
   for (const w of s.words) {
     const { label, id } = resolveSituationWord(index, w);
-    if (id !== undefined) words.push({ id, labels: { fr: label } });
+    // The library knows which of its words are actions or describing words (the others are things).
+    if (id !== undefined) words.push({ id, labels: { fr: label }, cls: situationWordKind(label) });
   }
   // Steps may repeat a pictogram (e.g. "douche" twice): keep the order as written.
   const steps: PlanItem[] = [];
   for (const st of s.steps ?? []) {
     const { w, timer } = typeof st === 'string' ? { w: st, timer: 0 } : st;
     const { label, id } = resolveSituationWord(index, w);
-    if (id !== undefined) steps.push({ id, labels: { fr: label }, timerMin: timer || undefined });
+    if (id !== undefined) steps.push({ id, labels: { fr: label }, cls: situationWordKind(label), timerMin: timer || undefined });
   }
   const anchor = searchPictos(index, topic, lang, 1)[0] ?? words[0]?.id;
   return { anchor, words: dedupe(words), steps, source: 'library', situation: s.id };

@@ -301,10 +301,12 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
   const [wiggle, setWiggle] = useState<Wiggle | null>(null);
   const wiggleSeq = useRef(0);
   const pulse = useCallback((concept: string, key?: string, touched = false) => {
-    if (!profileRef.current.settings.wiggle) return;
+    const st = profileRef.current.settings;
+    // Phones buzz in the hand when a picture is touched (their own switch; iPads have no vibration motor).
+    if (touched && st.haptics !== false) Haptics.selectionAsync().catch(() => {});
+    // The picture wiggles on the screen (its own switch; "fewer animations" turns it off).
+    if (!st.wiggle || st.reduceMotion) return;
     setWiggle({ concept, key, n: ++wiggleSeq.current });
-    // Phones also buzz (iPads have no vibration motor: the wiggle is what they get).
-    if (touched && profileRef.current.settings.haptics !== false) Haptics.selectionAsync().catch(() => {});
   }, []);
 
   // ── Apps (YouTube, WhatsApp…): short countdown so a mistaken touch can be cancelled ──

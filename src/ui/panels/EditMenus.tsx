@@ -204,10 +204,10 @@ export function TlaMenu({ id }: { id: string }) {
         icon="grid"
         text={e.arrange}
         onPress={() => {
-          // The topic words go back to the order of the main board (the fixed words do not move).
-          const cells = arrangeTla(app.profile, b);
-          if (cells) app.update((d) => void (d.boards[id].cells = cells));
-          setMsg(cells ? e.arranged : e.arrangedAlready);
+          // Back in columns like the main board: each kind of word in its own column.
+          const next = arrangeTla(app.profile, b);
+          if (next) app.update((d) => void Object.assign(d.boards[id], next));
+          setMsg(next ? e.arranged : e.arrangedAlready);
         }}
       />
       <Item icon="link" text={e.share} onPress={() => app.setOverlay({ kind: 'shareTla', id })} />

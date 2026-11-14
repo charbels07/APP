@@ -99,6 +99,10 @@ const fr = {
     'Le profil devient le leur : ils choisissent leur propre code accompagnant, décident de ce qui est enregistré et de qui fait partie de l’équipe. Vous restez dans l’équipe et pouvez continuer à modifier le tableau.',
   ],
   parentsMake: 'Créer le code des parents',
+  parentsEmail: 'E-mail des parents (facultatif)',
+  parentsSubject: (child: string, app: string) => `Le tableau de communication de ${child} (${app})`,
+  parentsMessage: (pro: string, child: string, code: string, app: string, site: string, role: string, firstScreen: string, link: string) =>
+    `Bonjour,\n\n${pro} a préparé le tableau de communication de ${child} dans l’application ${app}. Pour qu’il devienne le vôtre :\n\n1. Ouvrez l’application${site ? ` : ${site}` : ''}\n2. Créez votre compte et choisissez « ${role} ».\n3. Sur le premier écran (« ${firstScreen} »), choisissez « ${link} » et entrez ce code : ${code}\n\nLe profil devient alors le vôtre : vous choisissez votre code accompagnant, ce qui est enregistré et qui fait partie de l’équipe.\n\nÀ bientôt`,
   parentsRenew: 'Nouveau code',
   parentsWarn: 'Ne donnez ce code qu’aux parents de l’enfant : la personne qui l’utilise devient responsable du profil.',
   ownBanner: (n: number) => (n ? `${n} changement(s) pas encore enregistré(s).` : 'Profil créé par vous : vos changements sont enregistrés quand vous touchez « Enregistrer ».'),
@@ -358,6 +362,10 @@ const en: Dict = {
     'The profile becomes theirs: they choose their own caregiver code, and decide what is recorded and who is in the team. You stay in the team and can keep editing the board.',
   ],
   parentsMake: 'Create the parents’ code',
+  parentsEmail: 'The parents’ email (optional)',
+  parentsSubject: (child, app) => `${child}’s communication board (${app})`,
+  parentsMessage: (pro, child, code, app, site, role, firstScreen, link) =>
+    `Hello,\n\n${pro} prepared ${child}’s communication board in the ${app} app. To make it yours:\n\n1. Open the app${site ? `: ${site}` : ''}\n2. Create your account and choose “${role}”.\n3. On the first screen (“${firstScreen}”), choose “${link}” and enter this code: ${code}\n\nThe profile then becomes yours: you choose your caregiver code, what is recorded and who is in the team.\n\nSee you soon`,
   parentsRenew: 'New code',
   parentsWarn: 'Give this code to the child’s parents only: whoever uses it becomes responsible for the profile.',
   ownBanner: (n) => (n ? `${n} change(s) not saved yet.` : 'Profile created by you: your changes are saved when you press “Save”.'),
@@ -605,6 +613,10 @@ const ar: Dict = {
     'يصبح الملف ملفهم: يختارون رمز المرافق الخاص بهم، ويقرّرون ما يُسجَّل ومن يكون في الفريق. تبقى أنت ضمن الفريق ويمكنك متابعة تعديل اللوحة.',
   ],
   parentsMake: 'إنشاء رمز الأهل',
+  parentsEmail: 'بريد الأهل الإلكتروني (اختياري)',
+  parentsSubject: (child, app) => `لوحة تواصل ${child} (${app})`,
+  parentsMessage: (pro, child, code, app, site, role, firstScreen, link) =>
+    `مرحباً،\n\n${pro} حضّر لوحة تواصل ${child} في تطبيق ${app}. لتصبح لوحتكم:\n\n1. افتحوا التطبيق${site ? `: ${site}` : ''}\n2. أنشئوا حسابكم واختاروا «${role}».\n3. في الشاشة الأولى («${firstScreen}») اختاروا «${link}» وأدخلوا هذا الرمز: ${code}\n\nيصبح الملف ملفكم: تختارون رمز المرافق وما يُسجَّل ومن يكون في الفريق.\n\nإلى اللقاء`,
   parentsRenew: 'رمز جديد',
   parentsWarn: 'أعطِ هذا الرمز لأهل الطفل فقط: من يستعمله يصبح مسؤولاً عن الملف.',
   ownBanner: (n) => (n ? `${n} تغيير(ات) لم تُحفظ بعد.` : 'ملف أنشأته أنت: تُحفظ تغييراتك عند الضغط على «حفظ».'),

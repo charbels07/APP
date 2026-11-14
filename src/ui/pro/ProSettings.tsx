@@ -2,18 +2,21 @@
  * What the Settings pages show on a child's board opened by a professional (Team, Follow-up,
  * Account), and the card that hands a profile created by a professional over to the parents.
  */
+import * as Clipboard from 'expo-clipboard';
 import React, { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Linking, Platform, Share, Text, View } from 'react-native';
+import { serverMode } from '../../backend';
 import type { Invitation, Membership } from '../../backend/types';
-import { errorText } from '../../i18n/account';
+import { APP_NAME, errorText } from '../../i18n/account';
 import { onboardingStrings } from '../../i18n/onboarding';
 import { proStrings, type ProStrings } from '../../i18n/pro';
 import { settingsStrings } from '../../i18n/settings';
+import { inviteMailLink } from '../../lib/inviteMail';
 import { preset } from '../../lib/permissions';
 import type { Profile } from '../../model/types';
 import type { ProBoardCtx } from '../../state/BoardContext';
 import { useSession } from '../../state/Session';
-import { Btn, Section } from '../common';
+import { Btn, Field, Section } from '../common';
 import { DataDashboard } from '../data/DataDashboard';
 import { MyAccount, Preferences } from '../settings/AccountTab';
 import { Note, ss } from '../settings/SettingsScreen';
@@ -27,14 +30,23 @@ import { C } from '../theme';
  */
 export function ParentsCard({ profileId, p }: { profileId: string; p: ProStrings }) {
   const { api, s, uiLang } = useSession();
+  const x = settingsStrings(uiLang);
   const first = onboardingStrings(uiLang).childTitle;
   const [inv, setInv] = useState<Invitation | null | undefined>(undefined);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // The parents' address, if the professional has it: the message is then addressed to them, and
+  // the invitation also shows by itself in the account they create with that address.
+  const [email, setEmail] = useState('');
+  const [copied, setCopied] = useState(false);
   useEffect(() => {
     api
       .profileInvitations(profileId)
-      .then((l) => setInv(l.find((i) => i.direction === 'invite' && i.role === 'parent' && i.status === 'pending') ?? null))
+      .then((l) => {
+        const found = l.find((i) => i.direction === 'invite' && i.role === 'parent' && i.status === 'pending') ?? null;
+        setInv(found);
+        if (found?.email) setEmail(found.email);
+      })
       .catch(() => setInv(null));
   }, [api, profileId]);
   const make = async () => {
@@ -43,21 +55,45 @@ export function ParentsCard({ profileId, p }: { profileId: string; p: ProStrings
     try {
       // A new code replaces the one given before.
       if (inv) await api.cancelInvitation(inv.id);
-      setInv(await api.invite(profileId, { role: 'parent', ...preset('parent') }));
+      setInv(await api.invite(profileId, { email: email.trim() || undefined, role: 'parent', ...preset('parent') }));
+      setCopied(false);
     } catch (e) {
       setError(errorText(s, e));
     }
     setBusy(false);
   };
+  const site = Platform.OS === 'web' && serverMode() === 'online' && typeof window !== 'undefined' ? window.location.origin : '';
+  const message = inv ? p.parentsMessage(inv.fromName, inv.childName, inv.code, APP_NAME, site, s.roleParent, first, s.haveCode) : '';
   return (
     <View style={ss.card}>
       <Text style={ss.title}>{p.parentsTitle}</Text>
       <Note text={p.parentsIntro} />
+      <Field label={p.parentsEmail} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} style={{ textAlign: 'left' }} />
       {inv ? (
         <>
           <Text style={ss.code} selectable>
             {inv.code}
           </Text>
+          {/* The app does not send e-mails itself: this opens the professional's own mail app, message ready. */}
+          <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+            <Btn
+              kind="primary"
+              icon="mail"
+              label={x.inviteByMail}
+              onPress={() => {
+                Linking.openURL(inviteMailLink(email || inv.email, p.parentsSubject(inv.childName, APP_NAME), message)).catch(() => {});
+              }}
+            />
+            <Btn icon="external" label={x.share} onPress={() => void Share.share({ message }).catch(() => {})} />
+            <Btn
+              icon="clipboard"
+              label={copied ? x.copied : x.copy}
+              onPress={async () => {
+                await Clipboard.setStringAsync(message).catch(() => {});
+                setCopied(true);
+              }}
+            />
+          </View>
           {p.parentsSteps(s.roleParent, first, s.haveCode).map((t, i) => (
             <Note key={i} text={`${i + 1}. ${t}`} />
           ))}

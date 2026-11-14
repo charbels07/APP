@@ -4,11 +4,13 @@
  * confirmed with a 6-digit code (in the demo the code is shown on screen instead of sent).
  * Apple, Google and phone are only offered when the server has them turned on.
  */
+import * as Clipboard from 'expo-clipboard';
 import React, { useEffect, useState } from 'react';
 import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import type { CodeSent, SignInMethods } from '../../backend/Backend';
 import type { Role } from '../../backend/types';
 import { errorText } from '../../i18n/account';
+import { codeFrom } from '../../lib/codeInput';
 import { useSession } from '../../state/Session';
 import { Btn, Field, Segmented } from '../common';
 import { checked } from '../a11y';
@@ -383,13 +385,22 @@ function CodeStep({
       <Field
         label={s.code}
         value={code}
-        onChangeText={(v) => setCode(v.replace(/\D/g, '').slice(0, 8))}
+        onChangeText={(v) => setCode(codeFrom(v))}
         keyboardType="number-pad"
         autoComplete="one-time-code"
         textContentType="oneTimeCode"
         style={{ fontSize: 28, letterSpacing: 8, textAlign: 'center' }}
         accessibilityLabel={s.code}
         onSubmitEditing={() => ready && onSubmit(code, password)}
+      />
+      {/* What was copied from the e-mail, even when the mail app made a link of the code. */}
+      <LinkBtn
+        label={s.pasteCode}
+        onPress={() => {
+          Clipboard.getStringAsync()
+            .then((v) => v && setCode(codeFrom(v)))
+            .catch(() => {});
+        }}
       />
       {step.kind === 'reset' && <PasswordField label={s.newPassword} value={password} onChange={setPassword} isNew />}
       <ErrorText text={error} />

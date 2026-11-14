@@ -18,6 +18,9 @@ describe('caregiver card actions', () => {
   it('duplicates a card into the next empty slot of the same board', () => {
     const p = createDefaultProfile();
     const b = p.boards.tla_meal;
+    // A full board of 5 lines and 6 columns (the starter board itself has free places in its columns).
+    const words = [...new Set(Object.values(p.boards).flatMap((x) => x.cells.filter(Boolean).map((c) => c!.concept)))].slice(0, 30);
+    Object.assign(b, { rows: 5, cols: 6, cells: words.map((concept) => ({ concept })) });
     b.cells[b.cells.length - 1] = null;
     b.cells[3] = null;
     const free = emptySlots(b);

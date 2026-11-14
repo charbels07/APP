@@ -1,6 +1,27 @@
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
+import { Platform } from 'react-native';
 import { saveMedia } from './media';
+
+/** What the device lets the app see of the person's pictures. */
+export type LibraryAccess = 'all' | 'selected' | 'none' | 'notAsked' | 'chosenOnly';
+
+/**
+ * Access to the photo library. On a tablet or phone the system asks the person the first time
+ * (selected pictures, all pictures, or none) and remembers; `ask` shows that question when it was
+ * never answered. In a browser there is nothing to ask: a site only ever receives the picture
+ * the person picks.
+ */
+export async function libraryAccess(ask = false): Promise<LibraryAccess> {
+  if (Platform.OS === 'web') return 'chosenOnly';
+  try {
+    const p = ask ? await ImagePicker.requestMediaLibraryPermissionsAsync() : await ImagePicker.getMediaLibraryPermissionsAsync();
+    if (p.granted) return p.accessPrivileges === 'limited' ? 'selected' : 'all';
+    return p.status === 'undetermined' ? 'notAsked' : 'none';
+  } catch {
+    return 'notAsked';
+  }
+}
 
 /**
  * Lets the family add a personal photo (camera, library or file) to a word
@@ -10,6 +31,9 @@ export async function pickPhoto(source: 'library' | 'camera'): Promise<string | 
   if (source === 'camera') {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) return undefined;
+  } else if ((await libraryAccess(true)) === 'none') {
+    // The person said no (now or earlier): nothing is opened. They can change it in the device's settings.
+    return undefined;
   }
   const options: ImagePicker.ImagePickerOptions = {
     mediaTypes: ['images'],

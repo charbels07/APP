@@ -46,8 +46,9 @@ function existingConcept(profile: Profile, pictoKey: string | undefined, fr: str
   });
 }
 
-function guessClass(topics: string[]): WordClass {
-  if (topics.includes('verb')) return 'verb';
+/** The kind of a new word, from its pictogram: its topics, or a symbol named "…, to" (an action). */
+function guessClass(topics: string[], pictoKey?: string): WordClass {
+  if (topics.includes('verb') || (pictoKey && /_,_to$/.test(pictoKey))) return 'verb';
   if (topics.includes('qualifying adjective') || topics.includes('adjective')) return 'descriptor';
   return 'noun';
 }
@@ -82,7 +83,7 @@ export function conceptMaker(lib: PreparedIndex, profile: Profile, stamp: string
     const cid = `c_${stamp}_${n++}`;
     newConcepts[cid] = {
       id: cid,
-      cls: item.cls ?? guessClass(it[7] ?? []),
+      cls: item.cls ?? guessClass(it[7] ?? [], it[10]),
       // Arabic from the library is Standard Arabic; AI proposals come in the family's dialect. Editable either way.
       labels,
       emoji: '⭐',
@@ -244,7 +245,7 @@ export function NewTlaPanel() {
     const describe = (item: PlanItem): Placed => {
       const it = lib.byId.get(item.id);
       const known = it ? existingConcept(profile, it[10], labelsFor(lib, item).fr) : undefined;
-      return known ? { concept: known, cls: getConcept(profile, known)?.cls ?? 'noun' } : { cls: item.cls ?? guessClass(it?.[7] ?? []) };
+      return known ? { concept: known, cls: getConcept(profile, known)?.cls ?? 'noun' } : { cls: item.cls ?? guessClass(it?.[7] ?? [], it?.[10]) };
     };
     return (words: PlanItem[]) => sort(words, describe);
   }, [lib, profile]);
@@ -301,10 +302,6 @@ export function NewTlaPanel() {
 
     await titleConcept(titleId, topic.trim() || t.newTlaTitle, p);
 
-    // Core words in the two left columns (same place on every TLA), then functions, then the
-    // topic words in the order of the main board.
-    const { rows, cols, cells } = tlaLayout(words);
-    const board: Board = { id: boardId, kind: 'tla', concept: titleId, rows, cols, cells };
     const schedule: Schedule | undefined = stepConcepts.length
       ? {
           id: `sched_${stamp}`,
@@ -316,6 +313,8 @@ export function NewTlaPanel() {
       : undefined;
     app.update((d) => {
       apply(d);
+      // Like the main board: each kind of word in its own column (the new words are known now).
+      const board: Board = { id: boardId, kind: 'tla', concept: titleId, ...tlaLayout(d, words) };
       d.boards[boardId] = board;
       d.tlaOrder.push(boardId);
       if (schedule) {

@@ -5,15 +5,15 @@ import { useSession } from '../../state/Session';
 import { PictoCredit } from '../PictoCredits';
 import { onboardingStrings } from '../../i18n/onboarding';
 import { editStrings } from '../../i18n/edit';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Image, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Image, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { DIALECT_ORDER, dialectName } from '../../data/dialects';
 import { VOICE_INDEX, VOICE_PROVIDER } from '../../data/voicePackIndex';
 import { dialectPack } from '../../lib/dialectVoice';
 import { CLASS_NAMES, CLASS_ORDER, CLASS_COLORS, C, radius } from '../theme';
 import { allConceptIds, availableLangs, display, getConcept, isRtl, label, langName, symbolOf, wordClass } from '../../lib/lexicon';
 import { deleteMedia } from '../../lib/media';
-import { pickPhoto } from '../../lib/photos';
+import { libraryAccess, pickPhoto, type LibraryAccess } from '../../lib/photos';
 import { APP_PRESETS, appLinkOf, isIncomplete, openAppUrl } from '../../lib/appLinks';
 import { exportJson, exportPdf, printDocument } from '../../lib/platform';
 import { boardCells, buildPrintHtml, conceptCell, type PrintOptions } from '../../lib/printHtml';
@@ -29,11 +29,55 @@ import { Btn, Field, Panel, Section, Segmented, Toggle } from '../common';
 import { PictoSearch } from '../PictoPicker';
 import { PrintPreview } from '../PrintPreview';
 import { SymbolView, useMediaUri } from '../SymbolView';
+import { useWiggle } from '../wiggle';
 import { scheduleTitle } from '../screens/ScheduleScreen';
 import { CellMenu, MoveToTlaPanel, ShareTlaPanel, TlaMenu } from './EditMenus';
 import { Recorder } from './Recorder';
 import { pinTooEasy } from './CommPanels';
 import { stable } from '../../lib/profileDiff';
+import { normalize } from '../../lib/search';
+
+/**
+ * "Your library": a picture saved on the device, or a photo taken now. A line says what the app is
+ * allowed to see of the person's pictures (the tablet asks the first time; a browser has nothing
+ * to ask, it only hands over the chosen picture).
+ */
+function OwnLibrary({ onPick }: { onPick: (from: 'library' | 'camera') => void | Promise<void> }) {
+  const { t } = useApp();
+  const [access, setAccess] = useState<LibraryAccess | null>(null);
+  const look = useCallback(() => void libraryAccess().then(setAccess), []);
+  useEffect(look, [look]);
+  const pick = async (from: 'library' | 'camera') => {
+    await onPick(from);
+    look();
+  };
+  return (
+    <>
+      <Text style={s.note}>{t.ownLibraryNote}</Text>
+      <View style={s.wrapRow}>
+        <Btn small icon="image" label={t.pickPicture} onPress={() => void pick('library')} />
+        <Btn small icon="camera" label={t.takePhoto} onPress={() => void pick('camera')} />
+      </View>
+      {access ? <Text style={[s.note, access === 'none' && { color: C.edit, fontWeight: '700' }]}>{t.libraryAccess[access]}</Text> : null}
+    </>
+  );
+}
+
+/** What "pictograms wiggle" looks like, shown at once (the setting itself is applied on "Save"). */
+function WiggleTry({ label, concept }: { label: string; concept: string }) {
+  const { profile } = useApp();
+  // Once when the switch is turned on, then at each press.
+  const [n, setN] = useState(1);
+  const transform = useWiggle(n);
+  return (
+    <View style={s.row}>
+      <Animated.View style={{ transform }}>
+        <SymbolView symbol={symbolOf(profile, concept)} size={48} />
+      </Animated.View>
+      <Btn small icon="play" label={label} onPress={() => setN((x) => x + 1)} />
+    </View>
+  );
+}
 
 /** The child lock of this device: the switch and how to stop the child leaving the app. */
 function ChildLock() {
@@ -356,13 +400,7 @@ function ConceptEditorBody({ conceptId, only }: { conceptId: string; only?: 'ima
               />
             </>
           )}
-          {source === 'photo' && <Text style={s.note}>{t.ownLibraryNote}</Text>}
-          {source === 'photo' && (
-            <View style={s.wrapRow}>
-              <Btn small icon="image" label={t.pickPicture} onPress={() => photo('library')} />
-              <Btn small icon="camera" label={t.takePhoto} onPress={() => photo('camera')} />
-            </View>
-          )}
+          {source === 'photo' && <OwnLibrary onPick={photo} />}
           <View style={s.row}>
             <Btn small icon="undo" label={t.resetSymbol} onPress={() => setSymbol(undefined)} />
             <TextInput placeholderTextColor={C.placeholder} value={emoji} onChangeText={setEmoji} placeholder={t.emojiPlaceholder} style={[s.input, { width: 110 }]} maxLength={8} />
@@ -673,12 +711,13 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
               />
             </View>
           )}
-          {source === 'photo' && <Text style={s.note}>{t.ownLibraryNote}</Text>}
           {source === 'photo' && (
-            <View style={s.wrapRow}>
-              <Btn small icon="image" label={t.pickPicture} onPress={async () => { const n = await pickPhoto('library'); if (n) chooseOwn(n); }} />
-              <Btn small icon="camera" label={t.takePhoto} onPress={async () => { const n = await pickPhoto('camera'); if (n) chooseOwn(n); }} />
-            </View>
+            <OwnLibrary
+              onPick={async (from) => {
+                const n = await pickPhoto(from);
+                if (n) chooseOwn(n);
+              }}
+            />
           )}
           {source === 'pictos' && !ownPicture && pictoQuery ? (
             <View style={{ gap: 6 }}>
@@ -902,6 +941,55 @@ export function useSettingsDraft(): SettingsDraft {
 }
 
 /** The child's AAC settings (first page of Settings; the others are Team and Account). */
+// ── Searching the settings ──
+
+/**
+ * The words typed in the settings' search bar (already simplified), and how many parts of the page
+ * matched them. Empty: the whole page is shown.
+ */
+export const SettingsSearch = createContext<{ q: string; hits: { current: number } }>({ q: '', hits: { current: 0 } });
+
+/**
+ * The names of the settings in a piece of the page: the labels of its switches, fields and
+ * choices. Explanations are left out on purpose (a note that mentions "voice" in passing would
+ * bring up the wrong part).
+ */
+function wordsIn(node: React.ReactNode, out: string[] = []): string[] {
+  React.Children.forEach(node, (child) => {
+    if (React.isValidElement(child)) {
+      const props = child.props as Record<string, unknown>;
+      for (const k of ['label', 'title']) if (typeof props[k] === 'string') out.push(props[k] as string);
+      // a small heading inside the part (<Text style={s.label}>)
+      if (props.style === s.label && typeof props.children === 'string') out.push(props.children);
+      if (Array.isArray(props.options)) for (const o of props.options as { label?: unknown }[]) if (typeof o?.label === 'string') out.push(o.label);
+      wordsIn(props.children as React.ReactNode, out);
+    }
+  });
+  return out;
+}
+
+/** Do all the words searched appear in these texts? (accents and capitals do not matter) */
+export function matchesSearch(q: string, texts: string[]): boolean {
+  const hay = normalize(texts.join(' '));
+  return q.split(/\s+/).filter(Boolean).every((w) => hay.includes(w));
+}
+
+/** A part of the settings page: while searching, only shown when it holds what is searched. */
+function Found({ title, children }: { title: string; children: React.ReactNode }) {
+  const search = useContext(SettingsSearch);
+  if (search.q) {
+    if (!matchesSearch(search.q, [title, ...wordsIn(children)])) return null;
+    search.hits.current += 1;
+  }
+  return <Section title={title}>{children}</Section>;
+}
+
+/** Shown under the page when the search found nothing in it. */
+function NothingFound({ text }: { text: string }) {
+  const search = useContext(SettingsSearch);
+  return search.q && search.hits.current === 0 ? <Text style={s.note}>{text}</Text> : null;
+}
+
 export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
   const app = useApp();
   const { profile, t } = app;
@@ -909,6 +997,7 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
   const board = useBoard();
   const o = onboardingStrings(profile.settings.uiLang);
   const { st, set, pin, setPin } = draft;
+  const searching = !!useContext(SettingsSearch).q;
   const langs = availableLangs(st);
   const [voiceChoice, setVoiceLang] = useState<Lang>(st.lang);
   const voiceLang = langs.includes(voiceChoice) ? voiceChoice : langs[0];
@@ -929,8 +1018,8 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
 
   return (
     <>
-      <Btn icon="book" label={t.openGuide} onPress={() => app.setOverlay({ kind: 'guide' })} />
-      <Section title={t.sCommunication}>
+      {!searching && <Btn icon="book" label={t.openGuide} onPress={() => app.setOverlay({ kind: 'guide' })} />}
+      <Found title={t.sCommunication}>
         <Text style={s.label}>{t.sCommLang}</Text>
         <Segmented value={st.lang} onChange={(v: Lang) => set((x) => void (x.lang = v))} options={langs.map((l) => ({ value: l, label: langName(st, l) }))} />
         <Text style={s.label}>{t.sArabic}</Text>
@@ -995,17 +1084,29 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
           ]}
         />
         <Text style={s.note}>{t.sRepeatNote}</Text>
-        <Toggle label={t.sWiggle} value={!!st.wiggle} onChange={(v) => set((x) => void (x.wiggle = v))} />
+        <Toggle
+          label={t.sWiggle}
+          value={!!st.wiggle}
+          note={t.sWiggleNote}
+          onChange={(v) =>
+            set((x) => {
+              x.wiggle = v;
+              // "Fewer animations" would silently stop it: the last choice wins.
+              if (v) x.reduceMotion = false;
+            })
+          }
+        />
+        {!!st.wiggle && <WiggleTry label={t.sWiggleTry} concept="want" />}
         <Toggle label={t.sAutoApps} value={st.autoOpenApps !== false} onChange={(v) => set((x) => void (x.autoOpenApps = v))} />
-      </Section>
+      </Found>
 
       {board && (
-        <Section title={t.lockTitle}>
+        <Found title={t.lockTitle}>
           <ChildLock />
-        </Section>
+        </Found>
       )}
 
-      <Section title={o.presentationAccess}>
+      <Found title={o.presentationAccess}>
         <Text style={s.label}>{o.langTitle}</Text>
         <View style={s.wrapRow}>
           {langs.map((l) => {
@@ -1062,11 +1163,21 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
             />
           </>
         )}
-        <Toggle label={o.reduceMotionToggle} value={!!st.reduceMotion} onChange={(v) => set((x) => void (x.reduceMotion = v))} />
+        <Toggle
+          label={o.reduceMotionToggle}
+          value={!!st.reduceMotion}
+          onChange={(v) =>
+            set((x) => {
+              x.reduceMotion = v;
+              // Pictures that wiggle are an animation: turned off with the others.
+              if (v) x.wiggle = false;
+            })
+          }
+        />
         <Toggle label={o.hapticsToggle} value={st.haptics !== false} onChange={(v) => set((x) => void (x.haptics = v))} />
-      </Section>
+      </Found>
 
-      <Section title={t.sBar}>
+      <Found title={t.sBar}>
         <Toggle label={t.tla} value={st.bar.tla} onChange={(v) => set((x) => void (x.bar.tla = v))} />
         <Toggle label={t.schedule} value={st.bar.schedule} onChange={(v) => set((x) => void (x.bar.schedule = v))} />
         {/* What the Schedule screen also offers: shown under it, so "schedule" means one thing. */}
@@ -1087,9 +1198,9 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
           </View>
         )}
         <Toggle label={t.timer} value={st.bar.timer} onChange={(v) => set((x) => void (x.bar.timer = v))} note={t.sBarNote} />
-      </Section>
+      </Found>
 
-      <Section title={t.sVoice}>
+      <Found title={t.sVoice}>
         <View style={s.row}>
           <Text style={[s.label, { flex: 1 }]}>
             {t.sRate} : {st.speechRate.toFixed(1)}×
@@ -1156,9 +1267,9 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
             />
           ))}
         </View>
-      </Section>
+      </Found>
 
-      <Section title={t.sHelp}>
+      <Found title={t.sHelp}>
         {langs.map((l) => (
           <Field
             key={l}
@@ -1170,14 +1281,14 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
         ))}
         <Field label={t.helpHowI} multiline value={draft.help.howICommunicate} onChangeText={(v) => draft.setHelp((h) => void (h.howICommunicate = v))} style={{ minHeight: 70 }} />
         <Field label={t.helpContact} value={draft.help.emergencyContact} onChangeText={(v) => draft.setHelp((h) => void (h.emergencyContact = v))} />
-      </Section>
+      </Found>
 
-      <Section title={t.sSecurity}>
+      <Found title={t.sSecurity}>
         <Field label={t.sPin} value={pin} keyboardType="number-pad" maxLength={4} onChangeText={(v) => setPin(v.replace(/\D/g, ''))} />
         {!draft.pinOk && <Text style={s.note}>{pin.length === 4 ? t.pinTooEasy : t.sPinFour}</Text>}
-      </Section>
+      </Found>
 
-      <Section title={t.sData}>
+      <Found title={t.sData}>
         <Toggle label={t.sAi} value={st.aiSuggestions !== false} onChange={(v) => set((x) => void (x.aiSuggestions = v))} />
         <View style={s.wrapRow}>
           <Btn icon="download" label={t.sExport} onPress={() => exportJson('profil-caa.json', profile)} />
@@ -1192,9 +1303,9 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
             }}
           />
         </View>
-      </Section>
+      </Found>
 
-      <Section title={t.sAbout}>
+      <Found title={t.sAbout}>
         <Text style={s.note}>{t.aboutText}</Text>
         {Object.keys(VOICE_INDEX).length > 0 && (
           <Text style={s.note}>
@@ -1202,7 +1313,8 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
           </Text>
         )}
         <PictoCredit lang={profile.settings.uiLang} />
-      </Section>
+      </Found>
+      <NothingFound text={t.sSearchNone} />
     </>
   );
 }

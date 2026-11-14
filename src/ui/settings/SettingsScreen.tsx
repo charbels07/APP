@@ -9,7 +9,7 @@
  * Account only say what they will hold: they open once the account is created.
  */
 import React, { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import type { Invitation, Proposal } from '../../backend/types';
 import { dataStrings } from '../../i18n/data';
 import { settingsStrings } from '../../i18n/settings';
@@ -17,7 +17,9 @@ import { useApp } from '../../state/AppState';
 import { useBoard, useProBoard } from '../../state/BoardContext';
 import { useSession } from '../../state/Session';
 import { Btn, Panel, Segmented, useNavRtl } from '../common';
-import { BoardSettingsBody, useSettingsDraft } from '../panels/CaregiverPanels';
+import { normalize } from '../../lib/search';
+import { Icon } from '../Icon';
+import { BoardSettingsBody, matchesSearch, SettingsSearch, useSettingsDraft } from '../panels/CaregiverPanels';
 import { DataDashboard } from '../data/DataDashboard';
 import { C } from '../theme';
 import { AccountTab } from './AccountTab';
@@ -34,6 +36,9 @@ export function SettingsScreen() {
   const { uiLang, account, api, s, go } = useSession();
   const x = settingsStrings(uiLang);
   const [tab, setTab] = useState<Tab>('board');
+  // The search bar: what is typed, simplified (no accents, no capitals); it works on the Board page.
+  const [query, setQuery] = useState('');
+  const q = normalize(query).trim();
   // Changes of the Board page wait here until "Save".
   const draft = useSettingsDraft();
   // Where the person was going when changes were still waiting (close, another page).
@@ -57,6 +62,15 @@ export function SettingsScreen() {
   useEffect(() => {
     void refreshWaiting();
   }, [refreshWaiting, tab]);
+
+  // What the other pages are about, in the words shown on them.
+  const d = dataStrings(uiLang);
+  const pageWords: Record<Exclude<Tab, 'board'>, string[]> = {
+    team: [x.tabTeam, x.invite, x.people, x.proposals, x.requests, x.connectionCode, x.history, x.roles.therapist, x.roles.teacher, x.roles.family],
+    data: [d.tab, d.title, ...Object.values(d.levels), ...Object.values(d.sections)],
+    account: [x.tabAccount, x.myAccount, x.addChild, x.devices, x.syncNow, x.linkDevice, x.privacy, x.exportProfile, x.deleteAccount, x.deleteProfile, x.prefs, x.interfaceLang, s.signOut, s.password, s.email],
+  };
+  const otherPages = q ? tabs.filter((p): p is Exclude<Tab, 'board'> => p !== 'board' && matchesSearch(q, pageWords[p])) : [];
 
   const label = (t: Tab) =>
     t === 'board' ? x.tabBoard : t === 'team' ? (waiting ? `${x.tabTeam} (${waiting})` : x.tabTeam) : t === 'data' ? dataStrings(uiLang).tab : x.tabAccount;
@@ -104,8 +118,58 @@ export function SettingsScreen() {
         ) : undefined
       }
     >
-      <Segmented<Tab> value={tab} onChange={(next) => go2(() => setTab(next))} options={tabs.map((t) => ({ value: t, label: label(t) }))} />
-      {tab === 'board' && <BoardSettingsBody draft={draft} />}
+      <View style={ss.search}>
+        <Icon name="search" size={20} color={C.textMuted} />
+        <TextInput
+          value={query}
+          onChangeText={(v) => {
+            setQuery(v);
+            // Most settings are on the Board page: searching shows that page, filtered.
+            if (v.trim() && tab !== 'board') setTab('board');
+          }}
+          placeholder={t.sSearch}
+          placeholderTextColor={C.placeholder}
+          style={ss.searchInput}
+          accessibilityLabel={t.sSearch}
+          autoCorrect={false}
+        />
+        {query ? <Btn small kind="ghost" icon="x" label={t.sSearchClear} onPress={() => setQuery('')} /> : null}
+      </View>
+      <Segmented<Tab>
+        value={tab}
+        onChange={(next) =>
+          go2(() => {
+            setQuery('');
+            setTab(next);
+          })
+        }
+        options={tabs.map((t) => ({ value: t, label: label(t) }))}
+      />
+      {/* The other pages that speak of what is searched: one tap goes there. */}
+      {q && otherPages.length > 0 && (
+        <View style={ss.also}>
+          <Text style={ss.sub}>{t.sSearchOther}</Text>
+          {otherPages.map((o) => (
+            <Btn
+              key={o}
+              small
+              icon="chevronRight"
+              label={label(o)}
+              onPress={() =>
+                go2(() => {
+                  setQuery('');
+                  setTab(o);
+                })
+              }
+            />
+          ))}
+        </View>
+      )}
+      {tab === 'board' && (
+        <SettingsSearch.Provider value={{ q, hits: { current: 0 } }}>
+          <BoardSettingsBody draft={draft} />
+        </SettingsSearch.Provider>
+      )}
       {pro && tab !== 'board' && <ProSettingsTab tab={tab} pro={pro} profile={app.profile} />}
       {!board && !pro && tab !== 'board' && (
         <View style={{ gap: 12 }}>
@@ -146,6 +210,9 @@ export function Note({ text }: { text: string }) {
 export const ss = StyleSheet.create({
   saveBar: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
   saveText: { flex: 1, minWidth: 140, fontSize: 14, fontWeight: '700', color: C.textMuted },
+  search: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1.5, borderColor: C.inputBorder, borderRadius: 12, paddingHorizontal: 12, minHeight: 48, backgroundColor: C.surface },
+  searchInput: { flex: 1, minHeight: 44, fontSize: 16, color: C.text },
+  also: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
   note: { fontSize: 14, color: C.textMuted, lineHeight: 20 },
   rtl: { textAlign: 'right', writingDirection: 'rtl' },
   row: {

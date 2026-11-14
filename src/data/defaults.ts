@@ -3,6 +3,7 @@
  * The layout and word choice must be designed/validated by the speech-language
  * therapist before release. Positions here only demonstrate the mechanics.
  */
+import { tlaLayout } from '../lib/boardOrder';
 import type { Board, Cell, HelpConfig, Profile, Schedule, Settings } from '../model/types';
 
 type Spec = string | null | { c: string; f?: string; l?: 1 | 2 | 3 };
@@ -134,31 +135,14 @@ const FOLDERS: Board[] = [
 /** Where the apps folder sits on the core board (an empty slot: nothing else moves). */
 export const APPS_FOLDER_SLOT = 3 * 12 + 11;
 
-/** TLAs share a fixed block of core words in the two left columns (TLA-01, TLA-02). */
-export const TLA_CORE: string[][] = [
-  ['i', 'want'],
-  ['you', 'like'],
-  ['more', 'not'],
-  ['done', 'stop'],
-  ['help_me', 'what'],
-];
+export { TLA_CORE, TLA_FUNCTIONS } from './tlaCore';
 
-/** Communication words put first on every activity board the family creates (comment, turns, ask). */
-export const TLA_FUNCTIONS = ['look_at', 'my_turn', 'i_like_it', 'where'];
-
+/**
+ * A starter activity board: its topic words. The grid itself (each kind of word in its own
+ * column, like the main board) is made when the profile is created, see createDefaultProfile.
+ */
 function tla(id: string, concept: string, specific: string[]): Board {
-  const rows = 5;
-  const cols = 6;
-  const cells: (Cell | null)[] = new Array(rows * cols).fill(null);
-  for (let r = 0; r < rows; r++) {
-    cells[r * cols] = { concept: TLA_CORE[r][0] };
-    cells[r * cols + 1] = { concept: TLA_CORE[r][1] };
-    for (let c = 2; c < cols; c++) {
-      const word = specific[r * (cols - 2) + (c - 2)];
-      cells[r * cols + c] = word ? { concept: word } : null;
-    }
-  }
-  return { id, kind: 'tla', concept, rows, cols, cells };
+  return { id, kind: 'tla', concept, rows: 1, cols: Math.max(specific.length, 1), cells: specific.map((word) => ({ concept: word })) };
 }
 
 const TLAS: Board[] = [
@@ -192,10 +176,6 @@ const TLAS: Board[] = [
   ]),
 ];
 
-/** Empty TLA that already contains the shared core block. */
-export function blankTla(id: string, concept: string): Board {
-  return tla(id, concept, []);
-}
 
 let stepSeq = 0;
 const step = (concept: string, extra: { tla?: string; timerMin?: number } = {}) => ({
@@ -287,7 +267,7 @@ export const QUICK_ZONE = ['yes', 'no', 'stop', 'wait_s', 'more', 'done', 'help_
 export function createDefaultProfile(): Profile {
   const boards: Record<string, Board> = {};
   for (const b of [CORE, ...FOLDERS, ...TLAS]) boards[b.id] = structuredClone(b);
-  return {
+  const profile: Profile = {
     version: 1,
     settings: structuredClone(DEFAULT_SETTINGS),
     boards,
@@ -302,4 +282,7 @@ export function createDefaultProfile(): Profile {
     monthPlan: {},
     migrations: ['apps'],
   };
+  // The starter activity boards follow the main board: each kind of word in its own column.
+  for (const t of TLAS) Object.assign(profile.boards[t.id], tlaLayout(profile, t.cells.map((c) => c!.concept)));
+  return profile;
 }

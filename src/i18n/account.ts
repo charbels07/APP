@@ -70,6 +70,7 @@ const fr = {
   seconds: 's',
   codeResent: 'Nouveau code envoyé.',
   codeJunk: 'Rien reçu au bout d’une minute ? Regardez dans le courrier indésirable (spam).',
+  pasteCode: 'Coller le code',
   codeWait: 'Un code a déjà été envoyé il y a un instant. Vous pourrez en demander un autre à la fin du compte à rebours.',
   changeAddress: 'Modifier l’adresse',
 
@@ -197,6 +198,7 @@ const en: Dict = {
   seconds: 's',
   codeResent: 'New code sent.',
   codeJunk: 'Nothing after a minute? Look in your junk (spam) folder.',
+  pasteCode: 'Paste the code',
   codeWait: 'A code was already sent a moment ago. You can ask for another one when the countdown ends.',
   changeAddress: 'Change the address',
 
@@ -318,6 +320,7 @@ const ar: Dict = {
   seconds: 'ث',
   codeResent: 'تمّ إرسال رمز جديد.',
   codeJunk: 'لم يصلك شيء بعد دقيقة؟ انظر في البريد غير المرغوب فيه (السبام).',
+  pasteCode: 'لصق الرمز',
   codeWait: 'أُرسل رمز قبل لحظات. يمكنك طلب رمز آخر عند انتهاء العدّ التنازلي.',
   changeAddress: 'تغيير العنوان',
 

@@ -75,3 +75,23 @@ describe('small wordings', () => {
     }
   });
 });
+
+describe('the code pasted from the e-mail', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { codeFrom } = require('../lib/codeInput') as typeof import('../lib/codeInput');
+  it('is found whatever the mail app made of it', () => {
+    expect(codeFrom('20883655')).toBe('20883655');
+    expect(codeFrom('2088 3655')).toBe('20883655');
+    expect(codeFrom('2088‌3655')).toBe('20883655'); // the invisible joiner of the new e-mail
+    expect(codeFrom('tel:20883655')).toBe('20883655');
+    expect(codeFrom('tel:+20883655')).toBe('20883655');
+    expect(codeFrom('https://eur01.safelinks.example/?url=tel%3A20883655&data=05%7C02%7C')).toBe('20883655');
+    expect(codeFrom('Your code: 123456.')).toBe('123456');
+  });
+  it('typing digit by digit still works', () => {
+    expect(codeFrom('2')).toBe('2');
+    expect(codeFrom('2088')).toBe('2088');
+    expect(codeFrom('208836551234')).toBe('20883655');
+    expect(codeFrom('')).toBe('');
+  });
+});

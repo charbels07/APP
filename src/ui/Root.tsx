@@ -13,6 +13,7 @@ import { HelpPanel, LangPanel, PinPanel } from './panels/CommPanels';
 import { ToolsPanel } from './panels/ToolsPanel';
 import { GuidePanel, WelcomeCard } from './panels/GuidePanel';
 import { NewTlaPanel } from './panels/NewTlaPanel';
+import { NewSequencePanel } from './panels/NewSequencePanel';
 import { FolderPeek, SelectionBar, useCurrentBoard } from './panels/EditMenus';
 import { editStrings } from '../i18n/edit';
 import { BoardScreen } from './screens/BoardScreen';
@@ -44,6 +45,7 @@ export function Root({ banner }: { banner?: React.ReactNode } = {}) {
       {overlay?.kind === 'lang' && <LangPanel />}
       {overlay?.kind === 'pin' && <PinPanel />}
       {overlay?.kind === 'newTla' && <NewTlaPanel />}
+      {overlay?.kind === 'newSequence' && <NewSequencePanel />}
       {overlay?.kind === 'guide' && <GuidePanel />}
       {overlay?.kind === 'settings' && <SettingsScreen />}
       {overlay?.kind === 'peek' && <FolderPeek folder={overlay.folder} />}

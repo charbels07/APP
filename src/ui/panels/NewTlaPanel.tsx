@@ -12,7 +12,8 @@ import { normalize } from '../../lib/search';
 import { planAutomatically, planFromAi, planFromLibrary, type PlanItem, type TlaPlan } from '../../lib/tlaPlanner';
 import type { Board, Cell, Concept, Profile, Schedule, WordClass } from '../../model/types';
 import { useApp } from '../../state/AppState';
-import { Btn, Field, Panel, Section, Toggle } from '../common';
+import { Btn, Field, Panel, Section, Toggle, useNavRtl } from '../common';
+import { moveItem, Reorderable } from '../Reorderable';
 import { PictoSearch, PictoThumb, usePictoLibrary } from '../PictoPicker';
 import { ImportTla } from './EditMenus';
 import { SymbolView } from '../SymbolView';
@@ -49,6 +50,129 @@ function labelsFor(lib: PreparedIndex, item: PlanItem) {
   return { fr, en: item.labels?.en ?? it?.[5][0] ?? fr, ar: item.labels?.ar ?? it?.[6][0] ?? fr };
 }
 
+/**
+ * Turns planned pictograms into words of the child's profile: a word the profile already has
+ * is reused, the others are created with their picture. Shared by "new board" and "new sequence".
+ */
+export function conceptMaker(lib: PreparedIndex, profile: Profile, stamp: string) {
+  const newConcepts: Record<string, Concept> = {};
+  const symbols: Record<string, string> = {};
+  const credits: Record<string, string | undefined> = {};
+  const made = new Map<number, string>(); // pictogram → concept, shared by words and steps
+  let n = 0;
+  const conceptFor = async (item: PlanItem): Promise<string | undefined> => {
+    if (made.has(item.id)) return made.get(item.id);
+    const it = lib.byId.get(item.id);
+    if (!it) return undefined;
+    const labels = labelsFor(lib, item);
+    const reuse = existingConcept(profile, it[10], labels.fr);
+    if (reuse) {
+      made.set(item.id, reuse);
+      return reuse;
+    }
+    const cid = `c_${stamp}_${n++}`;
+    newConcepts[cid] = {
+      id: cid,
+      cls: item.cls ?? guessClass(it[7] ?? []),
+      // Arabic from the library is Standard Arabic; AI proposals come in the family's dialect. Editable either way.
+      labels,
+      emoji: '⭐',
+      custom: true,
+    };
+    const media = await pictoToMedia(item.id).catch(() => undefined);
+    if (media) (symbols[cid] = media), (credits[cid] = await pictoCredit(item.id).catch(() => undefined));
+    made.set(item.id, cid);
+    return cid;
+  };
+  /** The word that names the board or the sequence (its picture: the pictogram closest to the topic). */
+  const titleConcept = async (id: string, name: string, plan: { anchor?: number; title?: Partial<Record<'fr' | 'en' | 'ar', string>> } | null) => {
+    const anchorItem = plan?.anchor !== undefined ? lib.byId.get(plan.anchor) : undefined;
+    newConcepts[id] = {
+      id,
+      cls: 'noun',
+      labels: { fr: name, en: plan?.title?.en ?? anchorItem?.[5][0] ?? name, ar: plan?.title?.ar ?? anchorItem?.[6][0] ?? name },
+      emoji: '🗂️',
+      custom: true,
+    };
+    if (plan?.anchor !== undefined) {
+      const media = await pictoToMedia(plan.anchor).catch(() => undefined);
+      if (media) (symbols[id] = media), (credits[id] = await pictoCredit(plan.anchor).catch(() => undefined));
+    }
+  };
+  /** Writes the new words and their pictures into the profile. */
+  const apply = (d: Profile) => {
+    Object.assign(d.customConcepts, newConcepts);
+    for (const [cid, media] of Object.entries(symbols)) d.overrides[cid] = { symbol: { kind: 'media', name: media }, credit: credits[cid] };
+  };
+  return { conceptFor, titleConcept, apply };
+}
+
+/** The label shown under a planned pictogram, in the menus' language. */
+export function planCaption(lib: PreparedIndex | null | false | undefined, item: PlanItem, ui: 'fr' | 'en' | 'ar'): string {
+  if (!lib) return '';
+  const l = labelsFor(lib, item);
+  return l[ui] || l.fr || l.en || '';
+}
+
+/**
+ * The steps of a plan: tap one to remove it, hold it then slide to change the order (or the
+ * two small arrows), "add a step" searches the pictogram library.
+ */
+export function StepsEditor({
+  steps,
+  onChange,
+  onHolding,
+  max = MAX_STEPS,
+}: {
+  steps: PlanItem[];
+  onChange: (steps: PlanItem[]) => void;
+  onHolding?: (on: boolean) => void;
+  max?: number;
+}) {
+  const { t, profile } = useApp();
+  const lib = usePictoLibrary();
+  const rtl = useNavRtl();
+  const ui = profile.settings.uiLang;
+  const [adding, setAdding] = useState(false);
+  return (
+    <View style={{ gap: 8 }}>
+      {steps.length > 0 && (
+        <>
+          <Reorderable
+            items={steps}
+            keyOf={(item, i) => `${item.id}_${i}`}
+            onMove={(from, to) => onChange(moveItem(steps, from, to))}
+            onHolding={onHolding}
+            labels={{ earlier: t.stepEarlier, later: t.stepLater }}
+            rtl={rtl}
+            render={(item, i, hold) => (
+              <PictoThumb
+                id={item.id}
+                caption={planCaption(lib, item, ui) + (item.timerMin ? ` · ${item.timerMin} ${t.minutes}` : '')}
+                removable
+                wide
+                hold={hold}
+                onPress={() => onChange(steps.filter((_, j) => j !== i))}
+              />
+            )}
+          />
+          {steps.length > 1 && <Text style={styles.note}>{t.stepsHint}</Text>}
+        </>
+      )}
+      {adding ? (
+        <PictoSearch
+          lang={ui}
+          onPick={(id) => {
+            if (steps.length < max) onChange([...steps, { id }]);
+          }}
+        />
+      ) : (
+        <Btn small icon="plus" label={t.addStep} onPress={() => setAdding(true)} />
+      )}
+    </View>
+  );
+}
+
 export function NewTlaPanel() {
   const app = useApp();
   const { t, profile } = app;
@@ -60,7 +184,9 @@ export function NewTlaPanel() {
   const [thinking, setThinking] = useState(false);
   const [aiFailed, setAiFailed] = useState(false);
   const [makeSchedule, setMakeSchedule] = useState(true);
-  const [adding, setAdding] = useState<'words' | 'steps' | null>(null);
+  const [adding, setAdding] = useState<'words' | null>(null);
+  // A step is being held (hold then slide to reorder): the panel must not scroll under the finger.
+  const [holding, setHolding] = useState(false);
   const [busy, setBusy] = useState(false);
   const aiCtl = useRef<AbortController | null>(null);
   const aiEnabled = aiOk && profile.settings.aiSuggestions !== false;
@@ -100,11 +226,7 @@ export function NewTlaPanel() {
     return () => aiCtl.current?.abort();
   }, []);
 
-  const caption = (item: PlanItem) => {
-    if (!lib) return '';
-    const l = labelsFor(lib, item);
-    return l[ui] || l.fr || l.en || '';
-  };
+  const caption = (item: PlanItem) => planCaption(lib, item, ui);
 
   const askAi = async () => {
     if (!lib || !topic.trim()) return;
@@ -142,35 +264,7 @@ export function NewTlaPanel() {
     const stamp = Date.now().toString(36);
     const boardId = `tla_${stamp}`;
     const titleId = `c_tla_${stamp}`;
-    const newConcepts: Record<string, Concept> = {};
-    const symbols: Record<string, string> = {};
-    const credits: Record<string, string | undefined> = {};
-    const made = new Map<number, string>(); // pictogram → concept, shared by words and steps
-    let n = 0;
-    const conceptFor = async (item: PlanItem): Promise<string | undefined> => {
-      if (made.has(item.id)) return made.get(item.id);
-      const it = lib.byId.get(item.id);
-      if (!it) return undefined;
-      const labels = labelsFor(lib, item);
-      const reuse = existingConcept(profile, it[10], labels.fr);
-      if (reuse) {
-        made.set(item.id, reuse);
-        return reuse;
-      }
-      const cid = `c_${stamp}_${n++}`;
-      newConcepts[cid] = {
-        id: cid,
-        cls: item.cls ?? guessClass(it[7] ?? []),
-        // Arabic from the library is Standard Arabic; AI proposals come in the family's dialect. Editable either way.
-        labels,
-        emoji: '⭐',
-        custom: true,
-      };
-      const media = await pictoToMedia(item.id).catch(() => undefined);
-      if (media) (symbols[cid] = media), (credits[cid] = await pictoCredit(item.id).catch(() => undefined));
-      made.set(item.id, cid);
-      return cid;
-    };
+    const { conceptFor, titleConcept, apply } = conceptMaker(lib, profile, stamp);
 
     const words: string[] = [];
     for (const item of p?.words ?? []) {
@@ -184,23 +278,7 @@ export function NewTlaPanel() {
         if (cid) stepConcepts.push({ concept: cid, timerMin: item.timerMin });
       }
 
-    const anchorItem = p?.anchor !== undefined ? lib.byId.get(p.anchor) : undefined;
-    const name = topic.trim() || t.newTlaTitle;
-    newConcepts[titleId] = {
-      id: titleId,
-      cls: 'noun',
-      labels: {
-        fr: name,
-        en: p?.title?.en ?? anchorItem?.[5][0] ?? name,
-        ar: p?.title?.ar ?? anchorItem?.[6][0] ?? name,
-      },
-      emoji: '🗂️',
-      custom: true,
-    };
-    if (p?.anchor !== undefined) {
-      const media = await pictoToMedia(p.anchor).catch(() => undefined);
-      if (media) (symbols[titleId] = media), (credits[titleId] = await pictoCredit(p.anchor).catch(() => undefined));
-    }
+    await titleConcept(titleId, topic.trim() || t.newTlaTitle, p);
 
     // Core words in the two left columns (same place on every TLA), then functions, then topic words.
     const specific = [...FUNCTION_WORDS, ...words];
@@ -228,8 +306,7 @@ export function NewTlaPanel() {
         }
       : undefined;
     app.update((d) => {
-      Object.assign(d.customConcepts, newConcepts);
-      for (const [cid, media] of Object.entries(symbols)) d.overrides[cid] = { symbol: { kind: 'media', name: media }, credit: credits[cid] };
+      apply(d);
       d.boards[boardId] = board;
       d.tlaOrder.push(boardId);
       if (schedule) {
@@ -245,7 +322,7 @@ export function NewTlaPanel() {
     plan?.source === 'library' ? t.sourceLibrary : plan?.source === 'ai' ? t.sourceAi : plan ? t.sourceAuto : '';
 
   return (
-    <Panel title={t.newTlaTitle} onClose={() => app.setOverlay(null)} tone="edit" maxWidth={900}>
+    <Panel title={t.newTlaTitle} onClose={() => app.setOverlay(null)} tone="edit" maxWidth={900} scrollLocked={holding}>
       <View style={styles.row}>
         <View style={styles.grow}>
           <Field label={t.tlaTopic} value={topic} onChangeText={setTopic} onSubmitEditing={suggest} autoFocus placeholder="préparer un gâteau" />
@@ -344,31 +421,7 @@ export function NewTlaPanel() {
           </Section>
 
           <Section title={`${t.stepsTitle} (${plan.steps.length})`}>
-            {plan.steps.length > 0 && (
-              <View style={styles.grid}>
-                {plan.steps.map((item, i) => (
-                  <View key={`${item.id}_${i}`} style={styles.step}>
-                    <Text style={styles.stepNum}>{i + 1}</Text>
-                    <PictoThumb
-                      id={item.id}
-                      caption={caption(item) + (item.timerMin ? ` · ${item.timerMin} ${t.minutes}` : '')}
-                      removable
-                      onPress={() => setPlan({ ...plan, steps: plan.steps.filter((_, j) => j !== i) })}
-                    />
-                  </View>
-                ))}
-              </View>
-            )}
-            {adding === 'steps' ? (
-              <PictoSearch
-                lang={ui}
-                onPick={(id) => {
-                  if (plan.steps.length < MAX_STEPS) setPlan({ ...plan, steps: [...plan.steps, { id }] });
-                }}
-              />
-            ) : (
-              <Btn small icon="plus" label={t.addStep} onPress={() => setAdding('steps')} />
-            )}
+            <StepsEditor steps={plan.steps} onChange={(steps) => setPlan({ ...plan, steps })} onHolding={setHolding} />
             {plan.steps.length > 0 && <Toggle label={t.makeSchedule} value={makeSchedule} onChange={setMakeSchedule} />}
           </Section>
 

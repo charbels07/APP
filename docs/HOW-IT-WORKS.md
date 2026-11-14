@@ -321,6 +321,19 @@ The full story, the list of what you must do yourself and what is still open are
 | Website | `public/_headers`: a text file that Cloudflare reads and turns into "browser protections" (a Content-Security-Policy and a few others). Expo copies the `public` folder into the built site. |
 | Tests | `supabase/tests/security_scenario.sql` plays each attack and expects a refusal; `src/__tests__/security.test.ts` does the same for the app's guards. |
 
+## Round 18 — Ten requests after testing on an iPad
+
+| What | How it was done |
+|---|---|
+| Caregiver code | `PinPanel` (`src/ui/panels/CommPanels.tsx`): a new profile starts with the value 1234, which now only means "not chosen yet". The first time, the panel opens directly on "choose your code" (typed twice); 1234 and codes like 0000 are refused. |
+| Select mode | `src/ui/Grid.tsx` and `SelectionBar` (`src/ui/panels/EditMenus.tsx`): a + case opens the word picker even while cards are being selected; the bin now works on the main board (it asks to confirm there); "Deselect all" was added. |
+| Sequences | The step lists of the Schedule screen are called sequences. "New sequence" (`src/ui/panels/NewSequencePanel.tsx`) asks for a topic and proposes the steps with the same planner as a new board (`src/lib/tlaPlanner.ts`: situation library first, the AI helper if allowed). |
+| Hold and slide | `src/ui/Reorderable.tsx` (**React Native**: `PanResponder` + `Animated`): a long press picks a step up, sliding shows where it will land, letting go moves it. Two small arrows do the same for people who cannot hold and slide. Used for the steps of a new board and of a new sequence. |
+| Week and month | Called "schedule" instead of "plan" in English, and their two switches sit under "Schedule" in Settings → Universal bar (no separate "Plans" section, which could be mistaken for subscription plans). |
+| Settings: Save | `useSettingsDraft` (`src/ui/panels/CaregiverPanels.tsx`): the page works on a copy of the settings. "Save" writes the copy into the profile, "Cancel changes" throws it away, and closing with changes waiting asks what to do. The bar with these buttons stays at the bottom of the window (`footer` of `Panel`). |
+| Child voices | `src/lib/voices.ts`: tablets have no children's voices, and a man's voice made higher still sounds like a man. A boy's and a girl's voice now both start from a woman's voice, raised a little (the boy's less). "Voice height" in Settings lets the family tune any voice by ear. |
+| AI on the website | `src/lib/aiPlanner.web.ts`: outside the online demo, the website now asks the app's own server function, like tablets do. One key (see `docs/API-KEYS.md`) then turns the AI on everywhere. |
+
 ## How everything is checked
 
 | Check | What it does |

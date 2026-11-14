@@ -48,7 +48,8 @@ function speakOne(text: string, lang: Lang, settings: Settings, onWord?: (charIn
       language: speechTag(lang),
       rate: settings.speechRate,
       voice: choice.id,
-      pitch: choice.pitch,
+      // The family's own adjustment (Settings → Voice height) on top of the voice's pitch.
+      pitch: Math.min(2, Math.max(0.5, +(choice.pitch * (settings.voicePitch ?? 1)).toFixed(2))),
       onDone: done,
       onStopped: done,
       onError: done,

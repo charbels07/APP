@@ -45,7 +45,7 @@ then fixed, then covered by an automatic test.
 | A professional could skip the verification by changing the account from "professional" to "parent". | Nobody can change their own account type any more. |
 | A link on a card could be anything, including a link that runs code in the website. Links arrived with boards shared by other people. | Only web pages (https) and known apps. A link never travels with a shared board, an imported file or a proposal. The banner shows where a link goes. |
 | After "Sign out", the child's whole copy (name, words, caregiver code) stayed in the browser. | Signing out sends what was not sent, then really erases it; an open board can no longer write it back. A choice also erases photos and recordings (shared computer). |
-| Caregiver code: 1234 for everyone, shown on the keypad of the real app, unlimited tries. | The hint only exists in the demo. The first time, the family chooses its own code. 5 wrong tries then a pause that grows. |
+| Caregiver code: 1234 for everyone, shown on the keypad of the real app, unlimited tries. | No hint anywhere and no code to know beforehand: the first time, the person chooses the code (typed twice). 5 wrong tries then a pause that grows. |
 | A team member with editing rights could turn on "record sentences" or "share statistics". | These two choices and the caregiver code can only be changed by the family, in the database and in the app. |
 | Any throw-away sign-in could use the AI helper (40 calls a day each) at your cost. | The helper is for people who look after a child here, with a ceiling for the whole service each day. (It is not deployed on the real server yet.) |
 

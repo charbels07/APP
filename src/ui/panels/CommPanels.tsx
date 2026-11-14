@@ -8,7 +8,6 @@ import { typedChips } from '../../lib/typedWords';
 import type { Lang, UiLang } from '../../model/types';
 import { UI_LANG_NAMES } from '../../i18n/ui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { serverMode } from '../../backend';
 import { useApp } from '../../state/AppState';
 import { useBoard } from '../../state/BoardContext';
 import { Btn, Panel, Section } from '../common';
@@ -369,8 +368,8 @@ export const pinTooEasy = (code: string) => code === '1234' || /^(\d)\1{3}$/.tes
 
 /**
  * Caregiver mode is protected so the user can't modify the board by accident (NAV-04).
- * The code starts as 1234: the first time the family enters it (real accounts, not the demo)
- * the app asks for a code of their own. Wrong codes are counted on this device.
+ * The first time, the person simply chooses a code (typed twice) and then uses it each time;
+ * there is no code to know beforehand. Wrong codes are counted on this device.
  */
 export function PinPanel() {
   const app = useApp();
@@ -378,13 +377,14 @@ export function PinPanel() {
   const { t, profile } = app;
   const [code, setCode] = useState('');
   const [msg, setMsg] = useState<string | null>(null);
-  const [step, setStep] = useState<'enter' | 'choose' | 'repeat'>('enter');
+  // "1234" is only the value a new profile starts with: it means "not chosen yet".
+  const unset = profile.settings.pin === '1234';
+  // In a child's profile the family chooses the code (the preview has no account: anyone trying it does).
+  const canChoose = !board || board.manager;
+  const [step, setStep] = useState<'enter' | 'choose' | 'repeat'>(unset && canChoose ? 'choose' : 'enter');
   const [chosen, setChosen] = useState('');
   const [lock, setLock] = useState({ fails: 0, until: 0 });
   const [now, setNow] = useState(Date.now());
-  const demo = serverMode() === 'demo';
-  // Only the family can change the code: they are the ones asked to replace 1234.
-  const mustChoose = !demo && !!board?.manager && profile.settings.pin === '1234';
   useEffect(() => {
     AsyncStorage.getItem(PIN_LOCK)
       .then((raw) => raw && setLock(JSON.parse(raw)))
@@ -424,9 +424,7 @@ export function PinPanel() {
         return again(t.pinWrong);
       }
       if (lock.fails) saveLock({ fails: 0, until: 0 });
-      if (!mustChoose) return open();
-      setStep('choose');
-      setCode('');
+      open();
     } else if (step === 'choose') {
       if (pinTooEasy(next)) return again(t.pinTooEasy);
       setChosen(next);
@@ -442,7 +440,7 @@ export function PinPanel() {
       again(t.pinMismatch);
     }
   };
-  const hint = msg ?? (waiting ? t.pinLocked.replace('{n}', String(wait)) : step === 'choose' ? t.pinChoose : step === 'repeat' ? t.pinRepeat : demo ? `${t.pinHint} ${t.pinDemo}` : t.pinHint);
+  const hint = msg ?? (waiting ? t.pinLocked.replace('{n}', String(wait)) : step === 'choose' ? t.pinChoose : step === 'repeat' ? t.pinRepeat : unset ? t.pinNotChosen : t.pinHint);
   const error = !!msg;
   return (
     <Panel title={t.pinTitle} onClose={() => app.setOverlay(null)} maxWidth={380} tone="edit">

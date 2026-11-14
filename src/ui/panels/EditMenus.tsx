@@ -284,7 +284,11 @@ export function SelectionBar() {
   const rtl = useNavRtl();
   const current = useCurrentBoard();
   const [msg, setMsg] = useState<string | null>(null);
+  // Removing words from the main board is asked twice (it is the child's everyday vocabulary).
+  const [sure, setSure] = useState(false);
   const sel = app.selection;
+  const count = sel && sel.board === current ? sel.indexes.length : 0;
+  useEffect(() => setSure(false), [count, current]);
   if (!sel) return null;
   const onThisBoard = sel.board === current ? sel.indexes : [];
   const b = current ? app.profile.boards[current] : undefined;
@@ -307,6 +311,18 @@ export function SelectionBar() {
             kind="ghost"
             label={e.selectAll}
             onPress={() => app.setSelection({ board: b.id, indexes: b.cells.map((c, i) => (c ? i : -1)).filter((i) => i >= 0) })}
+          />
+        )}
+        {b && (
+          <Btn
+            small
+            kind="ghost"
+            label={e.selectNone}
+            disabled={!n}
+            onPress={() => {
+              app.setSelection({ board: b.id, indexes: [] });
+              setMsg(null);
+            }}
           />
         )}
         <Btn
@@ -354,12 +370,19 @@ export function SelectionBar() {
           small
           kind="danger"
           icon="trash"
-          accessibilityLabel={e.delete}
-          disabled={!n || b?.kind === 'core'}
+          label={sure ? e.confirmRemove : undefined}
+          accessibilityLabel={sure ? e.confirmRemove : e.delete}
+          disabled={!n}
           onPress={() => {
             if (!current) return;
+            if (b?.kind === 'core' && !sure) {
+              setSure(true);
+              setMsg(e.removeFromMain(n));
+              return;
+            }
             app.update((d) => removeCells(d, current, onThisBoard));
             app.setSelection({ board: current, indexes: [] });
+            setMsg(null);
           }}
         />
         <Btn small kind="primary" icon="check" label={e.done} onPress={done} />
@@ -571,7 +594,8 @@ const st = StyleSheet.create({
   },
   selText: { fontSize: 15, fontWeight: '700', color: C.accent },
   selMsg: { fontSize: 13, color: C.text },
-  selActions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
+  // On a phone the buttons go on several lines (never wider than the screen).
+  selActions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, flexShrink: 1, maxWidth: '100%' },
   sizes: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 6 },
   sizeLabel: { fontSize: 13, fontWeight: '600', color: C.textMuted },
   sizeBtn: { paddingHorizontal: 8, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: C.border, backgroundColor: C.surface },

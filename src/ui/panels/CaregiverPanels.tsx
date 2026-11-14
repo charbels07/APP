@@ -5,7 +5,7 @@ import { useSession } from '../../state/Session';
 import { PictoCredit } from '../PictoCredits';
 import { onboardingStrings } from '../../i18n/onboarding';
 import { editStrings } from '../../i18n/edit';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Image, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { DIALECT_ORDER, dialectName } from '../../data/dialects';
 import { VOICE_INDEX, VOICE_PROVIDER } from '../../data/voicePackIndex';
@@ -34,6 +34,7 @@ import { scheduleTitle } from '../screens/ScheduleScreen';
 import { CellMenu, MoveToTlaPanel, ShareTlaPanel, TlaMenu } from './EditMenus';
 import { Recorder } from './Recorder';
 import { pinTooEasy } from './CommPanels';
+import { stable } from '../../lib/profileDiff';
 
 export function CaregiverOverlay() {
   const { overlay } = useApp();
@@ -394,9 +395,8 @@ function ConceptEditorBody({ conceptId, only }: { conceptId: string; only?: 'ima
 }
 
 /** Which device voice each language uses now, with a button to hear it. */
-function VoicesUsed() {
-  const { profile, t } = useApp();
-  const st = profile.settings;
+function VoicesUsed({ st }: { st: Profile['settings'] }) {
+  const { t } = useApp();
   const [plan, setPlan] = useState<Record<Lang, VoiceChoice> | null>(null);
   const key = JSON.stringify([st.voiceKind, st.voiceAge, st.voices, st.arabic]);
   useEffect(() => {
@@ -791,15 +791,89 @@ function ScheduleEditor({ id }: { id: string }) {
 
 // ── Settings ──
 
+const copyOf = <T,>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
+
+/**
+ * The settings being changed, before they are saved. Every switch of the "Board" page writes
+ * here; "Save" copies it into the child's profile, "Cancel changes" throws it away.
+ * (Three things do not wait for Save, because they are not the child's settings: the language
+ * of the menus, the child lock of this device, and "Reset".)
+ */
+export interface SettingsDraft {
+  st: Profile['settings'];
+  help: Profile['help'];
+  /** The caregiver code as typed (kept apart: saved only when it is a valid new code). */
+  pin: string;
+  pinOk: boolean;
+  setPin: (v: string) => void;
+  set: (fn: (s: Profile['settings']) => void) => void;
+  setHelp: (fn: (h: Profile['help']) => void) => void;
+  dirty: boolean;
+  save: () => void;
+  cancel: () => void;
+}
+
+export function useSettingsDraft(): SettingsDraft {
+  const app = useApp();
+  const { profile } = app;
+  const [draft, setDraft] = useState(() => ({ settings: copyOf(profile.settings), help: copyOf(profile.help) }));
+  const [pin, setPin] = useState(profile.settings.pin);
+  // The menus' language and the code are compared apart.
+  const core = (x: Profile['settings']) => stable({ ...x, uiLang: undefined, pin: undefined });
+  const pinOk = pin === profile.settings.pin || (/^\d{4}$/.test(pin) && !pinTooEasy(pin));
+  const dirty = core(draft.settings) !== core(profile.settings) || stable(draft.help) !== stable(profile.help) || (pinOk && pin !== profile.settings.pin);
+  const dirtyRef = useRef(dirty);
+  dirtyRef.current = dirty;
+  // Listening to a voice in Settings prepares it for the whole app: when the settings close,
+  // the app goes back to the voice that is really saved.
+  const saved = useRef(profile.settings);
+  saved.current = profile.settings;
+  useEffect(() => () => void prepareVoices(saved.current), []);
+  // The profile changed elsewhere (another device, "Reset") while nothing was waiting here: follow it.
+  useEffect(() => {
+    if (dirtyRef.current) return;
+    setDraft({ settings: copyOf(profile.settings), help: copyOf(profile.help) });
+    setPin(profile.settings.pin);
+  }, [profile.settings, profile.help]);
+  return {
+    st: draft.settings,
+    help: draft.help,
+    pin,
+    pinOk,
+    setPin,
+    set: (fn) =>
+      setDraft((d) => {
+        const settings = copyOf(d.settings);
+        fn(settings);
+        return { ...d, settings };
+      }),
+    setHelp: (fn) =>
+      setDraft((d) => {
+        const help = copyOf(d.help);
+        fn(help);
+        return { ...d, help };
+      }),
+    dirty,
+    save: () =>
+      app.update((d) => {
+        d.settings = { ...copyOf(draft.settings), uiLang: d.settings.uiLang, pin: pinOk ? pin : d.settings.pin };
+        d.help = copyOf(draft.help);
+      }),
+    cancel: () => {
+      setDraft({ settings: copyOf(profile.settings), help: copyOf(profile.help) });
+      setPin(profile.settings.pin);
+    },
+  };
+}
+
 /** The child's AAC settings (first page of Settings; the others are Team and Account). */
-export function BoardSettingsBody() {
+export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
   const app = useApp();
   const { profile, t } = app;
   const sess = useSession();
   const board = useBoard();
   const o = onboardingStrings(profile.settings.uiLang);
-  const st = profile.settings;
-  const set = (fn: (s: Profile['settings']) => void) => app.update((d) => fn(d.settings));
+  const { st, set, pin, setPin } = draft;
   const langs = availableLangs(st);
   const [voiceChoice, setVoiceLang] = useState<Lang>(st.lang);
   const voiceLang = langs.includes(voiceChoice) ? voiceChoice : langs[0];
@@ -814,7 +888,6 @@ export function BoardSettingsBody() {
     });
   const [voices, setVoices] = useState<Awaited<ReturnType<typeof listVoices>>>([]);
   const [confirmReset, setConfirmReset] = useState(false);
-  const [pin, setPin] = useState(st.pin);
   useEffect(() => {
     listVoices(voiceLang).then(setVoices);
   }, [voiceLang]);
@@ -912,21 +985,6 @@ export function BoardSettingsBody() {
         </Section>
       )}
 
-      <Section title={o.plansTitle}>
-        <Toggle
-          label={o.planWeek}
-          note={o.planWeekNote}
-          value={!!st.plans?.week}
-          onChange={(v) => set((x) => void (x.plans = { ...(x.plans ?? { week: false, month: false }), week: v }))}
-        />
-        <Toggle
-          label={o.planMonth}
-          note={o.planMonthNote}
-          value={!!st.plans?.month}
-          onChange={(v) => set((x) => void (x.plans = { ...(x.plans ?? { week: false, month: false }), month: v }))}
-        />
-      </Section>
-
       <Section title={o.presentationAccess}>
         <Text style={s.label}>{o.langTitle}</Text>
         <View style={s.wrapRow}>
@@ -991,6 +1049,23 @@ export function BoardSettingsBody() {
       <Section title={t.sBar}>
         <Toggle label={t.tla} value={st.bar.tla} onChange={(v) => set((x) => void (x.bar.tla = v))} />
         <Toggle label={t.schedule} value={st.bar.schedule} onChange={(v) => set((x) => void (x.bar.schedule = v))} />
+        {/* What the Schedule screen also offers: shown under it, so "schedule" means one thing. */}
+        {st.bar.schedule && (
+          <View style={s.under}>
+            <Toggle
+              label={o.planWeek}
+              note={o.planWeekNote}
+              value={!!st.plans?.week}
+              onChange={(v) => set((x) => void (x.plans = { ...(x.plans ?? { week: false, month: false }), week: v }))}
+            />
+            <Toggle
+              label={o.planMonth}
+              note={o.planMonthNote}
+              value={!!st.plans?.month}
+              onChange={(v) => set((x) => void (x.plans = { ...(x.plans ?? { week: false, month: false }), month: v }))}
+            />
+          </View>
+        )}
         <Toggle label={t.timer} value={st.bar.timer} onChange={(v) => set((x) => void (x.bar.timer = v))} note={t.sBarNote} />
       </Section>
 
@@ -1002,6 +1077,14 @@ export function BoardSettingsBody() {
           <Btn small icon="minus" accessibilityLabel="-" onPress={() => set((x) => void (x.speechRate = Math.max(0.5, +(x.speechRate - 0.1).toFixed(1))))} />
           <Btn small icon="plus" accessibilityLabel="+" onPress={() => set((x) => void (x.speechRate = Math.min(1.6, +(x.speechRate + 0.1).toFixed(1))))} />
         </View>
+        <View style={s.row}>
+          <Text style={[s.label, { flex: 1 }]}>
+            {t.sPitch} : {(st.voicePitch ?? 1).toFixed(2)}×
+          </Text>
+          <Btn small icon="minus" accessibilityLabel={`${t.sPitch} -`} onPress={() => set((x) => void (x.voicePitch = Math.max(0.7, +((x.voicePitch ?? 1) - 0.05).toFixed(2))))} />
+          <Btn small icon="plus" accessibilityLabel={`${t.sPitch} +`} onPress={() => set((x) => void (x.voicePitch = Math.min(1.4, +((x.voicePitch ?? 1) + 0.05).toFixed(2))))} />
+        </View>
+        <Text style={s.note}>{t.sPitchNote}</Text>
         <Text style={s.label}>{t.sVoiceKind}</Text>
         <Segmented
           value={st.voiceKind ?? 'device'}
@@ -1032,7 +1115,7 @@ export function BoardSettingsBody() {
         {dialectPack({ ...st, dialectVoice: true }) && (
           <Toggle label={t.sDialectVoice} value={st.dialectVoice !== false} onChange={(v) => set((x) => void (x.dialectVoice = v))} note={t.sDialectVoiceNote} />
         )}
-        <VoicesUsed />
+        <VoicesUsed st={st} />
         <Text style={s.label}>{t.voicePrecise}</Text>
         <Text style={s.label}>{t.sVoiceFor}</Text>
         <Segmented value={voiceLang} onChange={setVoiceLang} options={langs.map((l) => ({ value: l, label: langName(st, l) }))} />
@@ -1060,22 +1143,18 @@ export function BoardSettingsBody() {
           <Field
             key={l}
             label={`${t.sHelpMessage} — ${langName(st, l)}`}
-            value={profile.help.message[l]}
-            onChangeText={(v) => app.update((d) => void (d.help.message[l] = v))}
+            value={draft.help.message[l]}
+            onChangeText={(v) => draft.setHelp((h) => void (h.message[l] = v))}
             style={isRtl(l) ? { textAlign: 'right' } : undefined}
           />
         ))}
-        <Field label={t.helpHowI} multiline value={profile.help.howICommunicate} onChangeText={(v) => app.update((d) => void (d.help.howICommunicate = v))} style={{ minHeight: 70 }} />
-        <Field label={t.helpContact} value={profile.help.emergencyContact} onChangeText={(v) => app.update((d) => void (d.help.emergencyContact = v))} />
+        <Field label={t.helpHowI} multiline value={draft.help.howICommunicate} onChangeText={(v) => draft.setHelp((h) => void (h.howICommunicate = v))} style={{ minHeight: 70 }} />
+        <Field label={t.helpContact} value={draft.help.emergencyContact} onChangeText={(v) => draft.setHelp((h) => void (h.emergencyContact = v))} />
       </Section>
 
       <Section title={t.sSecurity}>
-        <View style={s.row}>
-          <View style={{ flex: 1 }}>
-            <Field label={t.sPin} value={pin} keyboardType="number-pad" maxLength={4} onChangeText={(v) => setPin(v.replace(/\D/g, ''))} />
-          </View>
-          <Btn small kind="primary" label={t.save} disabled={!/^\d{4}$/.test(pin) || pinTooEasy(pin) || pin === st.pin} onPress={() => set((x) => void (x.pin = pin))} style={{ alignSelf: 'flex-end' }} />
-        </View>
+        <Field label={t.sPin} value={pin} keyboardType="number-pad" maxLength={4} onChangeText={(v) => setPin(v.replace(/\D/g, ''))} />
+        {!draft.pinOk && <Text style={s.note}>{pin.length === 4 ? t.pinTooEasy : t.sPinFour}</Text>}
       </Section>
 
       <Section title={t.sData}>
@@ -1236,6 +1315,8 @@ const s = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   wrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   note: { fontSize: 13, color: C.textMuted },
+  // Switches that belong to the one above them (week and month, under Schedule).
+  under: { marginStart: 14, paddingStart: 12, borderStartWidth: 3, borderStartColor: C.border, gap: 4 },
   lockNote: { backgroundColor: C.surfaceAlt, padding: 10, borderRadius: radius.md },
   label: { fontSize: 14, fontWeight: '700', color: C.text },
   previewRow: { flexDirection: 'row', gap: 14, alignItems: 'flex-start', flexWrap: 'wrap' },

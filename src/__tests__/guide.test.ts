@@ -49,8 +49,10 @@ describe('in-app guide', () => {
         t.pictoToReview, t.sAbout, t.sSymbols, t.sShowLabels,
         // languages now live in Settings; its pages
         t.sCommLang, t.sInterface, st.tabTeam, st.tabAccount, dataStrings(lang).tab,
-        // presentation and access, plans, lock
-        ob.presentationAccess, ob.plansTitle, t.lockTitle,
+        // presentation and access, lock
+        ob.presentationAccess, t.lockTitle,
+        // sequences (step lists) with suggested steps; settings are saved on demand; voice height; selection
+        t.newSchedule, t.suggestSteps, t.createSeq, t.editSchedule, t.save, t.sDiscard, t.sPitch, e.selectAll, e.selectNone,
         // professionals
         pro.nav.users, pro.nav.create, pro.nav.library, pro.nav.learn, pro.sendForApproval, st.levels[1], st.levels[2], st.levels[3],
         // the certificate must be accepted first; writing to the app's team

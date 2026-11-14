@@ -33,6 +33,7 @@ export const PictoThumb = React.memo(function PictoThumb({
   caption,
   removable,
   wide,
+  hold,
 }: {
   id: number;
   size?: number;
@@ -42,6 +43,8 @@ export const PictoThumb = React.memo(function PictoThumb({
   removable?: boolean;
   /** Search results: room for the word and the library's name. */
   wide?: boolean;
+  /** Makes the chip holdable (hold then slide to move it): see Reorderable. */
+  hold?: { onLongPress: () => void; onPressOut: () => void; delayLongPress: number };
 }) {
   const [uri, setUri] = useState<string>();
   useEffect(() => {
@@ -56,6 +59,7 @@ export const PictoThumb = React.memo(function PictoThumb({
   return (
     <Pressable
       onPress={onPress}
+      {...hold}
       accessibilityRole="button"
       accessibilityLabel={caption?.replace('\n', ', ')}
       style={({ pressed }) => [

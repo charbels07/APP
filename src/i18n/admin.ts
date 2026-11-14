@@ -153,7 +153,7 @@ const fr = {
     recording: 'Niveau de suivi',
   } as Record<string, string>,
   switches: 'Options activées',
-  switchNames: { grammar: 'Grammaire automatique', quickZone: 'Zone rapide', ai: 'Suggestions par IA', weekPlan: 'Plan de la semaine', monthPlan: 'Plan du mois' } as Record<string, string>,
+  switchNames: { grammar: 'Grammaire automatique', quickZone: 'Zone rapide', ai: 'Suggestions par IA', weekPlan: 'Planning de la semaine', monthPlan: 'Planning du mois' } as Record<string, string>,
   values: {
     release: 'Au lever du doigt',
     press: 'Dès le toucher',
@@ -343,7 +343,7 @@ const en: Dict = {
     recording: 'Recording level',
   },
   switches: 'Options turned on',
-  switchNames: { grammar: 'Automatic grammar', quickZone: 'Quick zone', ai: 'AI suggestions', weekPlan: 'Week plan', monthPlan: 'Month plan' },
+  switchNames: { grammar: 'Automatic grammar', quickZone: 'Quick zone', ai: 'AI suggestions', weekPlan: 'Week schedule', monthPlan: 'Month schedule' },
   values: {
     release: 'When the finger lifts',
     press: 'As soon as it touches',
@@ -528,7 +528,7 @@ const ar: Dict = {
     recording: 'مستوى المتابعة',
   },
   switches: 'الخيارات المفعّلة',
-  switchNames: { grammar: 'القواعد التلقائية', quickZone: 'المنطقة السريعة', ai: 'اقتراحات الذكاء الاصطناعي', weekPlan: 'خطة الأسبوع', monthPlan: 'خطة الشهر' },
+  switchNames: { grammar: 'القواعد التلقائية', quickZone: 'المنطقة السريعة', ai: 'اقتراحات الذكاء الاصطناعي', weekPlan: 'جدول الأسبوع', monthPlan: 'جدول الشهر' },
   values: {
     release: 'عند رفع الإصبع',
     press: 'فور اللمس',

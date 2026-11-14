@@ -91,6 +91,7 @@ export function Panel({
   headerRight,
   scroll = true,
   scrollLocked,
+  footer,
 }: {
   title: string;
   onClose: () => void;
@@ -101,6 +102,8 @@ export function Panel({
   scroll?: boolean;
   /** Freeze scrolling (e.g. while a finger draws inside the panel). */
   scrollLocked?: boolean;
+  /** Stays visible under the scrolling part (the Save bar of the settings). */
+  footer?: React.ReactNode;
 }) {
   const headerBg = tone === 'help' ? C.helpSoft : tone === 'edit' ? C.editSoft : C.surface;
   const rtl = useNavRtl();
@@ -126,6 +129,7 @@ export function Panel({
         ) : (
           <View style={[styles.panelBody, { flex: 1 }]}>{children}</View>
         )}
+        {footer ? <View style={styles.panelFooter}>{footer}</View> : null}
       </View>
     </View>
   );
@@ -294,6 +298,7 @@ export const styles = StyleSheet.create({
   panelTitle: { flex: 1, fontSize: 20, fontWeight: '700', color: C.text },
   closeBtn: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   panelBody: { padding: 18, gap: 14 },
+  panelFooter: { borderTopWidth: 1, borderTopColor: C.border, backgroundColor: C.surface, paddingHorizontal: 16, paddingVertical: 10 },
   btn: {
     flexDirection: 'row',
     alignItems: 'center',

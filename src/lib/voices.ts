@@ -4,7 +4,9 @@
  * Devices don't say whether a voice is male or female, so voices are recognised by
  * name: Apple, Google and Microsoft voices have known names (Thomas, Amélie, Samantha,
  * Maged…), and Siri voices carry "male"/"female" in their identifier.
- * Tablets have no real child voices: a child voice is the chosen voice, higher pitched.
+ * Tablets have no real child voices. A child's voice is nearest to a woman's voice, a little
+ * higher: a girl's and a boy's voice both start from a woman's voice of the language (a man's
+ * voice made higher still sounds like a man), the boy's a little lower than the girl's.
  * When a language has no voice of the chosen kind, the device voice is pitched towards it
  * ("approximate" — shown in Settings).
  */
@@ -88,7 +90,21 @@ export interface VoiceChoice {
   exact: boolean;
 }
 
-const CHILD_PITCH: Record<VoiceKind, number> = { f: 1.5, m: 1.35, device: 1.4 };
+/**
+ * How much higher a child's voice is, depending on the voice it starts from. Kept moderate: a
+ * voice raised a lot sounds like a cartoon, not like a child. Families fine-tune it by ear with
+ * "voice height" in Settings.
+ */
+const CHILD = {
+  /** from a woman's voice */
+  girl: 1.25,
+  boy: 1.1,
+  /** from the device's own voice (woman or man: unknown) */
+  device: 1.3,
+  /** from a man's voice, when the language has no woman's voice */
+  girlFromMan: 1.6,
+  boyFromMan: 1.45,
+};
 const clamp = (p: number) => Math.min(2, Math.max(0.5, +p.toFixed(2)));
 
 export function chooseVoice(
@@ -101,29 +117,42 @@ export function chooseVoice(
   /** Locale to prefer inside the language (the family's Arabic: ar-EG, ar-LB…), when a voice has it. */
   preferLocale?: string,
 ): VoiceChoice {
-  const child = age === 'child' ? CHILD_PITCH[kind] : 1;
+  const child = age === 'child';
   const prefix = tag.slice(0, 2).toLowerCase();
   const locale = (v: VoiceInfo) => v.language.toLowerCase().replace('_', '-');
   const forLang = voices.filter((v) => locale(v).startsWith(prefix));
   const local = (v: VoiceInfo) => !!preferLocale && locale(v) === preferLocale.toLowerCase();
   if (explicitId) {
+    // A precise voice chosen by the family: raised according to what that voice is.
     const v = voices.find((x) => x.id === explicitId);
-    return { id: explicitId, name: v?.name, pitch: clamp(child), exact: true };
+    const g = v ? voiceGender(v) : undefined;
+    const up = !child ? 1 : g === 'm' ? (kind === 'f' ? CHILD.girlFromMan : CHILD.boyFromMan) : kind === 'm' ? CHILD.boy : kind === 'f' ? CHILD.girl : CHILD.device;
+    return { id: explicitId, name: v?.name, pitch: clamp(up), exact: true };
   }
   // A natural voice first, then the right country; a machine-like voice only when there is nothing else.
   const score = (v: VoiceInfo) => (local(v) ? 8 : 0) + (isRobotic(v) ? -16 : 0) + (isNatural(v) ? 4 : 0) + (locale(v) === tag.toLowerCase() ? 2 : 0);
   if (kind === 'device') {
     // The device's default voice, unless it has a voice of the family's own dialect.
     const own = forLang.filter(local).sort((a, b) => score(b) - score(a) || a.name.localeCompare(b.name))[0];
-    return own ? { id: own.id, name: own.name, pitch: clamp(child), exact: true } : { pitch: clamp(child), exact: true };
+    const up = child ? CHILD.device : 1;
+    return own ? { id: own.id, name: own.name, pitch: clamp(up), exact: true } : { pitch: clamp(up), exact: true };
   }
-  const match = forLang.filter((v) => voiceGender(v) === kind).sort((a, b) => score(b) - score(a) || a.name.localeCompare(b.name))[0];
-  if (match) return { id: match.id, name: match.name, pitch: clamp(child), exact: true };
+  const best = (g: VoiceGender) => forLang.filter((v) => voiceGender(v) === g).sort((a, b) => score(b) - score(a) || a.name.localeCompare(b.name))[0];
+  if (child) {
+    // Girl or boy: a woman's voice, a little higher (see CHILD); a man's voice only without one.
+    const woman = best('f');
+    if (woman) return { id: woman.id, name: woman.name, pitch: clamp(kind === 'm' ? CHILD.boy : CHILD.girl), exact: true };
+    const man = best('m');
+    if (man) return { id: man.id, name: man.name, pitch: clamp(kind === 'm' ? CHILD.boyFromMan : CHILD.girlFromMan), exact: false };
+    return { pitch: clamp(kind === 'm' ? 1.35 : 1.5), exact: false };
+  }
+  const match = best(kind);
+  if (match) return { id: match.id, name: match.name, pitch: 1, exact: true };
   // No voice of that kind for this language: the default voice, pitched lower (man) or higher (woman).
   // French and English: a clearly lower pitch for a man (0.8 still sounded like a woman). Arabic keeps
-  // the pitch it always had, and so does a boy's voice.
-  const towards = kind === 'm' ? (age === 'adult' && lang !== 'ar' ? 0.7 : 0.8) : 1.2;
-  return { pitch: clamp(towards * child), exact: false };
+  // the pitch it always had.
+  const towards = kind === 'm' ? (lang !== 'ar' ? 0.7 : 0.8) : 1.2;
+  return { pitch: clamp(towards), exact: false };
 }
 
 /**

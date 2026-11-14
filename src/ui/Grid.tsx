@@ -44,7 +44,17 @@ export function Grid({ board }: { board: Board }) {
       if (a.editMode) {
         // Multi-selection: each tap adds or removes the card.
         if (a.selection) {
-          if (!cell) return;
+          // An empty case still adds a word while cards are being selected (the selection is kept).
+          if (!cell)
+            return a.setOverlay({
+              kind: 'picker',
+              onPick: (conceptId) => {
+                a.update((d) => {
+                  d.boards[board.id].cells[index] = { concept: conceptId, level: board.kind === 'core' ? 1 : undefined };
+                });
+                a.setOverlay(null);
+              },
+            });
           const cur = a.selection.board === board.id ? a.selection.indexes : [];
           a.setSelection({ board: board.id, indexes: cur.includes(index) ? cur.filter((i) => i !== index) : [...cur, index] });
           return;

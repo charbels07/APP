@@ -162,6 +162,8 @@ export interface Settings {
   voiceKind: 'device' | 'f' | 'm';
   /** Child voice = the chosen voice, higher pitched (tablets have no real child voices). */
   voiceAge: 'adult' | 'child';
+  /** Voice height chosen by ear, on top of the voice's own (1 = unchanged; 0.7 lower … 1.4 higher). */
+  voicePitch?: number;
   /** Seconds before the same pictogram can be pressed again (0 = no limit). */
   repeatDelay: number;
   /** Languages the child communicates in (the first is the main one); `lang` is the one in use. */

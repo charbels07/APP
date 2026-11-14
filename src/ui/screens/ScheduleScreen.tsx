@@ -62,20 +62,8 @@ export function ScheduleScreen() {
       const s = d.schedules.find((x) => x.id === schedule?.id);
       s?.steps.forEach((st) => (st.done = false));
     });
-  const newSchedule = () => {
-    const id = `sched_${Date.now().toString(36)}`;
-    app.update((d) => {
-      d.schedules.push({
-        id,
-        title: t.newSchedule,
-        concept: "s_morning",
-        recurring: false,
-        steps: [],
-      });
-      d.activeSchedule = id;
-    });
-    app.setOverlay({ kind: "scheduleEditor", id });
-  };
+  // A new sequence: its topic first, the app proposes the steps (like a new activity board).
+  const newSchedule = () => app.setOverlay({ kind: "newSequence" });
 
   const steps = schedule?.steps ?? [];
   const currentIndex = steps.findIndex((s) => !s.done);
@@ -138,7 +126,7 @@ export function ScheduleScreen() {
             <Btn
               small
               icon="plus"
-              accessibilityLabel={t.newSchedule}
+              label={t.newSchedule}
               onPress={newSchedule}
             />
             {schedule && (

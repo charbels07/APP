@@ -55,3 +55,10 @@
   by removing one storage key by hand. Photos and recordings exist only on the device that made them.
 - Demo builds are asked for on purpose: `EXPO_PUBLIC_APP_MODE=demo` (a release build with no server
   address shows "not connected"). Web headers: `public/_headers` (a test checks the policy).
+- Caregiver code: `settings.pin === '1234'` means "not chosen yet" (the first unlock asks to choose one);
+  never show or suggest a default code. Board settings are edited through `useSettingsDraft` (saved on
+  "Save", not at each change): new settings controls use the draft's `st` / `set`, not `app.update`.
+- Words for the user: the Schedule screen holds "sequences" (step lists: New sequence / Edit sequence) and
+  the week and month "schedules" (never "plan": it reads as a subscription plan). Lists the user orders
+  by hand use `src/ui/Reorderable.tsx` (hold and slide, plus arrows as the non-drag alternative).
+- Services and keys: `docs/API-KEYS.md` (keep it up to date when a feature starts needing one).

@@ -17,7 +17,7 @@ import { useApp } from '../../state/AppState';
 import { useBoard } from '../../state/BoardContext';
 import { useSession } from '../../state/Session';
 import { Btn, Panel, Segmented, useNavRtl } from '../common';
-import { BoardSettingsBody } from '../panels/CaregiverPanels';
+import { BoardSettingsBody, useSettingsDraft } from '../panels/CaregiverPanels';
 import { DataDashboard } from '../data/DataDashboard';
 import { C } from '../theme';
 import { AccountTab } from './AccountTab';
@@ -31,6 +31,12 @@ export function SettingsScreen() {
   const { uiLang, account, api, s, go } = useSession();
   const x = settingsStrings(uiLang);
   const [tab, setTab] = useState<Tab>('board');
+  // Changes of the Board page wait here until "Save".
+  const draft = useSettingsDraft();
+  // Where the person was going when changes were still waiting (close, another page).
+  const [leaving, setLeaving] = useState<(() => void) | null>(null);
+  const go2 = (next: () => void) => (tab === 'board' && draft.dirty ? setLeaving(() => next) : next());
+  const t = app.t;
   const isDevice = account?.provider === 'device';
   const seesData = !!board && !isDevice && (board.manager || !!board.access?.perms.viewData);
   const tabs: Tab[] = board ? (isDevice ? ['board', 'account'] : ['board', 'team', ...(seesData ? (['data'] as Tab[]) : []), 'account']) : ['board', 'team', 'data', 'account'];
@@ -53,9 +59,50 @@ export function SettingsScreen() {
     t === 'board' ? x.tabBoard : t === 'team' ? (waiting ? `${x.tabTeam} (${waiting})` : x.tabTeam) : t === 'data' ? dataStrings(uiLang).tab : x.tabAccount;
 
   return (
-    <Panel title={app.t.settings} onClose={() => app.setOverlay(null)} tone="edit" maxWidth={820}>
-      <Segmented<Tab> value={tab} onChange={setTab} options={tabs.map((t) => ({ value: t, label: label(t) }))} />
-      {tab === 'board' && <BoardSettingsBody />}
+    <Panel
+      title={app.t.settings}
+      onClose={() => go2(() => app.setOverlay(null))}
+      tone="edit"
+      maxWidth={820}
+      footer={
+        tab === 'board' ? (
+          <View style={ss.saveBar}>
+            <Text style={[ss.saveText, (draft.dirty || leaving) && { color: C.edit }]} accessibilityLiveRegion="polite">
+              {leaving ? t.sLeaveAsk : draft.dirty ? t.sUnsaved : t.sSaved}
+            </Text>
+            {leaving ? (
+              <Btn
+                small
+                label={t.sLeaveDiscard}
+                onPress={() => {
+                  draft.cancel();
+                  const next = leaving;
+                  setLeaving(null);
+                  next();
+                }}
+              />
+            ) : (
+              <Btn small label={t.sDiscard} disabled={!draft.dirty} onPress={draft.cancel} />
+            )}
+            <Btn
+              small
+              kind="primary"
+              icon="check"
+              label={t.save}
+              disabled={!draft.dirty}
+              onPress={() => {
+                draft.save();
+                const next = leaving;
+                setLeaving(null);
+                next?.();
+              }}
+            />
+          </View>
+        ) : undefined
+      }
+    >
+      <Segmented<Tab> value={tab} onChange={(next) => go2(() => setTab(next))} options={tabs.map((t) => ({ value: t, label: label(t) }))} />
+      {tab === 'board' && <BoardSettingsBody draft={draft} />}
       {!board && tab !== 'board' && (
         <View style={{ gap: 12 }}>
           <Note text={tab === 'team' ? x.previewTeam : tab === 'data' ? x.previewData : x.previewAccount} />
@@ -93,6 +140,8 @@ export function Note({ text }: { text: string }) {
 }
 
 export const ss = StyleSheet.create({
+  saveBar: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
+  saveText: { flex: 1, minWidth: 140, fontSize: 14, fontWeight: '700', color: C.textMuted },
   note: { fontSize: 14, color: C.textMuted, lineHeight: 20 },
   rtl: { textAlign: 'right', writingDirection: 'rtl' },
   row: {

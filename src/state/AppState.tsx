@@ -41,6 +41,7 @@ export type Overlay =
   | { kind: 'scheduleEditor'; id: string }
   | { kind: 'model' }
   | { kind: 'newTla' }
+  | { kind: 'newSequence' }
   | { kind: 'guide' };
 
 /** Where a touched word sits, so a demonstration can replay the exact gesture. */

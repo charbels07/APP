@@ -1,9 +1,14 @@
 /**
- * AI proposals in the browser demo: uses the Claude access the demo page is
- * given by claude.ai (the viewer is asked to allow it on first use).
- * Only the topic text is sent — never the child's name, vocabulary or messages
- * (spec GEN-04), and nothing is spoken or added without the family's choice (GEN-02/03).
+ * AI proposals in a browser. Two cases:
+ *  - the online demo (a page of claude.ai): it uses the Claude access that page is given
+ *    (the viewer is asked to allow it on first use);
+ *  - the real website: like tablets, it asks the app's own server function "caa-ai"
+ *    (supabase/functions/caa-ai), which holds the key. Without that function deployed the
+ *    request fails and the app falls back to its built-in library.
+ * Only the topic, the photo or the drawing is sent — never the child's name, vocabulary or
+ * messages (spec GEN-04), and nothing is spoken or added without the family's choice (GEN-02/03).
  */
+import { backend } from '../backend';
 import { drawingPrompt, photoPrompt, tlaPrompt } from '../../supabase/functions/_shared/aiPrompts';
 import type { DrawingGuess, Stroke } from './aiPlanner';
 import type { AiPhoto } from './photoForAi';
@@ -29,12 +34,34 @@ function getSample(): Promise<Sample | null> {
 }
 
 export async function aiAvailable(): Promise<boolean> {
-  return (await getSample()) !== null;
+  return (await getSample()) !== null || !!backend().askAi;
 }
+
+/** The app's own server function (real website), when the page has no Claude access of its own. */
+async function askServer(req: Parameters<NonNullable<ReturnType<typeof backend>['askAi']>>[0], signal?: AbortSignal): Promise<unknown> {
+  const api = backend();
+  if (!api.askAi) return null;
+  try {
+    return await api.askAi(req, signal);
+  } catch {
+    return null;
+  }
+}
+const isPlan = (d: unknown): d is AiPlan => !!d && typeof d === 'object' && Array.isArray((d as AiPlan).words);
+const toBase64 = (blob: Blob) =>
+  new Promise<string>((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(',')[1] ?? '');
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(blob);
+  });
 
 export async function askAiForTla(topic: string, signal?: AbortSignal, arabic?: string): Promise<AiPlan | null> {
   const sample = await getSample();
-  if (!sample) return null;
+  if (!sample) {
+    const d = await askServer({ task: 'tla', topic, arabic }, signal);
+    return isPlan(d) ? d : null;
+  }
   try {
     const data = (await sample.json(tlaPrompt(topic, arabic), { modelTier: 'default', signal })) as AiPlan;
     return data && typeof data === 'object' ? data : null;
@@ -46,7 +73,10 @@ export async function askAiForTla(topic: string, signal?: AbortSignal, arabic?: 
 /** Photo → activity board: only the photo (and the parent's few words) is sent. */
 export async function askAiForPhoto(photo: AiPhoto, hint: string, signal?: AbortSignal, arabic?: string): Promise<AiPlan | null> {
   const sample = await getSample();
-  if (!sample) return null;
+  if (!sample) {
+    const d = await askServer({ task: 'photo', hint, arabic, image: { data: photo.data, mediaType: photo.mediaType } }, signal);
+    return isPlan(d) ? d : null;
+  }
   try {
     const bytes = Uint8Array.from(atob(photo.data), (c) => c.charCodeAt(0));
     const blob = new Blob([bytes], { type: photo.mediaType });
@@ -99,9 +129,15 @@ export async function askAiToReadDrawing(
   arabic?: string,
 ): Promise<DrawingGuess[] | null> {
   const sample = await getSample();
-  if (!sample) return null;
+  if (!sample && !backend().askAi) return null;
   const png = await drawingToPng(strokes);
   if (!png) return [];
+  if (!sample) {
+    // Real website: the drawing goes to the app's server function as a picture.
+    const data = (await askServer({ task: 'drawing', arabic, image: { data: await toBase64(png), mediaType: 'image/png' } }, signal)) as { guesses?: DrawingGuess[] } | null;
+    if (!data) return null;
+    return Array.isArray(data.guesses) ? data.guesses.filter((g) => g && (g.fr || g.en || g.ar)).slice(0, 5) : [];
+  }
   try {
     const data = (await sample.json(drawingPrompt(arabic), { images: [png], modelTier: 'quick', signal })) as {
       guesses?: DrawingGuess[];

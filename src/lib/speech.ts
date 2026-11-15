@@ -8,7 +8,7 @@ import { Platform } from 'react-native';
 import type { Lang, Settings } from '../model/types';
 import type { Segment } from './grammar';
 import { speechTag } from './lexicon';
-import { chooseVoice, forVoice, voiceGender, type VoiceChoice, type VoiceGender, type VoiceInfo } from './voices';
+import { chooseVoice, forVoice, plainKind, voiceGender, type VoiceChoice, type VoiceGender, type VoiceInfo } from './voices';
 import { mediaUri } from './media';
 import { spanOfName, type Span } from './trimSilence';
 import { clipUri } from './voiceClips';
@@ -34,9 +34,9 @@ export function stopSpeech(): void {
 export type SpeechProgress = (segment: number, charIndex: number) => void;
 
 function speakOne(text: string, lang: Lang, settings: Settings, onWord?: (charIndex: number) => void): Promise<void> {
-  // Until the device's voices are known, the pitch already follows the chosen kind and age.
+  // Until the device's voices are known, the pitch already follows the chosen kind.
   const choice =
-    plan[lang] ?? chooseVoice([], lang, speechTag(lang), settings.voiceKind ?? 'device', settings.voiceAge ?? 'adult', settings.voices[lang]);
+    plan[lang] ?? chooseVoice([], lang, speechTag(lang), plainKind(settings), 'adult');
   return new Promise((resolve) => {
     let settled = false;
     const done = () => {
@@ -49,8 +49,8 @@ function speakOne(text: string, lang: Lang, settings: Settings, onWord?: (charIn
       language: speechTag(lang),
       rate: settings.speechRate,
       voice: choice.id,
-      // The family's own adjustment (Settings → Voice height) on top of the voice's pitch.
-      pitch: Math.min(2, Math.max(0.5, +(choice.pitch * (settings.voicePitch ?? 1)).toFixed(2))),
+      // The voice as it is (1), or lowered / raised when the device has no voice of the chosen kind.
+      pitch: choice.pitch,
       onDone: done,
       onStopped: done,
       onError: done,
@@ -130,7 +130,7 @@ export async function speakSegments(segments: Segment[], settings: Settings, onP
       // The dialect's own voice; if the clip cannot be read, the tablet's voice says the word.
       const uri = await clipUri(seg.pack, seg.text);
       if (mine !== generation) return;
-      if (uri) await playOne(uri, settings.voiceAge === 'child' ? 1.12 : 1);
+      if (uri) await playOne(uri);
       else await speakOne(seg.text, seg.lang, settings);
     } else {
       const uri = await mediaUri(seg.media);
@@ -164,7 +164,7 @@ function deviceVoices(): Promise<VoiceInfo[]> {
   return voiceList;
 }
 
-/** Voice and pitch used for each language, from Settings → Voice (woman / man, adult / child). */
+/** Voice and pitch used for each language, from Settings → Voice (female / male). */
 let plan: Partial<Record<Lang, VoiceChoice>> = {};
 
 // Arabic uses the device's standard Arabic voice whatever the family's dialect: the voices of each
@@ -173,7 +173,7 @@ export async function prepareVoices(settings: Settings): Promise<Record<Lang, Vo
   const voices = await deviceVoices();
   const next = {} as Record<Lang, VoiceChoice>;
   for (const l of ['fr', 'en', 'ar'] as Lang[])
-    next[l] = chooseVoice(voices, l, speechTag(l), settings.voiceKind ?? 'device', settings.voiceAge ?? 'adult', settings.voices[l]);
+    next[l] = chooseVoice(voices, l, speechTag(l), plainKind(settings), 'adult');
   plan = next;
   return next;
 }

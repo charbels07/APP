@@ -52,7 +52,7 @@ describe('in-app guide', () => {
         // presentation and access, lock
         ob.presentationAccess, t.lockTitle, t.lockShort, t.settings,
         // sequences (step lists) with suggested steps; settings are saved on demand; voice height; selection
-        t.newSchedule, t.suggestSteps, t.createSeq, t.editSchedule, t.save, t.sDiscard, t.sPitch, e.selectAll, e.selectNone,
+        t.newSchedule, t.suggestSteps, t.createSeq, t.editSchedule, t.save, t.sDiscard, e.selectAll, e.selectNone,
         // a step is added through the word picker, which has a way back to the sequence
         t.addStep, t.chooseWord, t.back,
         // professionals

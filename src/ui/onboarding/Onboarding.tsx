@@ -34,6 +34,7 @@ import { pickTextFile } from '../../lib/pickTextFile';
 import { exactPicto, searchPictos } from '../../lib/pictoSearch';
 import { loadPictoLibrary, pictoCredit, pictoToMedia } from '../../lib/pictoLibrary';
 import { prepareVoices, speakText } from '../../lib/speech';
+import { plainKind } from '../../lib/voices';
 import { forgetLegacyProfile, loadLegacyProfile, migrate } from '../../lib/storage';
 import type { Lang, Profile } from '../../model/types';
 import { AppProvider } from '../../state/AppState';
@@ -423,7 +424,7 @@ function LangStep({ o, a, set }: StepProps) {
 function VoiceStep({ o, a, set }: StepProps) {
   const listen = async () => {
     const lang = a.langs[0] ?? 'fr';
-    const settings = { ...DEFAULT_SETTINGS, lang, voiceKind: a.voiceKind, voiceAge: a.voiceAge };
+    const settings = { ...DEFAULT_SETTINGS, lang, voiceKind: plainKind(a) };
     await prepareVoices(settings);
     await speakText(o.voiceSample[lang], lang, settings);
   };
@@ -431,22 +432,12 @@ function VoiceStep({ o, a, set }: StepProps) {
     <>
       <Title text={o.voiceTitle} intro={o.voiceIntro} help="voice" />
       <T style={s.label}>{o.voiceKind}</T>
-      <Segmented<Answers['voiceKind']>
-        value={a.voiceKind}
+      <Segmented<'f' | 'm'>
+        value={plainKind(a)}
         onChange={(voiceKind) => set({ voiceKind })}
         options={[
           { value: 'f', label: o.voiceF },
           { value: 'm', label: o.voiceM },
-          { value: 'device', label: o.voiceDevice },
-        ]}
-      />
-      <T style={s.label}>{o.voiceAge}</T>
-      <Segmented<Answers['voiceAge']>
-        value={a.voiceAge}
-        onChange={(voiceAge) => set({ voiceAge })}
-        options={[
-          { value: 'child', label: o.voiceChild },
-          { value: 'adult', label: o.voiceAdult },
         ]}
       />
       <Btn icon="volume" label={o.listen} onPress={listen} />
@@ -610,7 +601,7 @@ function ReviewStep({ o, a, goto }: { o: OnboardingStrings; a: Answers; goto: (s
     ...(a.langs.includes('ar') ? [{ label: o.rArabic, value: dialectName(a.arabic, uiLang), step: 'arabic' as StepId }] : []),
     {
       label: o.rVoice,
-      value: `${a.voiceKind === 'f' ? o.voiceF : a.voiceKind === 'm' ? o.voiceM : o.voiceDevice} · ${a.voiceAge === 'child' ? o.voiceChild : o.voiceAdult}`,
+      value: plainKind(a) === 'f' ? o.voiceF : o.voiceM,
       step: 'voice',
     },
     {

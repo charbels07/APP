@@ -39,12 +39,13 @@
   listener). Arabic is read by the device's standard Arabic voice whatever the dialect; do not generate or
   ship voice packs, and do not make the Arabic voice follow the dialect, unless asked. The code stays, switched
   off by the empty index (`npm run build:voices`, `src/lib/dialectVoice.ts`, `src/data/voicePackIndex.ts`).
-- No voice from a paid service (owner's decision, November 2026): Microsoft Azure children's voices were built
-  and removed the same day. Every voice is the device's own, or a family's recording. Do not add a speech
-  service, a server function for speech or a key for one unless asked. With a child's voice, "Create a new
-  word" requires a recording in the board's language before Save (`PickerPanel`, `t.recordRequired`).
-- The boy's voice stays a woman's voice raised (below). A man's voice raised (by 25 %, then 40 %) was tried on
-  the owner's iPad: it sounds like an adult. Do not try it again; change `CHILD` only with the owner's ear.
+- Voice (owner's decisions, November 2026): every voice is the device's own, or a family's recording of a
+  word. No paid speech service: Microsoft Azure children's voices were built and removed the same day; do not
+  add a speech service, a server function for speech or a key for one unless asked. The family only chooses
+  Female or Male (`plainKind` in `src/lib/voices.ts`; Settings → Voice and the set-up), plus the speed. "Device
+  voice", the voice's age (child), its height and "a specific voice" were removed from the screens on purpose:
+  do not bring them back unless asked. The code that made child voices is still in `chooseVoice` (`CHILD`),
+  unused; a man's voice raised to make a boy sounded like an adult on the owner's iPad.
 - A man's / woman's voice is chosen by name in `src/lib/voices.ts`: machine-like and joke voices (`ROBOTIC`)
   come last. A family's own recording of a word (`overrides[id].audio[lang]`) always wins over any voice.
   Child voices are a woman's voice raised (`CHILD`): the girl clearly higher than the boy, and the boy on

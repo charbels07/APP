@@ -83,6 +83,15 @@ export function voiceGender(v: Pick<VoiceInfo, 'id' | 'name'>): VoiceGender | un
   return undefined;
 }
 
+/**
+ * Settings → Voice only asks "female or male" (owner's decision, November 2026): no "device
+ * voice", no child's voice, no height, no precise voice. A profile that never chose (or chose
+ * "device voice" before) gets the voice of the child's own gender.
+ */
+export function plainKind(settings: { voiceKind?: VoiceKind; gender?: string }): VoiceGender {
+  return settings.voiceKind === 'f' || settings.voiceKind === 'm' ? settings.voiceKind : settings.gender === 'f' ? 'f' : 'm';
+}
+
 export interface VoiceChoice {
   /** Device voice to use (undefined: the device's default voice for the language). */
   id?: string;

@@ -6,6 +6,7 @@
  * moving, so the child's motor memory is never broken.
  */
 import { shareChoice } from './product';
+import { plainKind } from './voices';
 import type { Intake } from '../backend/types';
 import type { ArabicDialect, Lang, Profile } from '../model/types';
 
@@ -126,8 +127,9 @@ export function applyAnswers(base: Profile, a: Answers, custom: { id: string; la
   st.langs = chosen.length ? chosen : [st.lang === 'ar' && st.arabic === 'none' ? 'fr' : st.lang];
   st.lang = st.langs[0];
   st.gender = a.gender;
-  st.voiceKind = a.voiceKind;
-  st.voiceAge = a.voiceAge;
+  // Female or male only: an answer left on "device" becomes the voice of the child's own gender.
+  st.voiceKind = plainKind(a);
+  st.voiceAge = 'adult';
   st.revealLevel = a.level ?? recommendedLevel(a);
   st.visual = a.visual === 'unsure' ? 'standard' : a.visual;
   if (a.feedback === 'standard') {

@@ -599,9 +599,11 @@ The child's voice was a woman's voice of the tablet made higher, and it sounded 
 to samples, the owner chose voices of Microsoft Azure AI Speech for the girl: **Maisie** (English) and
 **Eloise** (French). No real boy's voice exists there: the owner liked **Dustin** (a young man's voice
 raised 8 %) but asked for the boy to stay on the tablet's free voice, made to sound like it. Measured,
-Dustin sits at about 165–180 Hz, between a man's voice and a woman's; the old boy (a woman's voice
-raised) was near 215 Hz. The boy is now a man's voice of the tablet raised by a quarter (`CHILD.boyFromMan`
-in `src/lib/voices.ts`), a woman's voice only when the device has no man's. Arabic is left as it was.
+on the same sentences, Dustin sits at 160–190 Hz, ordinary men's voices at 100–140 Hz and women's at
+190–200 Hz; the old boy (a woman's voice raised) was near 215 Hz. The boy is now a man's voice of the
+device raised by about 40 % (`boyPitch` in `src/lib/voices.ts`; in Edge each man's voice has its measured
+height), and a woman's voice a little lower when the device has no man's. On Android a man's voice is
+found by its code (`ANDROID_MEN`). "Device voice" + child for a boy counts as the boy's voice (`kindFor`). Arabic is left as it was.
 
 | What | How |
 |---|---|

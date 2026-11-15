@@ -42,16 +42,17 @@
 - Children's voice (owner's decision, November 2026): with voice age "Child" and a girl's voice, French and
   English are said by voices of Microsoft Azure AI Speech chosen by the owner by ear (Maisie EN, Eloise FR),
   through the server function `caa-voice`. The boy is NOT sent there: he keeps the tablet's voice
-  (free), a man's voice raised a little to sound like Azure's "Dustin" (`CHILD.boyFromMan` in `voices.ts`).
+  (free), brought as near as possible to Azure's "Dustin" (`BOY_HZ`, `boyPitch`, `kindFor` in `voices.ts`).
   The girl's voice lives in `src/lib/childVoice.ts`, `childVoiceSound.ts` (sounds kept by `saidCache`). Do not change these voices unless asked. The tablet's voice stays the safety net (offline, not
   deployed, Arabic): never leave a child silent, and show the setting only when `childVoiceAvailable()`. The
   family is told the text travels to Microsoft and can refuse (`settings.childVoiceOnline`); never send the
   child's name. With a child's voice, "Create a new word" requires a recording before Save (`PickerPanel`).
 - A man's / woman's voice is chosen by name in `src/lib/voices.ts`: machine-like and joke voices (`ROBOTIC`)
   come last. A family's own recording of a word (`overrides[id].audio[lang]`) always wins over any voice.
-  On the tablet (`CHILD`), the girl is a woman's voice raised; the boy is a man's voice raised a little (a
-  woman's voice only when the device has no man's: the other one of the same country when there are two).
-  Keep both sounding like children.
+  On the tablet (`CHILD`), the girl is a woman's voice raised; the boy is a man's voice raised by about 40 %
+  (measured: Dustin 160–190 Hz, men 100–140 Hz), a woman's voice a little lower only when the device has no
+  man's. "Device voice" + child for a boy is the boy's voice too (`kindFor`). Android voices are told apart by
+  their code (`ANDROID_MEN`). Not yet confirmed by ear on a tablet: change the numbers only with the owner.
 - App pictograms live in `src/data/concepts.ts` (`app: { url, triggers }`); new built-in folders are added
   to saved profiles by a one-time migration in `src/lib/storage.ts` (only into an empty slot).
 - Back office (`src/ui/admin/`, stage `admin`): only accounts in the database table `admins`; every

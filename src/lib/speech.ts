@@ -8,7 +8,7 @@ import { Platform } from 'react-native';
 import type { Lang, Settings } from '../model/types';
 import type { Segment } from './grammar';
 import { speechTag } from './lexicon';
-import { chooseVoice, forVoice, voiceGender, type VoiceChoice, type VoiceGender, type VoiceInfo } from './voices';
+import { chooseVoice, forVoice, kindFor, voiceGender, type VoiceChoice, type VoiceGender, type VoiceInfo } from './voices';
 import { mediaUri } from './media';
 import { spanOfName, type Span } from './trimSilence';
 import { clipUri } from './voiceClips';
@@ -37,7 +37,7 @@ export type SpeechProgress = (segment: number, charIndex: number) => void;
 function speakOne(text: string, lang: Lang, settings: Settings, onWord?: (charIndex: number) => void): Promise<void> {
   // Until the device's voices are known, the pitch already follows the chosen kind and age.
   const choice =
-    plan[lang] ?? chooseVoice([], lang, speechTag(lang), settings.voiceKind ?? 'device', settings.voiceAge ?? 'adult', settings.voices[lang]);
+    plan[lang] ?? chooseVoice([], lang, speechTag(lang), kindFor(settings), settings.voiceAge ?? 'adult', settings.voices[lang]);
   return new Promise((resolve) => {
     let settled = false;
     const done = () => {
@@ -180,7 +180,7 @@ export async function prepareVoices(settings: Settings): Promise<Record<Lang, Vo
   const voices = await deviceVoices();
   const next = {} as Record<Lang, VoiceChoice>;
   for (const l of ['fr', 'en', 'ar'] as Lang[])
-    next[l] = chooseVoice(voices, l, speechTag(l), settings.voiceKind ?? 'device', settings.voiceAge ?? 'adult', settings.voices[l]);
+    next[l] = chooseVoice(voices, l, speechTag(l), kindFor(settings), settings.voiceAge ?? 'adult', settings.voices[l]);
   plan = next;
   return next;
 }

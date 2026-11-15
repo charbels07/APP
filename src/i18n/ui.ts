@@ -231,7 +231,7 @@ const fr = {
   voiceAdult: 'Adulte',
   voiceChild: 'Enfant',
   voiceChildNote:
-    'Voix d’enfant : les tablettes n’ont pas de vraies voix d’enfant. Pour une fille, l’application part d’une voix de femme et la rend plus aiguë ; pour un garçon, d’une voix d’homme rendue un peu plus aiguë, comme une voix jeune (sans voix d’homme sur l’appareil : une voix de femme un peu plus aiguë) ; réglez-la à l’oreille avec « Hauteur de la voix ». Pour une vraie voix d’enfant, enregistrez un frère, une sœur ou un cousin sur les mots (Voix enregistrée).',
+    'Voix d’enfant : les tablettes n’ont pas de vraies voix d’enfant. Pour une fille, l’application part d’une voix de femme et la rend plus aiguë ; pour un garçon, d’une voix d’homme rendue plus aiguë, comme une voix jeune (sans voix d’homme sur l’appareil : une voix de femme un peu plus grave) ; réglez-la à l’oreille avec « Hauteur de la voix ». Pour une vraie voix d’enfant, enregistrez un frère, une sœur ou un cousin sur les mots (Voix enregistrée).',
   voiceUsed: 'Voix utilisée',
   voiceDefaultUsed: 'voix de l’appareil',
   voiceApprox: 'voix approchée : pas de voix de ce type pour cette langue sur cet appareil',
@@ -632,7 +632,7 @@ const en: Dict = {
   voiceAdult: 'Adult',
   voiceChild: 'Child',
   voiceChildNote:
-    'Child voice: tablets have no real child voices. For a girl, the app starts from a woman’s voice and makes it higher; for a boy, from a man’s voice made a little higher, like a young voice (with no man’s voice on the device: a woman’s voice a little higher); tune it by ear with “Voice height”. For a real child’s voice, record a brother, sister or cousin on the words (Recorded voice).',
+    'Child voice: tablets have no real child voices. For a girl, the app starts from a woman’s voice and makes it higher; for a boy, from a man’s voice made higher, like a young voice (with no man’s voice on the device: a woman’s voice a little lower); tune it by ear with “Voice height”. For a real child’s voice, record a brother, sister or cousin on the words (Recorded voice).',
   voiceUsed: 'Voice used',
   voiceDefaultUsed: 'device voice',
   voiceApprox: 'approximate voice: no voice of this type for this language on this device',
@@ -1021,7 +1021,7 @@ const ar: Dict = {
   voiceAdult: 'بالغ',
   voiceChild: 'طفل',
   voiceChildNote:
-    'صوت الطفل: لا تحتوي الأجهزة اللوحية على أصوات أطفال حقيقية. للبنت ينطلق التطبيق من صوت امرأة ويجعله أحدّ؛ وللصبي من صوت رجل أحدّ قليلاً، كصوت فتى (وإذا لم يكن في الجهاز صوت رجل: صوت امرأة أحدّ قليلاً)؛ اضبطه بالسمع من «طبقة الصوت». لصوت طفل حقيقي، سجّل صوت أخ أو أخت أو قريب على الكلمات («صوت مسجّل»).',
+    'صوت الطفل: لا تحتوي الأجهزة اللوحية على أصوات أطفال حقيقية. للبنت ينطلق التطبيق من صوت امرأة ويجعله أحدّ؛ وللصبي من صوت رجل أحدّ، كصوت فتى (وإذا لم يكن في الجهاز صوت رجل: صوت امرأة أغلظ قليلاً)؛ اضبطه بالسمع من «طبقة الصوت». لصوت طفل حقيقي، سجّل صوت أخ أو أخت أو قريب على الكلمات («صوت مسجّل»).',
   voiceUsed: 'الصوت المستخدم',
   voiceDefaultUsed: 'صوت الجهاز',
   voiceApprox: 'صوت تقريبي: لا يوجد صوت من هذا النوع لهذه اللغة على هذا الجهاز',

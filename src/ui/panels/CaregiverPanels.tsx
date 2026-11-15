@@ -1083,15 +1083,21 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
   const { st, set, pin, setPin } = draft;
   const searching = !!useContext(SettingsSearch).q;
   const langs = availableLangs(st);
-  // "None" takes Arabic out of the child's languages; a dialect only changes the words.
-  const setArabic = (v: ArabicDialect) =>
+  const childLangs = st.langs?.length ? st.langs : [st.lang];
+  // As at set-up: Arabic not among the child's languages means no Arabic in the app, so "Which
+  // Arabic?" only shows once Arabic is ticked. Ticked again before saving, it gets its dialect back.
+  const lastDialect = useRef<ArabicDialect>('lb');
+  if (st.arabic && st.arabic !== 'none') lastDialect.current = st.arabic;
+  const toggleLang = (l: Lang, on: boolean) =>
     set((x) => {
-      x.arabic = v;
-      if (v !== 'none') return;
-      const kept = (x.langs?.length ? x.langs : [x.lang]).filter((l) => l !== 'ar');
-      x.langs = kept.length ? kept : ['fr'];
-      if (x.lang === 'ar') x.lang = x.langs[0];
+      const cur = x.langs?.length ? x.langs : [x.lang];
+      const next = on ? cur.filter((y) => y !== l) : [...cur, l];
+      if (!next.length) return;
+      x.langs = next;
+      if (!next.includes(x.lang)) x.lang = next[0];
+      if (l === 'ar') x.arabic = on ? 'none' : lastDialect.current;
     });
+  const setArabic = (v: ArabicDialect) => set((x) => void (x.arabic = v));
   const [confirmReset, setConfirmReset] = useState(false);
 
   return (
@@ -1100,24 +1106,17 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
       <Group title={t.gLanguages} icon="globe">
         <Text style={s.label}>{t.sChildLangs}</Text>
         <View style={s.wrapRow}>
-          {langs.map((l) => {
-            const on = (st.langs ?? [st.lang]).includes(l);
+          {availableLangs({ arabic: 'lb' }).map((l) => {
+            const on = childLangs.includes(l);
             return (
               <Btn
                 key={l}
                 small
                 kind={on ? 'primary' : 'secondary'}
                 icon={on ? 'check' : undefined}
-                label={langName(st, l)}
-                onPress={() =>
-                  set((x) => {
-                    const cur = x.langs?.length ? x.langs : [x.lang];
-                    const next = on ? cur.filter((y) => y !== l) : [...cur, l];
-                    if (!next.length) return;
-                    x.langs = next;
-                    if (!next.includes(x.lang)) x.lang = next[0];
-                  })
-                }
+                selected={on}
+                label={l === 'ar' ? o.langArabic : langName(st, l)}
+                onPress={() => toggleLang(l, on)}
               />
             );
           })}
@@ -1128,22 +1127,27 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
             <Segmented value={st.lang} onChange={(v: Lang) => set((x) => void (x.lang = v))} options={langs.map((l) => ({ value: l, label: langName(st, l) }))} />
           </>
         )}
-        <Text style={s.label}>{t.sArabic}</Text>
-        <View style={s.wrapRow} accessibilityRole="radiogroup">
-          {([...DIALECT_ORDER, 'none'] as ArabicDialect[]).map((d) => {
-            const on = (st.arabic ?? 'lb') === d;
-            return (
-              <Btn
-                key={d}
-                small
-                kind={on ? 'primary' : 'secondary'}
-                icon={on ? 'check' : undefined}
-                label={dialectName(d, st.uiLang)}
-                onPress={() => setArabic(d)}
-              />
-            );
-          })}
-        </View>
+        {childLangs.includes('ar') && (
+          <>
+            <Text style={s.label}>{t.sArabic}</Text>
+            <View style={s.wrapRow} accessibilityRole="radiogroup">
+              {DIALECT_ORDER.map((d) => {
+                const on = (st.arabic && st.arabic !== 'none' ? st.arabic : 'lb') === d;
+                return (
+                  <Btn
+                    key={d}
+                    small
+                    kind={on ? 'primary' : 'secondary'}
+                    icon={on ? 'check' : undefined}
+                    selected={on}
+                    label={dialectName(d, st.uiLang)}
+                    onPress={() => setArabic(d)}
+                  />
+                );
+              })}
+            </View>
+          </>
+        )}
         <Text style={s.label}>{t.sInterface}</Text>
         <Segmented
           value={st.uiLang}
@@ -1260,15 +1264,20 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
         <Toggle label={t.sSpeakOnTap} value={st.speakOnTap} onChange={(v) => set((x) => void (x.speakOnTap = v))} />
         <Toggle label={t.sAddToStrip} value={st.addToStrip} onChange={(v) => set((x) => void (x.addToStrip = v))} />
         <Toggle label={t.sGrammar} value={st.grammar} onChange={(v) => set((x) => void (x.grammar = v))} />
-        <Text style={s.label}>{t.sGender}</Text>
-        <Segmented
-          value={st.gender}
-          onChange={(v) => set((x) => void (x.gender = v))}
-          options={[
-            { value: 'm', label: t.masculine },
-            { value: 'f', label: t.feminine },
-          ]}
-        />
+        {/* Only French and Arabic words change with the speaker's gender (English has no agreement). */}
+        {[...childLangs, st.lang].some((l) => l === 'fr' || l === 'ar') && (
+          <>
+            <Text style={s.label}>{t.sGender}</Text>
+            <Segmented
+              value={st.gender}
+              onChange={(v) => set((x) => void (x.gender = v))}
+              options={[
+                { value: 'm', label: t.masculine },
+                { value: 'f', label: t.feminine },
+              ]}
+            />
+          </>
+        )}
         <Toggle label={t.sQuickZone} value={st.quickZone} onChange={(v) => set((x) => void (x.quickZone = v))} />
         <Toggle label={t.sAutoApps} value={st.autoOpenApps !== false} onChange={(v) => set((x) => void (x.autoOpenApps = v))} />
       </Group>

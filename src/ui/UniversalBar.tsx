@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useApp } from '../state/AppState';
 import { useBoard } from '../state/BoardContext';
+import { adminStrings } from '../i18n/admin';
 import { useSession } from '../state/Session';
 import { Icon, type IconName } from './Icon';
 import { C } from './theme';
@@ -33,7 +34,7 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
   const app = useApp();
   const { width, height } = useWindowDimensions();
   const board = useBoard();
-  const { childLock } = useSession();
+  const { childLock, isAdmin, go } = useSession();
   const iconsOnly = !vertical && width < 520;
   const { t, view, path, overlay, profile, timer, editMode } = app;
   // The adult's panels: straight in while caregiver mode is open, otherwise the caregiver code first.
@@ -90,6 +91,18 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
       active: editMode,
     },
   ];
+  // Only for the accounts of the app's own team (the database says who they are), on their own
+  // board: the way back to the back office. Like the settings, behind the caregiver code, so a
+  // child holding the tablet cannot open it. On a very narrow screen the row has no room for one
+  // more button of a touchable size: the way back is then Settings → Account.
+  if (isAdmin && board && (vertical || width >= 340))
+    tools.push({
+      key: 'backOffice',
+      icon: 'briefcase',
+      label: adminStrings(profile.settings.uiLang).title,
+      onPress: () => (editMode ? go({ name: 'admin' }) : app.setOverlay({ kind: 'pin', then: { kind: 'backOffice' } })),
+      active: false,
+    });
   const visible = (items: Item[]) => items.filter((m) => m.show !== false);
   // The tools (search, guide, settings, child lock, caregiver): one column with their names when
   // the screen is tall enough for all of them, otherwise icons side by side.

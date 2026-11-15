@@ -122,8 +122,9 @@ table, `admins`, that nobody can read or change from the app.
    One line in the result = done. "Success. No rows returned" = no account has that address yet
    (create the account first, then run it again).
 4. Sign in to the app with that account (sign out and in again if it was already open): it opens
-   on the back office. *Open the app* goes to the app itself; *Account → Open the back office*
-   comes back.
+   on the back office. *Open the app* goes to the app itself; the **Back office** button comes
+   back (at the bottom of the board's bar, after the caregiver code; in the top row of the
+   professional workspace). Only team accounts see that button.
 
 The back office is a page **of the app**: it is not in the Supabase dashboard, and the demo link
 cannot show the real one (the demo never talks to this server). It opens wherever the real app

@@ -450,6 +450,17 @@ order, by itself.
 | To switch it on | Four steps in `supabase/README.md`, section 10 (deploy the function, three secrets, run the SQL file, one "connect" line), and `select * from public.team_mail_check();` says in plain words what is missing. |
 | Tests | Database: 24 new checks (`supabase/tests/team_mail_scenario.sql`) — nobody reads or redirects the messages, the wrong key gets nothing, no document or address in the text, no name in the weekly figures, nothing about usage under 5 children. App: `teamMail.test.ts` plays the function with a pretend mailbox, `wordPlaces.test.ts`, more cases in `voices`, `onboarding` and `inviteMail` tests. The real sending was tried by the owner on 15 November 2026: the test e-mail arrived. **Not tried yet:** a real request from a professional and the first Monday e-mail on the real project, and Outlook / Yahoo with a signed-in mailbox. |
 
+## Round 27 — A "Back office" button for the team, and the team e-mails switched on
+
+| What | How it was done |
+|---|---|
+| Why there was "no way back" | There was one, but hidden: Settings → Account → "Open the back office", and Settings is behind the caregiver code. |
+| The button on the board | `src/ui/UniversalBar.tsx` adds **Back office** at the bottom of the bar, only when the session says the account is in the team (`isAdmin`, which is the database's own answer, `is_admin()`). A parent's or a therapist's account never gets the button. |
+| Behind the caregiver code | Like Settings and Lock: outside caregiver mode the button opens the code keypad first (`{ kind: 'pin', then: { kind: 'backOffice' } }`, `PinPanel` in `src/ui/panels/CommPanels.tsx`), so a child holding the tablet cannot open the certificates. In caregiver mode it opens at once. |
+| In the professional workspace | A team account that is also a professional gets the same button in the top row of the workspace (`src/ui/pro/Workspace.tsx`). No code there: the workspace is an adult's space. |
+| The team e-mails | Switched on by the owner on 15 November 2026 (function deployed, three secrets, two SQL files, test e-mail received). The request e-mail now gives the professional's name. The function reads Supabase's new server key first and the old one as a second try (the old keys retire in early 2027). |
+| Tests | Browser runs at computer and phone sizes: a team account sees the button, the code is asked, a wrong code keeps the board; a parent and an ordinary professional never see it. Accessibility scan of the board with the button: no rule broken. |
+
 ## How everything is checked
 
 | Check | What it does |

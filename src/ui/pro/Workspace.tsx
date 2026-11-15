@@ -13,6 +13,7 @@ import type { Invitation, Membership, Notice, ProfileSummary, Proposal, Resource
 import { APP_NAME, errorText } from '../../i18n/account';
 import { dataStrings } from '../../i18n/data';
 import { proStrings, type ProSection, type ProStrings } from '../../i18n/pro';
+import { adminStrings } from '../../i18n/admin';
 import { settingsStrings } from '../../i18n/settings';
 import { preset, type AccessLevel, type CollaboratorRole, type PermissionSet } from '../../lib/permissions';
 import { resourceName } from '../../lib/resourceNames';
@@ -275,6 +276,8 @@ export function Workspace({ verification, onVerify, openUserId }: { verification
         <View style={[st.header, rtl && { flexDirection: 'row-reverse' }]}>
           {!wide && <Btn small kind="ghost" icon="help" label={p.help} onPress={() => setTour(0)} />}
           <View style={{ flex: 1 }} />
+          {/* Only for the accounts of the app's own team: the way back to the back office. */}
+          {sess.isAdmin && <Btn small icon="briefcase" label={adminStrings(uiLang).title} accessibilityLabel={adminStrings(uiLang).entry} onPress={() => sess.go({ name: 'admin' })} />}
           <LangSwitch />
         </View>
         <ScrollView contentContainerStyle={st.main} keyboardShouldPersistTaps="handled">

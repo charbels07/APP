@@ -107,4 +107,8 @@
 - The board's bar has "Settings" and "Lock" (child lock) for the parents: outside caregiver mode they
   always go through the code (`{ kind: 'pin', then: { kind: 'settings' | 'lock' } }`), and open without
   turning caregiver mode on (`opensAlone`). Never open the settings or the lock from the bar without the code.
+- The way back to the back office is a button only the app's team sees (`isAdmin` from the session, which
+  asks the database): in the bar of their own board, behind the caregiver code like the settings
+  (`then: { kind: 'backOffice' }`), and in the header of the professional workspace. Never show it to
+  another account; hiding it is comfort only, every `admin_*` function still checks `is_admin()`.
 - Services and keys: `docs/API-KEYS.md` (keep it up to date when a feature starts needing one).

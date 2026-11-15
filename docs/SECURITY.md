@@ -102,6 +102,11 @@ Both buttons open the caregiver code keypad first (same code, same pauses after 
 nothing of the settings is shown before the code is right, and the board does not switch to
 caregiver mode behind them.
 
+The accounts of the app's team also get a "Back office" button there (and in the professional
+workspace). On the board it goes through the same keypad, so a child holding a team member's
+tablet cannot open the certificates. The button is only shown to accounts the database lists as
+team; showing or hiding it changes nothing to who may read the back office (`is_admin()` decides).
+
 ### Added later: e-mails to the app's team (November 2026)
 
 The database writes the messages (a professional applied; the figures of the week) and a server

@@ -1,11 +1,11 @@
 /**
- * Server function "caa-voice" (Supabase Edge Function, Deno): the children's voice.
- * In French and English the app asks it to say a word or a sentence with a child's voice of a
+ * Server function "caa-voice" (Supabase Edge Function, Deno): the real girl's voice.
+ * In French and English the app asks it to say a word or a sentence with a girl's voice of a
  * speech service (Microsoft Azure AI Speech) and plays the sound it gets back; the tablet keeps
  * the sound, so each phrase is asked once per device.
  *
  * Only signed-in accounts that look after a child can call it, a limited number of times a day
- * (count_voice_call). Only the text to say, its language and "girl / boy" are received: never
+ * (count_voice_call). Only the text to say, its language and the kind of voice are received: never
  * the child's name or the account. The voice itself is chosen here, not by the app. Nothing is kept.
  * The Azure key is a Supabase secret (AZURE_SPEECH_KEY, AZURE_SPEECH_REGION); it never reaches the app.
  */
@@ -17,15 +17,13 @@ const MAX_CHARS = 300;
 const FORMAT = 'audio-24khz-48kbitrate-mono-mp3';
 
 /**
- * The voices chosen by the app's owner after listening (November 2026).
- * Girls are real children's voices. No boy's voice exists at the service: the boy is a young
- * man's voice that speaks both languages, a little higher.
+ * The voices chosen by the app's owner after listening (November 2026): real girls' voices.
+ * No real boy's voice exists at the service, so the boy is not said here: he keeps the tablet's
+ * own voice (the app never asks for one; a request for a boy is refused like any unknown voice).
  */
 const VOICES: Record<string, { name: string; locale: string; pitch?: string }> = {
   'en.f': { name: 'en-GB-MaisieNeural', locale: 'en-GB' },
-  'en.m': { name: 'en-US-DustinMultilingualNeural', locale: 'en-US', pitch: '+8%' },
   'fr.f': { name: 'fr-FR-EloiseNeural', locale: 'fr-FR' },
-  'fr.m': { name: 'en-US-DustinMultilingualNeural', locale: 'fr-FR', pitch: '+8%' },
 };
 
 const CORS = {

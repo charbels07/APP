@@ -1078,6 +1078,8 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
   const board = useBoard();
   const o = onboardingStrings(profile.settings.uiLang);
   const { st, set, pin, setPin } = draft;
+  // The real child's voice from the internet is a girl's: the boy keeps the tablet's own voice.
+  const girlVoice = st.voiceKind === 'f' || (st.voiceKind !== 'm' && st.gender === 'f');
   const searching = !!useContext(SettingsSearch).q;
   const langs = availableLangs(st);
   const [voiceChoice, setVoiceLang] = useState<Lang>(st.lang);
@@ -1336,9 +1338,9 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
             { value: 'child', label: t.voiceChild },
           ]}
         />
-        {st.voiceAge === 'child' && !childOnline && <Text style={s.note}>{t.voiceChildNote}</Text>}
+        {st.voiceAge === 'child' && !(childOnline && girlVoice) && <Text style={s.note}>{t.voiceChildNote}</Text>}
         {/* Only when the server offers the children's voice: the family is told what travels, and can refuse. */}
-        {st.voiceAge === 'child' && childOnline && (
+        {st.voiceAge === 'child' && childOnline && girlVoice && (
           <Toggle
             label={t.sChildVoiceOnline}
             value={st.childVoiceOnline !== false}

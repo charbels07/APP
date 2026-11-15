@@ -95,18 +95,18 @@ export const SETUP_HELP: Record<SetupHelpId, SetupHelp> = {
   voice: {
     lines: {
       fr: [
-        'C’est la voix qui dit les mots que l’enfant touche. Elle vient de l’appareil : pas besoin d’internet. Seule la vraie voix d’enfant, quand elle est proposée en français et en anglais, vient d’internet : le texte à dire est alors envoyé à un service de voix, sans le nom de l’enfant.',
-        'Féminine ou masculine, adulte ou enfant : les appareils n’ont pas de vraies voix d’enfant, alors la voix d’enfant est une voix de femme rendue plus aiguë (davantage pour une fille que pour un garçon). Touchez « Écouter » pour l’entendre.',
+        'C’est la voix qui dit les mots que l’enfant touche. Elle vient de l’appareil : pas besoin d’internet. Seule la vraie voix de fille, quand elle est proposée en français et en anglais, vient d’internet : le texte à dire est alors envoyé à un service de voix, sans le nom de l’enfant.',
+        'Féminine ou masculine, adulte ou enfant : les appareils n’ont pas de vraies voix d’enfant, alors la voix de fille est une voix de femme rendue plus aiguë, et la voix de garçon une voix d’homme rendue un peu plus aiguë. Touchez « Écouter » pour l’entendre.',
         'Plus tard, dans Réglages → Voix : la vitesse, la hauteur, une voix précise par langue. Un mot peut aussi être enregistré par quelqu’un de la famille.',
       ],
       en: [
-        'This is the voice that says the words the child touches. It comes from the device: no internet needed. Only the real child’s voice, when it is offered in French and English, comes from the internet: the text to say is then sent to a speech service, without the child’s name.',
-        'Female or male, adult or child: devices have no real children’s voices, so a child’s voice is a woman’s voice made higher (more for a girl than for a boy). Touch “Listen” to hear it.',
+        'This is the voice that says the words the child touches. It comes from the device: no internet needed. Only the real girl’s voice, when it is offered in French and English, comes from the internet: the text to say is then sent to a speech service, without the child’s name.',
+        'Female or male, adult or child: devices have no real children’s voices, so a girl’s voice is a woman’s voice made higher, and a boy’s voice a man’s voice made a little higher. Touch “Listen” to hear it.',
         'Later, in Settings → Voice: the speed, the height, a precise voice for each language. A word can also be recorded by someone in the family.',
       ],
       ar: [
-        'هذا هو الصوت الذي ينطق الكلمات التي يلمسها الطفل. يأتي من الجهاز: لا حاجة إلى الإنترنت. فقط صوت الطفل الحقيقي، عندما يُعرض بالفرنسية والإنجليزية، يأتي عبر الإنترنت: يُرسَل عندها النص المطلوب نطقه إلى خدمة صوت، من دون اسم الطفل.',
-        'صوت امرأة أو رجل، بالغ أو طفل: لا توجد في الأجهزة أصوات أطفال حقيقية، لذلك صوت الطفل هو صوت امرأة أحدّ (أكثر للبنت منه للصبي). المس «استمع» لتسمعه.',
+        'هذا هو الصوت الذي ينطق الكلمات التي يلمسها الطفل. يأتي من الجهاز: لا حاجة إلى الإنترنت. فقط صوت البنت الحقيقي، عندما يُعرض بالفرنسية والإنجليزية، يأتي عبر الإنترنت: يُرسَل عندها النص المطلوب نطقه إلى خدمة صوت، من دون اسم الطفل.',
+        'صوت امرأة أو رجل، بالغ أو طفل: لا توجد في الأجهزة أصوات أطفال حقيقية، لذلك صوت البنت هو صوت امرأة أحدّ، وصوت الصبي صوت رجل أحدّ قليلاً. المس «استمع» لتسمعه.',
         'لاحقاً، في الإعدادات ← الصوت: السرعة، طبقة الصوت، صوت محدّد لكل لغة. يمكن أيضاً أن يسجّل أحد أفراد العائلة كلمة بصوته.',
       ],
     },

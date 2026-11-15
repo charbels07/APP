@@ -77,7 +77,7 @@ day, only people who look after a child, and only the topic, the photo or the dr
 
 | Feature | Without a key (today) | With a key |
 |---|---|---|
-| **The voice that speaks** | The voices of the tablet or the browser (free, work offline). No real child voice (a woman's voice made higher), and one standard Arabic voice | **A real child's voice in French and English**: with a **Microsoft Azure AI Speech** key kept in the server function `caa-voice`, a girl's voice (Maisie in English, Eloise in French) or a boy's (Dustin, both languages) says the words and sentences when the family chose "Child". The text to say is sent to Microsoft (never the child's name); each phrase is asked once per tablet, then kept there. Arabic keeps the tablet's voice (the dialect voices were tried and judged not good enough; `npm run build:voices` stays switched off) |
+| **The voice that speaks** | The voices of the tablet or the browser (free, work offline). No real child voice (a woman's voice made higher), and one standard Arabic voice | **A real girl's voice in French and English**: with a **Microsoft Azure AI Speech** key kept in the server function `caa-voice`, a girl's voice (Maisie in English, Eloise in French) says the words and sentences when the family chose "Child" and a girl's voice. The boy keeps the tablet's voice (a man's voice made a little higher, tuned to sound like the young voice "Dustin" the owner liked): free, offline. The text to say is sent to Microsoft (never the child's name); each phrase is asked once per tablet, then kept there. Arabic keeps the tablet's voice (the dialect voices were tried and judged not good enough; `npm run build:voices` stays switched off) |
 | **Dictation** (say a word to search, dictate a sentence to model) | The tablet's or browser's own speech recognition (Apple, Google): free, no key | A cloud recognition service (Azure Speech, Google, OpenAI) understands dialects and children better. It needs a server function and sends the recording to that service (not built; to decide with the privacy rules) |
 | **A family's own recording of a word** | Works, no key: recorded on the device, it always wins over any voice | — |
 
@@ -97,7 +97,7 @@ npx supabase functions deploy caa-voice
 ```
 
 Today: **not deployed** on the real server, so the app speaks with the tablet's voice and shows
-nothing about the children's voice. The day it is deployed, "Real child's voice in French and
+nothing about it. The day it is deployed, "Real girl's voice in French and
 English" appears by itself in Settings → Voice (on, with what it sends written under it; the family
 can turn it off). Cost: Azure bills per character said (about 16 US dollars per million characters
 for these voices, to check on Azure's price page); a phrase already said on a tablet costs nothing.

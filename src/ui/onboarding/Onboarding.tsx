@@ -433,7 +433,7 @@ function VoiceStep({ o, a, set }: StepProps) {
   }, []);
   const listen = async () => {
     const lang = a.langs[0] ?? 'fr';
-    const settings = { ...DEFAULT_SETTINGS, lang, voiceKind: a.voiceKind, voiceAge: a.voiceAge };
+    const settings = { ...DEFAULT_SETTINGS, lang, voiceKind: a.voiceKind, voiceAge: a.voiceAge, gender: a.gender };
     await prepareVoices(settings);
     await speakText(o.voiceSample[lang], lang, settings);
   };
@@ -460,7 +460,7 @@ function VoiceStep({ o, a, set }: StepProps) {
         ]}
       />
       {/* Said before the choice is made: with this voice the words to say travel to a speech service. */}
-      {online && a.voiceAge === 'child' && a.langs.some((l) => l !== 'ar') && <T style={{ color: C.textMuted, fontSize: 14 }}>{o.voiceOnlineNote}</T>}
+      {online && a.voiceAge === 'child' && (a.voiceKind === 'f' || (a.voiceKind !== 'm' && a.gender === 'f')) && a.langs.some((l) => l !== 'ar') && <T style={{ color: C.textMuted, fontSize: 14 }}>{o.voiceOnlineNote}</T>}
       <Btn icon="volume" label={o.listen} onPress={listen} />
     </>
   );

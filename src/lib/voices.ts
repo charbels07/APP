@@ -4,11 +4,12 @@
  * Devices don't say whether a voice is male or female, so voices are recognised by
  * name: Apple, Google and Microsoft voices have known names (Thomas, Amélie, Samantha,
  * Maged…), and Siri voices carry "male"/"female" in their identifier.
- * Tablets have no real child voices. A child's voice is nearest to a woman's voice, a little
- * higher: a girl's and a boy's voice both start from a woman's voice of the language (a man's
- * voice made higher still sounds like a man). To tell them apart, the girl's is clearly higher
- * than the boy's, and when the device has two women's voices of the same country the boy gets
- * the other one (another timbre, not only another height).
+ * Tablets have no real child voices. The girl's voice is a woman's voice of the language, higher.
+ * The boy's voice is a man's voice raised a little, to sound like the young boy's voice the owner
+ * chose by ear (Azure's "Dustin" raised 8 %: measured at about 165–180 Hz, between an ordinary
+ * man's voice and a woman's; a woman's voice raised, tried before, came out near 215 Hz and was
+ * judged odd). Only when the device has no man's voice for the language does the boy start from a
+ * woman's voice: the other one of the same country when there are two, otherwise the girl's, lower.
  * When a language has no voice of the chosen kind, the device voice is pitched towards it
  * ("approximate" — shown in Settings).
  */
@@ -105,9 +106,10 @@ const CHILD = {
   boyOwnVoice: 1.2,
   /** from the device's own voice (woman or man: unknown) */
   device: 1.3,
-  /** from a man's voice, when the language has no woman's voice */
+  /** the boy, from a man's voice: a young voice like "Dustin", not a man's and not a woman's */
+  boyFromMan: 1.25,
+  /** the girl from a man's voice, when the language has no woman's voice */
   girlFromMan: 1.65,
-  boyFromMan: 1.4,
   /** no named voice at all for the language */
   girlUnknown: 1.45,
   boyUnknown: 1.15,
@@ -147,19 +149,21 @@ export function chooseVoice(
   const ranked = (g: VoiceGender) => forLang.filter((v) => voiceGender(v) === g).sort((a, b) => score(b) - score(a) || a.name.localeCompare(b.name));
   const best = (g: VoiceGender): VoiceInfo | undefined => ranked(g)[0];
   if (child) {
-    // Girl or boy: a woman's voice, higher (see CHILD); a man's voice only without one.
+    // The girl: a woman's voice, higher. The boy: a man's voice a little higher (see CHILD).
     const women = ranked('f');
     const woman = women[0];
     if (woman && kind === 'f') return { id: woman.id, name: woman.name, pitch: clamp(CHILD.girl), exact: true };
+    const youngMan = kind === 'm' ? ranked('m').find((v) => !isRobotic(v)) : undefined;
+    if (youngMan) return { id: youngMan.id, name: youngMan.name, pitch: clamp(CHILD.boyFromMan), exact: true };
     if (woman) {
-      // The boy: another woman's voice of the same country when the device has one (never a
-      // machine-like one, never another accent); otherwise the girl's voice, clearly lower.
+      // The boy without a man's voice: another woman's voice of the same country when the device has
+      // one (never a machine-like one, never another accent); otherwise the girl's voice, clearly lower.
       const own = women.find((v) => v.id !== woman.id && locale(v) === locale(woman) && !isRobotic(v));
       const v = own ?? woman;
       return { id: v.id, name: v.name, pitch: clamp(own ? CHILD.boyOwnVoice : CHILD.boy), exact: true };
     }
     const man = best('m');
-    if (man) return { id: man.id, name: man.name, pitch: clamp(kind === 'm' ? CHILD.boyFromMan : CHILD.girlFromMan), exact: false };
+    if (man) return { id: man.id, name: man.name, pitch: clamp(kind === 'm' ? CHILD.boyFromMan : CHILD.girlFromMan), exact: kind === 'm' };
     return { pitch: clamp(kind === 'm' ? CHILD.boyUnknown : CHILD.girlUnknown), exact: false };
   }
   const match = best(kind);

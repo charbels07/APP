@@ -596,12 +596,16 @@ without being in caregiver mode.
 ## Round 33 — A real child's voice in French and English, and new words recorded
 
 The child's voice was a woman's voice of the tablet made higher, and it sounded odd. After listening
-to samples, the owner chose voices of Microsoft Azure AI Speech: **Maisie** (English girl), **Eloise**
-(French girl) and **Dustin** (boy, both languages, a little higher). Arabic is left as it was.
+to samples, the owner chose voices of Microsoft Azure AI Speech for the girl: **Maisie** (English) and
+**Eloise** (French). No real boy's voice exists there: the owner liked **Dustin** (a young man's voice
+raised 8 %) but asked for the boy to stay on the tablet's free voice, made to sound like it. Measured,
+Dustin sits at about 165–180 Hz, between a man's voice and a woman's; the old boy (a woman's voice
+raised) was near 215 Hz. The boy is now a man's voice of the tablet raised by a quarter (`CHILD.boyFromMan`
+in `src/lib/voices.ts`), a woman's voice only when the device has no man's. Arabic is left as it was.
 
 | What | How |
 |---|---|
-| Who says what | `src/lib/childVoice.ts` (pure, tested): voice age "Child" + French or English + the family did not refuse (`settings.childVoiceOnline`) + no precise device voice chosen → girl or boy. |
+| Who says what | `src/lib/childVoice.ts` (pure, tested): voice age "Child" + French or English + the family did not refuse (`settings.childVoiceOnline`) + no precise device voice chosen + a girl's voice → the real girl's voice. A boy's voice: never (the tablet's voice). |
 | Getting the sound | `src/lib/childVoiceSound.ts`: the device's own copy first (`src/lib/saidCache(.web).ts`: a file per phrase in the app's cache, the browser's Cache Storage on the web), otherwise the server function `caa-voice`. After 3.5 seconds without an answer, or offline, the tablet's voice says it: a child is never left silent. |
 | Speaking | `speakSegments` (`src/lib/speech.ts`): a whole run of words is one phrase, said in one go; a word recorded by the family still plays its recording. The family's speech rate applies. |
 | The server | `supabase/functions/caa-voice` (Deno): checks the request, counts the call in the database (`count_voice_call`: people who look after a child, 1,500 a day each, 40,000 for everyone), asks Azure with the voice it chooses itself, returns the MP3. Key = Supabase secrets `AZURE_SPEECH_KEY`, `AZURE_SPEECH_REGION`. |
@@ -667,8 +671,8 @@ to samples, the owner chose voices of Microsoft Azure AI Speech: **Maisie** (Eng
 - **Children's voice**: needs the `caa-voice` function deployed with an Azure Speech key
   (`docs/API-KEYS.md`); until then the tablet's voice speaks. A phrase never said before needs
   internet once. Words added in bulk (a new activity board, the names of the set-up) are not asked a
-  recording. The boy's voice is a young man's voice raised a little: no real boy's voice exists at
-  the service. Microsoft must be named in the privacy notice before real families.
+  recording. The boy's voice is the tablet's man's voice raised a little, set from measurements and
+  not yet listened to on a tablet: adjust `CHILD.boyFromMan` (or "Voice height") by ear. Microsoft must be named in the privacy notice before real families.
 - **Dialect voices**: tried and dropped for now (the generated voices were judged bad by a native
   listener). Arabic is read by the device's standard Arabic voice; families record the words that do not
   sound right.

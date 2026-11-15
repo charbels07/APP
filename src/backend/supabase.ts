@@ -914,7 +914,7 @@ export class SupabaseBackend implements Backend {
     return this.voiceAnswer;
   }
 
-  async sayAsChild(req: { text: string; lang: 'fr' | 'en'; kind: 'f' | 'm' }): Promise<string> {
+  async sayAsChild(req: { text: string; lang: 'fr' | 'en'; kind: 'f' }): Promise<string> {
     const { data: out, error } = await this.sb.functions.invoke('caa-voice', { body: req, timeout: 20000 });
     if (error) {
       // The function's own word ("limit", "busy"…) when it gave one: the app then waits longer.

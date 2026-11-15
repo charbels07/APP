@@ -400,13 +400,13 @@ const BASE: BaseChapter[] = [
     title: { fr: 'Ajouter, remplacer, déplacer, retirer', en: 'Adding, replacing, moving, removing' },
     steps: {
       fr: [
-        'Case vide → Créer un nouveau mot (écrivez-le ou touchez Dire le mot ; le pictogramme est proposé tout seul, ou choisissez Votre bibliothèque pour une image à vous) ou choisissez un mot existant (écrivez ou dites-le pour le trouver). Retour, en haut de l’écran, revient à l’écran d’avant ; la croix ferme tout.',
+        'Case vide → Créer un nouveau mot (écrivez-le ou touchez Dire le mot ; le pictogramme est proposé tout seul, ou choisissez Votre bibliothèque pour une image à vous ; quand la voix est Fille ou Garçon, « Enregistrez ce mot » est obligatoire : le mot nouveau sera dit avec votre voix, et Enregistrer ne s’active qu’après l’enregistrement) ou choisissez un mot existant (écrivez ou dites-le pour le trouver). Retour, en haut de l’écran, revient à l’écran d’avant ; la croix ferme tout.',
         'Sur une case : Remplacer par un autre mot, ou Retirer de ce tableau.',
         'Déplacer cette case, puis touchez la nouvelle place (une case vide, ou un mot pour les échanger). Pour les mots de base : à décider avec l’orthophoniste.',
         'Le dossier « mes mots » est prévu pour les mots de l’enfant : prénoms, jeux préférés, lieux familiers.',
       ],
       en: [
-        'Empty card → Create a new word (type it or touch Say the word; the pictogram is suggested automatically, or choose Your library for a picture of your own) or choose an existing word (type or say it to find it). Back, at the top of the screen, returns to the screen before; the cross closes everything.',
+        'Empty card → Create a new word (type it or touch Say the word; the pictogram is suggested automatically, or choose Your library for a picture of your own; when the voice is Girl or Boy, “Record this word” is required: the new word will be said with your own voice, and Save only becomes active once it is recorded) or choose an existing word (type or say it to find it). Back, at the top of the screen, returns to the screen before; the cross closes everything.',
         'On a card: Replace with another word, or Remove from this board.',
         'Move this card, then touch the new place (an empty slot, or a word to swap them). For core words: decide with the speech therapist.',
         'The “my words” folder is meant for the child’s own words: names, favourite games, familiar places.',
@@ -489,7 +489,7 @@ const BASE: BaseChapter[] = [
         'Communication : prononcer chaque mot, ajouter à la phrase, grammaire automatique (à couper pour travailler une forme), accords au féminin, zone rapide (oui, non, stop, attends…), délai entre deux appuis sur le même pictogramme (2 s : fini les « pas pas pas »), faire vibrer les pictogrammes (le bouton Essayer montre le mouvement ; un iPad n’a pas de moteur de vibration, seule l’image bouge), ouvrir l’appli citée dans une phrase.',
         'Images : Bibliothèque de symboles (Pictogrammes ou Emoji) et Afficher le texte sous les images. Présentation et accès : boutons et texte plus grands ou contraste élevé, taille des images, façon de sélectionner (toucher puis lever le doigt, dès que le doigt touche, ou garder le doigt appuyé avec une durée d’appui), moins d’animations (ce choix arrête le mouvement des pictogrammes), petite vibration au toucher.',
         'Barre universelle : masquer TLA, Planning ou Minuteur si l’enfant n’en a pas besoin (CAA et Aide restent toujours). Sous Planning : le planning de la semaine et celui du mois. Rien ne change tant que vous n’avez pas touché Enregistrer, en bas de la page ; Annuler les modifications revient en arrière.',
-        'Voix : la vitesse, et Type de voix : Féminine ou Masculine. Voix utilisée montre la voix de chaque langue : elle vient de l’appareil, et « voix approchée » signifie qu’il n’a pas de voix de ce type pour cette langue (on peut en installer dans les réglages de l’appareil). Bouton Aide : le message dit en premier, les informations utiles.',
+        'Voix : la vitesse, et Type de voix : Femme, Homme, Fille ou Garçon (Fille et Garçon sont des voix de l’appareil rendues plus aiguës ; les appareils n’ont pas de vraies voix d’enfant). Voix utilisée montre la voix de chaque langue : elle vient de l’appareil, et « voix approchée » signifie qu’il n’a pas de voix de ce type pour cette langue (on peut en installer dans les réglages de l’appareil). Bouton Aide : le message dit en premier, les informations utiles.',
         'Aussi : Mode verrouillé (enfant), Sécurité (le code accompagnant), Données (propositions par IA, Exporter le profil, Réinitialiser le profil) et À propos (crédits et licences des pictogrammes).',
       ],
       en: [
@@ -498,7 +498,7 @@ const BASE: BaseChapter[] = [
         'Communication: say each word, add to sentence, automatic grammar (turn off to practise a form), feminine agreement, quick zone (yes, no, stop, wait…), delay between two presses on the same pictogram (2 s: no more “no no no”), wiggling pictograms (the Try it button shows the movement; an iPad has no vibration motor, only the picture moves), open the app mentioned in a sentence.',
         'Pictures: Symbol library (Pictograms or Emoji) and Show text under images. Presentation and access: larger buttons and text or high contrast, picture size, access method (touch then lift the finger, as soon as the finger touches, or keep the finger pressed with a hold time), fewer animations (this choice stops the wiggling), small vibration on touch.',
         'Universal bar: hide Boards, Schedule or Timer if the child doesn’t need them (AAC and Help always stay). Under Schedule: the week schedule and the month schedule. Nothing changes until you touch Save, at the bottom of the page; Cancel changes goes back.',
-        'Voice: the speed, and Voice type: Female or Male. Voice used shows the voice of each language: it comes from the device, and “approximate voice” means the device has no voice of that type for that language (more can be installed in the device’s own settings). Help button: the first message said, the useful information.',
+        'Voice: the speed, and Voice type: Woman, Man, Girl or Boy (Girl and Boy are voices of the device made higher; devices have no real children’s voices). Voice used shows the voice of each language: it comes from the device, and “approximate voice” means the device has no voice of that type for that language (more can be installed in the device’s own settings). Help button: the first message said, the useful information.',
         'Also: Child lock, Security (the caregiver code), Data (AI suggestions, Export profile, Reset profile) and About (pictogram credits and licences).',
       ],
     },
@@ -854,7 +854,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   addWord: {
     title: 'إضافة، استبدال، نقل، إزالة',
     steps: [
-      'خانة فارغة ← «إنشاء كلمة جديدة» (اكتبها أو المس «قل الكلمة»؛ يُقترح الرمز تلقائياً، أو اختر «مكتبتك» لصورة من عندك) أو اختر كلمة موجودة (اكتبها أو قلها للعثور عليها). «رجوع»، في أعلى الشاشة، يعيد إلى الشاشة السابقة؛ وعلامة الإغلاق تغلق كل شيء.',
+      'خانة فارغة ← «إنشاء كلمة جديدة» (اكتبها أو المس «قل الكلمة»؛ يُقترح الرمز تلقائياً، أو اختر «مكتبتك» لصورة من عندك؛ وعندما يكون الصوت «بنت» أو «صبي» يصبح «سجّل هذه الكلمة» إلزامياً: تُنطق الكلمة الجديدة بصوتك، ولا يعمل زر «حفظ» إلا بعد التسجيل) أو اختر كلمة موجودة (اكتبها أو قلها للعثور عليها). «رجوع»، في أعلى الشاشة، يعيد إلى الشاشة السابقة؛ وعلامة الإغلاق تغلق كل شيء.',
       'على البطاقة: «استبدال بكلمة أخرى» أو «إزالة من هذه اللوحة».',
       '«نقل هذه البطاقة»، ثم المس المكان الجديد (خانة فارغة، أو كلمة لتبديل مكانيهما). بالنسبة للكلمات الأساسية: يُقرَّر ذلك مع أخصائية النطق.',
       'مجلد «كلماتي» مخصّص لكلمات الطفل الخاصة: الأسماء، الألعاب المفضلة، الأماكن المألوفة.',
@@ -895,7 +895,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
       'التواصل: نطق كل كلمة، إضافة الكلمات إلى الجملة، القواعد التلقائية (أوقفها للتدرّب على صيغة)، التأنيث، المنطقة السريعة (نعم، لا، توقف، انتظر…)، المهلة بين ضغطتين على الرمز نفسه (ثانيتان)، اهتزاز الرموز (زر «جرّب» يُظهر الحركة؛ الآيباد ليس فيه محرّك اهتزاز، تتحرك الصورة فقط)، فتح التطبيق المذكور في جملة.',
       'الصور: «مكتبة الرموز» (رموز أو إيموجي) و«إظهار النص تحت الصور». «العرض وطريقة الاختيار»: أزرار ونص أكبر أو تباين عالٍ، حجم الصور، طريقة الاختيار (المس ثم ارفع الإصبع، بمجرد أن يلمس الإصبع، أو إبقاء الإصبع مضغوطاً مع مدة الضغط)، حركة أقل (هذا الخيار يوقف اهتزاز الرموز)، اهتزاز خفيف عند اللمس.',
       'الشريط الدائم: إخفاء «اللوحات» أو «الجدول» أو «المؤقت» إذا لم يحتجها الطفل («التواصل» و«مساعدة» يبقيان دائماً). تحت «الجدول»: جدول الأسبوع وجدول الشهر. لا يتغيّر شيء قبل لمس «حفظ» أسفل الصفحة؛ «إلغاء التغييرات» يعيد كل شيء كما كان.',
-      'الصوت: السرعة، و«نوع الصوت»: أنثوي أو ذكوري. «الصوت المستخدم» يبيّن صوت كل لغة: يأتي من الجهاز، و«صوت تقريبي» يعني أن الجهاز لا يملك صوتاً من هذا النوع لهذه اللغة (يمكن تثبيت أصوات أخرى من إعدادات الجهاز). زر المساعدة: الرسالة الأولى التي تُقال، والمعلومات المفيدة.',
+      'الصوت: السرعة، و«نوع الصوت»: امرأة، رجل، بنت أو صبي («بنت» و«صبي» من أصوات الجهاز بعد جعلها أحدّ؛ لا توجد في الأجهزة أصوات أطفال حقيقية). «الصوت المستخدم» يبيّن صوت كل لغة: يأتي من الجهاز، و«صوت تقريبي» يعني أن الجهاز لا يملك صوتاً من هذا النوع لهذه اللغة (يمكن تثبيت أصوات أخرى من إعدادات الجهاز). زر المساعدة: الرسالة الأولى التي تُقال، والمعلومات المفيدة.',
       'أيضاً: «وضع القفل (للطفل)»، «الأمان» (رمز المرافق)، «البيانات» (اقتراحات الذكاء الاصطناعي، تصدير الملف الشخصي، إعادة ضبط الملف الشخصي) و«حول التطبيق» (حقوق وتراخيص الرموز).',
     ],
   },

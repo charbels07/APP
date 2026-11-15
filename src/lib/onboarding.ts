@@ -127,9 +127,9 @@ export function applyAnswers(base: Profile, a: Answers, custom: { id: string; la
   st.langs = chosen.length ? chosen : [st.lang === 'ar' && st.arabic === 'none' ? 'fr' : st.lang];
   st.lang = st.langs[0];
   st.gender = a.gender;
-  // Female or male only: an answer left on "device" becomes the voice of the child's own gender.
+  // Woman, man, girl or boy: an answer left on "device" becomes the voice of the child's own gender.
   st.voiceKind = plainKind(a);
-  st.voiceAge = 'adult';
+  st.voiceAge = a.voiceAge;
   st.revealLevel = a.level ?? recommendedLevel(a);
   st.visual = a.visual === 'unsure' ? 'standard' : a.visual;
   if (a.feedback === 'standard') {

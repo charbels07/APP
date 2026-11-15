@@ -593,14 +593,15 @@ without being in caregiver mode.
 | Who is still never asked | Only the accounts of the app's own team (your decision). |
 | Tested | In a browser, with a therapist's account from sign-up to the workspace, at computer and phone size: choosing the code (a code too easy is refused), then Settings, Caregiver mode and the shortcut each ask it; a wrong code is refused. |
 
-## Round 33 — The voice: only "Female or Male", and no paid voice service
+## Round 33 — Four voices: Woman, Man, Girl, Boy; no paid voice service
 
 | What | How |
 |---|---|
-| The choice | Settings → Voice and the set-up only ask Female or Male (`plainKind` in `src/lib/voices.ts`), plus the speed. "Device voice", the voice's age (adult / child), the voice height and "a specific voice" are gone from the screens: the owner found them too many. A board that had "device voice" gets the voice of the child's own gender. |
-| What speaks | The device's own voice of that kind for each language ("Voice used" shows it, with Play); when the device has none, its voice lowered or raised ("approximate voice"). A word recorded by the family still wins. |
-| Children's voices from a service | Tried (Microsoft Azure AI Speech, through a server function) and removed the same day at the owner's request: it is billed per character. |
-| Child voices on the device | No longer offered. Two attempts to make the boy a man's voice raised were judged on an iPad: it sounds like an adult. The code remains in `chooseVoice`, unused. |
+| The choice | Settings → Voice and the set-up offer four voices, in French, English and Arabic: Woman, Man, Girl, Boy (`voiceOption`, `optionParts` in `src/lib/voices.ts`), plus the speed. "Device voice", the voice height and "a specific voice" are gone from the screens: the owner found them too many. A board left on "device voice" follows the child's gender. |
+| What speaks | Always a voice of the device. Girl: a woman's voice raised (unchanged, judged good). Boy: a man's voice raised by about 40 %, aimed at the height of a young voice the owner liked (measured: 160–190 Hz against 100–140 Hz for men); in Edge each man's voice is raised by what it needs; a woman's voice a little lower when the device has no man's. Android's voices are recognised by their code. |
+| A limit | Chrome's "Google" voices on a computer cannot be made higher or lower: Girl and Boy then sound like adults. A child's voice uses another voice of the device when there is one, and the screen says so. |
+| New words | With Girl or Boy, "Create a new word" asks for a recording in the board's language before "Save" (`PickerPanel`). A recording stays on the device that made it. Words added in bulk (a new activity board, the names of the set-up) are not asked one. |
+| Children's voices from a service | Tried (Microsoft Azure AI Speech) and removed the same day at the owner's request: billed per character. |
 
 ## How everything is checked
 

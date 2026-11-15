@@ -34,7 +34,7 @@ import { pickTextFile } from '../../lib/pickTextFile';
 import { exactPicto, searchPictos } from '../../lib/pictoSearch';
 import { loadPictoLibrary, pictoCredit, pictoToMedia } from '../../lib/pictoLibrary';
 import { prepareVoices, speakText } from '../../lib/speech';
-import { plainKind } from '../../lib/voices';
+import { optionParts, voiceOption, type VoiceOption } from '../../lib/voices';
 import { forgetLegacyProfile, loadLegacyProfile, migrate } from '../../lib/storage';
 import type { Lang, Profile } from '../../model/types';
 import { AppProvider } from '../../state/AppState';
@@ -424,7 +424,7 @@ function LangStep({ o, a, set }: StepProps) {
 function VoiceStep({ o, a, set }: StepProps) {
   const listen = async () => {
     const lang = a.langs[0] ?? 'fr';
-    const settings = { ...DEFAULT_SETTINGS, lang, voiceKind: plainKind(a) };
+    const settings = { ...DEFAULT_SETTINGS, lang, ...optionParts(voiceOption(a)) };
     await prepareVoices(settings);
     await speakText(o.voiceSample[lang], lang, settings);
   };
@@ -432,12 +432,14 @@ function VoiceStep({ o, a, set }: StepProps) {
     <>
       <Title text={o.voiceTitle} intro={o.voiceIntro} help="voice" />
       <T style={s.label}>{o.voiceKind}</T>
-      <Segmented<'f' | 'm'>
-        value={plainKind(a)}
-        onChange={(voiceKind) => set({ voiceKind })}
+      <Segmented<VoiceOption>
+        value={voiceOption(a)}
+        onChange={(v) => set(optionParts(v))}
         options={[
-          { value: 'f', label: o.voiceF },
-          { value: 'm', label: o.voiceM },
+          { value: 'woman', label: o.voiceWoman },
+          { value: 'man', label: o.voiceMan },
+          { value: 'girl', label: o.girl },
+          { value: 'boy', label: o.boy },
         ]}
       />
       <Btn icon="volume" label={o.listen} onPress={listen} />
@@ -601,7 +603,7 @@ function ReviewStep({ o, a, goto }: { o: OnboardingStrings; a: Answers; goto: (s
     ...(a.langs.includes('ar') ? [{ label: o.rArabic, value: dialectName(a.arabic, uiLang), step: 'arabic' as StepId }] : []),
     {
       label: o.rVoice,
-      value: plainKind(a) === 'f' ? o.voiceF : o.voiceM,
+      value: { woman: o.voiceWoman, man: o.voiceMan, girl: o.girl, boy: o.boy }[voiceOption(a)],
       step: 'voice',
     },
     {

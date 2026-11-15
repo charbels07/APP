@@ -34,9 +34,9 @@ export function stopSpeech(): void {
 export type SpeechProgress = (segment: number, charIndex: number) => void;
 
 function speakOne(text: string, lang: Lang, settings: Settings, onWord?: (charIndex: number) => void): Promise<void> {
-  // Until the device's voices are known, the pitch already follows the chosen kind.
+  // Until the device's voices are known, the pitch already follows the chosen voice.
   const choice =
-    plan[lang] ?? chooseVoice([], lang, speechTag(lang), plainKind(settings), 'adult');
+    plan[lang] ?? chooseVoice([], lang, speechTag(lang), plainKind(settings), settings.voiceAge ?? 'adult');
   return new Promise((resolve) => {
     let settled = false;
     const done = () => {
@@ -49,7 +49,7 @@ function speakOne(text: string, lang: Lang, settings: Settings, onWord?: (charIn
       language: speechTag(lang),
       rate: settings.speechRate,
       voice: choice.id,
-      // The voice as it is (1), or lowered / raised when the device has no voice of the chosen kind.
+      // The voice as it is (1), raised for a child, or lowered / raised when the device has no voice of the chosen kind.
       pitch: choice.pitch,
       onDone: done,
       onStopped: done,
@@ -164,7 +164,7 @@ function deviceVoices(): Promise<VoiceInfo[]> {
   return voiceList;
 }
 
-/** Voice and pitch used for each language, from Settings → Voice (female / male). */
+/** Voice and pitch used for each language, from Settings → Voice (woman, man, girl or boy). */
 let plan: Partial<Record<Lang, VoiceChoice>> = {};
 
 // Arabic uses the device's standard Arabic voice whatever the family's dialect: the voices of each
@@ -173,7 +173,7 @@ export async function prepareVoices(settings: Settings): Promise<Record<Lang, Vo
   const voices = await deviceVoices();
   const next = {} as Record<Lang, VoiceChoice>;
   for (const l of ['fr', 'en', 'ar'] as Lang[])
-    next[l] = chooseVoice(voices, l, speechTag(l), plainKind(settings), 'adult');
+    next[l] = chooseVoice(voices, l, speechTag(l), plainKind(settings), settings.voiceAge ?? 'adult');
   plan = next;
   return next;
 }

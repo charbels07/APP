@@ -96,17 +96,17 @@ export const SETUP_HELP: Record<SetupHelpId, SetupHelp> = {
     lines: {
       fr: [
         'C’est la voix qui dit les mots que l’enfant touche. Elle vient de l’appareil : pas besoin d’internet.',
-        'Féminine ou masculine : c’est une voix de l’appareil. Touchez « Écouter » pour l’entendre.',
+        'Femme, Homme, Fille ou Garçon : ce sont des voix de l’appareil. Il n’existe pas de vraies voix d’enfant sur les appareils : Fille et Garçon sont des voix rendues plus aiguës. Touchez « Écouter » pour l’entendre.',
         'Plus tard, dans Réglages → Voix : la vitesse, et la voix utilisée pour chaque langue. Un mot peut aussi être enregistré par quelqu’un de la famille.',
       ],
       en: [
         'This is the voice that says the words the child touches. It comes from the device: no internet needed.',
-        'Female or male: it is one of the device’s voices. Touch “Listen” to hear it.',
+        'Woman, Man, Girl or Boy: they are voices of the device. Devices have no real children’s voices: Girl and Boy are voices made higher. Touch “Listen” to hear it.',
         'Later, in Settings → Voice: the speed, and the voice used for each language. A word can also be recorded by someone in the family.',
       ],
       ar: [
         'هذا هو الصوت الذي ينطق الكلمات التي يلمسها الطفل. يأتي من الجهاز: لا حاجة إلى الإنترنت.',
-        'صوت امرأة أو رجل: هو أحد أصوات الجهاز. المس «استمع» لتسمعه.',
+        'امرأة، رجل، بنت أو صبي: كلها من أصوات الجهاز. لا توجد في الأجهزة أصوات أطفال حقيقية: «بنت» و«صبي» صوتان جُعلا أحدّ. المس «استمع» لتسمعه.',
         'لاحقاً، في الإعدادات ← الصوت: السرعة، والصوت المستخدم لكل لغة. يمكن أيضاً أن يسجّل أحد أفراد العائلة كلمة بصوته.',
       ],
     },

@@ -40,16 +40,20 @@
   ship voice packs, and do not make the Arabic voice follow the dialect, unless asked. The code stays, switched
   off by the empty index (`npm run build:voices`, `src/lib/dialectVoice.ts`, `src/data/voicePackIndex.ts`).
 - Voice (owner's decisions, November 2026): every voice is the device's own, or a family's recording of a
-  word. No paid speech service: Microsoft Azure children's voices were built and removed the same day; do not
-  add a speech service, a server function for speech or a key for one unless asked. The family only chooses
-  Female or Male (`plainKind` in `src/lib/voices.ts`; Settings → Voice and the set-up), plus the speed. "Device
-  voice", the voice's age (child), its height and "a specific voice" were removed from the screens on purpose:
-  do not bring them back unless asked. The code that made child voices is still in `chooseVoice` (`CHILD`),
-  unused; a man's voice raised to make a boy sounded like an adult on the owner's iPad.
-- A man's / woman's voice is chosen by name in `src/lib/voices.ts`: machine-like and joke voices (`ROBOTIC`)
-  come last. A family's own recording of a word (`overrides[id].audio[lang]`) always wins over any voice.
-  Child voices are a woman's voice raised (`CHILD`): the girl clearly higher than the boy, and the boy on
-  another woman's voice of the same country when there is one. Keep both sounding like children.
+  word (`overrides[id].audio[lang]`, which always wins). No paid speech service: Microsoft Azure children's
+  voices were built and removed the same day; do not add a speech service, a server function for speech or a
+  key for one unless asked. The family chooses one of FOUR voices, in every language: Woman, Man, Girl, Boy
+  (`voiceOption` / `optionParts` in `src/lib/voices.ts`; Settings → Voice and the set-up), plus the speed.
+  "Device voice", the voice height and "a specific voice" were removed from the screens on purpose: do not
+  bring them back, and never remove the Girl and Boy voices (the owner was upset when they went).
+- How the four are made (`chooseVoice`): voices are told apart by name (Android: by code, `ANDROID_MEN`);
+  machine-like and joke voices (`ROBOTIC`) come last. Girl = a woman's voice raised (`CHILD.girl`, the owner
+  judged it good: do not change it). Boy = a man's voice raised by about 40 % (`boyPitch`: aimed at a young
+  voice the owner liked, 160–190 Hz), a woman's voice a little lower when the device has no man's. Chrome's
+  "Google" voices cannot change height: a child's voice prefers another voice of the device. The boy has not
+  been confirmed by the owner's ear: change its numbers only with them.
+- With a child's voice (Girl or Boy), "Create a new word" requires a recording in the board's language before
+  Save (`PickerPanel`, `t.recordRequired`).
 - App pictograms live in `src/data/concepts.ts` (`app: { url, triggers }`); new built-in folders are added
   to saved profiles by a one-time migration in `src/lib/storage.ts` (only into an empty slot).
 - Back office (`src/ui/admin/`, stage `admin`): only accounts in the database table `admins`; every

@@ -22,7 +22,7 @@ import { pictoCredit, pictoToMedia } from '../../lib/pictoLibrary';
 import { countFeature, reportProblem } from '../../lib/product';
 import { searchWords } from '../../lib/search';
 import { prepareVoices, speakText } from '../../lib/speech';
-import { plainKind } from '../../lib/voices';
+import { optionParts, voiceOption, type VoiceOption } from '../../lib/voices';
 import type { VoiceChoice } from '../../lib/voices';
 import { UI_LANG_NAMES } from '../../i18n/ui';
 import type { AppLink, ArabicDialect, CellDisplay, Lang, Profile, UiLang, WordClass } from '../../model/types';
@@ -486,7 +486,7 @@ function ConceptEditorBody({ conceptId, only }: { conceptId: string; only?: 'ima
 function VoicesUsed({ st }: { st: Profile['settings'] }) {
   const { t } = useApp();
   const [plan, setPlan] = useState<Record<Lang, VoiceChoice> | null>(null);
-  const key = JSON.stringify([st.voiceKind, st.gender, st.arabic]);
+  const key = JSON.stringify([st.voiceKind, st.voiceAge, st.gender, st.arabic]);
   useEffect(() => {
     let alive = true;
     prepareVoices(st).then((p) => alive && setPlan(p));
@@ -645,6 +645,20 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
     setOwnPicture({ name, credit });
   };
   const pictoQuery = draft.fr || draft.en || draft.ar;
+  // With a child's voice a new word is said with the family's or the therapist's own voice:
+  // it is recorded here, in the board's language, before the word can be added.
+  const mustRecord = profile.settings.voiceAge === 'child';
+  const [recording, setRecording] = useState<string | undefined>();
+  const kept = useRef(false);
+  const recordingRef = useRef(recording);
+  recordingRef.current = recording;
+  // A recording made for a word that was not added in the end is not left on the device.
+  useEffect(
+    () => () => {
+      if (recordingRef.current && !kept.current) deleteMedia(recordingRef.current);
+    },
+    [],
+  );
 
   const create = async () => {
     const id = `c_${Date.now().toString(36)}`;
@@ -663,7 +677,9 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
         custom: true,
       };
       if (media) d.overrides[id] = { symbol: { kind: 'media', name: media }, credit };
+      if (recording) (d.overrides[id] ??= {}).audio = { [lang]: recording };
     });
+    kept.current = true;
     setBusy(false);
     onPick(id);
   };
@@ -762,11 +778,17 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
               />
             </View>
           ) : null}
+          {mustRecord && (
+            <Section title={`${t.recordRequired} — ${langName(profile.settings, lang)}`}>
+              <Text style={s.note}>{t.recordRequiredNote}</Text>
+              <Recorder media={recording} onChange={setRecording} />
+            </Section>
+          )}
           <Btn
             kind="primary"
             icon="check"
             label={busy ? t.creating : t.save}
-            disabled={busy || !(draft.fr || draft.en || draft.ar)}
+            disabled={busy || !(draft.fr || draft.en || draft.ar) || (mustRecord && !recording)}
             onPress={create}
           />
         </View>
@@ -1256,23 +1278,25 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
           <Btn small icon="plus" accessibilityLabel="+" onPress={() => set((x) => void (x.speechRate = Math.min(1.6, +(x.speechRate + 0.1).toFixed(1))))} />
         </View>
         <Text style={s.label}>{t.sVoiceKind}</Text>
-        {/* Female or male, nothing else: the voices are the device's own. */}
+        {/* Four voices, all made from the device's own: nothing else to choose. */}
         <Segmented
-          value={plainKind(st)}
-          onChange={(v: 'f' | 'm') =>
-            // What older versions let people choose (age, height, a precise voice) is put back to plain.
+          value={voiceOption(st)}
+          onChange={(v: VoiceOption) =>
+            // What older versions let people choose (height, a precise voice) is put back to plain.
             set((x) => {
-              x.voiceKind = v;
-              x.voiceAge = 'adult';
+              Object.assign(x, optionParts(v));
               x.voicePitch = 1;
               x.voices = {};
             })
           }
           options={[
-            { value: 'f', label: t.voiceFemale },
-            { value: 'm', label: t.voiceMale },
+            { value: 'woman', label: t.voiceWoman },
+            { value: 'man', label: t.voiceMan },
+            { value: 'girl', label: t.voiceGirl },
+            { value: 'boy', label: t.voiceBoy },
           ]}
         />
+        {st.voiceAge === 'child' && <Text style={s.note}>{t.voiceKidsNote}</Text>}
         <VoicesUsed st={st} />
       </Found>
 

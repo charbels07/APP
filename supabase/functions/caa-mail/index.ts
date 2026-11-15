@@ -19,6 +19,10 @@
  *
  * This function must be deployed with "Verify JWT" turned off (the database has no sign-in
  * token to show; the key above replaces it).
+ *
+ * To talk to the database it uses the server key that Supabase hands to every function by
+ * itself: the new "secret key" (SUPABASE_SECRET_KEY) first, the older "service role" key
+ * (SUPABASE_SERVICE_ROLE_KEY, retired in 2027) as a second try. Nothing to set for either.
  */
 import nodemailer from 'npm:nodemailer@6.9.16';
 import { createClient } from 'npm:@supabase/supabase-js@2';
@@ -67,15 +71,26 @@ Deno.serve(async (req) => {
   const user = Deno.env.get('SMTP_USER');
   const pass = Deno.env.get('SMTP_PASS');
   const url = Deno.env.get('SUPABASE_URL');
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  if (!user || !pass || !url || !serviceKey) return json({ error: 'not_configured' }, 503);
+  const serverKeys = [Deno.env.get('SUPABASE_SECRET_KEY'), Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')].filter((k): k is string => !!k);
+  if (!user || !pass || !url || !serverKeys.length) return json({ error: 'not_configured' }, 503);
   const to = Deno.env.get('MAIL_TO') || user;
 
-  const db = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
-  // The database checks the key and hands out the waiting messages (10 at most).
-  const { data: mails, error } = await db.rpc('team_mail_take', { p_key: key });
-  if (error) return json({ error: /forbidden/.test(error.message ?? '') ? 'unauthorized' : 'unavailable' }, /forbidden/.test(error.message ?? '') ? 401 : 503);
-  const waiting = (mails ?? []) as { id: string; subject: string; body: string }[];
+  // The database checks the caller's key and hands out the waiting messages (10 at most).
+  // If the project no longer accepts one of the two server keys, the other one is tried.
+  let db: ReturnType<typeof createClient> | null = null;
+  let waiting: { id: string; subject: string; body: string }[] = [];
+  for (const serverKey of serverKeys) {
+    const client = createClient(url, serverKey, { auth: { persistSession: false, autoRefreshToken: false } });
+    const { data: mails, error } = await client.rpc('team_mail_take', { p_key: key });
+    if (!error) {
+      db = client;
+      waiting = (mails ?? []) as typeof waiting;
+      break;
+    }
+    // "forbidden" is the database's own answer to a wrong caller key: no second try.
+    if (/forbidden/.test(error.message ?? '')) return json({ error: 'unauthorized' }, 401);
+  }
+  if (!db) return json({ error: 'unavailable' }, 503);
   if (!waiting.length) return json({ sent: 0, failed: 0 });
 
   const transport = nodemailer.createTransport({

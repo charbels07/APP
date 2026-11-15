@@ -264,7 +264,7 @@ select * from public.team_mail_check();
 | Weekly job planned: no | run `select public.team_mail_plan();` |
 | Last answers of the function: 401 | *Verify JWT* is still on (step 1) |
 | … 404 | the function is not deployed, or is not called `caa-mail` |
-| … 503 | a secret of step 2 is missing |
+| … 503 | a secret of step 2 is missing, or the function is an older copy: paste `index.ts` again and deploy |
 | Last error from the mailbox: "Invalid login" | the app password is wrong: make a new one and replace `SMTP_PASS` |
 
 To read the weekly e-mail without waiting for Monday: `select public.team_mail_weekly();` (one a

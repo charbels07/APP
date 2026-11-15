@@ -39,7 +39,9 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'method' }, 405);
 
   // 1. A signed-in account (parent, professional or a child's device), with calls left today.
-  const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
+  // The project's public key: the new "publishable key" first, the older "anon" key otherwise
+  // (Supabase hands both to functions by itself; the old one is retired in 2027).
+  const sb = createClient(Deno.env.get('SUPABASE_URL')!, (Deno.env.get('SUPABASE_PUBLISHABLE_KEY') || Deno.env.get('SUPABASE_ANON_KEY'))!, {
     global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } },
   });
   const { data: who } = await sb.auth.getUser();

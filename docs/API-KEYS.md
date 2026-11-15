@@ -12,7 +12,7 @@ Supabase values are allowed inside the app.
 | Service | What it does | Key | Where it goes | Today |
 |---|---|---|---|---|
 | **Supabase** (server) | Accounts, children's profiles, teams, files, back office | Project address + *publishable* key (public) | `.env` on your computer and the two build variables in Cloudflare | Done |
-| Supabase *secret* key | Full access to the database | Secret | Nowhere in the app. Only in Supabase itself (server functions read it there) | Never used by the app |
+| Supabase *secret* key | Full access to the database | Secret | Nowhere in the app. Only in Supabase itself: it hands it to the server functions by itself (`SUPABASE_SECRET_KEY`; the older `SUPABASE_SERVICE_ROLE_KEY` is retired in early 2027, the functions read the new one first) | Never used by the app |
 | **Cloudflare** | Hosts the website | Your Cloudflare account | Connected to the GitHub repository | Done |
 | **E-mail sender** (confirmation codes, password reset) | Sends the app's e-mails | SMTP user + password | Supabase → Authentication → SMTP settings | Done with a Gmail app password. For real families, a mail service (Resend, Brevo, SendGrid…) delivers better and sends more per hour |
 

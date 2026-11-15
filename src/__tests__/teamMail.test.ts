@@ -37,6 +37,7 @@ beforeEach(() => {
     MAIL_TO: 'team@example.test',
     SUPABASE_URL: 'https://abcdefghijklmnopqrst.supabase.co',
     SUPABASE_SERVICE_ROLE_KEY: 'service-key',
+    SUPABASE_SECRET_KEY: undefined,
     SMTP_HOST: undefined,
   });
 });
@@ -107,6 +108,35 @@ describe('caa-mail: the postman of the team', () => {
     mockRpc.mockResolvedValueOnce({ data: [{ id: 'm1', subject: 's', body: 'b' }], error: null }).mockResolvedValue({ data: null, error: null });
     await call();
     expect(mockSendMail.mock.calls[0][0].to).toBe('app@example.test');
+  });
+
+  it('uses the new server key first, the older one if the first is not accepted, and gives up cleanly without any', async () => {
+    env.SUPABASE_SECRET_KEY = 'sb_secret_new';
+    // The new key works: the old one is never tried.
+    mockRpc.mockResolvedValueOnce({ data: [], error: null });
+    expect((await call()).status).toBe(200);
+    expect(mockCreateClient.mock.calls.map((c) => (c as unknown[])[1])).toEqual(['sb_secret_new']);
+    // The new key is refused by the project: the old one is tried, and the message leaves.
+    mockCreateClient.mockClear();
+    mockRpc.mockReset();
+    mockRpc
+      .mockResolvedValueOnce({ data: null, error: { message: 'Invalid API key' } })
+      .mockResolvedValueOnce({ data: [{ id: 'm1', subject: 's', body: 'b' }], error: null })
+      .mockResolvedValue({ data: null, error: null });
+    expect(await (await call()).json()).toEqual({ sent: 1, failed: 0 });
+    expect(mockCreateClient.mock.calls.map((c) => (c as unknown[])[1])).toEqual(['sb_secret_new', 'service-key']);
+    // Neither is accepted: "unavailable", and nothing is sent.
+    mockRpc.mockReset();
+    mockRpc.mockResolvedValue({ data: null, error: { message: 'Invalid API key' } });
+    mockSendMail.mockClear();
+    expect((await call()).status).toBe(503);
+    expect(mockSendMail).not.toHaveBeenCalled();
+    // No server key at all: "not configured", the database is not even asked.
+    env.SUPABASE_SECRET_KEY = undefined;
+    env.SUPABASE_SERVICE_ROLE_KEY = undefined;
+    mockRpc.mockReset();
+    expect((await call()).status).toBe(503);
+    expect(mockRpc).not.toHaveBeenCalled();
   });
 
   it('nothing waiting: no connection to the mailbox at all', async () => {

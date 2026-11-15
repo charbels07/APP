@@ -9,6 +9,8 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { Animated, Image, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { DIALECT_ORDER, dialectName } from '../../data/dialects';
 import { VOICE_INDEX, VOICE_PROVIDER } from '../../data/voicePackIndex';
+import { childVoiceKind } from '../../lib/childVoice';
+import { childVoiceAvailable } from '../../lib/childVoiceSound';
 import { dialectPack } from '../../lib/dialectVoice';
 import { CLASS_NAMES, CLASS_ORDER, CLASS_COLORS, C, radius } from '../theme';
 import { allConceptIds, availableLangs, display, getConcept, isRtl, label, langName, symbolOf, wordClass } from '../../lib/lexicon';
@@ -481,11 +483,25 @@ function ConceptEditorBody({ conceptId, only }: { conceptId: string; only?: 'ima
   );
 }
 
+/** Does the server offer the children's voice? (false until it answered: nothing shows meanwhile) */
+function useChildVoiceOnline(): boolean {
+  const [ok, setOk] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    childVoiceAvailable().then((v) => alive && setOk(v));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return ok;
+}
+
 /** Which device voice each language uses now, with a button to hear it. */
 function VoicesUsed({ st }: { st: Profile['settings'] }) {
   const { t } = useApp();
   const [plan, setPlan] = useState<Record<Lang, VoiceChoice> | null>(null);
   const key = JSON.stringify([st.voiceKind, st.voiceAge, st.voices, st.arabic]);
+  const childOnline = useChildVoiceOnline();
   useEffect(() => {
     let alive = true;
     prepareVoices(st).then((p) => alive && setPlan(p));
@@ -504,10 +520,14 @@ function VoicesUsed({ st }: { st: Profile['settings'] }) {
             {/* Separate lines: an Arabic language name must not turn the French line right-to-left. */}
             <View style={{ flex: 1 }}>
               <Text style={s.classText}>{langName(st, l)}</Text>
-              <Text style={s.note}>
-                {c?.name ?? t.voiceDefaultUsed}
-                {c && !c.exact ? ` — ${t.voiceApprox}` : ''}
-              </Text>
+              {childOnline && childVoiceKind(st, l) ? (
+                <Text style={s.note}>{t.voiceChildReal}</Text>
+              ) : (
+                <Text style={s.note}>
+                  {c?.name ?? t.voiceDefaultUsed}
+                  {c && !c.exact ? ` — ${t.voiceApprox}` : ''}
+                </Text>
+              )}
             </View>
             <Btn small icon="volume" label={t.play} onPress={() => speakText(t.voiceSample[l], l, st)} />
           </View>
@@ -644,6 +664,20 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
     setOwnPicture({ name, credit });
   };
   const pictoQuery = draft.fr || draft.en || draft.ar;
+  // With the child's voice a new word is said with the family's or the therapist's own voice:
+  // it is recorded here, in the board's language, before the word can be added.
+  const mustRecord = profile.settings.voiceAge === 'child';
+  const [recording, setRecording] = useState<string | undefined>();
+  const kept = useRef(false);
+  const recordingRef = useRef(recording);
+  recordingRef.current = recording;
+  // A recording made for a word that was not added in the end is not left on the device.
+  useEffect(
+    () => () => {
+      if (recordingRef.current && !kept.current) deleteMedia(recordingRef.current);
+    },
+    [],
+  );
 
   const create = async () => {
     const id = `c_${Date.now().toString(36)}`;
@@ -662,7 +696,9 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
         custom: true,
       };
       if (media) d.overrides[id] = { symbol: { kind: 'media', name: media }, credit };
+      if (recording) (d.overrides[id] ??= {}).audio = { [lang]: recording };
     });
+    kept.current = true;
     setBusy(false);
     onPick(id);
   };
@@ -761,11 +797,17 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
               />
             </View>
           ) : null}
+          {mustRecord && (
+            <Section title={`${t.recordRequired} — ${langName(profile.settings, lang)}`}>
+              <Text style={s.note}>{t.recordRequiredNote}</Text>
+              <Recorder media={recording} onChange={setRecording} />
+            </Section>
+          )}
           <Btn
             kind="primary"
             icon="check"
             label={busy ? t.creating : t.save}
-            disabled={busy || !(draft.fr || draft.en || draft.ar)}
+            disabled={busy || !(draft.fr || draft.en || draft.ar) || (mustRecord && !recording)}
             onPress={create}
           />
         </View>
@@ -1029,6 +1071,7 @@ function NothingFound({ text }: { text: string }) {
 }
 
 export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
+  const childOnline = useChildVoiceOnline();
   const app = useApp();
   const { profile, t } = app;
   const sess = useSession();
@@ -1293,7 +1336,16 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
             { value: 'child', label: t.voiceChild },
           ]}
         />
-        {st.voiceAge === 'child' && <Text style={s.note}>{t.voiceChildNote}</Text>}
+        {st.voiceAge === 'child' && !childOnline && <Text style={s.note}>{t.voiceChildNote}</Text>}
+        {/* Only when the server offers the children's voice: the family is told what travels, and can refuse. */}
+        {st.voiceAge === 'child' && childOnline && (
+          <Toggle
+            label={t.sChildVoiceOnline}
+            value={st.childVoiceOnline !== false}
+            onChange={(v) => set((x) => void (x.childVoiceOnline = v))}
+            note={`${t.sChildVoiceOnlineNote}${st.childVoiceOnline === false ? ` ${t.voiceChildNote}` : ''}`}
+          />
+        )}
         {/* Only when the app has a voice for the family's dialect. */}
         {dialectPack({ ...st, dialectVoice: true }) && (
           <Toggle label={t.sDialectVoice} value={st.dialectVoice !== false} onChange={(v) => set((x) => void (x.dialectVoice = v))} note={t.sDialectVoiceNote} />

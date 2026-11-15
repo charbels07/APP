@@ -593,6 +593,22 @@ without being in caregiver mode.
 | Who is still never asked | Only the accounts of the app's own team (your decision). |
 | Tested | In a browser, with a therapist's account from sign-up to the workspace, at computer and phone size: choosing the code (a code too easy is refused), then Settings, Caregiver mode and the shortcut each ask it; a wrong code is refused. |
 
+## Round 33 — A real child's voice in French and English, and new words recorded
+
+The child's voice was a woman's voice of the tablet made higher, and it sounded odd. After listening
+to samples, the owner chose voices of Microsoft Azure AI Speech: **Maisie** (English girl), **Eloise**
+(French girl) and **Dustin** (boy, both languages, a little higher). Arabic is left as it was.
+
+| What | How |
+|---|---|
+| Who says what | `src/lib/childVoice.ts` (pure, tested): voice age "Child" + French or English + the family did not refuse (`settings.childVoiceOnline`) + no precise device voice chosen → girl or boy. |
+| Getting the sound | `src/lib/childVoiceSound.ts`: the device's own copy first (`src/lib/saidCache(.web).ts`: a file per phrase in the app's cache, the browser's Cache Storage on the web), otherwise the server function `caa-voice`. After 3.5 seconds without an answer, or offline, the tablet's voice says it: a child is never left silent. |
+| Speaking | `speakSegments` (`src/lib/speech.ts`): a whole run of words is one phrase, said in one go; a word recorded by the family still plays its recording. The family's speech rate applies. |
+| The server | `supabase/functions/caa-voice` (Deno): checks the request, counts the call in the database (`count_voice_call`: people who look after a child, 1,500 a day each, 40,000 for everyone), asks Azure with the voice it chooses itself, returns the MP3. Key = Supabase secrets `AZURE_SPEECH_KEY`, `AZURE_SPEECH_REGION`. |
+| Privacy | The text to say travels to Microsoft, without name or account. The family reads it in Settings → Voice (and in the set-up) and can turn it off. The sounds kept on a device are erased with the rest (`forgetEverything`). |
+| New words | With a child's voice, "Create a new word" asks for a recording in the board's language before "Save" (`PickerPanel`): the new word is said with the family's or the therapist's own voice. Recordings stay on the device that made them; elsewhere the word is said by the children's voice. |
+| Tested | `src/__tests__/childVoice.test.ts`; database: `scenario.sql`, `security_scenario.sql`. The function was tried against the real service for the four voices; the whole chain (app → function → Azure) can only be tried once the function is deployed. |
+
 ## How everything is checked
 
 | Check | What it does |
@@ -648,6 +664,11 @@ without being in caregiver mode.
   Gulf, Iraqi, Standard Arabic) were written without a native reviewer. Before selling in a country,
   have its list read by a speech therapist or a parent from there (`src/data/dialectWords.ts`).
   North African dialects (Moroccan, Algerian, Tunisian) are not included.
+- **Children's voice**: needs the `caa-voice` function deployed with an Azure Speech key
+  (`docs/API-KEYS.md`); until then the tablet's voice speaks. A phrase never said before needs
+  internet once. Words added in bulk (a new activity board, the names of the set-up) are not asked a
+  recording. The boy's voice is a young man's voice raised a little: no real boy's voice exists at
+  the service. Microsoft must be named in the privacy notice before real families.
 - **Dialect voices**: tried and dropped for now (the generated voices were judged bad by a native
   listener). Arabic is read by the device's standard Arabic voice; families record the words that do not
   sound right.

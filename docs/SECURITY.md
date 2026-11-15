@@ -47,6 +47,7 @@ then fixed, then covered by an automatic test.
 | After "Sign out", the child's whole copy (name, words, caregiver code) stayed in the browser. | Signing out sends what was not sent, then really erases it; an open board can no longer write it back. A choice also erases photos and recordings (shared computer). |
 | Caregiver code: 1234 for everyone, shown on the keypad of the real app, unlimited tries. | No hint anywhere and no code to know beforehand: the first time, the person chooses the code (typed twice). 5 wrong tries then a pause that grows. |
 | A team member with editing rights could turn on "record sentences" or "share statistics". | These two choices and the caregiver code can only be changed by the family, in the database and in the app. |
+| Any throw-away sign-in could make the children's voice speak (each new phrase is billed by the speech service). | `count_voice_call`: only people who look after a child, a daily count per account and a ceiling for the whole service; the function receives a text, a language and "girl / boy" only, chooses the voice itself and escapes the text. |
 | Any throw-away sign-in could use the AI helper (40 calls a day each) at your cost. | The helper is for people who look after a child here, with a ceiling for the whole service each day. (It is not deployed on the real server yet.) |
 
 ### Medium

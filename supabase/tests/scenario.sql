@@ -234,6 +234,11 @@ select set_config('request.jwt.claim.sub', :'sarah', false);
 select test.ok((select count_ai_call() = 1), 'each account has its own count');
 select test.ok((select count(*) = 0 from ai_calls), 'nobody reads the AI counters from the app');
 
+-- Children's voice: the same kind of counter, per account and per day.
+select set_config('request.jwt.claim.sub', :'rita', false);
+select test.ok((select count_voice_call() = 1) and (select count_voice_call() = 2), 'calls to the children''s voice are counted per account and per day');
+select test.ok((select count(*) = 0 from voice_calls) and (select count(*) = 0 from voice_budget), 'nobody reads the voice counters from the app');
+
 -- This tablet tells which version of the app it runs.
 select set_config('request.jwt.claim.sub', :'rita', false);
 select test.ok((select (register_device((select v::uuid from test.ids where k = 'adam'), 'ipad-rita', 'iPad', 'companion', 'ios', '1.2.0')).app_version = '1.2.0'),

@@ -39,6 +39,13 @@
   listener). Arabic is read by the device's standard Arabic voice whatever the dialect; do not generate or
   ship voice packs, and do not make the Arabic voice follow the dialect, unless asked. The code stays, switched
   off by the empty index (`npm run build:voices`, `src/lib/dialectVoice.ts`, `src/data/voicePackIndex.ts`).
+- Children's voice (owner's decision, November 2026): with voice age "Child", French and English are said by
+  voices of Microsoft Azure AI Speech chosen by the owner by ear (Maisie EN girl, Eloise FR girl, Dustin boy in
+  both), through the server function `caa-voice` (`src/lib/childVoice.ts`, `childVoiceSound.ts`, sounds kept by
+  `saidCache`). Do not change these voices unless asked. The tablet's voice stays the safety net (offline, not
+  deployed, Arabic): never leave a child silent, and show the setting only when `childVoiceAvailable()`. The
+  family is told the text travels to Microsoft and can refuse (`settings.childVoiceOnline`); never send the
+  child's name. With a child's voice, "Create a new word" requires a recording before Save (`PickerPanel`).
 - A man's / woman's voice is chosen by name in `src/lib/voices.ts`: machine-like and joke voices (`ROBOTIC`)
   come last. A family's own recording of a word (`overrides[id].audio[lang]`) always wins over any voice.
   Child voices are a woman's voice raised (`CHILD`): the girl clearly higher than the boy, and the boy on

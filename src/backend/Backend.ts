@@ -174,6 +174,11 @@ export interface Backend {
   askAi?(req: AiRequest, signal?: AbortSignal): Promise<unknown>;
   /** Is the AI helper installed on the server? (When it is not, the app shows nothing about AI.) */
   aiReady?(): Promise<boolean>;
+  /** Children's voice (server function "caa-voice"): the sound (base64 MP3) of a French or English
+   *  phrase said by a child's voice. Only the text, its language and girl / boy are sent. */
+  sayAsChild?(req: { text: string; lang: 'fr' | 'en'; kind: 'f' | 'm' }): Promise<string>;
+  /** Is the children's voice installed on the server, with its key? */
+  childVoiceReady?(): Promise<boolean>;
   /** Demonstration only (local backend): fills the progress pages with an example. */
   demoSeedUsage?(profileId: string, label: (id: string) => string): Promise<void>;
 

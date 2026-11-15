@@ -10,6 +10,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { clearMedia, deleteMedia } from './media';
 import { clearExports } from './platform';
+import { clearSaid } from './saidCache';
 
 /** Children erased during this run of the app: nothing may write their copy back. */
 const gone = new Set<string>();
@@ -70,6 +71,8 @@ export async function forgetEverything(opts: { media?: boolean; beforeSignOut?: 
   }
   await AsyncStorage.multiRemove(mine).catch(() => {});
   await clearExports().catch(() => {});
+  // What the children's voice said is kept as sounds on the device: a child's words too.
+  await clearSaid().catch(() => {});
   if (opts.media) await clearMedia().catch(() => {});
 }
 

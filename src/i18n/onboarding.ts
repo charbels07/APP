@@ -48,6 +48,7 @@ const fr = {
   voiceAge: 'Âge de la voix',
   voiceAdult: 'Adulte',
   voiceChild: 'Enfant',
+  voiceOnlineNote: 'En français et en anglais, la voix d’enfant est une vraie voix d’enfant qui vient d’internet : le texte à dire est envoyé à un service de voix (Microsoft), sans le nom de l’enfant. Vous l’entendrez une fois le tableau créé ; elle se coupe dans Réglages → Voix.',
   listen: 'Écouter',
   voiceSample: { fr: 'Bonjour, je veux jouer.', en: 'Hello, I want to play.', ar: 'مرحبا، بدي إلعب.' },
 
@@ -236,6 +237,7 @@ const en: Dict = {
   voiceAge: 'Voice age',
   voiceAdult: 'Adult',
   voiceChild: 'Child',
+  voiceOnlineNote: 'In French and English, the child’s voice is a real child’s voice that comes from the internet: the text to say is sent to a speech service (Microsoft), without the child’s name. You will hear it once the board is created; it can be turned off in Settings → Voice.',
   listen: 'Listen',
   voiceSample: fr.voiceSample,
 
@@ -409,6 +411,7 @@ const ar: Dict = {
   voiceAge: 'عمر الصوت',
   voiceAdult: 'بالغ',
   voiceChild: 'طفل',
+  voiceOnlineNote: 'بالفرنسية والإنجليزية، صوت الطفل هو صوت طفل حقيقي يأتي عبر الإنترنت: يُرسَل النص المطلوب نطقه إلى خدمة صوت (مايكروسوفت)، من دون اسم الطفل. ستسمعه بعد إنشاء اللوحة، ويمكن إيقافه من الإعدادات ← الصوت.',
   listen: 'استمع',
   voiceSample: fr.voiceSample,
 

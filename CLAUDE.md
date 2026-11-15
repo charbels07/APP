@@ -4,6 +4,12 @@
   `node_modules/<pkg>/build/*.d.ts` before using an API instead of relying on memory.
 - Use `EXPO_OFFLINE=1 npx expo install <pkg>` (the Expo API host may be unreachable).
 - Checks before committing: `npm run typecheck` and `npm test`.
+- Publishing (owner's decision, November 2026): every finished change goes on the live app without
+  asking. Once the checks pass: commit, push the session branch, open a pull request into the
+  repository's default branch (`claude/amazing-ptolemy-w798kn`, the one Cloudflare publishes) and merge
+  it; Cloudflare rebuilds the web app by itself. If the default branch moved meanwhile, bring it into the
+  session branch and run the checks again first. Database migrations (`supabase/migrations`) are not
+  published by this: say so when a change needs one.
 - No Expo Router on purpose: the app is one surface with a persistent universal bar
   (`src/ui/Root.tsx`); overlays live inside the content area so the bar is always reachable.
 - Vocabulary is concept-based (`src/data/concepts.ts`); never move core cells

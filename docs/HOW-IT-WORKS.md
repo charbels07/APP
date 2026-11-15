@@ -603,6 +603,23 @@ without being in caregiver mode.
 | New words | With Girl or Boy, "Create a new word" asks for a recording in the board's language before "Save" (`PickerPanel`). A recording stays on the device that made it. Words added in bulk (a new activity board, the names of the set-up) are not asked one. |
 | Children's voices from a service | Tried (Microsoft Azure AI Speech) and removed the same day at the owner's request: billed per character. |
 
+## Round 34 — Settings tidied into ten groups
+
+The Board page of the settings was one long page where "Communication" held fifteen unrelated things.
+It is now ten groups, closed at first, opened by a touch (`Group` in `src/ui/panels/CaregiverPanels.tsx`):
+Languages, Words and pictures, Display, Touch, Sentence, Voice, Universal bar, Help button, Code and data,
+About. Searching still works: only the groups that hold the word are shown, already open.
+
+| Removed because it was there twice | Where it stays |
+|---|---|
+| "Open the guide" at the top | The Guide button of the bar |
+| Child lock | The Lock button of the bar |
+| Export profile (with an account) | Account → Privacy |
+| Menus' language on a family's Account page | Settings → Board → Languages |
+
+Labels were shortened and most explaining sentences removed (Arabic, word places, repeat delay, wiggle,
+week and month schedules, the bar). The guide and the set-up help name the new groups, in three languages.
+
 ## How everything is checked
 
 | Check | What it does |

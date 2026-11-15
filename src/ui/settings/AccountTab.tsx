@@ -47,7 +47,7 @@ export function AccountTab({ board, openTeam }: { board: BoardCtx; openTeam: () 
         <Note text={x.subscriptionLater} />
       </Section>
       <Privacy board={board} x={x} />
-      <Preferences x={x} />
+      <Preferences x={x} noLang />
       <WriteTeam />
       <Help x={x} />
     </>
@@ -334,13 +334,14 @@ function Privacy({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
   );
 }
 
-export function Preferences({ x }: { x: SettingsStrings }) {
+/** `noLang`: on a child's board the menus' language is already in Settings → Board → Languages. */
+export function Preferences({ x, noLang }: { x: SettingsStrings; noLang?: boolean }) {
   const { uiLang, setUiLang, account, updatePrefs } = useSession();
   const n = account?.prefs.notifications ?? { invitations: true, proposals: true, sync: true, billing: true };
   return (
     <Section title={x.prefs}>
-      <Note text={x.interfaceLang} />
-      <Segmented<UiLang> value={uiLang} onChange={setUiLang} options={(['fr', 'en', 'ar'] as UiLang[]).map((l) => ({ value: l, label: UI_LANG_NAMES[l] }))} />
+      {!noLang && <Note text={x.interfaceLang} />}
+      {!noLang && <Segmented<UiLang> value={uiLang} onChange={setUiLang} options={(['fr', 'en', 'ar'] as UiLang[]).map((l) => ({ value: l, label: UI_LANG_NAMES[l] }))} />}
       <Note text={x.notifications} />
       {(['invitations', 'proposals', 'sync'] as const).map((k) => (
         <Toggle key={k} label={x.notif[k]} value={n[k] !== false} onChange={(v) => void updatePrefs({ notifications: { ...n, [k]: v } })} />

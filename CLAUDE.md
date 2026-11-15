@@ -55,6 +55,13 @@
   been confirmed by the owner's ear: change its numbers only with them.
 - With a child's voice (Girl or Boy), "Create a new word" requires a recording in the board's language before
   Save (`PickerPanel`, `t.recordRequired`).
+- Settings → Board page (owner's request, November 2026: "tidy, simple words, nothing twice"): ten groups
+  closed at first (`Group` in `CaregiverPanels.tsx`): Languages, Words and pictures, Display, Touch, Sentence,
+  Voice, Universal bar, Help button, Code and data, About. A new control goes into the group it belongs to,
+  with a short label and no explaining sentence unless the choice cannot be understood without one. Nothing
+  appears twice: the child lock and the guide are on the bar (not in the settings), the profile's backup is
+  on the Account page when there is an account, the menus' language is in Languages (not in a family's
+  Account page). The guide's "settings" chapter names the groups; keep its step order (`setupHelp.ts`).
 - App pictograms live in `src/data/concepts.ts` (`app: { url, triggers }`); new built-in folders are added
   to saved profiles by a one-time migration in `src/lib/storage.ts` (only into an empty slot).
 - Back office (`src/ui/admin/`, stage `admin`): only accounts in the database table `admins`; every

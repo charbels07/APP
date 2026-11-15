@@ -157,17 +157,17 @@ export const SETUP_HELP: Record<SetupHelpId, SetupHelp> = {
       fr: [
         'C’est l’aspect des cases : les couleurs habituelles, des textes plus grands et plus gras, ou des cases sombres à bordure vive (contraste élevé) pour un enfant qui voit moins bien.',
         'Dans tous les cas, la couleur d’une case garde son sens (personnes, actions, mots qui décrivent…).',
-        'Le petit aperçu montre le résultat. Cela se change dans Réglages → Présentation et accès.',
+        'Le petit aperçu montre le résultat. Cela se change dans Réglages → Affichage.',
       ],
       en: [
         'This is how the cards look: the usual colours, bigger and bolder text, or dark cards with a bright border (high contrast) for a child who sees less well.',
         'In every case the colour of a card keeps its meaning (people, actions, describing words…).',
-        'The small preview shows the result. It can be changed in Settings → Presentation and access.',
+        'The small preview shows the result. It can be changed in Settings → Display.',
       ],
       ar: [
         'هذا شكل البطاقات: الألوان المعتادة، أو نص أكبر وأعرض، أو بطاقات داكنة بإطار زاهٍ (تباين عالٍ) لطفل يرى أقل.',
         'في كل الحالات يحتفظ لون البطاقة بمعناه (أشخاص، أفعال، كلمات وصف…).',
-        'المعاينة الصغيرة تُظهر النتيجة. يمكن تغييره في الإعدادات ← العرض وطريقة الاختيار.',
+        'المعاينة الصغيرة تُظهر النتيجة. يمكن تغييره في الإعدادات ← العرض.',
       ],
     },
     guide: [
@@ -256,17 +256,17 @@ export const SETUP_HELP: Record<SetupHelpId, SetupHelp> = {
       fr: [
         'C’est la façon dont une touche compte. Toucher puis lever le doigt : le mot est dit quand le doigt se lève, l’enfant peut donc glisser jusqu’à la bonne case. Dès que le doigt touche : pour un enfant qui tape vite. Garder le doigt appuyé : le doigt doit rester un instant, ce qui évite les touches par accident.',
         'Durée d’appui : le temps pendant lequel le doigt doit rester. Délai avant de répéter : empêche le même mot d’être dit plusieurs fois de suite (« pas pas pas »).',
-        'Cela se change dans Réglages → Présentation et accès.',
+        'Cela se change dans Réglages → Toucher.',
       ],
       en: [
         'This is how a touch counts. Touch, then lift the finger: the word is said when the finger lifts, so the child can slide to the right card. As soon as the finger touches: for a child who taps fast. Keep the finger pressed: the finger must stay a moment, which avoids touches by accident.',
         'Hold time: how long the finger must stay. Delay before repeating: stops the same word being said several times in a row (“not not not”).',
-        'It can be changed in Settings → Presentation and access.',
+        'It can be changed in Settings → Touch.',
       ],
       ar: [
         'هذه طريقة احتساب اللمسة. اللمس ثم رفع الإصبع: تُنطق الكلمة عند رفع الإصبع، فيستطيع الطفل أن ينزلق إلى البطاقة الصحيحة. فور لمس الإصبع: لطفل ينقر بسرعة. إبقاء الإصبع مضغوطاً: يجب أن يبقى الإصبع لحظة، وهذا يمنع اللمس بالخطأ.',
         'مدة الضغط: الوقت الذي يجب أن يبقى فيه الإصبع. المهلة قبل التكرار: تمنع نطق الكلمة نفسها مرات متتالية («لا لا لا»).',
-        'يمكن تغييره في الإعدادات ← العرض وطريقة الاختيار.',
+        'يمكن تغييره في الإعدادات ← اللمس.',
       ],
     },
     guide: [{ chapter: 'settings', steps: [3] }],

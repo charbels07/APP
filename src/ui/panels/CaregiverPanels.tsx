@@ -27,7 +27,9 @@ import type { VoiceChoice } from '../../lib/voices';
 import { UI_LANG_NAMES } from '../../i18n/ui';
 import type { AppLink, ArabicDialect, CellDisplay, Lang, Profile, UiLang, WordClass } from '../../model/types';
 import { useApp, useBack } from '../../state/AppState';
-import { Btn, Field, Panel, Section, Segmented, Toggle } from '../common';
+import { Btn, Field, Panel, Section, Segmented, Toggle, useNavRtl } from '../common';
+import { Icon, type IconName } from '../Icon';
+import { expanded } from '../a11y';
 import { PictoSearch } from '../PictoPicker';
 import { SearchBox } from '../SearchBox';
 import { VoiceButton } from '../VoiceButton';
@@ -1035,14 +1037,35 @@ export function matchesSearch(q: string, texts: string[]): boolean {
   return q.split(/\s+/).filter(Boolean).every((w) => hay.includes(w));
 }
 
-/** A part of the settings page: while searching, only shown when it holds what is searched. */
-function Found({ title, children }: { title: string; children: React.ReactNode }) {
+/**
+ * A group of the settings page: a line with its name, opened by a touch. While searching, only
+ * the groups that hold what is searched are shown, already open.
+ */
+function Group({ title, icon, children }: { title: string; icon: IconName; children: React.ReactNode }) {
   const search = useContext(SettingsSearch);
+  const rtl = useNavRtl();
+  const [open, setOpen] = useState(false);
   if (search.q) {
     if (!matchesSearch(search.q, [title, ...wordsIn(children)])) return null;
     search.hits.current += 1;
   }
-  return <Section title={title}>{children}</Section>;
+  const shown = open || !!search.q;
+  return (
+    <View style={[s.group, shown && s.groupOpen]}>
+      <Pressable
+        onPress={() => setOpen(!shown)}
+        style={({ pressed }) => [s.groupHead, rtl && { flexDirection: 'row-reverse' }, pressed && { opacity: 0.7 }]}
+        accessibilityRole="button"
+        accessibilityLabel={title}
+        {...expanded(shown)}
+      >
+        <Icon name={icon} size={22} color={shown ? C.accent : C.text} />
+        <Text style={[s.groupTitle, shown && { color: C.accent }, rtl && { textAlign: 'right' }]}>{title}</Text>
+        <Icon name={shown ? 'chevronDown' : rtl ? 'chevronLeft' : 'chevronRight'} size={20} color={C.textMuted} />
+      </Pressable>
+      {shown && <View style={s.groupBody}>{children}</View>}
+    </View>
+  );
 }
 
 /** Shown under the page when the search found nothing in it. */
@@ -1073,10 +1096,38 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
 
   return (
     <>
-      {!searching && <Btn icon="book" label={t.openGuide} onPress={() => app.setOverlay({ kind: 'guide', back: { kind: 'settings' } })} />}
-      <Found title={t.sCommunication}>
-        <Text style={s.label}>{t.sCommLang}</Text>
-        <Segmented value={st.lang} onChange={(v: Lang) => set((x) => void (x.lang = v))} options={langs.map((l) => ({ value: l, label: langName(st, l) }))} />
+      {/* Ten short groups, closed at first: one thing in one place (the lock and the guide are on the bar). */}
+      <Group title={t.gLanguages} icon="globe">
+        <Text style={s.label}>{t.sChildLangs}</Text>
+        <View style={s.wrapRow}>
+          {langs.map((l) => {
+            const on = (st.langs ?? [st.lang]).includes(l);
+            return (
+              <Btn
+                key={l}
+                small
+                kind={on ? 'primary' : 'secondary'}
+                icon={on ? 'check' : undefined}
+                label={langName(st, l)}
+                onPress={() =>
+                  set((x) => {
+                    const cur = x.langs?.length ? x.langs : [x.lang];
+                    const next = on ? cur.filter((y) => y !== l) : [...cur, l];
+                    if (!next.length) return;
+                    x.langs = next;
+                    if (!next.includes(x.lang)) x.lang = next[0];
+                  })
+                }
+              />
+            );
+          })}
+        </View>
+        {langs.length > 1 && (
+          <>
+            <Text style={s.label}>{t.sCommLang}</Text>
+            <Segmented value={st.lang} onChange={(v: Lang) => set((x) => void (x.lang = v))} options={langs.map((l) => ({ value: l, label: langName(st, l) }))} />
+          </>
+        )}
         <Text style={s.label}>{t.sArabic}</Text>
         <View style={s.wrapRow} accessibilityRole="radiogroup">
           {([...DIALECT_ORDER, 'none'] as ArabicDialect[]).map((d) => {
@@ -1093,22 +1144,15 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
             );
           })}
         </View>
-        <Text style={s.note}>{t.sArabicNote}</Text>
         <Text style={s.label}>{t.sInterface}</Text>
         <Segmented
           value={st.uiLang}
           onChange={(v: UiLang) => app.setUiLang(v)}
           options={(['fr', 'en', 'ar'] as UiLang[]).map((l) => ({ value: l, label: UI_LANG_NAMES[l] }))}
         />
-        <Text style={s.label}>{t.sGender}</Text>
-        <Segmented
-          value={st.gender}
-          onChange={(v) => set((x) => void (x.gender = v))}
-          options={[
-            { value: 'm', label: t.masculine },
-            { value: 'f', label: t.feminine },
-          ]}
-        />
+      </Group>
+
+      <Group title={t.gWords} icon="image">
         <Text style={s.label}>{t.sLevel}</Text>
         <Segmented
           value={st.revealLevel}
@@ -1139,73 +1183,6 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
           ]}
         />
         <Toggle label={t.sShowLabels} value={st.showLabels} onChange={(v) => set((x) => void (x.showLabels = v))} />
-        <Toggle label={t.sSpeakOnTap} value={st.speakOnTap} onChange={(v) => set((x) => void (x.speakOnTap = v))} />
-        <Toggle label={t.sAddToStrip} value={st.addToStrip} onChange={(v) => set((x) => void (x.addToStrip = v))} />
-        <Toggle label={t.sGrammar} value={st.grammar} onChange={(v) => set((x) => void (x.grammar = v))} />
-        <Toggle label={t.sQuickZone} value={st.quickZone} onChange={(v) => set((x) => void (x.quickZone = v))} />
-        <Text style={s.label}>{t.sRepeatDelay}</Text>
-        <Segmented
-          value={String(st.repeatDelay ?? 0)}
-          onChange={(v) => set((x) => void (x.repeatDelay = Number(v)))}
-          options={[
-            { value: '0', label: t.repeatOff },
-            ...[1, 2, 3, 5].map((n) => ({ value: String(n), label: `${n} s` })),
-          ]}
-        />
-        <Text style={s.note}>{t.sRepeatNote}</Text>
-        <Toggle
-          label={t.sWiggle}
-          value={!!st.wiggle}
-          note={t.sWiggleNote}
-          onChange={(v) =>
-            set((x) => {
-              x.wiggle = v;
-              // "Fewer animations" would silently stop it: the last choice wins.
-              if (v) x.reduceMotion = false;
-            })
-          }
-        />
-        {!!st.wiggle && <WiggleTry label={t.sWiggleTry} concept="want" />}
-        <Toggle label={t.sAutoApps} value={st.autoOpenApps !== false} onChange={(v) => set((x) => void (x.autoOpenApps = v))} />
-      </Found>
-
-      {board && (
-        <Found title={t.lockTitle}>
-          <ChildLock />
-        </Found>
-      )}
-
-      <Found title={o.presentationAccess}>
-        <Text style={s.label}>{o.langTitle}</Text>
-        <View style={s.wrapRow}>
-          {langs.map((l) => {
-            const on = (st.langs ?? [st.lang]).includes(l);
-            return (
-              <Btn
-                key={l}
-                small
-                kind={on ? 'primary' : 'secondary'}
-                icon={on ? 'check' : undefined}
-                label={langName(st, l)}
-                onPress={() =>
-                  set((x) => {
-                    const cur = x.langs?.length ? x.langs : [x.lang];
-                    const next = on ? cur.filter((y) => y !== l) : [...cur, l];
-                    if (!next.length) return;
-                    x.langs = next;
-                    if (!next.includes(x.lang)) x.lang = next[0];
-                  })
-                }
-              />
-            );
-          })}
-        </View>
-        <Text style={s.label}>{o.visualTitle}</Text>
-        <Segmented
-          value={st.visual ?? 'standard'}
-          onChange={(v: Profile['settings']['visual']) => set((x) => void (x.visual = v))}
-          options={(['standard', 'large', 'contrast'] as const).map((v) => ({ value: v, label: o.visual[v] }))}
-        />
         <Text style={s.label}>{o.pictoSize}</Text>
         <Segmented
           value={st.pictoSize ?? 'normal'}
@@ -1215,6 +1192,41 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
             { value: 'large', label: o.pictoLarge },
           ]}
         />
+      </Group>
+
+      <Group title={t.gDisplay} icon="eye">
+        <Text style={s.label}>{o.visualTitle}</Text>
+        <Segmented
+          value={st.visual ?? 'standard'}
+          onChange={(v: Profile['settings']['visual']) => set((x) => void (x.visual = v))}
+          options={(['standard', 'large', 'contrast'] as const).map((v) => ({ value: v, label: o.visual[v] }))}
+        />
+        <Toggle
+          label={o.reduceMotionToggle}
+          value={!!st.reduceMotion}
+          onChange={(v) =>
+            set((x) => {
+              x.reduceMotion = v;
+              // Pictures that wiggle are an animation: turned off with the others.
+              if (v) x.wiggle = false;
+            })
+          }
+        />
+        <Toggle
+          label={t.sWiggle}
+          value={!!st.wiggle}
+          onChange={(v) =>
+            set((x) => {
+              x.wiggle = v;
+              // "Fewer animations" would silently stop it: the last choice wins.
+              if (v) x.reduceMotion = false;
+            })
+          }
+        />
+        {!!st.wiggle && <WiggleTry label={t.sWiggleTry} concept="want" />}
+      </Group>
+
+      <Group title={t.gTouch} icon="pointer">
         <Text style={s.label}>{o.accessTitle}</Text>
         <Segmented
           value={st.access ?? 'release'}
@@ -1232,44 +1244,36 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
             />
           </>
         )}
-        <Toggle
-          label={o.reduceMotionToggle}
-          value={!!st.reduceMotion}
-          onChange={(v) =>
-            set((x) => {
-              x.reduceMotion = v;
-              // Pictures that wiggle are an animation: turned off with the others.
-              if (v) x.wiggle = false;
-            })
-          }
+        <Text style={s.label}>{t.sRepeatDelay}</Text>
+        <Segmented
+          value={String(st.repeatDelay ?? 0)}
+          onChange={(v) => set((x) => void (x.repeatDelay = Number(v)))}
+          options={[
+            { value: '0', label: t.repeatOff },
+            ...[1, 2, 3, 5].map((n) => ({ value: String(n), label: `${n} s` })),
+          ]}
         />
         <Toggle label={o.hapticsToggle} value={st.haptics !== false} onChange={(v) => set((x) => void (x.haptics = v))} />
-      </Found>
+      </Group>
 
-      <Found title={t.sBar}>
-        <Toggle label={t.tla} value={st.bar.tla} onChange={(v) => set((x) => void (x.bar.tla = v))} />
-        <Toggle label={t.schedule} value={st.bar.schedule} onChange={(v) => set((x) => void (x.bar.schedule = v))} />
-        {/* What the Schedule screen also offers: shown under it, so "schedule" means one thing. */}
-        {st.bar.schedule && (
-          <View style={s.under}>
-            <Toggle
-              label={o.planWeek}
-              note={o.planWeekNote}
-              value={!!st.plans?.week}
-              onChange={(v) => set((x) => void (x.plans = { ...(x.plans ?? { week: false, month: false }), week: v }))}
-            />
-            <Toggle
-              label={o.planMonth}
-              note={o.planMonthNote}
-              value={!!st.plans?.month}
-              onChange={(v) => set((x) => void (x.plans = { ...(x.plans ?? { week: false, month: false }), month: v }))}
-            />
-          </View>
-        )}
-        <Toggle label={t.timer} value={st.bar.timer} onChange={(v) => set((x) => void (x.bar.timer = v))} note={t.sBarNote} />
-      </Found>
+      <Group title={t.gSentence} icon="pencil">
+        <Toggle label={t.sSpeakOnTap} value={st.speakOnTap} onChange={(v) => set((x) => void (x.speakOnTap = v))} />
+        <Toggle label={t.sAddToStrip} value={st.addToStrip} onChange={(v) => set((x) => void (x.addToStrip = v))} />
+        <Toggle label={t.sGrammar} value={st.grammar} onChange={(v) => set((x) => void (x.grammar = v))} />
+        <Text style={s.label}>{t.sGender}</Text>
+        <Segmented
+          value={st.gender}
+          onChange={(v) => set((x) => void (x.gender = v))}
+          options={[
+            { value: 'm', label: t.masculine },
+            { value: 'f', label: t.feminine },
+          ]}
+        />
+        <Toggle label={t.sQuickZone} value={st.quickZone} onChange={(v) => set((x) => void (x.quickZone = v))} />
+        <Toggle label={t.sAutoApps} value={st.autoOpenApps !== false} onChange={(v) => set((x) => void (x.autoOpenApps = v))} />
+      </Group>
 
-      <Found title={t.sVoice}>
+      <Group title={t.sVoice} icon="volume">
         <View style={s.row}>
           <Text style={[s.label, { flex: 1 }]}>
             {t.sRate} : {st.speechRate.toFixed(1)}×
@@ -1298,9 +1302,30 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
         />
         {st.voiceAge === 'child' && <Text style={s.note}>{t.voiceKidsNote}</Text>}
         <VoicesUsed st={st} />
-      </Found>
+      </Group>
 
-      <Found title={t.sHelp}>
+      <Group title={t.sBar} icon="grid">
+        <Toggle label={t.tla} value={st.bar.tla} onChange={(v) => set((x) => void (x.bar.tla = v))} />
+        <Toggle label={t.schedule} value={st.bar.schedule} onChange={(v) => set((x) => void (x.bar.schedule = v))} />
+        {/* What the Schedule screen also offers: shown under it, so "schedule" means one thing. */}
+        {st.bar.schedule && (
+          <View style={s.under}>
+            <Toggle
+              label={o.planWeek}
+              value={!!st.plans?.week}
+              onChange={(v) => set((x) => void (x.plans = { ...(x.plans ?? { week: false, month: false }), week: v }))}
+            />
+            <Toggle
+              label={o.planMonth}
+              value={!!st.plans?.month}
+              onChange={(v) => set((x) => void (x.plans = { ...(x.plans ?? { week: false, month: false }), month: v }))}
+            />
+          </View>
+        )}
+        <Toggle label={t.timer} value={st.bar.timer} onChange={(v) => set((x) => void (x.bar.timer = v))} />
+      </Group>
+
+      <Group title={t.sHelp} icon="help">
         {langs.map((l) => (
           <Field
             key={l}
@@ -1312,18 +1337,16 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
         ))}
         <Field label={t.helpHowI} multiline value={draft.help.howICommunicate} onChangeText={(v) => draft.setHelp((h) => void (h.howICommunicate = v))} style={{ minHeight: 70 }} />
         <Field label={t.helpContact} value={draft.help.emergencyContact} onChangeText={(v) => draft.setHelp((h) => void (h.emergencyContact = v))} />
-      </Found>
+      </Group>
 
-      <Found title={t.sSecurity}>
+      <Group title={t.gCodeData} icon="shield">
         <Field label={app.ownCode ? t.sPinOwn : t.sPin} value={pin} keyboardType="number-pad" maxLength={4} onChangeText={(v) => setPin(v.replace(/\D/g, ''))} />
         {!draft.pinOk && <Text style={s.note}>{pin.length === 4 ? t.pinTooEasy : t.sPinFour}</Text>}
         {app.ownCode && <Text style={s.note}>{t.sPinOwnNote}</Text>}
-      </Found>
-
-      <Found title={t.sData}>
-        <Toggle label={t.sAi} value={st.aiSuggestions !== false} onChange={(v) => set((x) => void (x.aiSuggestions = v))} />
+        <Toggle label={t.sAi} note={t.sAiNote} value={st.aiSuggestions !== false} onChange={(v) => set((x) => void (x.aiSuggestions = v))} />
         <View style={s.wrapRow}>
-          <Btn icon="download" label={t.sExport} onPress={() => exportJson('profil-caa.json', profile)} />
+          {/* With an account, the backup is on the Account page (Privacy): not twice. */}
+          {!board && <Btn icon="download" label={t.sExport} onPress={() => exportJson('profil-caa.json', profile)} />}
           <Btn
             kind="danger"
             icon="trash"
@@ -1335,9 +1358,9 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
             }}
           />
         </View>
-      </Found>
+      </Group>
 
-      <Found title={t.sAbout}>
+      <Group title={t.sAbout} icon="heart">
         <Text style={s.note}>{t.aboutText}</Text>
         {Object.keys(VOICE_INDEX).length > 0 && (
           <Text style={s.note}>
@@ -1345,7 +1368,7 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
           </Text>
         )}
         <PictoCredit lang={profile.settings.uiLang} />
-      </Found>
+      </Group>
       <NothingFound text={t.sSearchNone} />
     </>
   );
@@ -1488,6 +1511,12 @@ const s = StyleSheet.create({
   wrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   note: { fontSize: 13, color: C.textMuted },
   // Switches that belong to the one above them (week and month, under Schedule).
+  // The groups of the settings page (see Group).
+  group: { borderWidth: 1.5, borderColor: C.border, borderRadius: radius.md, backgroundColor: C.surface },
+  groupOpen: { borderColor: C.accent },
+  groupHead: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingHorizontal: 14 },
+  groupTitle: { flex: 1, fontSize: 17, fontWeight: '700', color: C.text },
+  groupBody: { gap: 10, paddingHorizontal: 14, paddingBottom: 14 },
   under: { marginStart: 14, paddingStart: 12, borderStartWidth: 3, borderStartColor: C.border, gap: 4 },
   lockNote: { backgroundColor: C.surfaceAlt, padding: 10, borderRadius: radius.md },
   label: { fontSize: 14, fontWeight: '700', color: C.text },

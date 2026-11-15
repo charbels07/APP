@@ -61,8 +61,8 @@ describe('set-up: the "?" beside each question', () => {
       const o = onboardingStrings(lang);
       const t = strings(lang);
       const text = (id: SetupHelpId) => SETUP_HELP[id].lines[lang].join(' ');
-      expect(text('visual')).toContain(o.presentationAccess);
-      expect(text('access')).toContain(o.presentationAccess);
+      expect(text('visual')).toContain(t.gDisplay);
+      expect(text('access')).toContain(t.gTouch);
       expect(text('voice')).toContain(t.sVoice);
       expect(text('voice')).toContain(o.listen);
       expect(text('review')).toContain(o.edit);

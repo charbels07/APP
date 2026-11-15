@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Accessibility check of the web version: builds the demo, serves it, scans the main screens at
-# several sizes and in Arabic, then tries the keyboard. Usage: npm run test:a11y
+# several sizes, in Arabic and in French, then tries the keyboard. A screen wider than its window
+# counts as a rule break (scripts/a11y/sideways.js). Usage: npm run test:a11y
 # Needs python3 and Playwright (with its Chromium) installed on the machine.
 set -uo pipefail
 cd "$(dirname "$0")/../.."
@@ -16,7 +17,8 @@ until curl -s -o /dev/null "http://localhost:$PORT/"; do sleep 1; done
 # The page must really be the app (not an older server left on this port).
 curl -s "http://localhost:$PORT/" | grep -q "_expo/static/js" || { echo "port $PORT does not serve the build: is something else using it?"; exit 1; }
 FAIL=0
-for cfg in "en-GB 1180 900 computer" "en-GB 390 800 phone" "en-GB 320 640 narrow" "en-GB 590 450 zoom-200" "ar-LB 1180 900 arabic" "ar-LB 390 800 arabic-phone"; do
+# French has the longest names and the Arabic menus are mirrored: both are also tried on the very narrow screen.
+for cfg in "en-GB 1180 900 computer" "en-GB 390 800 phone" "en-GB 320 640 narrow" "en-GB 590 450 zoom-200" "ar-LB 1180 900 arabic" "ar-LB 390 800 arabic-phone" "ar-LB 320 640 arabic-narrow" "fr-FR 320 640 french-narrow"; do
   set -- $cfg
   out=$(node scripts/a11y/scan.js "$PORT" "$1" "$2" "$3" "$4" 2>&1)
   bad=$(echo "$out" | grep " · " | grep -v "no violation")

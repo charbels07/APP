@@ -1,7 +1,7 @@
 # Accessibility check
 
 **Standard:** WCAG 2.2, level AA (the reference most accessibility laws point to) ·
-**Date:** 14 November 2026 · **What was checked:** the web version of the app (same code as the tablet app).
+**Date:** 15 November 2026 · **What was checked:** the web version of the app (same code as the tablet app).
 
 This is a check done by a program and by reading the code. It is **not a certificate**: no tool can
 state that an app "complies everywhere". A formal statement needs an independent audit and tests
@@ -11,7 +11,7 @@ with people who use a screen reader, a switch or a keyboard every day.
 
 | | |
 |---|---|
-| Screens scanned by the program | 52 different screens, at several sizes and in Arabic: 182 scans |
+| Screens scanned by the program | 54 different screens, at several sizes, in Arabic and in French: 211 scans |
 | Rule breaks found at the start | 4 kinds, on almost every screen (see below) |
 | Rule breaks left in the scans | 0 |
 | Keyboard-only use | works: Tab, Enter, Space, Escape; the focus is always visible |
@@ -21,15 +21,20 @@ Run it again at any time: `npm run test:a11y` (about 10 minutes; needs Playwrigh
 
 ## What was scanned
 
-- **Family side** (28 screens): welcome, who are you, sign-up, code, set-up of the child, the board,
+- **Family side** (33 screens): welcome, the try-it board, who are you, sign-up, code, set-up of the
+  child (first name, languages, which Arabic, the "?" explanation, the board to try at the end), the board,
   a folder, the three tabs of the magnifying glass (search, keyboard, model), help, activity boards,
   schedule, timer, guide, caregiver code,
   caregiver mode, word editor, settings (Board, Team, Progress, Account), and the six back-office pages.
-- **Professional side** (15 screens): the four verification steps, the status page, the tour, and
-  every section of the workspace (dashboard, users, create, library, collaborations, learning, account).
+- **Professional side** (21 screens): the four verification steps, the status page, the tour,
+  every section of the workspace (dashboard, users, library, collaborations, guide, account),
+  connecting a user, the library's search and a material's form, and a child's profile prepared by
+  the professional (first step, the page with the parents' code, the board, its three settings pages).
 - **Sizes:** computer (1180 × 900), phone (390 × 800), very narrow (320 × 640, the size WCAG uses for
   "reflow"), and 590 × 450 (a computer window zoomed to 200 %).
-- **Languages:** English everywhere; Arabic (right to left) on 8 screens at two sizes.
+- **Languages:** English everywhere; Arabic (right to left) on 9 screens at three sizes, the very
+  narrow one included; French, which has the longest names, on 10 screens at the very narrow size
+  (the same 9 and the board at the end of the set-up).
 
 ## What was wrong, and what was done
 
@@ -83,8 +88,19 @@ The blue, the red and the green of the app are each a little darker than before.
 | "Home" in a folder's header was 20 px high. | 44 px. |
 | With the timer's options open on a short screen, the board was squashed to a thin strip. | On a short screen the options sit on one line that scrolls sideways. |
 | Chart columns are narrower than 24 px on a phone. | The same figures can be shown as a table (allowed by the rule as an equivalent). |
+| Three boards have a banner above them, with a sentence and buttons: the try-it board ("Preview: try the board freely. Nothing is saved."), the board at the end of the set-up and the professional's material boards. The buttons stayed beside the sentence whatever the width. At 320 px the last button went past the edge of the screen: "Create my account" by 27 px in French (2 px in English), "Finish" of the set-up by 18 px in French, "Save to the library" by 165 px in French. The sentence itself was cut after a few words, on phones too. | One banner for the three (`src/ui/BoardBanner.tsx`): when there is no room for both on one line, the buttons go under the sentence, which now shows in full (three languages). |
 
 No screen scrolls sideways at 320 px, and nothing is lost at 200 % zoom in the scans.
+The run now fails when a screen is wider than its window, on either side (the Arabic menus are
+mirrored, so a row that is too long sticks out on the left): `scripts/a11y/sideways.js`. Before, the
+figure was written in a results file that nobody read, and the try-it board was only opened in
+English: this is how the banner went unnoticed. What scrolls inside its own area (the cards of the
+board on a narrow screen) is not counted.
+
+Not in the run at 320 px: the professional side (scanned at 1180 and 390 px, in English). Tried once
+at 320 px on 15 November 2026 with the same scan: no screen wider than its window in English. In
+French and in Arabic only the demonstration board and a material board were tried there (the
+material board is the one fixed above); the other screens of the workspace were not.
 
 ## What a program cannot check (still to do)
 

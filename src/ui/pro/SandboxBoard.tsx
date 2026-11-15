@@ -20,6 +20,7 @@ import type { Profile } from '../../model/types';
 import { AppProvider, useApp, type Overlay } from '../../state/AppState';
 import { ProBoardContext, type MyAccess } from '../../state/BoardContext';
 import { useSession } from '../../state/Session';
+import { BoardBanner, type BannerTone } from '../BoardBanner';
 import { Btn, Panel, Section } from '../common';
 import { Icon, type IconName } from '../Icon';
 import { Root } from '../Root';
@@ -43,18 +44,11 @@ function StartAt({ edit, view, overlay, onStarted }: { edit?: boolean; view?: 't
   return null;
 }
 
-export function Banner({ icon, text, tone = 'accent', children }: { icon: IconName; text: string; tone?: 'accent' | 'edit' | 'success'; children?: React.ReactNode }) {
-  const { uiLang } = useSession();
-  const color = tone === 'edit' ? C.edit : tone === 'success' ? C.success : C.accent;
-  const bg = tone === 'edit' ? C.editSoft : tone === 'success' ? C.successSoft : C.accentSoft;
+export function Banner({ icon, text, tone = 'accent', children }: { icon: IconName; text: string; tone?: BannerTone; children?: React.ReactNode }) {
   return (
-    <View style={[s.banner, { backgroundColor: bg, borderColor: color }, uiLang === 'ar' && { flexDirection: 'row-reverse' }]}>
-      <Icon name={icon} size={22} color={color} />
-      <Text style={[s.bannerText, { color }, uiLang === 'ar' && { textAlign: 'right' }]} numberOfLines={3}>
-        {text}
-      </Text>
+    <BoardBanner icon={icon} text={text} tone={tone} small>
       {children}
-    </View>
+    </BoardBanner>
   );
 }
 
@@ -336,17 +330,6 @@ function SendPanel({
 }
 
 const s = StyleSheet.create({
-  banner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    borderWidth: 1.5,
-    borderRadius: radius.md,
-    paddingLeft: 12,
-    paddingRight: 6,
-    paddingVertical: 5,
-  },
-  bannerText: { flex: 1, fontWeight: '700', fontSize: 14 },
   quiet: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 8 },
   quietText: { flex: 1, fontWeight: '700', fontSize: 14, color: C.textMuted },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, backgroundColor: C.bg },

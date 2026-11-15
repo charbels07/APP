@@ -54,6 +54,9 @@
   so give states with the helpers of `src/ui/a11y.ts` (`{...checked(on)}`, `selected`, `pressed`, `expanded`,
   `spoken(lang)`); a labelled `Pressable` always has a role; overlays go through `Panel` (dialog, focus,
   Escape); colours come from `src/ui/theme.ts` (contrast is tested). Run `npm run test:a11y` after UI changes.
+  A screen wider than its window fails that run (`scripts/a11y/sideways.js`; French and Arabic are tried at
+  320 px). A sentence with its buttons above the board (`<Root banner>`) is a `BoardBanner`
+  (`src/ui/BoardBanner.tsx`: the buttons go under the sentence when there is no room), never a hand-made row.
 - Security (`docs/SECURITY.md`): the database decides, never the app. A function that receives rights,
   a status or an owner from the app must clean or ignore them (`clean_perms`, column grants); anything
   a person can repeat goes through `rate_limit`; nothing is executable by `anon`. A new rule comes

@@ -1,17 +1,23 @@
 // Accessibility check of the web version (WCAG 2.2 level AA), with axe-core and Playwright.
-// Opens the main screens of the demo build (welcome, sign-up, set-up, board, panels, caregiver mode,
-// word editor, settings, back office) and lists what breaks a rule. Run it through `npm run test:a11y`.
+// Opens the main screens of the demo build (welcome, try-it board, sign-up, set-up and its last board, board, panels,
+// caregiver mode, word editor, settings, back office) and lists what breaks a rule, a screen wider
+// than its window included. Run it through `npm run test:a11y`.
+// Locales: en-GB (every screen), ar-LB and fr-FR (welcome, try-it board, back office, board; in
+// French also the board at the end of the set-up).
 // Needs Playwright on the machine (it is not a dependency of the app).
 // Usage: node scan.js [port] [locale] [width] [height] [tag]
 const { chromium } = require('playwright');
 const fs = require('fs');
 const axeSrc = fs.readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
+const { sideways } = require('./sideways');
 /** Where screenshots and results go: outside the project. */
 const OUT = process.env.A11Y_OUT || require('path').join(require('os').tmpdir(), 'a11y-check');
 const [port = '8770', locale = 'en-GB', W = '1180', H = '900', tag = 'en-desk'] = process.argv.slice(2);
 const L = {
-  'en-GB': { bo: 'Back office (demonstration)', openApp: 'Open the app', cont: 'Continue', create: 'Create my account', parent: /Parent/, pro: /Professional/, name: 'Your name', email: 'Email address', pw: 'Password', verify: 'Verify', caregiver: 'Caregiver', settings: 'Settings', guide: 'Guide', search: 'Search', keyboard: 'Keyboard', boards: 'Boards', schedule: 'Schedule', timer: 'Timer', help: 'Help', model: 'Model', have: 'I already have an account', tabs: ['Team', 'Progress', 'Account'], record: 'Record the pronunciation', done: 'Done' },
-  'ar-LB': { bo: 'لوحة الإدارة (عرض تجريبي)', openApp: 'فتح التطبيق' },
+  'en-GB': { bo: 'Back office (demonstration)', openApp: 'Open the app', cont: 'Continue', create: 'Create my account', parent: /Parent/, pro: /Professional/, name: 'Your name', email: 'Email address', pw: 'Password', verify: 'Verify', caregiver: 'Caregiver', settings: 'Settings', guide: 'Guide', search: 'Search', keyboard: 'Keyboard', boards: 'Boards', schedule: 'Schedule', timer: 'Timer', help: 'Help', model: 'Model', have: 'I already have an account', tabs: ['Team', 'Progress', 'Account'], record: 'Record the pronunciation', done: 'Done', tryIt: /Try it first/, finish: 'Finish' },
+  'ar-LB': { bo: 'لوحة الإدارة (عرض تجريبي)', openApp: 'فتح التطبيق', tryIt: /جرّب أولاً/ },
+  // French has the longest names of the three languages: scanned on the very narrow screen.
+  'fr-FR': { bo: 'Back-office (démonstration)', openApp: 'Ouvrir l’application', tryIt: /Essayer d’abord/, signUp: 'Créer un compte', parent: /Parent ou aidant/, create: 'Créer mon compte', codeIs: /Votre code est/, verify: 'Vérifier', cont: 'Continuer', finish: 'Terminer' },
 }[locale];
 const results = [];
 (async () => {
@@ -32,27 +38,33 @@ const results = [];
       const vis = (e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
       const noRole = [...document.querySelectorAll('[aria-label]:not([role])')].filter((e) => !['INPUT', 'TEXTAREA', 'IMG', 'BUTTON', 'A', 'SELECT'].includes(e.tagName) && vis(e)).map((e) => e.getAttribute('aria-label').slice(0, 40));
       const small = [...document.querySelectorAll('[role=button],[role=tab],[role=radio],[role=checkbox],[role=switch],[role=link],a,button,input')].filter(vis).map((e) => { const r = e.getBoundingClientRect(); return { w: Math.round(r.width), h: Math.round(r.height), n: (e.getAttribute('aria-label') || e.textContent || '').trim().slice(0, 30) }; }).filter((x) => x.w < 24 || x.h < 24);
-      return { noRole: [...new Set(noRole)].slice(0, 12), noRoleN: noRole.length, small: small.slice(0, 10), lang: document.documentElement.lang, title: document.title, overflowX: document.documentElement.scrollWidth - window.innerWidth };
+      return { noRole: [...new Set(noRole)].slice(0, 12), noRoleN: noRole.length, small: small.slice(0, 10), lang: document.documentElement.lang, title: document.title };
     });
+    Object.assign(extra, await p.evaluate(sideways));
     results.push({ screen, ...r, extra });
-    console.log(`${tag} · ${screen}: ${r.violations.length ? r.violations.map((v) => `${v.id}(${v.n})`).join(', ') : 'no violation'}`);
+    // Wider than the window (WCAG 1.4.10): a rule break like the others, so the run fails on it.
+    const found = [...r.violations.map((v) => `${v.id}(${v.n})`), ...(extra.overflowX > 0 ? [`wider than the screen (${extra.overflowX} px: ${extra.overflowBy})`] : [])];
+    console.log(`${tag} · ${screen}: ${found.length ? found.join(', ') : 'no violation'}`);
     await p.screenshot({ path: `${OUT}/${tag}-${screen}.png` });
   };
   const step = async (name, fn) => { try { await fn(); } catch (e) { console.log(`${tag} · ${name}: SKIPPED (${e.message.split('\n')[0].slice(0, 110)})`); } };
   const btn = (n, exact = true) => p.getByRole('button', { name: n, exact }).first();
+  // From a question of the set-up to its last screen: the board to try, with "Finish" in its banner.
+  const toSetupBoard = async () => { for (let i = 0; i < 25 && !(await btn(L.finish).count()); i++) { await btn(L.cont).last().click(); await p.waitForTimeout(350); } await btn(L.finish).waitFor(); await p.waitForTimeout(1500); };
   const centerOf = (word) => p.evaluate((w) => { const e = [...document.querySelectorAll('*')].find((x) => x.children.length === 0 && x.textContent.trim() === w); if (!e) return null; const r = (e.closest('[role="button"]') || e).getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; }, word);
   fs.mkdirSync(OUT, { recursive: true });
 
   await p.goto(`http://localhost:${port}/`);
   await p.getByRole('button').first().waitFor();
   await scan('01-welcome');
+  // The try-it board (its banner sits above the board), then the caregiver code keypad on it (the
+  // team account used further down is never asked the code).
+  await step('15b-try-it', async () => {
+    await p.getByRole('button', { name: L.tryIt }).click(); await p.waitForTimeout(2000); await scan('15b-try-it-board');
+    if (locale === 'en-GB') await step('16-pin', async () => { await btn(L.caregiver).click(); await p.waitForTimeout(400); await scan('16-pin'); });
+  });
+  await p.goto(`http://localhost:${port}/`); await p.getByRole('button').first().waitFor();
   if (locale === 'en-GB') {
-    // The caregiver code keypad, on the try-it board (the team account used further down is never asked the code).
-    await step('16-pin', async () => {
-      await p.getByRole('button', { name: /Try it first/ }).click(); await p.waitForTimeout(2000);
-      await btn(L.caregiver).click(); await p.waitForTimeout(400); await scan('16-pin');
-      await p.goto(`http://localhost:${port}/`); await p.getByRole('button').first().waitFor();
-    });
     await step('02-role', async () => { await btn('Sign up').click(); await p.getByText('Who are you').first().waitFor().catch(() => {}); await scan('02-role'); });
     await step('03-signup', async () => { await p.getByText(L.parent).first().click(); await p.getByLabel(L.email).waitFor(); await scan('03-signup'); });
     await step('04-code', async () => {
@@ -67,6 +79,20 @@ const results = [];
       // The "?" beside the question: its explanation, with the part of the guide.
       await p.getByRole('button', { name: /^Explain: / }).click(); await p.getByRole('dialog').waitFor(); await scan('05d-setup-help'); await p.keyboard.press('Escape'); await p.waitForTimeout(300);
       await p.getByRole('checkbox', { name: /Arabic/ }).click(); await btn('Continue').click(); await p.getByText('Which Arabic?').first().waitFor(); await scan('05c-setup-arabic');
+    });
+    // The end of the set-up: the board to try before "Finish" (a banner above the board).
+    await step('05e-setup-board', async () => { await p.getByRole('radio', { name: /^Lebanese/ }).first().click(); await toSetupBoard(); await scan('05e-setup-board'); });
+    await p.evaluate(() => localStorage.removeItem('caa.session.v1')); await p.reload(); await p.getByRole('button').first().waitFor();
+  }
+  if (locale === 'fr-FR') {
+    // In French only that last board of the set-up, reached the short way (nothing scanned before it).
+    await step('05e-setup-board', async () => {
+      await btn(L.signUp).click(); await p.getByText(L.parent).first().click();
+      await p.getByRole('textbox').nth(1).waitFor(); await p.getByRole('textbox').nth(0).fill('Rita'); await p.getByRole('textbox').nth(1).fill('rita@example.com'); await p.locator('input[type=password]').first().fill('secret123');
+      await p.getByRole('button', { name: L.create }).last().click();
+      const code = (await p.getByText(L.codeIs).first().textContent()).match(/\d{6}/)[0];
+      await p.getByRole('textbox').last().fill(code); await btn(L.verify).click(); await p.waitForTimeout(1500);
+      await p.getByRole('textbox').first().fill('Adam'); await toSetupBoard(); await scan('05e-setup-board');
     });
     await p.evaluate(() => localStorage.removeItem('caa.session.v1')); await p.reload(); await p.getByRole('button').first().waitFor();
   }

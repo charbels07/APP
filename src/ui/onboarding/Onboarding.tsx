@@ -38,6 +38,7 @@ import { forgetLegacyProfile, loadLegacyProfile, migrate } from '../../lib/stora
 import type { Lang, Profile } from '../../model/types';
 import { AppProvider } from '../../state/AppState';
 import { useSession } from '../../state/Session';
+import { BoardBanner } from '../BoardBanner';
 import { Btn, Field, Panel, Segmented } from '../common';
 import { setupHelp, type SetupHelpId } from '../../data/setupHelp';
 import { Icon } from '../Icon';
@@ -833,13 +834,8 @@ function TryBoard({
       </StartLayout>
     );
   }
-  const rtl = sess.uiLang === 'ar';
   const banner = (
-    <View style={[s.tryBanner, rtl && { flexDirection: 'row-reverse' }]}>
-      <Icon name="sparkles" size={22} color={C.success} />
-      <Text style={[s.tryText, rtl && { textAlign: 'right' }]} numberOfLines={3}>
-        {error ?? (freeEdit ? proStrings(sess.uiLang).tryBanner : o.tryBanner)}
-      </Text>
+    <BoardBanner icon="sparkles" tone="success" border="#6CE9A6" text={error ?? (freeEdit ? proStrings(sess.uiLang).tryBanner : o.tryBanner)}>
       <Btn small label={o.back} onPress={onBack} disabled={busy} />
       <Btn
         small
@@ -859,7 +855,7 @@ function TryBoard({
           }
         }}
       />
-    </View>
+    </BoardBanner>
   );
   return (
     <AppProvider initial={profile} onChange={(p) => (latest.current = p)} uiLang={sess.uiLang} setUiLang={sess.setUiLang} freeEdit={freeEdit}>
@@ -954,17 +950,4 @@ const s = StyleSheet.create({
   reviewRow: { flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderBottomColor: C.border, paddingVertical: 8 },
   mini: { gap: 3, alignSelf: 'center', padding: 8, backgroundColor: C.bg, borderRadius: radius.md, direction: 'ltr' },
   miniCell: { width: 18, height: 14, borderRadius: 3, borderWidth: 1 },
-  tryBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: C.successSoft,
-    borderColor: '#6CE9A6',
-    borderWidth: 1.5,
-    borderRadius: radius.md,
-    paddingLeft: 12,
-    paddingRight: 6,
-    paddingVertical: 5,
-  },
-  tryText: { flex: 1, fontWeight: '700', fontSize: 15, color: C.success },
 });

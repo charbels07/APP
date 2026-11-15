@@ -15,6 +15,7 @@ import { BoardContext, type MyAccess } from '../state/BoardContext';
 import { ProfileSync } from '../state/profileSync';
 import { UsageTracker } from '../state/usageTracker';
 import { useSession } from '../state/Session';
+import { BoardBanner } from './BoardBanner';
 import { Btn } from './common';
 import { Icon } from './Icon';
 import { BackOffice } from './admin/BackOffice';
@@ -83,14 +84,10 @@ function PreviewStage() {
   const { s, go, uiLang, setUiLang } = useSession();
   const initial = useMemo(() => createDefaultProfile(), []);
   const banner = (
-    <View style={[styles.banner, uiLang === 'ar' && { flexDirection: 'row-reverse' }]}>
-      <Icon name="eye" size={22} color={C.accent} />
-      <Text style={[styles.bannerText, uiLang === 'ar' && { textAlign: 'right' }]} numberOfLines={2}>
-        {s.previewBanner}
-      </Text>
+    <BoardBanner icon="eye" text={s.previewBanner} border="#A4C2FF">
       <Btn small label={s.back} onPress={() => go({ name: 'welcome' })} />
       <Btn small kind="primary" label={s.previewNext} onPress={() => go({ name: 'role' })} />
-    </View>
+    </BoardBanner>
   );
   return (
     <AppProvider initial={initial} onChange={() => {}} uiLang={uiLang} setUiLang={setUiLang} preview>
@@ -282,19 +279,6 @@ function OpenGuideOnStart() {
 
 const styles = StyleSheet.create({
   splash: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: C.bg },
-  banner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: C.accentSoft,
-    borderColor: '#A4C2FF',
-    borderWidth: 1.5,
-    borderRadius: radius.md,
-    paddingLeft: 12,
-    paddingRight: 6,
-    paddingVertical: 5,
-  },
-  bannerText: { flex: 1, fontWeight: '700', fontSize: 15, color: C.accent },
   toast: {
     position: 'absolute',
     top: 12,

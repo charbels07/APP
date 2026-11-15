@@ -113,4 +113,9 @@
   asks the database): at the bottom of the bar of their own board (no code: the team is never asked one)
   and in the header of the professional workspace. Never show it to another account; hiding it is comfort
   only, every `admin_*` function still checks `is_admin()`.
+- Set-up journey: every question has a "?" beside its title (`Title help="…"` in `Onboarding.tsx`) that
+  opens what the choice does plus the matching part of the guide (`src/data/setupHelp.ts`: three languages,
+  written about "the child", guide parts named by chapter id and step index). A new step or question gets
+  its entry there; `setupHelp.test.ts` fails otherwise. If a guide chapter's steps are re-ordered, check
+  the indexes used in `setupHelp.ts`.
 - Services and keys: `docs/API-KEYS.md` (keep it up to date when a feature starts needing one).

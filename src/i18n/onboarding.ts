@@ -14,6 +14,10 @@ const fr = {
   skip: 'Passer',
   edit: 'Modifier',
   recommended: 'Recommandé',
+  helpAbout: (title: string) => `Expliquer : ${title}`,
+  helpWhat: 'À quoi sert ce choix',
+  helpGuide: 'Dans le guide',
+  helpOk: 'Compris',
 
   childTitle: 'Votre enfant',
   childName: 'Prénom de l’enfant',
@@ -198,6 +202,10 @@ const en: Dict = {
   skip: 'Skip',
   edit: 'Edit',
   recommended: 'Recommended',
+  helpAbout: (title: string) => `Explain: ${title}`,
+  helpWhat: 'What this choice does',
+  helpGuide: 'In the guide',
+  helpOk: 'Got it',
 
   childTitle: 'Your child',
   childName: 'Child’s first name',
@@ -367,6 +375,10 @@ const ar: Dict = {
   skip: 'تخطٍّ',
   edit: 'تعديل',
   recommended: 'مُستحسن',
+  helpAbout: (title: string) => `شرح: ${title}`,
+  helpWhat: 'ما فائدة هذا الاختيار',
+  helpGuide: 'في الدليل',
+  helpOk: 'فهمت',
 
   childTitle: 'طفلك',
   childName: 'اسم الطفل',

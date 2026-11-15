@@ -5,7 +5,7 @@
  * so closing the app does not lose them.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { createDefaultProfile, DEFAULT_SETTINGS } from '../../data/defaults';
 import { DIALECT_ORDER, DIALECTS, dialectName } from '../../data/dialects';
@@ -38,7 +38,8 @@ import { forgetLegacyProfile, loadLegacyProfile, migrate } from '../../lib/stora
 import type { Lang, Profile } from '../../model/types';
 import { AppProvider } from '../../state/AppState';
 import { useSession } from '../../state/Session';
-import { Btn, Field, Segmented } from '../common';
+import { Btn, Field, Panel, Segmented } from '../common';
+import { setupHelp, type SetupHelpId } from '../../data/setupHelp';
 import { Icon } from '../Icon';
 import { Root } from '../Root';
 import { ErrorText, LinkBtn, StartLayout, T, st, useRtl } from '../start/StartLayout';
@@ -80,6 +81,9 @@ export function Onboarding() {
   const [siblings, setSiblings] = useState<{ id: string; name: string }[]>([]);
   const [imported, setImported] = useState<{ name: string; profile: Profile } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // The explanation opened by the "?" beside a question.
+  const [helpFor, setHelpFor] = useState<{ id: SetupHelpId; title: string } | null>(null);
+  const helpCtx = useMemo(() => ({ open: (id: SetupHelpId, title: string) => setHelpFor({ id, title }), label: o.helpAbout }), [o]);
 
   useEffect(() => {
     (async () => {
@@ -146,7 +150,8 @@ export function Onboarding() {
   const inSetup = draft.step >= setupFrom;
   const partSteps = inSetup ? steps.length - setupFrom : setupFrom;
   const partIndex = inSetup ? draft.step - setupFrom : draft.step;
-  return (
+  // The page of the step; the explanation opened by a "?" is drawn over it.
+  const page = (
     <StartLayout onBack={back} maxWidth={640}>
       <View style={{ gap: 8 }}>
         <T style={s.part}>
@@ -167,6 +172,7 @@ export function Onboarding() {
       {stepId === 'activities' && <ActivitiesStep o={o} a={a} set={set} />}
       {stepId === 'visual' && (
         <ChoiceStep<VisualChoice>
+          help="visual"
           title={o.visualTitle}
           value={a.visual}
           options={(['standard', 'large', 'contrast', 'unsure'] as VisualChoice[]).map((v) => ({ value: v, label: o.visual[v], note: o.visualNotes[v] }))}
@@ -176,6 +182,7 @@ export function Onboarding() {
       )}
       {stepId === 'feedback' && (
         <ChoiceStep<FeedbackChoice>
+          help="feedback"
           title={o.feedbackTitle}
           value={a.feedback}
           options={(['standard', 'reduced', 'later'] as FeedbackChoice[]).map((v) => ({ value: v, label: o.feedback[v], note: o.feedbackNotes[v] }))}
@@ -223,6 +230,14 @@ export function Onboarding() {
       </View>
     </StartLayout>
   );
+  return (
+    <HelpContext.Provider value={helpCtx}>
+      <View style={{ flex: 1 }}>
+        {page}
+        {helpFor && <HelpPanel id={helpFor.id} title={helpFor.title} o={o} onClose={() => setHelpFor(null)} />}
+      </View>
+    </HelpContext.Provider>
+  );
 }
 
 function useRtlRow() {
@@ -237,14 +252,68 @@ function baseProfile(a: Answers, legacy: Profile | null, imported: { profile: Pr
 
 type StepProps = { o: OnboardingStrings; a: Answers; set: (p: Partial<Answers>) => void };
 
-function Title({ text, intro }: { text: string; intro?: string }) {
+/** Opens the explanation of a question (the "?" beside its title). */
+const HelpContext = createContext<{ open: (id: SetupHelpId, title: string) => void; label: (title: string) => string } | null>(null);
+
+function Title({ text, intro, help }: { text: string; intro?: string; help?: SetupHelpId }) {
+  const ask = useContext(HelpContext);
+  const rtl = useRtl();
   return (
     <View style={{ gap: 6 }}>
-      <T style={st.title} accessibilityRole="header">
-        {text}
-      </T>
+      <View style={[s.titleRow, rtl && { flexDirection: 'row-reverse' }]}>
+        <T style={[st.title, { flexShrink: 1 }]} accessibilityRole="header">
+          {text}
+        </T>
+        {help && ask ? (
+          <Pressable
+            onPress={() => ask.open(help, text)}
+            style={({ pressed }) => [s.helpBtn, pressed && { backgroundColor: C.accentSoft }]}
+            accessibilityRole="button"
+            accessibilityLabel={ask.label(text)}
+            hitSlop={6}
+          >
+            <Text style={s.helpMark}>?</Text>
+          </Pressable>
+        ) : null}
+      </View>
       {intro ? <T style={st.muted}>{intro}</T> : null}
     </View>
+  );
+}
+
+/** What the question is for, then the part of the guide that goes with it. */
+function HelpPanel({ id, title, o, onClose }: { id: SetupHelpId; title: string; o: OnboardingStrings; onClose: () => void }) {
+  const { uiLang } = useSession();
+  const rtl = useRtl();
+  const help = setupHelp(id, uiLang);
+  const side = rtl ? ({ textAlign: 'right', writingDirection: 'rtl' } as const) : null;
+  return (
+    <Panel title={title} onClose={onClose} maxWidth={560}>
+      <Text style={[s.helpHead, side]} accessibilityRole="header">
+        {o.helpWhat}
+      </Text>
+      {help.lines.map((line, i) => (
+        <Text key={i} style={[s.helpLine, side]}>
+          {line}
+        </Text>
+      ))}
+      {help.guide.map((part) => (
+        <View key={part.title} style={s.helpGuide}>
+          <View style={[{ flexDirection: 'row', alignItems: 'center', gap: 8 }, rtl && { flexDirection: 'row-reverse' }]}>
+            <Icon name="book" size={18} color={C.accent} />
+            <Text style={[s.helpGuideTitle, side]} accessibilityRole="header">
+              {o.helpGuide} · {part.title}
+            </Text>
+          </View>
+          {part.steps.map((step, i) => (
+            <Text key={i} style={[s.helpLine, side]}>
+              {step}
+            </Text>
+          ))}
+        </View>
+      ))}
+      <Btn kind="primary" icon="check" label={o.helpOk} onPress={onClose} />
+    </Panel>
   );
 }
 
@@ -290,7 +359,7 @@ function Option({
 function ChildStep({ o, a, set }: StepProps) {
   return (
     <>
-      <Title text={o.childTitle} />
+      <Title text={o.childTitle} help="child" />
       <Field label={o.childName} value={a.name} onChangeText={(name) => set({ name })} autoComplete="off" autoCapitalize="words" />
       <Field
         label={o.childAge}
@@ -319,7 +388,7 @@ function ArabicStep({ o, a, set }: StepProps) {
   const { uiLang } = useSession();
   return (
     <>
-      <Title text={o.arabicTitle} intro={o.arabicIntro} />
+      <Title text={o.arabicTitle} intro={o.arabicIntro} help="arabic" />
       {DIALECT_ORDER.map((d) => (
         <Option key={d} label={dialectName(d, uiLang)} note={DIALECTS[d].langName} selected={a.arabic === d} onPress={() => set({ arabic: d })} />
       ))}
@@ -334,7 +403,7 @@ function LangStep({ o, a, set }: StepProps) {
   const toggle = (l: Lang) => set({ langs: a.langs.includes(l) ? a.langs.filter((x) => x !== l) : [...a.langs, l] });
   return (
     <>
-      <Title text={o.langTitle} intro={o.langIntro} />
+      <Title text={o.langTitle} intro={o.langIntro} help="langs" />
       {availableLangs({ arabic: 'lb' }).map((l) => (
         <Option
           key={l}
@@ -359,7 +428,7 @@ function VoiceStep({ o, a, set }: StepProps) {
   };
   return (
     <>
-      <Title text={o.voiceTitle} intro={o.voiceIntro} />
+      <Title text={o.voiceTitle} intro={o.voiceIntro} help="voice" />
       <T style={s.label}>{o.voiceKind}</T>
       <Segmented<Answers['voiceKind']>
         value={a.voiceKind}
@@ -387,7 +456,7 @@ function VoiceStep({ o, a, set }: StepProps) {
 function CommStep({ o, a, set }: StepProps) {
   return (
     <>
-      <Title text={o.commTitle} intro={o.commIntro} />
+      <Title text={o.commTitle} intro={o.commIntro} help="comm" />
       <T style={s.question}>{o.qSpeech}</T>
       {SPEECH.map((v) => (
         <Option key={v} label={o.speech[v]} selected={a.speech === v} onPress={() => set({ speech: v })} />
@@ -422,7 +491,7 @@ function ActivitiesStep({ o, a, set }: StepProps) {
   };
   return (
     <>
-      <Title text={o.actTitle} intro={o.actIntro} />
+      <Title text={o.actTitle} intro={o.actIntro} help="activities" />
       <View style={[s.chips, rtl && { flexDirection: 'row-reverse' }]}>
         {ACTIVITY_CHOICES.filter((id) => getConcept(profile, id)).map((id) => {
           const on = a.activities.includes(id);
@@ -470,12 +539,14 @@ function ActivitiesStep({ o, a, set }: StepProps) {
 
 function ChoiceStep<V extends string>({
   title,
+  help,
   value,
   options,
   onChange,
   preview,
 }: {
   title: string;
+  help: SetupHelpId;
   value: V;
   options: { value: V; label: string; note?: string }[];
   onChange: (v: V) => void;
@@ -483,7 +554,7 @@ function ChoiceStep<V extends string>({
 }) {
   return (
     <>
-      <Title text={title} />
+      <Title text={title} help={help} />
       {options.map((op) => (
         <Option key={op.value} label={op.label} note={op.note} selected={value === op.value} onPress={() => onChange(op.value)} />
       ))}
@@ -552,7 +623,7 @@ function ReviewStep({ o, a, goto }: { o: OnboardingStrings; a: Answers; goto: (s
   ];
   return (
     <>
-      <Title text={o.reviewTitle} intro={o.reviewIntro} />
+      <Title text={o.reviewTitle} intro={o.reviewIntro} help="review" />
       {rows.map((r) => (
         <View key={r.step} style={[s.reviewRow, rtl && st.rev]}>
           <View style={{ flex: 1, gap: 2 }}>
@@ -583,7 +654,7 @@ function VocabStep({
   const choices: StartVocab[] = ['core', ...(hasLegacy ? (['legacy'] as const) : []), ...(siblings.length ? (['copy'] as const) : []), 'file'];
   return (
     <>
-      <Title text={o.vocabTitle} intro={o.vocabIntro} />
+      <Title text={o.vocabTitle} intro={o.vocabIntro} help="vocab" />
       {choices.map((v) => (
         <View key={v} style={{ gap: 8 }}>
           <Option
@@ -614,7 +685,7 @@ function LayoutStep({ o, a, set }: StepProps) {
   const level = a.level ?? rec;
   return (
     <>
-      <Title text={o.layoutTitle} intro={o.layoutIntro} />
+      <Title text={o.layoutTitle} intro={o.layoutIntro} help="layout" />
       <T style={s.label}>{o.wordsShown}</T>
       {([1, 2, 3] as const).map((l) => (
         <Option
@@ -675,7 +746,7 @@ function MiniBoard({ profile, level }: { profile: Profile; level: 1 | 2 | 3 }) {
 function AccessStep({ o, a, set }: StepProps) {
   return (
     <>
-      <Title text={o.accessTitle} intro={o.accessIntro} />
+      <Title text={o.accessTitle} intro={o.accessIntro} help="access" />
       {(['release', 'press', 'hold'] as const).map((v) => (
         <Option key={v} label={o.access[v]} note={o.accessNotes[v]} selected={a.access === v} badge={v === 'release' ? o.recommended : undefined} onPress={() => set({ access: v })} />
       ))}
@@ -695,7 +766,7 @@ function AccessStep({ o, a, set }: StepProps) {
 function PlansStep({ o, a, set }: StepProps) {
   return (
     <>
-      <Title text={o.plansTitle} intro={o.plansIntro} />
+      <Title text={o.plansTitle} intro={o.plansIntro} help="plans" />
       <Option multi label={o.planDay} note={o.planDayNote} selected onPress={() => {}} />
       <Option multi label={o.planWeek} note={o.planWeekNote} selected={!!a.planWeek} onPress={() => set({ planWeek: !a.planWeek })} />
       <Option multi label={o.planMonth} note={o.planMonthNote} selected={!!a.planMonth} onPress={() => set({ planMonth: !a.planMonth })} />
@@ -709,7 +780,7 @@ function DataStep({ o, a, set }: StepProps) {
   const d = dataStrings(useSession().uiLang);
   return (
     <>
-      <Title text={o.dataTitle} intro={o.dataIntro} />
+      <Title text={o.dataTitle} intro={o.dataIntro} help="data" />
       {(['off', 'usage', 'vocabulary', 'language'] as const).map((l) => (
         <Option key={l} label={d.levels[l]} note={d.levelNotes[l]} selected={a.dataCollection === l} onPress={() => set({ dataCollection: l })} />
       ))}
@@ -822,6 +893,14 @@ async function customWords(texts: string[], lang: Lang): Promise<{ id: string; l
 }
 
 const s = StyleSheet.create({
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  // The "?" beside a question: round, big enough for a finger.
+  helpBtn: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, borderColor: C.accent, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center' },
+  helpMark: { fontSize: 20, fontWeight: '800', color: C.accent, lineHeight: 24 },
+  helpHead: { fontSize: 13, fontWeight: '800', color: C.textMuted, textTransform: 'uppercase', letterSpacing: 0.5 },
+  helpLine: { fontSize: 16, lineHeight: 23, color: C.text },
+  helpGuide: { gap: 8, backgroundColor: C.surfaceAlt, borderRadius: radius.md, padding: 12 },
+  helpGuideTitle: { flexShrink: 1, fontSize: 15, fontWeight: '800', color: C.text },
   part: { fontSize: 13, fontWeight: '800', color: C.textMuted, textTransform: 'uppercase', letterSpacing: 0.5 },
   bar: { height: 6, borderRadius: 3, backgroundColor: C.surfaceAlt, overflow: 'hidden' },
   barFill: { height: 6, backgroundColor: C.accent, borderRadius: 3 },

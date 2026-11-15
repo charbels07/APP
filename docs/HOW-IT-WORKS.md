@@ -461,12 +461,21 @@ order, by itself.
 | The team e-mails | Switched on by the owner on 15 November 2026 (function deployed, three secrets, two SQL files, test e-mail received). The request e-mail now gives the professional's name. The function reads Supabase's new server key first and the old one as a second try (the old keys retire in early 2027). |
 | Tests | Browser runs at computer and phone sizes: a team account sees the button and is never asked the code (Settings, Lock, Caregiver, Back office); a parent is asked the code for each and never sees the button; an ordinary professional never sees it. The accessibility walk now scans the code keypad on the try-it board (the demo's team account no longer shows it). |
 
+## Round 28 — A "?" beside each question of the set-up
+
+| What | How it was done |
+|---|---|
+| The "?" | In `src/ui/onboarding/Onboarding.tsx`, the title of each of the 14 set-up questions has a small round "?" (36 px, so a finger finds it; a screen reader says "Explain: " and the question). |
+| What it opens | A panel over the page (`Panel`, the same component as every other panel: Escape closes it, the focus comes back on the "?"). First "what this choice does" in two or three plain lines, with where to change it later; then, in a grey box, the part of the in-app guide that goes with the question. |
+| Where the texts are | `src/data/setupHelp.ts` (TypeScript, data only): one entry per question, in French, English and Arabic, written about "the child" so that parents and professionals read the same text. The guide parts are not copied: each entry names a chapter of `src/data/guide.ts` and which of its steps to show, so a change in the guide shows here too. |
+| Tests | `src/__tests__/setupHelp.test.ts`: every question has its "?", the three languages have the same lines, the guide chapters and steps exist, and the names of settings and buttons are the ones written on screen. A browser run pressed every "?" in English and Arabic at three sizes; the accessibility walk now scans the panel. |
+
 ## How everything is checked
 
 | Check | What it does |
 |---|---|
 | `npm run typecheck` | TypeScript reads the whole code and refuses mistakes such as a missing field or a wrong type. |
-| `npm test` | 244 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office, colour contrast. |
+| `npm test` | 248 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office, colour contrast. |
 | `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger, a tablet and a member of our team; then every attack found by the security review, which must fail; then a professional who prepares a profile and hands it to the parents; then the e-mails to the team; 140 checks. |
 | `npm run test:live` | The same story on a second, empty Supabase project (never the one families use), through the app's own code: 13 steps, including devices, history undo, invitation codes, revisions and materials (needs "Confirm email" off while it runs). Last full run: before the back office (all 13 passed); **to run again once the back-office migration is on the real project**. |
 | `npm run test:a11y` | Accessibility: 178 scans of 51 screens against WCAG 2.2 AA (four sizes, Arabic), then a keyboard-only run. Last run: 0 rule break. |

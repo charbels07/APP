@@ -64,6 +64,8 @@ const results = [];
     // The languages, then which Arabic (asked only once Arabic is ticked).
     await step('05b-languages', async () => {
       await p.getByLabel('Child’s first name').fill('Adam'); await btn('Continue').click(); await p.getByText('Communication languages').first().waitFor(); await scan('05b-setup-languages');
+      // The "?" beside the question: its explanation, with the part of the guide.
+      await p.getByRole('button', { name: /^Explain: / }).click(); await p.getByRole('dialog').waitFor(); await scan('05d-setup-help'); await p.keyboard.press('Escape'); await p.waitForTimeout(300);
       await p.getByRole('checkbox', { name: /Arabic/ }).click(); await btn('Continue').click(); await p.getByText('Which Arabic?').first().waitFor(); await scan('05c-setup-arabic');
     });
     await p.evaluate(() => localStorage.removeItem('caa.session.v1')); await p.reload(); await p.getByRole('button').first().waitFor();

@@ -185,7 +185,7 @@ export async function listVoices(lang: Lang): Promise<{ id: string; name: string
     .map((v) => ({ id: v.id, name: `${v.name} (${v.language})`, gender: voiceGender(v) }));
 }
 
-/** Short beep (web only; on devices the timer uses speech + haptics). */
+/** Short beep (web only; on devices the timer uses speech). */
 export function beep(): void {
   if (Platform.OS !== 'web') return;
   try {

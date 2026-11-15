@@ -1,4 +1,3 @@
-import * as Haptics from 'expo-haptics';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 import { editStrings } from '../i18n/edit';
@@ -251,7 +250,6 @@ export function Grid({ board }: { board: Board }) {
         setDrag({ from: index, over: index });
         setMoved(null);
         containerRef.current?.measureInWindow((x: number) => (containerX.current = x));
-        if (a.profile.settings.haptics !== false) Haptics.selectionAsync().catch(() => {});
         return;
       }
       // Use mode: a long press on a folder shows its most requested words without opening it;

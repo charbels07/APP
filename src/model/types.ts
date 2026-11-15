@@ -155,7 +155,7 @@ export interface Settings {
   speechRate: number;
   voices: Partial<Record<Lang, string>>;
   pin: string;
-  timer: { display: TimerDisplay[]; sound: boolean; haptic: boolean };
+  timer: { display: TimerDisplay[]; sound: boolean };
   /** Speed of demonstrations and dictation replays (1 = normal, higher = slower). */
   modelPace: number;
   /** Let the app ask an AI for TLA proposals and to recognise drawings (only the topic or drawing is sent). */
@@ -184,8 +184,6 @@ export interface Settings {
   pictoSize: 'normal' | 'large';
   /** Fewer animations (no pulsing highlights, no wiggling). */
   reduceMotion: boolean;
-  /** Small vibration when a pictogram is touched (phones; iPads have no vibration motor). */
-  haptics: boolean;
   /**
    * How the child selects a pictogram: when the finger lifts (standard), as soon as it touches
    * (for children who slide), or by holding it (`holdTime` seconds: avoids accidental touches).

@@ -106,8 +106,8 @@ const fr = {
     later: 'Je déciderai plus tard',
   } as Opt<FeedbackChoice>,
   feedbackNotes: {
-    standard: 'Les pictos bougent quand on les touche et quand ils sont dits ; petite vibration sur téléphone.',
-    reduced: 'Pas d’animations ni de vibrations, minuteur silencieux. La voix reste.',
+    standard: 'Les pictos bougent quand on les touche et quand ils sont dits.',
+    reduced: 'Pas d’animations, minuteur silencieux. La voix reste.',
     later: 'Les réglages par défaut ; à changer quand vous voulez.',
   } as Opt<FeedbackChoice>,
 
@@ -169,7 +169,6 @@ const fr = {
   repeatDelay: 'Délai avant de pouvoir répéter le même mot',
   sec: 's',
   accessLater: 'Contacteurs et commande oculaire : pas encore disponibles.',
-  hapticsToggle: 'Petite vibration au toucher (téléphones)',
   reduceMotionToggle: 'Moins d’animations',
   presentationAccess: 'Présentation et accès',
 
@@ -287,8 +286,8 @@ const en: Dict = {
   feedbackTitle: 'Sounds and animation',
   feedback: { standard: 'Standard feedback', reduced: 'Reduced sounds and animations', later: 'Decide later' },
   feedbackNotes: {
-    standard: 'Pictures move when touched and when said; a small vibration on phones.',
-    reduced: 'No animations or vibrations, silent timer. The voice stays.',
+    standard: 'Pictures move when touched and when said.',
+    reduced: 'No animations, silent timer. The voice stays.',
     later: 'The default settings; change them whenever you like.',
   },
 
@@ -346,7 +345,6 @@ const en: Dict = {
   repeatDelay: 'Delay before the same word can be repeated',
   sec: 's',
   accessLater: 'Switch access and eye gaze: not available yet.',
-  hapticsToggle: 'Small vibration on touch (phones)',
   reduceMotionToggle: 'Fewer animations',
   presentationAccess: 'Presentation and access',
 
@@ -462,8 +460,8 @@ const ar: Dict = {
   feedbackTitle: 'الأصوات والحركة',
   feedback: { standard: 'التفاعل العادي', reduced: 'أصوات وحركة أقل', later: 'سأقرر لاحقاً' },
   feedbackNotes: {
-    standard: 'تتحرك الصور عند لمسها وعند نطقها؛ اهتزاز خفيف على الهاتف.',
-    reduced: 'من دون حركة أو اهتزاز، مؤقت صامت. يبقى الصوت.',
+    standard: 'تتحرك الصور عند لمسها وعند نطقها.',
+    reduced: 'من دون حركة، مؤقت صامت. يبقى الصوت.',
     later: 'الإعدادات الافتراضية؛ غيّرها متى شئت.',
   },
 
@@ -521,7 +519,6 @@ const ar: Dict = {
   repeatDelay: 'المدة قبل تكرار الكلمة نفسها',
   sec: 'ث',
   accessLater: 'المفاتيح والتحكم بالعين: غير متوفرة بعد.',
-  hapticsToggle: 'اهتزاز خفيف عند اللمس (الهواتف)',
   reduceMotionToggle: 'حركة أقل',
   presentationAccess: 'العرض وطريقة الاختيار',
 

@@ -73,7 +73,7 @@ TLA, Schedule, Timer, Help + one magnifying glass for search / keyboard /
 model, guide, caregiver lock) ·
 search with typo tolerance, synonyms and "show me where" · keyboard · 4 TLAs ·
 2 schedules (now / next / done, linked TLA and timer) · First–Then · timer
-(circle / bar / digits, keeps running, sound + haptics) · 3-level Help button ·
+(circle / bar / digits, keeps running, sound) · 3-level Help button ·
 protected caregiver mode (PIN) · word editor (labels ×3, photo from camera or
 library, pictogram search, emoji, display mode, colour, reveal level, voice
 recording per language) · custom words · new TLAs and schedules · settings ·

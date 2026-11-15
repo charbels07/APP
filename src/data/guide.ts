@@ -242,12 +242,12 @@ const BASE: BaseChapter[] = [
     steps: {
       fr: [
         'Minuteur : choisissez une durée ; le temps qui reste se voit en cercle, en barre ou en chiffres.',
-        'Il continue pendant qu’on communique. À la fin : un son, une vibration (sur téléphone) et « C’est fini ! ».',
+        'Il continue pendant qu’on communique. À la fin : un son et « C’est fini ! ».',
         'Il se place au-dessus du tableau sans cacher de picto. À côté, le picto de ce que l’enfant attend (la piscine, le parc…) : il est dit à la fin.',
       ],
       en: [
         'Timer: choose a duration; the time left shows as a circle, a bar or digits.',
-        'It keeps running while you communicate. At the end: a sound, a vibration (on phones) and “Time is up!”.',
+        'It keeps running while you communicate. At the end: a sound and “Time is up!”.',
         'It sits above the board without hiding any picture. Next to it, the picture of what the child is waiting for (the pool, the park…): it is said at the end.',
       ],
     },
@@ -486,7 +486,7 @@ const BASE: BaseChapter[] = [
       fr: [
         'Les Réglages ont plusieurs pages : Tableau (les réglages de l’enfant, décrits ici), Équipe, Suivi (si la famille l’a choisi) et Compte. Sans compte, Équipe, Suivi et Compte expliquent seulement ce qu’ils contiendront. En haut, le champ « Rechercher un réglage (voix, code, langue…) » trouve un réglage par son nom. La page Tableau est rangée en groupes : touchez un nom pour l’ouvrir.',
         'Langues : Langues de l’enfant, Langue de communication (ce que dit l’appareil, ce qui est écrit sur les cases), Arabe (le dialecte, quand l’arabe est coché) et Langue de navigation (menus, boutons, guide).',
-        'Phrase : prononcer chaque mot, ajouter à la phrase, grammaire automatique (à couper pour travailler une forme), accords au féminin (seulement avec le français ou l’arabe parmi les langues de l’enfant : l’anglais n’a pas d’accords), zone rapide (oui, non, stop, attends…), ouvrir l’application citée dans la phrase. Toucher : la façon de sélectionner (toucher puis lever le doigt, dès que le doigt touche, ou garder le doigt appuyé avec une durée d’appui), la pause avant de retoucher la même image (2 s : fini les « pas pas pas »), petite vibration au toucher.',
+        'Phrase : prononcer chaque mot, ajouter à la phrase, grammaire automatique (à couper pour travailler une forme), accords au féminin (seulement avec le français ou l’arabe parmi les langues de l’enfant : l’anglais n’a pas d’accords), zone rapide (oui, non, stop, attends…), ouvrir l’application citée dans la phrase. Toucher : la façon de sélectionner (toucher puis lever le doigt, dès que le doigt touche, ou garder le doigt appuyé avec une durée d’appui), la pause avant de retoucher la même image (2 s : fini les « pas pas pas »).',
         'Mots et images : les mots affichés (niveau), Bibliothèque de symboles (Pictogrammes ou Emoji), Afficher le texte sous les images, taille des images. Affichage : boutons et texte plus grands ou contraste élevé, moins d’animations (ce choix arrête le mouvement des images), les images qui bougent quand on les touche (le bouton Essayer montre le mouvement).',
         'Barre universelle : masquer TLA, Planning ou Minuteur si l’enfant n’en a pas besoin (CAA et Aide restent toujours). Sous Planning : le planning de la semaine et celui du mois. Rien ne change tant que vous n’avez pas touché Enregistrer, en bas de la page ; Annuler les modifications revient en arrière.',
         'Voix : la vitesse, et Type de voix : Femme, Homme, Fille ou Garçon (Fille et Garçon sont des voix de l’appareil rendues plus aiguës ; les appareils n’ont pas de vraies voix d’enfant). Voix utilisée montre la voix de chaque langue : elle vient de l’appareil, et « voix approchée » signifie qu’il n’a pas de voix de ce type pour cette langue (on peut en installer dans les réglages de l’appareil). Bouton Aide : le message dit en premier, les informations utiles.',
@@ -495,7 +495,7 @@ const BASE: BaseChapter[] = [
       en: [
         'Settings has several pages: Board (the child’s settings, described here), Team, Progress (if the family chose it) and Account. Without an account, Team, Progress and Account only explain what they will hold. At the top, the field “Search a setting (voice, code, language…)” finds a setting by its name. The Board page is sorted into groups: touch a name to open it.',
         'Languages: Child’s languages, Communication language (what the device says, what is written on the cards), Arabic (the dialect, when Arabic is ticked) and Navigation language (menus, buttons, guide).',
-        'Sentence: say each word, add to sentence, automatic grammar (turn off to practise a form), feminine agreement (only with French or Arabic among the child’s languages: English has no agreement), quick zone (yes, no, stop, wait…), open the app named in the sentence. Touch: the access method (touch then lift the finger, as soon as the finger touches, or keep the finger pressed with a hold time), the pause before touching the same picture again (2 s: no more “no no no”), small vibration on touch.',
+        'Sentence: say each word, add to sentence, automatic grammar (turn off to practise a form), feminine agreement (only with French or Arabic among the child’s languages: English has no agreement), quick zone (yes, no, stop, wait…), open the app named in the sentence. Touch: the access method (touch then lift the finger, as soon as the finger touches, or keep the finger pressed with a hold time), the pause before touching the same picture again (2 s: no more “no no no”).',
         'Words and pictures: the words shown (level), Symbol library (Pictograms or Emoji), Show text under images, picture size. Display: larger buttons and text or high contrast, fewer animations (this choice stops the wiggling), pictures that wiggle when touched (the Try it button shows the movement).',
         'Universal bar: hide Boards, Schedule or Timer if the child doesn’t need them (AAC and Help always stay). Under Schedule: the week schedule and the month schedule. Nothing changes until you touch Save, at the bottom of the page; Cancel changes goes back.',
         'Voice: the speed, and Voice type: Woman, Man, Girl or Boy (Girl and Boy are voices of the device made higher; devices have no real children’s voices). Voice used shows the voice of each language: it comes from the device, and “approximate voice” means the device has no voice of that type for that language (more can be installed in the device’s own settings). Help button: the first message said, the useful information.',
@@ -788,7 +788,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
     title: 'المؤقت',
     steps: [
       '«المؤقت»: اختر مدة؛ يظهر الوقت المتبقي على شكل دائرة أو شريط أو أرقام.',
-      'يستمر أثناء التواصل. في النهاية: صوت، واهتزاز (على الهاتف)، و«خلص الوقت!».',
+      'يستمر أثناء التواصل. في النهاية: صوت، و«خلص الوقت!».',
       'يظهر فوق اللوحة من دون أن يخفي أي صورة. بجانبه صورة ما ينتظره الطفل (المسبح، الحديقة…): تُقال في النهاية.',
     ],
   },
@@ -892,7 +892,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
     steps: [
       'للإعدادات عدة صفحات: «اللوحة» (إعدادات الطفل، وهي المشروحة هنا)، «الفريق»، «المتابعة» (إذا اختارتها العائلة) و«الحساب». دون حساب، تشرح صفحات «الفريق» و«المتابعة» و«الحساب» ما ستحتويه فقط. في الأعلى، حقل «ابحث عن إعداد (الصوت، الرمز، اللغة…)» يجد الإعداد باسمه. صفحة «اللوحة» مرتّبة في مجموعات: المس اسماً لفتحه.',
       '«اللغات»: «لغات الطفل»، «لغة التواصل» (ما يقوله الجهاز وما يُكتب على البطاقات)، «العربية» (اللهجة، إذا كانت العربية محدّدة) و«لغة التنقل» (القوائم والأزرار والدليل).',
-      '«الجملة»: نطق كل كلمة، إضافة الكلمات إلى الجملة، القواعد التلقائية (أوقفها للتدرّب على صيغة)، التأنيث (فقط إذا كانت الفرنسية أو العربية من لغات الطفل: لا تأنيث في الإنجليزية)، المنطقة السريعة (نعم، لا، توقف، انتظر…)، فتح التطبيق المذكور في الجملة. «اللمس»: طريقة الاختيار (المس ثم ارفع الإصبع، بمجرد أن يلمس الإصبع، أو إبقاء الإصبع مضغوطاً مع مدة الضغط)، مهلة قبل لمس الصورة نفسها مجدداً (ثانيتان)، اهتزاز خفيف عند اللمس.',
+      '«الجملة»: نطق كل كلمة، إضافة الكلمات إلى الجملة، القواعد التلقائية (أوقفها للتدرّب على صيغة)، التأنيث (فقط إذا كانت الفرنسية أو العربية من لغات الطفل: لا تأنيث في الإنجليزية)، المنطقة السريعة (نعم، لا، توقف، انتظر…)، فتح التطبيق المذكور في الجملة. «اللمس»: طريقة الاختيار (المس ثم ارفع الإصبع، بمجرد أن يلمس الإصبع، أو إبقاء الإصبع مضغوطاً مع مدة الضغط)، مهلة قبل لمس الصورة نفسها مجدداً (ثانيتان).',
       '«الكلمات والصور»: الكلمات الظاهرة (المستوى)، «مكتبة الرموز» (رموز أو إيموجي)، «إظهار النص تحت الصور»، حجم الصور. «العرض»: أزرار ونص أكبر أو تباين عالٍ، حركة أقل (هذا الخيار يوقف حركة الصور)، الصور التي تتحرّك عند لمسها (زر «جرّب» يُظهر الحركة).',
       'الشريط الدائم: إخفاء «اللوحات» أو «الجدول» أو «المؤقت» إذا لم يحتجها الطفل («التواصل» و«مساعدة» يبقيان دائماً). تحت «الجدول»: جدول الأسبوع وجدول الشهر. لا يتغيّر شيء قبل لمس «حفظ» أسفل الصفحة؛ «إلغاء التغييرات» يعيد كل شيء كما كان.',
       'الصوت: السرعة، و«نوع الصوت»: امرأة، رجل، بنت أو صبي («بنت» و«صبي» من أصوات الجهاز بعد جعلها أحدّ؛ لا توجد في الأجهزة أصوات أطفال حقيقية). «الصوت المستخدم» يبيّن صوت كل لغة: يأتي من الجهاز، و«صوت تقريبي» يعني أن الجهاز لا يملك صوتاً من هذا النوع لهذه اللغة (يمكن تثبيت أصوات أخرى من إعدادات الجهاز). زر المساعدة: الرسالة الأولى التي تُقال، والمعلومات المفيدة.',

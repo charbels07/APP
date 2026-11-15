@@ -134,11 +134,9 @@ export function applyAnswers(base: Profile, a: Answers, custom: { id: string; la
   st.visual = a.visual === 'unsure' ? 'standard' : a.visual;
   if (a.feedback === 'standard') {
     st.wiggle = true;
-    st.haptics = true;
     st.reduceMotion = false;
   } else if (a.feedback === 'reduced') {
     st.wiggle = false;
-    st.haptics = false;
     st.reduceMotion = true;
     st.timer = { ...st.timer, sound: false };
   }

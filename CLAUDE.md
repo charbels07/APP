@@ -43,8 +43,7 @@
   English are said by voices of Microsoft Azure AI Speech chosen by the owner by ear (Maisie EN, Eloise FR),
   through the server function `caa-voice`. The boy is NOT sent there: he keeps the tablet's voice
   (free), a man's voice raised a little to sound like Azure's "Dustin" (`CHILD.boyFromMan` in `voices.ts`).
-  Girl's voice: (`src/lib/childVoice.ts`, `childVoiceSound.ts`, sounds kept by
-  `saidCache`). Do not change these voices unless asked. The tablet's voice stays the safety net (offline, not
+  The girl's voice lives in `src/lib/childVoice.ts`, `childVoiceSound.ts` (sounds kept by `saidCache`). Do not change these voices unless asked. The tablet's voice stays the safety net (offline, not
   deployed, Arabic): never leave a child silent, and show the setting only when `childVoiceAvailable()`. The
   family is told the text travels to Microsoft and can refuse (`settings.childVoiceOnline`); never send the
   child's name. With a child's voice, "Create a new word" requires a recording before Save (`PickerPanel`).

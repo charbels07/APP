@@ -1257,7 +1257,6 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
             ...[1, 2, 3, 5].map((n) => ({ value: String(n), label: `${n} s` })),
           ]}
         />
-        <Toggle label={o.hapticsToggle} value={st.haptics !== false} onChange={(v) => set((x) => void (x.haptics = v))} />
       </Group>
 
       <Group title={t.gSentence} icon="pencil">

@@ -113,7 +113,6 @@ const fr = {
   bar: 'Barre',
   digits: 'Chiffres',
   sound: 'Son',
-  vibration: 'Vibration',
   timeUp: { fr: 'C’est fini !', en: 'Time is up!', ar: 'خلص الوقت!' },
   // caregiver
   pinTitle: 'Mode accompagnant',
@@ -400,7 +399,6 @@ const fr = {
   pictureChosen: 'Image choisie',
   // wiggle
   sWiggle: 'Les images bougent quand on les touche',
-  sWiggleNote: 'L’image bouge à l’écran. Un iPad ne peut pas vibrer dans la main (il n’a pas de vibreur) ; sur un téléphone, voir « Petite vibration au toucher » plus bas.',
   sWiggleTry: 'Essayer',
   sSearch: 'Rechercher un réglage (voix, code, langue…)',
   sSearchNone: 'Aucun réglage de cette page ne correspond.',
@@ -531,7 +529,6 @@ const en: Dict = {
   bar: 'Bar',
   digits: 'Digits',
   sound: 'Sound',
-  vibration: 'Vibration',
   pinTitle: 'Caregiver mode',
   pinChooseTitle: 'Caregiver code',
   pinWhy: [
@@ -806,7 +803,6 @@ const en: Dict = {
   pictureChosen: 'Picture chosen',
   // wiggle
   sWiggle: 'Pictures wiggle when touched',
-  sWiggleNote: 'The picture moves on the screen. An iPad cannot buzz in the hand (it has no vibration motor); on a phone, see “Small vibration on touch” further down.',
   sWiggleTry: 'Try it',
   sSearch: 'Search a setting (voice, code, language…)',
   sSearchNone: 'No setting on this page matches.',
@@ -941,7 +937,6 @@ const ar: Dict = {
   bar: 'شريط',
   digits: 'أرقام',
   sound: 'صوت',
-  vibration: 'اهتزاز',
   pinTitle: 'وضع المرافق',
   pinChooseTitle: 'رمز المرافق',
   pinWhy: [
@@ -1201,7 +1196,6 @@ const ar: Dict = {
   saving: 'جارٍ الحفظ…',
   pictureChosen: 'الصورة المختارة',
   sWiggle: 'تتحرّك الصور عند لمسها',
-  sWiggleNote: 'تتحرّك الصورة على الشاشة. الآيباد لا يهتزّ في اليد (ليس فيه محرّك اهتزاز)؛ على الهاتف، انظر «اهتزاز خفيف عند اللمس» في الأسفل.',
   sWiggleTry: 'جرّب',
   sSearch: 'ابحث عن إعداد (الصوت، الرمز، اللغة…)',
   sSearchNone: 'لا إعداد في هذه الصفحة يطابق البحث.',

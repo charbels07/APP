@@ -128,13 +128,6 @@ export function TimerCard() {
               label={t.sound}
               onPress={() => app.update((p) => void (p.settings.timer.sound = !p.settings.timer.sound))}
             />
-            <Btn
-              small
-              kind={profile.settings.timer.haptic ? 'primary' : 'secondary'}
-              selected={profile.settings.timer.haptic}
-              label={t.vibration}
-              onPress={() => app.update((p) => void (p.settings.timer.haptic = !p.settings.timer.haptic))}
-            />
           </View>
         </OptionsBox>
       )}

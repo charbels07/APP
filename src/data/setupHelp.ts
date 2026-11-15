@@ -178,18 +178,15 @@ export const SETUP_HELP: Record<SetupHelpId, SetupHelp> = {
   feedback: {
     lines: {
       fr: [
-        'Standard : l’image bouge un peu quand on la touche et quand son mot est dit, ce qui aide l’enfant à suivre. Réduit : pas de mouvement, pas de vibration, minuteur silencieux — pour un enfant vite gêné par le bruit ou le mouvement. La voix reste toujours.',
-        'Une tablette comme l’iPad n’a pas de moteur de vibration : seule l’image bouge.',
+        'Standard : l’image bouge un peu quand on la touche et quand son mot est dit, ce qui aide l’enfant à suivre. Réduit : pas de mouvement, minuteur silencieux — pour un enfant vite gêné par le bruit ou le mouvement. La voix reste toujours.',
         'Cela se change dans les Réglages.',
       ],
       en: [
-        'Standard: the picture moves a little when it is touched and when its word is said, which helps the child follow. Reduced: no movement, no vibration, a silent timer — for a child easily bothered by noise or movement. The voice always stays.',
-        'A tablet such as an iPad has no vibration motor: only the picture moves.',
+        'Standard: the picture moves a little when it is touched and when its word is said, which helps the child follow. Reduced: no movement, a silent timer — for a child easily bothered by noise or movement. The voice always stays.',
         'It can be changed in Settings.',
       ],
       ar: [
-        'عادي: تتحرك الصورة قليلاً عند لمسها وعند نطق كلمتها، وهذا يساعد الطفل على المتابعة. مخفَّف: بلا حركة ولا اهتزاز ومؤقت صامت — لطفل يزعجه الصوت أو الحركة بسرعة. الصوت يبقى دائماً.',
-        'الجهاز اللوحي مثل الآيباد ليس فيه محرّك اهتزاز: تتحرك الصورة فقط.',
+        'عادي: تتحرك الصورة قليلاً عند لمسها وعند نطق كلمتها، وهذا يساعد الطفل على المتابعة. مخفَّف: بلا حركة ومؤقت صامت — لطفل يزعجه الصوت أو الحركة بسرعة. الصوت يبقى دائماً.',
         'يمكن تغييره من الإعدادات.',
       ],
     },

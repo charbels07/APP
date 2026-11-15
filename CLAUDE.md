@@ -59,6 +59,8 @@
   the device has no man's. Chrome's
   "Google" voices cannot change height: a child's voice prefers another voice of the device. The boy has not
   been confirmed by the owner's ear: change its numbers only with them.
+- Vibration: removed on purpose (owner's decision, November 2026): no vibration anywhere (touch, timer,
+  dragging) and no switch for it. Do not add `expo-haptics` or `navigator.vibrate` back unless asked.
 - With a child's voice (Girl or Boy), "Create a new word" requires a recording in the board's language before
   Save (`PickerPanel`, `t.recordRequired`).
 - Settings → Board page (owner's request, November 2026: "tidy, simple words, nothing twice"): ten groups

@@ -1,4 +1,3 @@
-import * as Haptics from 'expo-haptics';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { strings, type UiStrings } from '../i18n/ui';
 import { createRepeatGuard } from '../lib/repeatGuard';
@@ -356,10 +355,8 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
   // ── Wiggling pictograms (setting): when touched and while being said ──
   const [wiggle, setWiggle] = useState<Wiggle | null>(null);
   const wiggleSeq = useRef(0);
-  const pulse = useCallback((concept: string, key?: string, touched = false) => {
+  const pulse = useCallback((concept: string, key?: string) => {
     const st = profileRef.current.settings;
-    // Phones buzz in the hand when a picture is touched (their own switch; iPads have no vibration motor).
-    if (touched && st.haptics !== false) Haptics.selectionAsync().catch(() => {});
     // The picture wiggles on the screen (its own switch; "fewer animations" turns it off).
     if (!st.wiggle || st.reduceMotion) return;
     setWiggle({ concept, key, n: ++wiggleSeq.current });
@@ -461,7 +458,7 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
         stripRef.current = [...stripRef.current, item];
         editStrip((s) => [...s, item]);
       }
-      pulse(conceptId, item.key, true);
+      pulse(conceptId, item.key);
       // An app pictogram opens its app (not while a demonstration is recorded or replayed).
       if (!playingRef.current && !recordRef.current && appLinkOf(p, conceptId)) launchApp(conceptId);
     },
@@ -850,9 +847,6 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
         const waited = timerRef.current.concept;
         const said = strings(p.settings.uiLang).timeUp[l] + (waited ? ` ${label(p, waited, l)}` : '');
         setTimeout(() => speakText(said, l, p.settings), 1100);
-      }
-      if (p.settings.timer.haptic) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       }
     }, 200);
     return () => clearInterval(id);

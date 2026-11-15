@@ -66,7 +66,7 @@ This file grows as each feature is built. Each line says **what** was made, **ho
 | Languages and voice | Several communication languages (the first is the main one); female / male, adult / child voice with a *Listen* button (the device's text-to-speech). |
 | Favourite activities | Chosen from pictures, or typed: a typed activity gets a pictogram from the offline library when one matches. They go in the « mes mots » folder, in free slots only. |
 | Presentation | Standard, larger text, or high contrast (dark cards, bright borders), drawn by the card component (`Grid.tsx`). |
-| Sounds and animation | Standard, or reduced (no wiggle, no vibration, silent timer; the voice stays). |
+| Sounds and animation | Standard, or reduced (no wiggle, silent timer; the voice stays). |
 | Starting vocabulary | Our core vocabulary, the board already on this tablet (from before accounts), a sibling's board, or a profile file. |
 | Access method | Select when the finger lifts, as soon as it touches, or by holding it (0.5–2 s) — handled by the touch events of each card. |
 | Try the board | The full app with the chosen settings; *Finish* creates the child's profile on the server. |
@@ -619,6 +619,14 @@ About. Searching still works: only the groups that hold the word are shown, alre
 
 Labels were shortened and most explaining sentences removed (Arabic, word places, repeat delay, wiggle,
 week and month schedules, the bar). The guide and the set-up help name the new groups, in three languages.
+
+## Round 35 — Languages and agreement shown only when they apply; no more vibration
+
+| What | How it was done |
+|---|---|
+| Which Arabic | Settings → Languages: the dialects only show while Arabic is ticked among the child's languages; unticking Arabic means no Arabic in the app (as at set-up), so "None" is gone. |
+| Agreement: boy / girl | Settings → Sentence: only shown when French or Arabic is one of the child's languages (English words have no feminine form). |
+| Vibration removed (owner's decision) | No vibration anywhere: the "Small vibration on touch" switch, the timer's "Vibration" button, the buzz when a card or a list item is held, and the `expo-haptics` package are gone (Round 25 is history). |
 
 ## How everything is checked
 

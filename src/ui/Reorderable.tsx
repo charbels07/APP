@@ -6,7 +6,6 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, PanResponder, Platform, Pressable, StyleSheet, Text, View, type LayoutRectangle } from 'react-native';
-import * as Haptics from 'expo-haptics';
 import { Icon } from './Icon';
 import { C } from './theme';
 
@@ -131,7 +130,6 @@ export function Reorderable<T>({
     xy.setValue({ x: 0, y: 0 });
     setHeld({ from: index, over: index });
     holdingRef.current?.(true);
-    Haptics.selectionAsync().catch(() => {});
   };
   const release = (index: number) => {
     const d = drag.current;

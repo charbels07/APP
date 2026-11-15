@@ -117,22 +117,23 @@ const CHILD = {
   /** the girl, from a woman's voice */
   girl: 1.4,
   /** the boy without a man's voice: a woman's voice a little lower, the height of "Dustin" */
-  boy: 0.9,
-  boyOwnVoice: 0.9,
+  boy: 1.05,
+  boyOwnVoice: 1.05,
   /** from the device's own voice (woman or man: unknown) */
   device: 1.3,
   /** the boy, from a man's voice whose own height is not known (see boyPitch) */
-  boyFromMan: 1.4,
+  boyFromMan: 1.5,
   /** the girl from a man's voice, when the language has no woman's voice */
   girlFromMan: 1.65,
   /** no named voice at all for the language */
   girlUnknown: 1.45,
   /** devices' default voices are women's: about the same height as the boy from a woman's voice */
-  boyUnknown: 0.95,
+  boyUnknown: 1.05,
 };
 
-/** The height aimed at for the boy: the young voice chosen by the owner ("Dustin" + 8 %). */
-const BOY_HZ = 170;
+/** The height aimed at for the boy: a little above the young voice the owner liked ("Dustin" + 8 %,
+ *  160–190 Hz), because he asked for a boy who sounds more like a child. */
+const BOY_HZ = 185;
 /**
  * Own height (Hz) of the men's voices that Edge offers ("… Online (Natural)": the same voices as
  * Azure's, measured there on the same sentences as Dustin). Other men's voices (Apple, Google,
@@ -147,7 +148,7 @@ const MEN_HZ: Record<string, number> = {
 function boyPitch(v: Pick<VoiceInfo, 'id' | 'name'>): number {
   if (!/online \(natural\)/i.test(v.name)) return CHILD.boyFromMan;
   const hz = tokensOf(v).map((t) => MEN_HZ[t]).find(Boolean);
-  return hz ? Math.min(1.6, Math.max(1, +(BOY_HZ / hz).toFixed(2))) : CHILD.boyFromMan;
+  return hz ? Math.min(1.7, Math.max(1, +(BOY_HZ / hz).toFixed(2))) : CHILD.boyFromMan;
 }
 
 /**

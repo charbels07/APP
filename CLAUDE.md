@@ -48,8 +48,9 @@
   bring them back, and never remove the Girl and Boy voices (the owner was upset when they went).
 - How the four are made (`chooseVoice`): voices are told apart by name (Android: by code, `ANDROID_MEN`);
   machine-like and joke voices (`ROBOTIC`) come last. Girl = a woman's voice raised (`CHILD.girl`, the owner
-  judged it good: do not change it). Boy = a man's voice raised by about 40 % (`boyPitch`: aimed at a young
-  voice the owner liked, 160–190 Hz), a woman's voice a little lower when the device has no man's. Chrome's
+  judged it good: do not change it). Boy = a man's voice raised by 50 % (`boyPitch`: aimed a little above a young
+  voice the owner liked, after he asked for "a bit more like a child"), a woman's voice barely raised when
+  the device has no man's. Chrome's
   "Google" voices cannot change height: a child's voice prefers another voice of the device. The boy has not
   been confirmed by the owner's ear: change its numbers only with them.
 - With a child's voice (Girl or Boy), "Create a new word" requires a recording in the board's language before

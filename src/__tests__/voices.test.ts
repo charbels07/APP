@@ -37,11 +37,11 @@ describe('choosing the voice for each language', () => {
   });
   it('a girl is a woman’s voice, higher; a boy is a man’s voice a little higher (a young voice, like Dustin)', () => {
     expect(chooseVoice(voices, 'fr', 'fr-FR', 'f', 'child')).toMatchObject({ id: 'au', pitch: 1.4, exact: true });
-    expect(chooseVoice(voices, 'fr', 'fr-FR', 'm', 'child')).toMatchObject({ id: 't', pitch: 1.4, exact: true });
+    expect(chooseVoice(voices, 'fr', 'fr-FR', 'm', 'child')).toMatchObject({ id: 't', pitch: 1.5, exact: true });
     expect(chooseVoice(voices, 'fr', 'fr-FR', 'device', 'child')).toEqual({ pitch: 1.3, exact: true });
     // A boy and a man never get the same voice and height.
     expect(chooseVoice(voices, 'fr', 'fr-FR', 'm', 'child')).not.toEqual(chooseVoice(voices, 'fr', 'fr-FR', 'm', 'adult'));
-    expect(chooseVoice(voices, 'en', 'en-US', 'm', 'child')).toMatchObject({ id: 'd', pitch: 1.4 });
+    expect(chooseVoice(voices, 'en', 'en-US', 'm', 'child')).toMatchObject({ id: 'd', pitch: 1.5 });
     // The two children never share a voice when the device has a man's and a woman's.
     const girl = chooseVoice(voices, 'en', 'en-US', 'f', 'child');
     const boy = chooseVoice(voices, 'en', 'en-US', 'm', 'child');
@@ -49,22 +49,22 @@ describe('choosing the voice for each language', () => {
     expect(boy.pitch).toBeGreaterThan(1);
     // A machine-like man's voice is never the boy.
     const eddy = [v('au', 'Audrey', 'fr-FR'), v('ed', 'Eddy (French (France))', 'fr-FR')];
-    expect(chooseVoice(eddy, 'fr', 'fr-FR', 'm', 'child')).toMatchObject({ id: 'au', pitch: 0.9 });
+    expect(chooseVoice(eddy, 'fr', 'fr-FR', 'm', 'child')).toMatchObject({ id: 'au', pitch: 1.05 });
   });
   it('no man’s voice but two women’s voices of the same country: the boy gets the other one (another timbre)', () => {
     const noMen = voices.filter((x) => !['t', 'd'].includes(x.id));
     const more = [...noMen, v('ma', 'Marie', 'fr-FR'), v('fl', 'Flo (French (France))', 'fr-FR'), v('k', 'Karen', 'en-AU')];
     expect(chooseVoice(more, 'fr', 'fr-FR', 'f', 'child')).toMatchObject({ id: 'au', pitch: 1.4 });
-    expect(chooseVoice(more, 'fr', 'fr-FR', 'm', 'child')).toMatchObject({ id: 'ma', pitch: 0.9, exact: true });
+    expect(chooseVoice(more, 'fr', 'fr-FR', 'm', 'child')).toMatchObject({ id: 'ma', pitch: 1.05, exact: true });
     // Never another accent (Karen is Australian) and never a machine-like voice (Flo).
-    expect(chooseVoice(more, 'en', 'en-US', 'm', 'child')).toMatchObject({ id: 's', pitch: 0.9 });
-    expect(chooseVoice([...noMen, v('fl', 'Flo (French (France))', 'fr-FR')], 'fr', 'fr-FR', 'm', 'child')).toMatchObject({ id: 'au', pitch: 0.9 });
+    expect(chooseVoice(more, 'en', 'en-US', 'm', 'child')).toMatchObject({ id: 's', pitch: 1.05 });
+    expect(chooseVoice([...noMen, v('fl', 'Flo (French (France))', 'fr-FR')], 'fr', 'fr-FR', 'm', 'child')).toMatchObject({ id: 'au', pitch: 1.05 });
   });
   it('a language with only a man’s voice: the child voice is that voice raised more (and says it is approximate)', () => {
-    expect(chooseVoice(voices, 'ar', 'ar-SA', 'm', 'child')).toMatchObject({ id: 'm', pitch: 1.4, exact: true });
+    expect(chooseVoice(voices, 'ar', 'ar-SA', 'm', 'child')).toMatchObject({ id: 'm', pitch: 1.5, exact: true });
     expect(chooseVoice(voices, 'ar', 'ar-SA', 'f', 'child')).toMatchObject({ id: 'm', pitch: 1.65, exact: false });
     // A precise voice chosen by the family is raised according to what it is.
-    expect(chooseVoice(voices, 'fr', 'fr-FR', 'm', 'child', 't')).toMatchObject({ id: 't', pitch: 1.4 });
+    expect(chooseVoice(voices, 'fr', 'fr-FR', 'm', 'child', 't')).toMatchObject({ id: 't', pitch: 1.5 });
     expect(chooseVoice(voices, 'fr', 'fr-FR', 'f', 'child', 'am')).toMatchObject({ id: 'am', pitch: 1.4 });
   });
   it('without a voice of that kind, the device voice is pitched towards it (and says so)', () => {
@@ -127,19 +127,19 @@ describe('a man’s voice that sounds like a man, not like a machine', () => {
     expect(chooseVoice(women, 'fr', 'fr-FR', 'm', 'adult')).toEqual({ pitch: 0.7, exact: false });
     expect(chooseVoice(women, 'en', 'en-US', 'm', 'adult')).toEqual({ pitch: 0.7, exact: false });
     expect(chooseVoice(women, 'ar', 'ar-SA', 'm', 'adult')).toEqual({ pitch: 0.8, exact: false });
-    expect(chooseVoice(women, 'fr', 'fr-FR', 'm', 'child')).toMatchObject({ id: 'g', pitch: 0.9, exact: true });
+    expect(chooseVoice(women, 'fr', 'fr-FR', 'm', 'child')).toMatchObject({ id: 'g', pitch: 1.05, exact: true });
   });
 
   it('the boy on every kind of device: a man’s voice raised towards the chosen young voice', () => {
     // An Android tablet: a man's voice is found by its code.
     const android = [v('fr-fr-x-frc-local', 'fr-fr-x-frc-local', 'fr-FR'), v('fr-fr-x-frd-local', 'fr-fr-x-frd-local', 'fr-FR')];
-    expect(chooseVoice(android, 'fr', 'fr-FR', 'm', 'child')).toMatchObject({ id: 'fr-fr-x-frd-local', pitch: 1.4, exact: true });
+    expect(chooseVoice(android, 'fr', 'fr-FR', 'm', 'child')).toMatchObject({ id: 'fr-fr-x-frd-local', pitch: 1.5, exact: true });
     // Edge on a computer: each man's voice has its measured height, so each is raised by what it needs.
     const edge = [v('h', 'Microsoft Henri Online (Natural) - French (France)', 'fr-FR'), v('g', 'Microsoft Guy Online (Natural) - English (United States)', 'en-US')];
-    expect(chooseVoice(edge, 'fr', 'fr-FR', 'm', 'child')).toMatchObject({ id: 'h', pitch: 1.39 });
-    expect(chooseVoice(edge, 'en', 'en-US', 'm', 'child')).toMatchObject({ id: 'g', pitch: 1.06 });
+    expect(chooseVoice(edge, 'fr', 'fr-FR', 'm', 'child')).toMatchObject({ id: 'h', pitch: 1.52 });
+    expect(chooseVoice(edge, 'en', 'en-US', 'm', 'child')).toMatchObject({ id: 'g', pitch: 1.16 });
     // No voice with a known name: the device's default voice, hardly changed.
-    expect(chooseVoice([], 'fr', 'fr-FR', 'm', 'child')).toEqual({ pitch: 0.95, exact: false });
+    expect(chooseVoice([], 'fr', 'fr-FR', 'm', 'child')).toEqual({ pitch: 1.05, exact: false });
   });
   it('four voices: woman, man, girl, boy; a board left on "device voice" follows the child', () => {
     expect(voiceOption({ voiceKind: 'f', voiceAge: 'adult' })).toBe('woman');
@@ -154,6 +154,6 @@ describe('a man’s voice that sounds like a man, not like a machine', () => {
     const chrome = [v('g', 'Google UK English Male', 'en-GB'), v('d', 'Microsoft David - English (United States)', 'en-US')];
     expect(chooseVoice(chrome, 'en', 'en-GB', 'm', 'child')).toMatchObject({ id: 'd' });
     expect(chooseVoice(chrome, 'en', 'en-GB', 'm', 'adult')).toMatchObject({ id: 'g' });
-    expect(chooseVoice(chrome.slice(0, 1), 'en', 'en-GB', 'm', 'child')).toMatchObject({ id: 'g', pitch: 1.4 });
+    expect(chooseVoice(chrome.slice(0, 1), 'en', 'en-GB', 'm', 'child')).toMatchObject({ id: 'g', pitch: 1.5 });
   });
 });

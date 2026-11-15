@@ -114,8 +114,11 @@ function sends them. What keeps it safe:
   own `…supabase.co/functions/v1/caa-mail` address;
 - the function cannot choose what is sent or to whom: subject and text come from the database,
   the address is a secret of the function;
-- the messages hold counts only: no name, no word, no sentence, no document; the use of the
-  boards follows the back-office rule (consenting families, 5 children or more);
+- the request e-mail gives the professional's name, profession and country (the owner asked for
+  the name: it sits in the team's mailbox, so that mailbox needs two-step sign-in); never a
+  document, an address or a phone number, and no name in the subject;
+- the weekly figures hold counts only: no name, no word, no sentence; the use of the boards
+  follows the back-office rule (consenting families, 5 children or more);
 - one e-mail a day for the same professional, 30 a day in all; a failure never blocks the request.
 
 `supabase/tests/team_mail_scenario.sql` plays each of these.

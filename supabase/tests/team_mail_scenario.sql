@@ -27,7 +27,7 @@ insert into auth.users (id, email, email_confirmed_at, raw_user_meta_data) value
   (:'nour', 'nour@centre.lb', now(), '{"role":"pro","display_name":"Nour"}'),
   (:'rita', 'rita@example.com', now(), '{"role":"parent","display_name":"Rita"}');
 
--- 1. A professional sends the request: one message is written for the team, with no name in it.
+-- 1. A professional sends the request: one message is written for the team (name, profession, country).
 set role authenticated;
 select set_config('request.jwt.claim.sub', :'sarah', false);
 insert into verifications (user_id, full_name, country, profession, documents)
@@ -40,9 +40,9 @@ reset role;
 select test.ok((select count(*) = 1 and bool_and(kind = 'application' and about = :'sarah' and sent_at is null) from team_mail),
   'a professional sends the request → one message for the team');
 select test.ok((select body like '%Speech-language therapist%' and body like '%Country: France%' and body like '%waiting for a decision: 1%'
-                   and body not like '%Sarah%' and body not like '%Khoury%' and body not like '%clinic%' and body not like '%.pdf%'
-                   and subject not like '%Sarah%' from team_mail),
-  'the message gives the profession and the country: never the name, the address or a document');
+                   and body like '%- Name: Sarah Khoury%' and body not like '%clinic%' and body not like '%@%' and body not like '%.pdf%'
+                   and subject not like '%Sarah%' and subject not like '%Khoury%' from team_mail),
+  'the message gives the name, the profession and the country: never the address or a document, and no name in the subject');
 select test.ok((select count(*) = 0 from net.calls), 'not connected yet: the message waits, nothing is called');
 
 -- 2. From the app, signed in or not, nothing of this can be read, written, sent or redirected.
@@ -118,12 +118,12 @@ select test.ok((select count(*) = 1 from team_mail where kind = 'application'), 
 set role authenticated;
 select set_config('request.jwt.claim.sub', :'marc', false);
 insert into verifications (user_id, full_name, country, profession, documents)
-  values (:'marc', 'Marc Tannous', E'Liban\nBcc: x@y.z', 'teacher', format('[{"name":"c.pdf","kind":"licence","ref":"%s/1-c.pdf"}]', :'marc')::jsonb);
+  values (:'marc', E'Marc\nTannous', E'Liban\nBcc: x@y.z', 'teacher', format('[{"name":"c.pdf","kind":"licence","ref":"%s/1-c.pdf"}]', :'marc')::jsonb);
 select submit_verification();
 reset role;
 select test.ok((select count(*) = 2 from team_mail where kind = 'application')
            and (select body like '%Special education teacher%' and body like '%Country: Liban Bcc: x@y.z%' and body like '%decision: 2%'
-                       and body not like '%Marc%' and body not like '%Tannous%' from team_mail where about = :'marc'),
+                       and body like '%- Name: Marc Tannous%' from team_mail where about = :'marc'),
   'another professional → another message; a line break typed in a field stays inside its line');
 
 -- 6. A mailbox that breaks never blocks the professional.

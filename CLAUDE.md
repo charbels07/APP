@@ -99,9 +99,11 @@
   A professional's code field accepts an invitation code or the family's code.
 - E-mails to the app's own team (a professional applied; the figures of the week): written by the database
   (`team_mail`, migration `20261116000000_team_mail.sql`), sent by the function `caa-mail`, which is only a
-  postman. Counts only: no name, word, sentence or document, and the back-office rule for usage (consenting
-  families, 5 children or more). Nothing of it is reachable from the app; a new kind of message is written
-  in SQL with its checks in `supabase/tests/team_mail_scenario.sql`.
+  postman. The request e-mail gives the professional's name, profession and country (the owner asked for
+  the name), never a document or an address, and no name in the subject. The weekly figures are counts
+  only: no name, word or sentence, and the back-office rule for usage (consenting families, 5 children or
+  more). Nothing of it is reachable from the app; a new kind of message is written in SQL with its checks
+  in `supabase/tests/team_mail_scenario.sql`.
 - The board's bar has "Settings" and "Lock" (child lock) for the parents: outside caregiver mode they
   always go through the code (`{ kind: 'pin', then: { kind: 'settings' | 'lock' } }`), and open without
   turning caregiver mode on (`opensAlone`). Never open the settings or the lock from the bar without the code.

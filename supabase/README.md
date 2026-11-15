@@ -206,8 +206,8 @@ to be renewed every six months. To offer it later, do that set-up, put the Servi
 
 Two e-mails arrive in the team's mailbox by themselves:
 
-- **when a professional sends their documents** for verification (profession, country, how many
-  requests are waiting — no name, no document);
+- **when a professional sends their documents** for verification (name, profession, country, how
+  many requests are waiting — no document, no address: those are read in the back office);
 - **every Monday at 06:00 UTC**, the figures of the week (new accounts, profiles, requests waiting,
   messages, use of the boards). Counts only; the use of the boards only covers families who share
   anonymous statistics, and only from 5 children up — the same rule as the back office.
@@ -216,8 +216,10 @@ The database writes these messages; a small server function, `caa-mail`, sends t
 Gmail account that already sends the sign-in codes. Nothing in the app changes.
 
 **1. The function.** Supabase → *Edge Functions* → *Deploy a new function* → *Via Editor*.
-Name it exactly `caa-mail`, replace the example by the whole content of
-`supabase/functions/caa-mail/index.ts`, and deploy. Then open the function's settings and turn
+Name it exactly `caa-mail`. The code goes **in the file called `index.ts`** (click it in the list
+on the left, select everything, paste the whole content of `supabase/functions/caa-mail/index.ts`
+over the example): Supabase only runs `index.ts`. Do not keep a second file (`file2.ts`…). Then
+deploy. Then open the function's settings and turn
 **off** the switch called *Verify JWT* (the database has no sign-in to show; it shows a key of its
 own instead). With the command line, the same in one go:
 
@@ -234,7 +236,9 @@ npx supabase functions deploy caa-mail --no-verify-jwt
 | `MAIL_TO` | the address where the team reads its e-mails (leave it out to use the same address) |
 
 **3. The database.** *SQL Editor*: run the file `supabase/migrations/20261116000000_team_mail.sql`,
-then this line with your own project address (*Project Settings → API → Project URL*):
+then the file `supabase/migrations/20261116000100_team_mail_name.sql` (it adds the professional's
+name to the first e-mail), then this line with your own project address (*Project Settings → API →
+Project URL*):
 
 ```sql
 select public.team_mail_connect('https://YOUR-PROJECT.supabase.co');

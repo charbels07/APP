@@ -10,7 +10,7 @@ const axeSrc = fs.readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
 const OUT = process.env.A11Y_OUT || require('path').join(require('os').tmpdir(), 'a11y-check');
 const [port = '8770', locale = 'en-GB', W = '1180', H = '900', tag = 'en-desk'] = process.argv.slice(2);
 const L = {
-  'en-GB': { bo: 'Back office (demonstration)', openApp: 'Open the app', cont: 'Continue', create: 'Create my account', parent: /Parent/, pro: /Professional/, name: 'Your name', email: 'Email address', pw: 'Password', verify: 'Verify', caregiver: 'Caregiver', settings: 'Settings', guide: 'Guide', search: 'Search', keyboard: 'Keyboard', boards: 'Boards', schedule: 'Schedule', timer: 'Timer', help: 'Help', model: 'Model', have: 'I already have an account', tabs: ['Team', 'Progress', 'Account'], record: 'Record the pronunciation', done: 'Done' },
+  'en-GB': { bo: 'Back office (demonstration)', openApp: 'Open the app', cont: 'Continue', create: 'Create my account', parent: /Parent/, pro: /Professional/, name: 'Your name', email: 'Email address', pw: 'Password', verify: 'Verify', caregiver: 'Caregiver', settings: 'Settings', guide: 'Guide', search: 'Search', keyboard: 'A new word', boards: 'Boards', schedule: 'Schedule', timer: 'Timer', help: 'Help', model: 'Write to model', have: 'I already have an account', tabs: ['Team', 'Progress', 'Account'], record: 'Record the pronunciation', done: 'Done' },
   'ar-LB': { bo: 'لوحة الإدارة (عرض تجريبي)', openApp: 'فتح التطبيق' },
 }[locale];
 const results = [];

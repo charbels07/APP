@@ -64,8 +64,11 @@
   by removing one storage key by hand. Photos and recordings exist only on the device that made them.
 - Demo builds are asked for on purpose: `EXPO_PUBLIC_APP_MODE=demo` (a release build with no server
   address shows "not connected"). Web headers: `public/_headers` (a test checks the policy).
-- Caregiver code: `settings.pin === '1234'` means "not chosen yet" (the first unlock asks to choose one);
-  never show or suggest a default code. Board settings are edited through `useSettingsDraft` (saved on
+- Caregiver code: `settings.pin === '1234'` means "not chosen yet"; never show or suggest a default code.
+  The family chooses it the first time a new board opens, before the guide (`OpenGuideOnStart` in
+  `src/ui/Stages.tsx` opens `{ kind: 'pin', then: { kind: 'guide' } }` once the person's rights are
+  known), and whenever a code is being chosen the keypad explains what it is (`t.pinWhy`). Never let
+  the "choose a code" keypad appear without that explanation. Board settings are edited through `useSettingsDraft` (saved on
   "Save", not at each change): new settings controls use the draft's `st` / `set`, not `app.update`.
 - Words for the user: the Schedule screen holds "sequences" (step lists: New sequence / Edit sequence) and
   the week and month "schedules" (never "plan": it reads as a subscription plan). Lists the user orders
@@ -118,4 +121,13 @@
   written about "the child", guide parts named by chapter id and step index). A new step or question gets
   its entry there; `setupHelp.test.ts` fails otherwise. If a guide chapter's steps are re-ordered, check
   the indexes used in `setupHelp.ts`.
+- The magnifying glass has three tabs named by what they are for (`t.toolFind`, `t.toolNewWord`,
+  `t.toolModel`: "Find on the board", "A new word", "Write to model"); the bar's button and the panel's
+  title stay "Search". "Draw" in the first tab only shows while `aiAvailable()` (not removed).
+- The in-app guide (`src/data/guide.ts`) is updated with every change a user can see, in the three
+  languages, with the names written on screen (`guide.test.ts` checks many of them).
+- Child lock in a browser (`src/lib/childLock.web.ts`): full screen (asked again at the next touch on the
+  board), no page bounce or pull-to-refresh (`overscroll-behavior` + stopping finger moves that scroll
+  nothing: `canScrollWith`), a question before the page closes. A site cannot block Safari's swipe-down
+  out of full screen: never promise that the browser lock keeps a child in (Guided Access does).
 - Services and keys: `docs/API-KEYS.md` (keep it up to date when a feature starts needing one).

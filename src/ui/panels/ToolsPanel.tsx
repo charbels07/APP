@@ -1,8 +1,8 @@
 /**
  * The magnifying glass of the universal bar: one panel, three tabs.
- *  - Search: find a word by typing, saying or drawing it, and see where it is;
- *  - Keyboard: write, and put what was written in the sentence as picture cards;
- *  - Model: dictate or type a sentence and watch the app press each word, record a demonstration.
+ *  - "Find on the board": find a word by typing, saying or drawing it, and see where it is;
+ *  - "A new word": write, and put what was written in the sentence as picture cards;
+ *  - "Write to model": dictate or type a sentence and watch the app press each word, record a demonstration.
  * They were three buttons of the bar; the tab that is open is the kind of the overlay
  * (`search`, `keyboard`, `model`), so the guide and the shortcuts still open the right one.
  */
@@ -27,11 +27,13 @@ export function ToolsPanel({ tool }: { tool: Tool }) {
   const app = useApp();
   const { t } = app;
   const rtl = useNavRtl();
-  // On a phone three names do not fit beside their icons: the name goes under the icon.
-  const narrow = useWindowDimensions().width < 520;
+  // Three names of several words do not fit beside their icons on a phone or a small tablet:
+  // there the name goes under the icon, on up to three lines.
+  const narrow = useWindowDimensions().width < 700;
   // While a finger draws a word to search, the panel must not scroll.
   const [drawing, setDrawing] = useState(false);
-  const names: Record<Tool, string> = { search: t.search, keyboard: t.keyboard, model: t.model };
+  // Named by what each one is for: find a word of the board, write a word that is not on it, write a sentence to model.
+  const names: Record<Tool, string> = { search: t.toolFind, keyboard: t.toolNewWord, model: t.toolModel };
   return (
     <Panel title={t.search} onClose={() => app.setOverlay(null)} scrollLocked={drawing}>
       <View style={[styles.tabs, rtl && { flexDirection: 'row-reverse' }]} accessibilityRole="tablist">
@@ -47,7 +49,7 @@ export function ToolsPanel({ tool }: { tool: Tool }) {
               {...selected(on)}
             >
               <Icon name={icon} size={20} color={on ? '#fff' : C.text} />
-              <Text style={[styles.tabText, narrow && styles.tabTextNarrow, on && { color: '#fff' }]} numberOfLines={narrow ? 2 : 1}>
+              <Text style={[styles.tabText, narrow && styles.tabTextNarrow, on && { color: '#fff' }]} numberOfLines={narrow ? 3 : 2}>
                 {names[k]}
               </Text>
             </Pressable>
@@ -78,6 +80,6 @@ const styles = StyleSheet.create({
   },
   tabNarrow: { flexDirection: 'column', gap: 2, paddingHorizontal: 4, paddingVertical: 6, minHeight: 56 },
   tabOn: { backgroundColor: C.accent, borderColor: C.accent },
-  tabText: { fontSize: 15, fontWeight: '700', color: C.text, flexShrink: 1 },
+  tabText: { fontSize: 15, fontWeight: '700', color: C.text, flexShrink: 1, textAlign: 'center' },
   tabTextNarrow: { fontSize: 13, textAlign: 'center' },
 });

@@ -10,7 +10,7 @@ import { UI_LANG_NAMES } from '../../i18n/ui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { opensAlone, useApp } from '../../state/AppState';
 import { useBoard } from '../../state/BoardContext';
-import { Btn, Panel, Section } from '../common';
+import { Btn, Panel, Section, useNavRtl } from '../common';
 import { DrawPad } from '../DrawPad';
 import { usePictoLibrary } from '../PictoPicker';
 import { chipPicture } from '../SentenceStrip';
@@ -413,9 +413,13 @@ export function PinPanel() {
     setNow(Date.now());
     void AsyncStorage.setItem(PIN_LOCK, JSON.stringify(l)).catch(() => {});
   };
+  // What comes after the right code. "guide": the first opening of a new board, where the family
+  // chooses its code before reading the guide.
+  const then = app.overlay?.kind === 'pin' ? app.overlay.then : undefined;
+  const beforeGuide = then?.kind === 'guide';
+  const rtl = useNavRtl();
   const open = () => {
-    const then = app.overlay?.kind === 'pin' ? app.overlay.then : undefined;
-    // The settings and the child lock open on their own: the board stays as the child uses it.
+    // The settings, the child lock and the guide open on their own: the board stays as the child uses it.
     if (then && opensAlone(then)) return app.setOverlay(then);
     app.setEditMode(true);
     if (then) app.setOverlay(then);
@@ -456,7 +460,24 @@ export function PinPanel() {
   const hint = msg ?? (waiting ? t.pinLocked.replace('{n}', String(wait)) : step === 'choose' ? t.pinChoose : step === 'repeat' ? t.pinRepeat : unset ? t.pinNotChosen : t.pinHint);
   const error = !!msg;
   return (
-    <Panel title={t.pinTitle} onClose={() => app.setOverlay(null)} maxWidth={380} tone="edit">
+    <Panel
+      title={step === 'enter' ? t.pinTitle : t.pinChooseTitle}
+      // Closed without choosing, on the first opening: the guide still opens (the code is asked later).
+      onClose={() => app.setOverlay(beforeGuide ? { kind: 'guide' } : null)}
+      maxWidth={step === 'enter' ? 380 : 440}
+      tone="edit"
+    >
+      {step !== 'enter' && (
+        // Choosing a code: what it is and what it protects, before the digits.
+        <View style={styles.pinWhy}>
+          {t.pinWhy.map((line, i) => (
+            <Text key={i} style={[styles.pinWhyText, rtl && { textAlign: 'right', writingDirection: 'rtl' }]}>
+              {line}
+            </Text>
+          ))}
+          {beforeGuide && <Text style={[styles.pinWhyText, { fontWeight: '700' }, rtl && { textAlign: 'right', writingDirection: 'rtl' }]}>{t.pinThenGuide}</Text>}
+        </View>
+      )}
       <Text style={[styles.muted, { textAlign: 'center' }, (error || waiting) && { color: C.help, fontWeight: '700' }]} accessibilityLiveRegion="polite">
         {hint}
       </Text>
@@ -489,6 +510,8 @@ export function PinPanel() {
 const styles = StyleSheet.create({
   ways: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   warn: { fontSize: 14, backgroundColor: C.editSoft, color: C.edit, padding: 10, borderRadius: radius.md },
+  pinWhy: { gap: 6, backgroundColor: C.surfaceAlt, borderRadius: radius.md, padding: 12 },
+  pinWhyText: { fontSize: 15, lineHeight: 21, color: C.text },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',

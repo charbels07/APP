@@ -97,8 +97,20 @@ describe('navigation language, separate from the words language', () => {
     }
     // Arabic navigation is really in Arabic for everything a user reads first.
     const ar = strings('ar');
-    for (const key of ['caa', 'tla', 'schedule', 'timer', 'help', 'search', 'keyboard', 'language', 'caregiver', 'speak', 'guide', 'settings', 'wordsLang', 'navLang'] as const)
+    for (const key of ['caa', 'tla', 'schedule', 'timer', 'help', 'search', 'toolFind', 'toolNewWord', 'toolModel', 'language', 'caregiver', 'speak', 'guide', 'settings', 'wordsLang', 'navLang'] as const)
       expect(ar[key]).toMatch(/[\u0600-\u06FF]/);
+  });
+
+  it('names the three tabs of the magnifying glass as they are written on screen', () => {
+    for (const lang of ['fr', 'en', 'ar'] as const) {
+      const t = strings(lang);
+      const text = GUIDE.flatMap((c) => [c.title[lang], ...c.steps[lang]]).join(' ');
+      for (const tab of [t.toolFind, t.toolNewWord, t.toolModel]) expect(text).toContain(tab);
+    }
+    const fr = strings('fr');
+    expect([fr.toolFind, fr.toolNewWord, fr.toolModel]).toEqual(['Trouver dans le tableau', 'Un nouveau mot', 'Écrire pour modéliser']);
+    // The button of the bar and the title of the panel keep their short name.
+    expect(fr.search).toBe('Chercher');
   });
 
   it('the two languages are stored separately', () => {

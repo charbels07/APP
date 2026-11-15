@@ -1,5 +1,5 @@
 /** Shows the screen of the current step of the journey (see src/state/Session.tsx). */
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, AppState as RNAppState, Platform, StyleSheet, Text, View } from 'react-native';
@@ -11,7 +11,7 @@ import { guardLeaving } from '../lib/childLock';
 import { invertOps } from '../lib/profileDiff';
 import type { Profile } from '../model/types';
 import { AppProvider, useApp } from '../state/AppState';
-import { BoardContext, type MyAccess } from '../state/BoardContext';
+import { BoardContext, useBoard, type MyAccess } from '../state/BoardContext';
 import { ProfileSync } from '../state/profileSync';
 import { UsageTracker } from '../state/usageTracker';
 import { useSession } from '../state/Session';
@@ -271,10 +271,31 @@ function deviceName(): string {
 /** End of the set-up journey: the guide (tailored to the choices) opens on the new board. */
 function OpenGuideOnStart() {
   const app = useApp();
+  const board = useBoard();
+  const latest = useRef(app);
+  latest.current = app;
+  const started = useRef(false);
+  const start = (chooseFirst: boolean) => {
+    const now = latest.current;
+    if (started.current || !now.profile.guide?.openOnStart) return;
+    started.current = true;
+    now.update((d) => void (d.guide = { ...d.guide, openOnStart: false }));
+    now.setOverlay(chooseFirst ? { kind: 'pin', then: { kind: 'guide' } } : { kind: 'guide' });
+  };
+  // The family first chooses its caregiver code, with an explanation of what it is; the guide
+  // opens after. Otherwise the keypad appeared in the middle of the guide, at the first "Try it"
+  // that needs caregiver mode, with nothing to say why. Who may choose the code is only known
+  // once the rights of this person have arrived, a moment after the board opens.
+  const access = board?.access;
+  const manager = !!board?.manager;
   useEffect(() => {
-    if (!app.profile.guide?.openOnStart) return;
-    app.update((d) => void (d.guide = { ...d.guide, openOnStart: false }));
-    app.setOverlay({ kind: 'guide' });
+    if (access) start(manager && latest.current.profile.settings.pin === '1234');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [access, manager]);
+  // Without internet the rights never arrive: the guide then opens on its own.
+  useEffect(() => {
+    const id = setTimeout(() => start(false), 4000);
+    return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return null;

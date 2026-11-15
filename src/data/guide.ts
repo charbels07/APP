@@ -68,13 +68,13 @@ const BASE: BaseChapter[] = [
     title: { fr: 'L’écran en un coup d’œil', en: 'The screen at a glance' },
     steps: {
       fr: [
-        'À gauche, la barre universelle, toujours au même endroit : CAA (accueil), TLA, Planning, Minuteur, le gros bouton rouge Aide, puis les outils Chercher (la loupe), Guide et Accompagnant. La loupe ouvre trois onglets : Chercher (trouver un mot), Clavier (écrire) et Modèle (montrer une phrase sur le tableau).',
+        'À gauche, la barre universelle, toujours au même endroit : CAA (accueil), TLA, Planning, Minuteur, le gros bouton rouge Aide, puis les outils Chercher (la loupe), Guide, Réglages, Verrou et Accompagnant. La loupe ouvre trois onglets : Trouver dans le tableau (chercher un mot), Un nouveau mot (l’écrire au clavier) et Écrire pour modéliser (montrer une phrase sur le tableau).',
         'En haut, la bande de phrase : chaque mot touché s’y ajoute.',
         'Au centre, la grille de mots. Chaque mot garde toujours sa place : c’est ce qui permet à l’enfant d’apprendre les gestes par cœur.',
         'Les couleurs indiquent le type de mot : jaune = personnes, vert = actions, bleu = descriptions, orange = objets, violet = questions, rose = mots sociaux, rouge = négation, gris = petits mots.',
       ],
       en: [
-        'On the left, the universal bar, always in the same place: AAC (home), Boards, Schedule, Timer, the big red Help button, then the tools Search (the magnifying glass), Guide and Caregiver. The magnifying glass opens three tabs: Search (find a word), Keyboard (write) and Model (show a sentence on the board).',
+        'On the left, the universal bar, always in the same place: AAC (home), Boards, Schedule, Timer, the big red Help button, then the tools Search (the magnifying glass), Guide, Settings, Lock and Caregiver. The magnifying glass opens three tabs: Find on the board (look for a word), A new word (type it) and Write to model (show a sentence on the board).',
         'At the top, the sentence strip: every word you touch is added to it.',
         'In the middle, the word grid. Each word always keeps its place: that is how the child learns the movements by heart.',
         'Colours show the kind of word: yellow = people, green = actions, blue = describing, orange = things, purple = questions, pink = social words, red = negation, grey = little words.',
@@ -136,19 +136,19 @@ const BASE: BaseChapter[] = [
     title: { fr: 'Trouver un mot', en: 'Finding a word' },
     steps: {
       fr: [
-        'Chercher (la loupe), premier onglet, puis au choix : tapez le mot (les fautes sont comprises : « pome » trouve « pomme »), touchez Dire le mot et dites-le, ou Dessiner : dessinez l’objet avec le doigt puis Trouver.',
+        'Chercher (la loupe), premier onglet (Trouver dans le tableau), puis au choix : tapez le mot (les fautes sont comprises : « pome » trouve « pomme »), ou touchez Dire le mot et dites-le. Quand l’aide par IA est disponible, un bouton Dessiner s’ajoute : dessinez l’objet avec le doigt puis Trouver.',
         'Montre-moi où fait clignoter le chemin : d’abord le dossier, puis le mot. L’enfant apprend ainsi où il se trouve.',
         'Le bouton + ajoute le mot directement à la phrase ; le haut-parleur le dit.',
       ],
       en: [
-        'Search (the magnifying glass), first tab, then either type the word (typos are fine: “aple” finds “apple”), touch Say the word and say it, or Draw: draw the thing with a finger, then Find.',
+        'Search (the magnifying glass), first tab (Find on the board), then either type the word (typos are fine: “aple” finds “apple”), or touch Say the word and say it. When the AI helper is available, a Draw button is added: draw the thing with a finger, then Find.',
         'Show me where lights up the way: first the folder, then the word. This is how the child learns where it is.',
         'The + button adds the word straight to the sentence; the speaker button says it.',
       ],
     },
     tip: {
-      fr: 'La reconnaissance des dessins utilise l’IA (seul le dessin est envoyé) ; elle se coupe dans les Réglages.',
-      en: 'Drawing recognition uses AI (only the drawing is sent); it can be turned off in Settings.',
+      fr: 'Le bouton Dessiner n’apparaît que si l’aide par IA est disponible : la reconnaissance des dessins l’utilise (seul le dessin est envoyé) ; elle se coupe dans les Réglages.',
+      en: 'The Draw button only shows while the AI helper is available: drawing recognition uses it (only the drawing is sent); it can be turned off in Settings.',
     },
     action: 'search',
   },
@@ -161,13 +161,13 @@ const BASE: BaseChapter[] = [
       fr: [
         'Les langues se choisissent dans les Réglages (mode accompagnant), avec deux choix séparés : Langue de communication (ce que dit l’appareil et ce qui est écrit sur les cases) et Langue de navigation (menus, boutons, guide).',
         'Par exemple : naviguer en français et parler en arabe, ou l’inverse. Les mots restent exactement à la même place dans toutes les langues.',
-        'L’arabe de l’application se choisit à l’installation et se change ici (Arabe de l’application) : libanais, syrien, jordanien / palestinien, égyptien, saoudien, du Golfe, irakien, arabe standard — ou Aucun, qui retire l’arabe des langues de l’enfant. Les mots arabes du tableau et les propositions suivent ce choix. Ce choix change les mots, pas la voix : l’appareil lit l’arabe avec sa voix arabe standard, quel que soit le dialecte. Si un mot ne sonne pas bien, enregistrez-le avec votre propre voix (voir « Modifier un mot »).',
+        'L’arabe de l’application est demandé à l’installation quand l’arabe fait partie des langues de l’enfant, et se change ici (Arabe de l’application) : libanais, syrien, jordanien / palestinien, égyptien, saoudien, du Golfe, irakien, arabe standard — ou Aucun, qui retire l’arabe des langues de l’enfant. Les mots arabes du tableau et les propositions suivent ce choix. Ce choix change les mots, pas la voix : l’appareil lit l’arabe avec sa voix arabe standard, quel que soit le dialecte. Si un mot ne sonne pas bien, enregistrez-le avec votre propre voix (voir « Modifier un mot »).',
         'On peut mélanger les langues dans une même phrase : chaque mot est dit dans sa langue.',
       ],
       en: [
         'Languages are chosen in Settings (caregiver mode), with two separate choices: Communication language (what the device says and what is written on the cards) and Navigation language (menus, buttons, guide).',
         'For example: navigate in English and speak in Arabic, or the other way round. Words stay exactly in the same place in every language.',
-        'The Arabic of the app is chosen at set-up and changed here (Arabic used in the app): Lebanese, Syrian, Jordanian / Palestinian, Egyptian, Saudi, Gulf, Iraqi, Modern Standard Arabic — or None, which removes Arabic from the child’s languages. The Arabic words of the board and the suggestions follow that choice. That choice changes the words, not the voice: the device reads Arabic with its standard Arabic voice, whatever the dialect. If a word does not sound right, record it with your own voice (see “Editing a word”).',
+        'The Arabic of the app is asked at set-up when Arabic is one of the child’s languages, and changed here (Arabic used in the app): Lebanese, Syrian, Jordanian / Palestinian, Egyptian, Saudi, Gulf, Iraqi, Modern Standard Arabic — or None, which removes Arabic from the child’s languages. The Arabic words of the board and the suggestions follow that choice. That choice changes the words, not the voice: the device reads Arabic with its standard Arabic voice, whatever the dialect. If a word does not sound right, record it with your own voice (see “Editing a word”).',
         'Languages can be mixed in one sentence: each word is said in its own language.',
       ],
     },
@@ -201,12 +201,12 @@ const BASE: BaseChapter[] = [
       fr: [
         'Un TLA est un tableau pour une activité précise : repas, parc, dentiste, école…',
         'TLA dans la barre, puis touchez l’onglet de l’activité.',
-        'Les mots de base (je, vouloir, encore, stop, aide-moi…) restent toujours dans les deux colonnes de gauche.',
+        'Les mots de base (je, vouloir, encore, stop, aide-moi…) sont toujours là, en haut de leur colonne : comme sur le tableau principal, chaque sorte de mot a sa colonne (personnes, actions, petits mots…).',
       ],
       en: [
         'An activity board is made for one situation: meal, park, dentist, school…',
         'Boards in the bar, then touch the activity’s tab.',
-        'Core words (I, want, more, stop, help me…) always stay in the two left columns.',
+        'Core words (I, want, more, stop, help me…) are always there, at the top of their column: as on the main board, each kind of word has its own column (people, actions, little words…).',
       ],
     },
     action: 'tla',
@@ -276,8 +276,8 @@ const BASE: BaseChapter[] = [
     icon: 'keyboard',
     title: { fr: 'Le clavier', en: 'The keyboard' },
     steps: {
-      fr: ['Pour ceux qui savent écrire : Chercher (la loupe), onglet Clavier, écrivez, puis Parler ou Ajouter à la phrase. Chaque mot écrit arrive dans la phrase avec son pictogramme (celui du tableau, sinon celui de la bibliothèque) et il est dit tel qu’il est écrit.'],
-      en: ['For those who can write: Search (the magnifying glass), Keyboard tab, type, then Speak or Add to sentence. Each typed word goes into the sentence with its pictogram (the one of the board, else one from the library) and is said exactly as written.'],
+      fr: ['Pour ceux qui savent écrire : Chercher (la loupe), onglet Un nouveau mot, écrivez, puis Parler ou Ajouter à la phrase. Chaque mot écrit arrive dans la phrase avec son pictogramme (celui du tableau, sinon celui de la bibliothèque) et il est dit tel qu’il est écrit.'],
+      en: ['For those who can write: Search (the magnifying glass), A new word tab, type, then Speak or Add to sentence. Each typed word goes into the sentence with its pictogram (the one of the board, else one from the library) and is said exactly as written.'],
     },
     action: 'keyboard',
   },
@@ -288,18 +288,18 @@ const BASE: BaseChapter[] = [
     title: { fr: 'Le mode accompagnant', en: 'Caregiver mode' },
     steps: {
       fr: [
-        'Accompagnant (cadenas). La première fois, vous choisissez votre code (4 chiffres, tapés deux fois) ; ensuite vous le tapez à chaque fois. Après 5 codes faux, il faut attendre un peu. Vous pouvez le changer dans Réglages → Sécurité.',
+        'Accompagnant (cadenas). Vous choisissez votre code (4 chiffres, tapés deux fois) à la première ouverture du tableau, avant ce guide ; ensuite vous le tapez à chaque fois. Après 5 codes faux, il faut attendre un peu. Vous pouvez le changer dans Réglages → Sécurité.',
         'Le bandeau jaune indique qu’on peut modifier : toucher une case ouvre ses réglages ; pour un dossier, appui long.',
         'Réglages et Imprimer / PDF sont dans le bandeau. Terminer revient au mode enfant.',
         'Tout est gardé sur l’appareil, même après l’avoir éteint ; avec un compte, c’est aussi sauvegardé en ligne et les autres appareils de la famille se mettent à jour.',
-        'Dans la barre, deux boutons pour les parents, chacun protégé par le code accompagnant : Réglages (ouvre les réglages sans passer en mode accompagnant) et Verrou. Verrou ouvre le Mode verrouillé (enfant) : l’enfant ne peut plus ouvrir d’autres applis ni revenir en arrière ; pour l’empêcher de quitter l’application, activez aussi l’Accès guidé (iPad) ou l’épinglage d’écran (Android). Pour le retirer : Verrou → code.',
+        'Dans la barre, deux boutons pour les parents, chacun protégé par le code accompagnant : Réglages (ouvre les réglages sans passer en mode accompagnant) et Verrou. Verrou ouvre le Mode verrouillé (enfant) : l’enfant ne peut plus ouvrir d’autres applis ni revenir en arrière ; pour l’empêcher de quitter l’application, activez aussi l’Accès guidé (iPad) ou l’épinglage d’écran (Android). Dans un navigateur, la page ne se recharge plus quand on la tire vers le bas, et le plein écran revient au toucher suivant. Pour le retirer : Verrou → code.',
       ],
       en: [
-        'Caregiver (padlock). The first time, you choose your code (4 digits, typed twice); after that you type it each time. After 5 wrong codes you have to wait a little. You can change it in Settings → Security.',
+        'Caregiver (padlock). You choose your code (4 digits, typed twice) the first time the board opens, before this guide; after that you type it each time. After 5 wrong codes you have to wait a little. You can change it in Settings → Security.',
         'The yellow banner means you can edit: touching a card opens its settings; for a folder, long press.',
         'Settings and Print / PDF are in the banner. Done goes back to child mode.',
         'Everything is kept on the device, even after switching it off; with an account it is also saved online and the family’s other devices update themselves.',
-        'In the bar, two buttons for the parents, each protected by the caregiver code: Settings (opens the settings without switching to caregiver mode) and Lock. Lock opens the Child lock: the child can no longer open other apps or go back; to stop them leaving the app, also turn on Guided Access (iPad) or screen pinning (Android). To take it off: Lock → code.',
+        'In the bar, two buttons for the parents, each protected by the caregiver code: Settings (opens the settings without switching to caregiver mode) and Lock. Lock opens the Child lock: the child can no longer open other apps or go back; to stop them leaving the app, also turn on Guided Access (iPad) or screen pinning (Android). In a browser, the page no longer reloads when it is pulled down, and full screen comes back at the next touch. To take it off: Lock → code.',
       ],
     },
     action: 'caregiver',
@@ -353,14 +353,14 @@ const BASE: BaseChapter[] = [
     steps: {
       fr: [
         'En mode accompagnant, touchez la case : libellés en français, en anglais et dans l’arabe choisi.',
-        'Image, deux choix : Bibliothèque de l’application (environ 24 000 pictogrammes hors ligne ; cherchez en français, en anglais ou en arabe, et touchez le nom d’une banque — Mulberry, OpenMoji… — pour ne voir que la sienne) ou Votre bibliothèque (Choisir une image enregistrée sur l’appareil, ou Prendre une photo). La source et la licence d’un pictogramme sont gardées avec le mot.',
+        'Image, deux choix : Bibliothèque de l’application (environ 24 000 pictogrammes hors ligne ; cherchez en français, en anglais ou en arabe, et touchez le nom d’une banque — Mulberry, OpenMoji… — pour ne voir que la sienne) ou Votre bibliothèque (Choisir une image enregistrée sur l’appareil, ou Prendre une photo). Sur une tablette, le système demande la première fois quelles photos l’application peut voir (celles que vous choisissez, toutes, ou aucune) ; dans un navigateur, seule l’image que vous choisissez est transmise. La source et la licence d’un pictogramme sont gardées avec le mot.',
         'Voix enregistrée : enregistrez votre voix ou celle d’un proche pour ce mot, une fois par langue (français, anglais, arabe ; une coche montre les langues déjà enregistrées). L’enregistrement remplace alors la voix de l’appareil chaque fois que le mot est touché ou dit dans une phrase ; quand la grammaire change le mot (« vouloir » dit « veux »), c’est la voix de l’appareil qui le dit. Idéal pour les prénoms et pour l’arabe parlé à la maison. L’enregistrement reste sur l’appareil où il a été fait.',
         'Catégorie (couleur) et Affichage de la case (image + texte, image seule, texte seul).',
         'Carte : taille, agrandir sur les cases vides voisines, intensité de la couleur pour attirer l’attention.',
       ],
       en: [
         'In caregiver mode, touch the card: labels in French, English and the Arabic you chose.',
-        'Picture, two choices: App’s library (about 24,000 offline pictograms; search in French, English or Arabic, and touch a library’s name — Mulberry, OpenMoji… — to see only its pictures) or Your library (Choose a picture saved on the device, or Take a photo). A pictogram’s source and licence are kept with the word.',
+        'Picture, two choices: App’s library (about 24,000 offline pictograms; search in French, English or Arabic, and touch a library’s name — Mulberry, OpenMoji… — to see only its pictures) or Your library (Choose a picture saved on the device, or Take a photo). On a tablet, the system asks the first time which photos the app may see (the ones you select, all, or none); in a browser, only the picture you choose is passed on. A pictogram’s source and licence are kept with the word.',
         'Recorded voice: record your voice or a relative’s for this word, once per language (French, English, Arabic; a tick shows the languages already recorded). The recording then replaces the device’s voice every time the word is touched or said in a sentence; when grammar changes the word (“want” said “wants”), the device’s voice says it. Ideal for names and for the Arabic spoken at home. The recording stays on the device where it was made.',
         'Category (colour) and Cell display (picture + text, picture only, text only).',
         'Card: size, spread over empty neighbouring slots, colour strength to draw attention.',
@@ -460,15 +460,15 @@ const BASE: BaseChapter[] = [
     id: 'model',
     track: 'pro',
     icon: 'pointer',
-    title: { fr: 'Modéliser (Modèle)', en: 'Modelling (Model)' },
+    title: { fr: 'Modéliser (Écrire pour modéliser)', en: 'Modelling (Write to model)' },
     steps: {
       fr: [
-        'Chercher (la loupe), onglet Modèle. Dicter une phrase, ou l’écrire, puis Montrer sur la grille : une main animée appuie sur chaque mot, dossiers compris, et le bandeau dit où elle va. Puis la phrase est lue.',
+        'Chercher (la loupe), onglet Écrire pour modéliser. Dicter une phrase, ou l’écrire, puis Montrer sur la grille : une main animée appuie sur chaque mot, dossiers compris, et le bandeau dit où elle va. Puis la phrase est lue.',
         'Enregistrer une démonstration : touchez les mots comme l’enfant devrait le faire, puis Terminer et garder. Rejouer la montre autant de fois que nécessaire.',
         'Vitesse : lente, normale ou rapide.',
       ],
       en: [
-        'Search (the magnifying glass), Model tab. Dictate a sentence, or type it, then Show on the board: an animated hand presses each word, folders included, and the banner says where it goes. Then the sentence is read.',
+        'Search (the magnifying glass), Write to model tab. Dictate a sentence, or type it, then Show on the board: an animated hand presses each word, folders included, and the banner says where it goes. Then the sentence is read.',
         'Record a demonstration: touch the words the way the child should, then Finish and keep. Replay shows it as often as needed.',
         'Speed: slow, normal or fast.',
       ],
@@ -482,21 +482,21 @@ const BASE: BaseChapter[] = [
     title: { fr: 'Les réglages utiles', en: 'Useful settings' },
     steps: {
       fr: [
-        'Les Réglages ont plusieurs pages : Tableau (les réglages de l’enfant, décrits ici), Équipe, Suivi (si la famille l’a choisi) et Compte. Sans compte, Équipe, Suivi et Compte expliquent seulement ce qu’ils contiendront.',
+        'Les Réglages ont plusieurs pages : Tableau (les réglages de l’enfant, décrits ici), Équipe, Suivi (si la famille l’a choisi) et Compte. Sans compte, Équipe, Suivi et Compte expliquent seulement ce qu’ils contiendront. En haut, le champ « Rechercher un réglage (voix, code, langue…) » trouve un réglage par son nom.',
         'Langues : Langue de communication (ce que dit l’appareil, ce qui est écrit sur les cases) et Langue de navigation (menus, boutons, guide).',
-        'Communication : prononcer chaque mot, ajouter à la phrase, grammaire automatique (à couper pour travailler une forme), accords au féminin, zone rapide (oui, non, stop, attends…), délai entre deux appuis sur le même pictogramme (2 s : fini les « pas pas pas »), faire vibrer les pictogrammes, ouvrir l’appli citée dans une phrase.',
-        'Images : Bibliothèque de symboles (Pictogrammes ou Emoji) et Afficher le texte sous les images. Présentation et accès : boutons et texte plus grands ou contraste élevé, taille des images, façon de sélectionner (toucher puis lever le doigt, dès que le doigt touche, ou garder le doigt appuyé avec une durée d’appui), moins d’animations, petite vibration au toucher.',
+        'Communication : prononcer chaque mot, ajouter à la phrase, grammaire automatique (à couper pour travailler une forme), accords au féminin, zone rapide (oui, non, stop, attends…), délai entre deux appuis sur le même pictogramme (2 s : fini les « pas pas pas »), faire vibrer les pictogrammes (le bouton Essayer montre le mouvement ; un iPad n’a pas de moteur de vibration, seule l’image bouge), ouvrir l’appli citée dans une phrase.',
+        'Images : Bibliothèque de symboles (Pictogrammes ou Emoji) et Afficher le texte sous les images. Présentation et accès : boutons et texte plus grands ou contraste élevé, taille des images, façon de sélectionner (toucher puis lever le doigt, dès que le doigt touche, ou garder le doigt appuyé avec une durée d’appui), moins d’animations (ce choix arrête le mouvement des pictogrammes), petite vibration au toucher.',
         'Barre universelle : masquer TLA, Planning ou Minuteur si l’enfant n’en a pas besoin (CAA et Aide restent toujours). Sous Planning : le planning de la semaine et celui du mois. Rien ne change tant que vous n’avez pas touché Enregistrer, en bas de la page ; Annuler les modifications revient en arrière.',
-        'Voix : féminine ou masculine, adulte ou enfant (Type de voix, Âge de la voix), vitesse, ou une voix précise par langue. Voix utilisée montre la voix de chaque langue : elle vient de l’appareil, et « voix approchée » signifie qu’il n’a pas de voix de ce type pour cette langue (on peut en installer dans les réglages de l’appareil). Bouton Aide : le message dit en premier, les informations utiles.',
+        'Voix : féminine ou masculine, adulte ou enfant (Type de voix, Âge de la voix ; la voix d’enfant est une voix de femme rendue plus aiguë, nettement plus pour une fille que pour un garçon), vitesse, ou une voix précise par langue. Voix utilisée montre la voix de chaque langue : elle vient de l’appareil, et « voix approchée » signifie qu’il n’a pas de voix de ce type pour cette langue (on peut en installer dans les réglages de l’appareil). Bouton Aide : le message dit en premier, les informations utiles.',
         'Aussi : Hauteur de la voix (plus grave ou plus aiguë, à régler à l’oreille), Mode verrouillé (enfant), Sécurité (le code accompagnant), Données (propositions par IA, Exporter le profil, Réinitialiser le profil) et À propos (crédits et licences des pictogrammes).',
       ],
       en: [
-        'Settings has several pages: Board (the child’s settings, described here), Team, Progress (if the family chose it) and Account. Without an account, Team, Progress and Account only explain what they will hold.',
+        'Settings has several pages: Board (the child’s settings, described here), Team, Progress (if the family chose it) and Account. Without an account, Team, Progress and Account only explain what they will hold. At the top, the field “Search a setting (voice, code, language…)” finds a setting by its name.',
         'Languages: Communication language (what the device says, what is written on the cards) and Navigation language (menus, buttons, guide).',
-        'Communication: say each word, add to sentence, automatic grammar (turn off to practise a form), feminine agreement, quick zone (yes, no, stop, wait…), delay between two presses on the same pictogram (2 s: no more “no no no”), wiggling pictograms, open the app mentioned in a sentence.',
-        'Pictures: Symbol library (Pictograms or Emoji) and Show text under images. Presentation and access: larger buttons and text or high contrast, picture size, access method (touch then lift the finger, as soon as the finger touches, or keep the finger pressed with a hold time), fewer animations, small vibration on touch.',
+        'Communication: say each word, add to sentence, automatic grammar (turn off to practise a form), feminine agreement, quick zone (yes, no, stop, wait…), delay between two presses on the same pictogram (2 s: no more “no no no”), wiggling pictograms (the Try it button shows the movement; an iPad has no vibration motor, only the picture moves), open the app mentioned in a sentence.',
+        'Pictures: Symbol library (Pictograms or Emoji) and Show text under images. Presentation and access: larger buttons and text or high contrast, picture size, access method (touch then lift the finger, as soon as the finger touches, or keep the finger pressed with a hold time), fewer animations (this choice stops the wiggling), small vibration on touch.',
         'Universal bar: hide Boards, Schedule or Timer if the child doesn’t need them (AAC and Help always stay). Under Schedule: the week schedule and the month schedule. Nothing changes until you touch Save, at the bottom of the page; Cancel changes goes back.',
-        'Voice: female or male, adult or child (Voice type, Voice age), speed, or a specific voice per language. Voice used shows the voice of each language: it comes from the device, and “approximate voice” means the device has no voice of that type for that language (more can be installed in the device’s own settings). Help button: the first message said, the useful information.',
+        'Voice: female or male, adult or child (Voice type, Voice age; a child’s voice is a woman’s voice made higher, clearly more for a girl than for a boy), speed, or a specific voice per language. Voice used shows the voice of each language: it comes from the device, and “approximate voice” means the device has no voice of that type for that language (more can be installed in the device’s own settings). Help button: the first message said, the useful information.',
         'Also: Voice height (deeper or sharper, tuned by ear), Child lock, Security (the caregiver code), Data (AI suggestions, Export profile, Reset profile) and About (pictogram credits and licences).',
       ],
     },
@@ -532,15 +532,15 @@ const BASE: BaseChapter[] = [
     title: { fr: 'Votre compte, vos enfants, vos appareils', en: 'Your account, children and devices' },
     steps: {
       fr: [
-        'Réglages (mode accompagnant) → Compte → Mon compte : votre nom, Changer le mot de passe, Se déconnecter. En vous déconnectant, les tableaux des enfants quittent l’appareil (ils restent dans votre compte) ; sur un ordinateur partagé, cochez aussi l’effacement des photos et des enregistrements.',
-        'Enfants : un seul compte pour plusieurs enfants. Ajouter un enfant crée son profil ; touchez un enfant de la liste pour ouvrir son tableau.',
+        'Réglages (mode accompagnant) → Compte → Mon compte : votre nom, Changer le mot de passe, Se déconnecter. En vous déconnectant, les tableaux des enfants quittent l’appareil (ils restent dans votre compte) ; sur un ordinateur partagé, cochez aussi l’effacement des photos et des enregistrements. À la connexion, Rester connecté ouvre l’application la fois suivante sans redemander le mot de passe : décochez-le sur un appareil qui n’est pas le vôtre.',
+        'Enfants : un seul compte pour plusieurs enfants. Ajouter un enfant crée son profil (à côté de chaque question, un « ? » explique à quoi sert le choix) ; touchez un enfant de la liste pour ouvrir son tableau.',
         'Appareils et synchronisation : les appareils reliés, la dernière synchronisation, Synchroniser maintenant, et retirer un appareil perdu. Relier un appareil donne un code à 8 caractères (lettres et chiffres) à saisir sur l’autre appareil (« Relier cette tablette avec un code », sur la première page) : Accès complet (tablette de l’enfant) ou Utiliser seulement (école, nounou…). Sur une tablette reliée : Délier cette tablette.',
         'Vie privée et données : Exporter le profil (fichier), supprimer le profil de l’enfant ou Supprimer mon compte. Une suppression est définitive : il faut l’écrire pour confirmer.',
         'Préférences : Langue des menus et Notifications dans l’application. Écrire à l’équipe : une idée ou un problème à nous signaler (n’écrivez jamais le nom d’un enfant). Ouvrir le guide ramène ici.',
       ],
       en: [
-        'Settings (caregiver mode) → Account → My account: your name, Change password, Sign out. When you sign out, the children’s boards leave the device (they stay in your account); on a shared computer, also tick erasing the photos and recordings.',
-        'Children: one account for several children. Add a child creates their profile; touch a child in the list to open their board.',
+        'Settings (caregiver mode) → Account → My account: your name, Change password, Sign out. When you sign out, the children’s boards leave the device (they stay in your account); on a shared computer, also tick erasing the photos and recordings. When you log in, Keep me logged in opens the app next time without asking for the password: untick it on a device that is not yours.',
+        'Children: one account for several children. Add a child creates their profile (beside each question, a “?” explains what the choice does); touch a child in the list to open their board.',
         'Devices and sync: the linked devices, the last sync, Sync now, and removing a lost device. Link a device gives an 8-character code (letters and digits) to type on the other device (“Link this tablet with a code”, on the first page): Full access (the child’s tablet) or Use only (school, nanny…). On a linked tablet: Unlink this tablet.',
         'Privacy and data: Export the profile (file), delete the child’s profile or Delete my account. Deleting is for good: you have to type it to confirm.',
         'Preferences: Menu language and In-app notifications. Write to the team: an idea or a problem to tell us about (never write a child’s name). Open the guide brings you back here.',
@@ -558,7 +558,7 @@ const BASE: BaseChapter[] = [
         'Vérification professionnelle (à la création du compte, puis dans Compte et licence) : votre pratique, un diplôme ou une autorisation d’exercer, puis une pièce d’identité, supprimée dès que la vérification est terminée. Envoyer pour vérification : notre équipe accepte, demande un complément ou refuse, et vous êtes prévenu dans l’application. En attendant, vous pouvez explorer votre espace et préparer des supports, mais pas encore rejoindre l’équipe d’un enfant.',
         'Accueil : vos utilisateurs connectés, les propositions en attente, les invitations, et des raccourcis.',
         'Mes utilisateurs → Connecter un utilisateur : tapez dans « Code de la famille ou d’une invitation » le code donné par les parents. Avec le code d’une invitation, vous rejoignez l’équipe tout de suite ; avec le code de la famille, indiquez votre rôle, les Droits demandés et un message, puis Envoyer la demande : la famille accepte avec les droits qu’elle choisit. Une invitation envoyée à votre adresse e-mail s’accepte au même endroit.',
-        'Mes utilisateurs → Créer le profil d’un enfant (une fois votre certificat accepté) : pour un enfant dont la famille n’a pas encore de compte. Vous répondez aux mêmes questions qu’un parent et vous préparez le tableau. Sur la page de l’enfant, Relier les parents → Créer le code des parents : les parents créent leur compte, choisissent J’ai un code d’invitation sur le premier écran (Votre enfant) et tapent le code. Le profil devient le leur : ils choisissent leur code accompagnant et ce qui est enregistré ; vous restez dans l’équipe.',
+        'Mes utilisateurs → Créer le profil d’un enfant (une fois votre certificat accepté) : pour un enfant dont la famille n’a pas encore de compte. Vous répondez aux mêmes questions qu’un parent et vous préparez le tableau. Sur la page de l’enfant, Relier les parents → Créer le code des parents (Envoyer par e-mail ouvre votre messagerie avec le message déjà écrit) : les parents créent leur compte, choisissent J’ai un code d’invitation sur le premier écran (Votre enfant) et tapent le code. Le profil devient le leur : ils choisissent leur code accompagnant et ce qui est enregistré ; vous restez dans l’équipe.',
         'Ma bibliothèque : sous Créer un support, touchez ce que vous voulez préparer (TLA, planning, D’abord / Ensuite, cartes à imprimer, ou à partir d’une photo) ; le support prend le nom de ce qu’il contient. Rechercher par nom retrouve un support. Les listes : Éléments créés, Partagés avec moi et Supports des utilisateurs. Touchez un support pour le personnaliser pour un enfant (Personnaliser pour…), le proposer à une famille (Proposer au profil de…) ou le partager Avec un collègue (e-mail) ou l’équipe d’un enfant.',
         'Collaborations : Mes connexions, Demandes envoyées, Ressources partagées et Activité récente.',
       ],
@@ -566,7 +566,7 @@ const BASE: BaseChapter[] = [
         'Professional verification (when the account is created, then in Account & licence): your practice, a diploma or a licence to practise, then an identity document, deleted as soon as the check is finished. Submit for verification: our team accepts, asks for something more or refuses, and you are told in the app. Meanwhile you can explore your workspace and prepare materials, but not yet join a child’s team.',
         'Dashboard: your connected users, the pending proposals, the invitations, and shortcuts.',
         'My AAC users → Connect a user: type the code the parents gave you in “Family code or invitation code”. With an invitation’s code you join the team at once; with the family’s code, give your role, the Rights requested and a message, then Send the request: the family accepts with the rights it chooses. An invitation sent to your email address is accepted in the same place.',
-        'My AAC users → Create a child’s profile (once your certificate is accepted): for a child whose family has no account yet. You answer the same questions as a parent and prepare the board. On the child’s page, Connect the parents → Create the parents’ code: the parents create their account, choose I have an invitation code on the first screen (Your child) and type the code. The profile becomes theirs: they choose their caregiver code and what is recorded; you stay in the team.',
+        'My AAC users → Create a child’s profile (once your certificate is accepted): for a child whose family has no account yet. You answer the same questions as a parent and prepare the board. On the child’s page, Connect the parents → Create the parents’ code (Send by email opens your mail with the message already written): the parents create their account, choose I have an invitation code on the first screen (Your child) and type the code. The profile becomes theirs: they choose their caregiver code and what is recorded; you stay in the team.',
         'My library: under Create a material, tap what you want to prepare (activity board, schedule, First / Then, picture cards, or from a photo); the material is named after what it contains. Search by name finds a material again. The lists: Created items, Shared with me and AAC user materials. Tap a material to personalise it for a child (Personalise for…), propose it to a family (Propose to the profile of…) or share it With a colleague (email) or a child’s team.',
         'Collaborations: My connections, Sent requests, Shared resources and Recent activity.',
       ],
@@ -713,7 +713,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   screen: {
     title: 'الشاشة بلمحة',
     steps: [
-      'على اليسار، الشريط الدائم، دائماً في المكان نفسه: التواصل (الرئيسية)، اللوحات، الجدول، المؤقت، زر «مساعدة» الأحمر الكبير، ثم الأدوات: «بحث» (العدسة المكبّرة)، الدليل، المرافق. تفتح العدسة ثلاثة تبويبات: «بحث» (إيجاد كلمة)، «لوحة المفاتيح» (الكتابة) و«نموذج» (إظهار جملة على اللوحة).',
+      'على اليسار، الشريط الدائم، دائماً في المكان نفسه: التواصل (الرئيسية)، اللوحات، الجدول، المؤقت، زر «مساعدة» الأحمر الكبير، ثم الأدوات: «بحث» (العدسة المكبّرة)، الدليل، «الإعدادات»، «قفل»، المرافق. تفتح العدسة ثلاثة تبويبات: «البحث في اللوحة» (إيجاد كلمة)، «كلمة جديدة» (كتابتها) و«الكتابة للنمذجة» (إظهار جملة على اللوحة).',
       'في الأعلى، شريط الجملة: تُضاف إليه كل كلمة تلمسها.',
       'في الوسط، شبكة الكلمات. تبقى كل كلمة دائماً في مكانها: هكذا يتعلّم الطفل الحركات عن ظهر قلب.',
       'تدلّ الألوان على نوع الكلمة: الأصفر = الأشخاص، الأخضر = الأفعال، الأزرق = الصفات، البرتقالي = الأشياء، البنفسجي = الأسئلة، الوردي = الكلمات الاجتماعية، الأحمر = النفي، الرمادي = الكلمات الصغيرة.',
@@ -741,18 +741,18 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   search: {
     title: 'البحث عن كلمة',
     steps: [
-      '«بحث» (العدسة المكبّرة)، التبويب الأول، ثم اختر: اكتب الكلمة (الأخطاء الإملائية مقبولة)، أو المس «قل الكلمة» وقلها، أو «ارسم»: ارسم الشيء بإصبعك ثم «ابحث».',
+      '«بحث» (العدسة المكبّرة)، التبويب الأول («البحث في اللوحة»)، ثم اختر: اكتب الكلمة (الأخطاء الإملائية مقبولة)، أو المس «قل الكلمة» وقلها. عندما يكون المساعد بالذكاء الاصطناعي متاحاً يُضاف زر «ارسم»: ارسم الشيء بإصبعك ثم «ابحث».',
       '«أرني المكان» يضيء الطريق: المجلد أولاً، ثم الكلمة. هكذا يتعلّم الطفل مكانها.',
       'زر + يضيف الكلمة مباشرة إلى الجملة، وزر مكبّر الصوت يقولها.',
     ],
-    tip: 'التعرّف على الرسومات يستخدم الذكاء الاصطناعي (يُرسل الرسم فقط)، ويمكن إيقافه في الإعدادات.',
+    tip: 'زر «ارسم» يظهر فقط عندما يكون المساعد بالذكاء الاصطناعي متاحاً: التعرّف على الرسومات يستخدمه (يُرسل الرسم فقط)، ويمكن إيقافه في الإعدادات.',
   },
   language: {
     title: 'اختيار اللغات',
     steps: [
       'تُختار اللغات في الإعدادات (وضع المرافق)، بخيارين منفصلين: «لغة التواصل» (ما يقوله الجهاز وما يُكتب على البطاقات) و«لغة التنقل» (القوائم والأزرار والدليل).',
       'مثلاً: التنقل بالعربية والكلمات بالفرنسية، أو التنقل بالفرنسية والكلمات بالعربية. تبقى الكلمات في المكان نفسه في كل اللغات.',
-      'تُختار عربية التطبيق عند الإعداد وتُغيَّر من هنا («العربية المستعملة في التطبيق»): اللبنانية، السورية، الأردنية / الفلسطينية، المصرية، السعودية، الخليجية، العراقية، العربية الفصحى — أو «لا شيء» الذي يزيل العربية من لغات الطفل. كلمات اللوحة العربية والاقتراحات تتبع هذا الاختيار. هذا الاختيار يغيّر الكلمات لا الصوت: يقرأ الجهاز العربية بصوته العربي الفصيح مهما كانت اللهجة. إذا لم تُلفظ كلمة جيداً، سجّلها بصوتك (انظر «تعديل كلمة»).',
+      'تُسأل عن عربية التطبيق عند الإعداد إذا كانت العربية من لغات الطفل، وتُغيَّر من هنا («العربية المستعملة في التطبيق»): اللبنانية، السورية، الأردنية / الفلسطينية، المصرية، السعودية، الخليجية، العراقية، العربية الفصحى — أو «لا شيء» الذي يزيل العربية من لغات الطفل. كلمات اللوحة العربية والاقتراحات تتبع هذا الاختيار. هذا الاختيار يغيّر الكلمات لا الصوت: يقرأ الجهاز العربية بصوته العربي الفصيح مهما كانت اللهجة. إذا لم تُلفظ كلمة جيداً، سجّلها بصوتك (انظر «تعديل كلمة»).',
       'يمكن خلط اللغات في جملة واحدة: تُقال كل كلمة بلغتها.',
     ],
   },
@@ -769,7 +769,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
     steps: [
       'اللوحة مخصّصة لنشاط محدد: الأكل، الحديقة، طبيب الأسنان، المدرسة…',
       '«اللوحات» في الشريط، ثم المس لسان النشاط.',
-      'تبقى الكلمات الأساسية («أنا»، «بدّي»، «كمان»، «خلص!»، «ساعدني»…) دائماً في العمودين على اليسار.',
+      'الكلمات الأساسية («أنا»، «بدّي»، «كمان»، «خلص!»، «ساعدني»…) موجودة دائماً في أعلى عمودها: كما في اللوحة الرئيسية، لكل نوع من الكلمات عموده (أشخاص، أفعال، كلمات صغيرة…).',
     ],
   },
   schedule: {
@@ -799,16 +799,16 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   },
   keyboard: {
     title: 'لوحة المفاتيح',
-    steps: ['لمن يعرف الكتابة: «بحث» (العدسة المكبّرة)، تبويب «لوحة المفاتيح»، اكتب، ثم «تكلّم» أو «أضف إلى الجملة». تدخل كل كلمة مكتوبة إلى الجملة مع رمزها (رمز اللوحة، وإلا رمز من المكتبة) وتُقال كما كُتبت.'],
+    steps: ['لمن يعرف الكتابة: «بحث» (العدسة المكبّرة)، تبويب «كلمة جديدة»، اكتب، ثم «تكلّم» أو «أضف إلى الجملة». تدخل كل كلمة مكتوبة إلى الجملة مع رمزها (رمز اللوحة، وإلا رمز من المكتبة) وتُقال كما كُتبت.'],
   },
   caregiver: {
     title: 'وضع المرافق',
     steps: [
-      '«المرافق» (القفل). في المرة الأولى تختار رمزك (4 أرقام، تُكتب مرتين)؛ بعدها تكتبه في كل مرة. بعد 5 رموز خاطئة يجب الانتظار قليلاً. يمكنك تغييره في الإعدادات ← الأمان.',
+      '«المرافق» (القفل). تختار رمزك (4 أرقام، تُكتب مرتين) عند أول فتح للوحة، قبل هذا الدليل؛ بعدها تكتبه في كل مرة. بعد 5 رموز خاطئة يجب الانتظار قليلاً. يمكنك تغييره في الإعدادات ← الأمان.',
       'الشريط الأصفر يعني أنك تستطيع التعديل: لمس بطاقة يفتح إعداداتها؛ وللمجلد، ضغطة طويلة.',
       '«الإعدادات» و«طباعة / PDF» في الشريط الأصفر. «إنهاء» يعيد إلى وضع الطفل.',
       'يُحفظ كل شيء على الجهاز، حتى بعد إطفائه؛ ومع حساب يُحفظ أيضاً على الإنترنت وتتحدّث أجهزة العائلة الأخرى تلقائياً.',
-      'في الشريط زرّان للأهل، كلٌّ منهما محميّ برمز المرافق: «الإعدادات» (يفتح الإعدادات دون الانتقال إلى وضع المرافق) و«قفل». «قفل» يفتح «وضع القفل (للطفل)»: لا يستطيع الطفل فتح تطبيقات أخرى ولا الرجوع؛ ولمنعه من الخروج من التطبيق، فعّل أيضاً «الوصول الموجَّه» (آيباد) أو «تثبيت الشاشة» (أندرويد). لإزالته: «قفل» ← الرمز.',
+      'في الشريط زرّان للأهل، كلٌّ منهما محميّ برمز المرافق: «الإعدادات» (يفتح الإعدادات دون الانتقال إلى وضع المرافق) و«قفل». «قفل» يفتح «وضع القفل (للطفل)»: لا يستطيع الطفل فتح تطبيقات أخرى ولا الرجوع؛ ولمنعه من الخروج من التطبيق، فعّل أيضاً «الوصول الموجَّه» (آيباد) أو «تثبيت الشاشة» (أندرويد). في المتصفح لا يُعاد تحميل الصفحة عند سحبها إلى الأسفل، ويعود ملء الشاشة عند اللمسة التالية. لإزالته: «قفل» ← الرمز.',
     ],
   },
   principles: {
@@ -832,7 +832,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
     title: 'تعديل كلمة',
     steps: [
       'في وضع المرافق، المس البطاقة: التسميات بالفرنسية والإنجليزية وبالعربية التي اخترتها.',
-      'الصورة، خياران: «مكتبة التطبيق» (نحو 24 ألف رمز دون إنترنت؛ ابحث بالفرنسية أو الإنجليزية أو العربية، والمس اسم مكتبة — Mulberry أو OpenMoji… — لترى صورها فقط) أو «مكتبتك» («اختيار صورة» محفوظة على الجهاز، أو «التقاط صورة»). يُحفظ مصدر الرمز وترخيصه مع الكلمة.',
+      'الصورة، خياران: «مكتبة التطبيق» (نحو 24 ألف رمز دون إنترنت؛ ابحث بالفرنسية أو الإنجليزية أو العربية، والمس اسم مكتبة — Mulberry أو OpenMoji… — لترى صورها فقط) أو «مكتبتك» («اختيار صورة» محفوظة على الجهاز، أو «التقاط صورة»). على الجهاز اللوحي يسأل النظام في المرة الأولى أيّ الصور يستطيع التطبيق رؤيتها (التي تختارها، كلها، أو لا شيء)؛ في المتصفح لا تُرسَل إلا الصورة التي تختارها. يُحفظ مصدر الرمز وترخيصه مع الكلمة.',
       '«صوت مسجّل»: سجّل صوتك أو صوت أحد الأقارب لهذه الكلمة، مرة لكل لغة (الفرنسية، الإنجليزية، العربية؛ علامة ✓ تبيّن اللغات المسجّلة). يحلّ التسجيل عندها محلّ صوت الجهاز كلما لُمست الكلمة أو قيلت في جملة؛ وعندما تغيّر القواعد شكل الكلمة يقولها صوت الجهاز. مثالي للأسماء وللعربية المحكية في البيت. يبقى التسجيل على الجهاز الذي سُجّل عليه.',
       '«الفئة (اللون)» و«عرض الخانة» (صورة + نص، صورة فقط، نص فقط).',
       'البطاقة: الحجم، التوسّع على الخانات الفارغة المجاورة، شدّة اللون لجذب الانتباه.',
@@ -877,9 +877,9 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
     ],
   },
   model: {
-    title: 'النمذجة («نموذج»)',
+    title: 'النمذجة («الكتابة للنمذجة»)',
     steps: [
-      '«بحث» (العدسة المكبّرة)، تبويب «نموذج». «إملاء جملة» أو كتابتها، ثم «أظهر على اللوحة»: يد متحركة تضغط على كل كلمة، بما في ذلك المجلدات، ويقول الشريط إلى أين تذهب. ثم تُقرأ الجملة.',
+      '«بحث» (العدسة المكبّرة)، تبويب «الكتابة للنمذجة». «إملاء جملة» أو كتابتها، ثم «أظهر على اللوحة»: يد متحركة تضغط على كل كلمة، بما في ذلك المجلدات، ويقول الشريط إلى أين تذهب. ثم تُقرأ الجملة.',
       '«تسجيل عرض»: المس الكلمات كما يجب أن يفعل الطفل، ثم «إنهاء وحفظ». «إعادة العرض» يُظهره كلما احتجت.',
       'السرعة: بطيئة، عادية أو سريعة.',
     ],
@@ -887,12 +887,12 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   settings: {
     title: 'الإعدادات المفيدة',
     steps: [
-      'للإعدادات عدة صفحات: «اللوحة» (إعدادات الطفل، وهي المشروحة هنا)، «الفريق»، «المتابعة» (إذا اختارتها العائلة) و«الحساب». دون حساب، تشرح صفحات «الفريق» و«المتابعة» و«الحساب» ما ستحتويه فقط.',
+      'للإعدادات عدة صفحات: «اللوحة» (إعدادات الطفل، وهي المشروحة هنا)، «الفريق»، «المتابعة» (إذا اختارتها العائلة) و«الحساب». دون حساب، تشرح صفحات «الفريق» و«المتابعة» و«الحساب» ما ستحتويه فقط. في الأعلى، حقل «ابحث عن إعداد (الصوت، الرمز، اللغة…)» يجد الإعداد باسمه.',
       'اللغات: «لغة التواصل» (ما يقوله الجهاز وما يُكتب على البطاقات) و«لغة التنقل» (القوائم والأزرار والدليل).',
-      'التواصل: نطق كل كلمة، إضافة الكلمات إلى الجملة، القواعد التلقائية (أوقفها للتدرّب على صيغة)، التأنيث، المنطقة السريعة (نعم، لا، توقف، انتظر…)، المهلة بين ضغطتين على الرمز نفسه (ثانيتان)، اهتزاز الرموز، فتح التطبيق المذكور في جملة.',
-      'الصور: «مكتبة الرموز» (رموز أو إيموجي) و«إظهار النص تحت الصور». «العرض وطريقة الاختيار»: أزرار ونص أكبر أو تباين عالٍ، حجم الصور، طريقة الاختيار (المس ثم ارفع الإصبع، بمجرد أن يلمس الإصبع، أو إبقاء الإصبع مضغوطاً مع مدة الضغط)، حركة أقل، اهتزاز خفيف عند اللمس.',
+      'التواصل: نطق كل كلمة، إضافة الكلمات إلى الجملة، القواعد التلقائية (أوقفها للتدرّب على صيغة)، التأنيث، المنطقة السريعة (نعم، لا، توقف، انتظر…)، المهلة بين ضغطتين على الرمز نفسه (ثانيتان)، اهتزاز الرموز (زر «جرّب» يُظهر الحركة؛ الآيباد ليس فيه محرّك اهتزاز، تتحرك الصورة فقط)، فتح التطبيق المذكور في جملة.',
+      'الصور: «مكتبة الرموز» (رموز أو إيموجي) و«إظهار النص تحت الصور». «العرض وطريقة الاختيار»: أزرار ونص أكبر أو تباين عالٍ، حجم الصور، طريقة الاختيار (المس ثم ارفع الإصبع، بمجرد أن يلمس الإصبع، أو إبقاء الإصبع مضغوطاً مع مدة الضغط)، حركة أقل (هذا الخيار يوقف اهتزاز الرموز)، اهتزاز خفيف عند اللمس.',
       'الشريط الدائم: إخفاء «اللوحات» أو «الجدول» أو «المؤقت» إذا لم يحتجها الطفل («التواصل» و«مساعدة» يبقيان دائماً). تحت «الجدول»: جدول الأسبوع وجدول الشهر. لا يتغيّر شيء قبل لمس «حفظ» أسفل الصفحة؛ «إلغاء التغييرات» يعيد كل شيء كما كان.',
-      'الصوت: أنثوي أو ذكوري، بالغ أو طفل («نوع الصوت»، «عمر الصوت»)، السرعة، أو صوت محدد لكل لغة. «الصوت المستخدم» يبيّن صوت كل لغة: يأتي من الجهاز، و«صوت تقريبي» يعني أن الجهاز لا يملك صوتاً من هذا النوع لهذه اللغة (يمكن تثبيت أصوات أخرى من إعدادات الجهاز). زر المساعدة: الرسالة الأولى التي تُقال، والمعلومات المفيدة.',
+      'الصوت: أنثوي أو ذكوري، بالغ أو طفل («نوع الصوت»، «عمر الصوت»؛ صوت الطفل هو صوت امرأة أحدّ، أكثر بوضوح للبنت منه للصبي)، السرعة، أو صوت محدد لكل لغة. «الصوت المستخدم» يبيّن صوت كل لغة: يأتي من الجهاز، و«صوت تقريبي» يعني أن الجهاز لا يملك صوتاً من هذا النوع لهذه اللغة (يمكن تثبيت أصوات أخرى من إعدادات الجهاز). زر المساعدة: الرسالة الأولى التي تُقال، والمعلومات المفيدة.',
       'أيضاً: «طبقة الصوت» (أغلظ أو أحدّ، تُضبط بالسمع)، «وضع القفل (للطفل)»، «الأمان» (رمز المرافق)، «البيانات» (اقتراحات الذكاء الاصطناعي، تصدير الملف الشخصي، إعادة ضبط الملف الشخصي) و«حول التطبيق» (حقوق وتراخيص الرموز).',
     ],
   },
@@ -909,8 +909,8 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   account: {
     title: 'حسابك وأطفالك وأجهزتك',
     steps: [
-      'الإعدادات (وضع المرافق) ← الحساب ← «حسابي»: اسمك، «تغيير كلمة المرور»، «تسجيل الخروج». عند تسجيل الخروج تغادر لوحات الأطفال الجهاز (وتبقى في حسابكم)؛ على حاسوب مشترك، اختر أيضاً مسح الصور والتسجيلات.',
-      '«الأطفال»: حساب واحد لعدة أطفال. «إضافة طفل» ينشئ ملفه؛ المس طفلاً في القائمة لفتح لوحته.',
+      'الإعدادات (وضع المرافق) ← الحساب ← «حسابي»: اسمك، «تغيير كلمة المرور»، «تسجيل الخروج». عند تسجيل الخروج تغادر لوحات الأطفال الجهاز (وتبقى في حسابكم)؛ على حاسوب مشترك، اختر أيضاً مسح الصور والتسجيلات. عند تسجيل الدخول، «إبقائي مسجّلاً» يفتح التطبيق في المرة القادمة دون طلب كلمة المرور: أزل التحديد على جهاز ليس لك.',
+      '«الأطفال»: حساب واحد لعدة أطفال. «إضافة طفل» ينشئ ملفه (بجانب كل سؤال علامة «؟» تشرح فائدة الاختيار)؛ المس طفلاً في القائمة لفتح لوحته.',
       '«الأجهزة والمزامنة»: الأجهزة المربوطة، آخر مزامنة، «مزامنة الآن»، وسحب جهاز مفقود. «ربط جهاز» يعطي رمزاً من 8 أحرف وأرقام يُكتب على الجهاز الآخر («ربط هذا الجهاز اللوحي برمز» في الصفحة الأولى): «صلاحية كاملة (جهاز الطفل)» أو «استعمال فقط (المدرسة، المربية…)». على جهاز مربوط: «فكّ ربط هذا الجهاز».',
       '«الخصوصية والبيانات»: «تصدير الملف (ملف)»، حذف ملف الطفل أو «حذف حسابي». الحذف نهائي: يجب كتابته للتأكيد.',
       '«التفضيلات»: «لغة القوائم» و«الإشعارات داخل التطبيق». «الكتابة إلى الفريق»: فكرة أو مشكلة تريد إبلاغنا بها (لا تكتب اسم طفل أبداً). «فتح الدليل» يعيدك إلى هنا.',
@@ -922,7 +922,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
       '«التحقق المهني» (عند إنشاء الحساب، ثم في «الحساب والترخيص»): ممارستك، شهادة أو ترخيص مهني، ثم وثيقة هوية تُحذف فور انتهاء التحقق. «إرسال للتحقق»: فريقنا يقبل أو يطلب معلومات إضافية أو يرفض، ونخبرك داخل التطبيق. في الانتظار يمكنك استكشاف مساحتك وتحضير المواد، لكن لا يمكنك بعد الانضمام إلى فريق طفل.',
       '«الرئيسية»: مستخدموك المرتبطون، الاقتراحات قيد الانتظار، الدعوات، واختصارات.',
       '«المستخدمون» ← «ربط مستخدم»: اكتب في «رمز العائلة أو رمز دعوة» الرمز الذي أعطاك إياه الأهل. برمز دعوة تنضمّ إلى الفريق فوراً؛ برمز العائلة، حدّد دورك و«الصلاحيات المطلوبة» ورسالة، ثم «إرسال الطلب»: تقبل العائلة بالصلاحيات التي تختارها. الدعوة المرسلة إلى بريدك الإلكتروني تُقبل في المكان نفسه.',
-      '«المستخدمون» ← «إنشاء ملف طفل» (بعد قبول شهادتك): لطفل ليس لعائلته حساب بعد. تجيب عن الأسئلة نفسها التي يجيب عنها الأهل وتحضّر اللوحة. في صفحة الطفل، «ربط الأهل» ← «إنشاء رمز الأهل»: ينشئ الأهل حسابهم، ويختارون «لديّ رمز دعوة» في الشاشة الأولى («طفلك») ويكتبون الرمز. يصبح الملف ملفهم: يختارون رمز المرافق وما يُسجَّل؛ وتبقى أنت ضمن الفريق.',
+      '«المستخدمون» ← «إنشاء ملف طفل» (بعد قبول شهادتك): لطفل ليس لعائلته حساب بعد. تجيب عن الأسئلة نفسها التي يجيب عنها الأهل وتحضّر اللوحة. في صفحة الطفل، «ربط الأهل» ← «إنشاء رمز الأهل» («إرسال بالبريد الإلكتروني» يفتح بريدك والرسالة مكتوبة مسبقاً): ينشئ الأهل حسابهم، ويختارون «لديّ رمز دعوة» في الشاشة الأولى («طفلك») ويكتبون الرمز. يصبح الملف ملفهم: يختارون رمز المرافق وما يُسجَّل؛ وتبقى أنت ضمن الفريق.',
       '«مكتبتي»: تحت «إنشاء مادة»، اضغط على ما تريد تحضيره (لوحة نشاط، جدول، «أولاً / ثم»، بطاقات للطباعة، أو من صورة)؛ تأخذ المادة اسم ما تحتويه. «البحث بالاسم» يجد مادة من جديد. القوائم: «العناصر المُنشأة»، «مشترك معي» و«مواد المستخدمين». اضغط على مادة لتخصيصها لطفل («تخصيص لـ…»)، أو اقتراحها على عائلة («اقتراح على ملف…»)، أو مشاركتها «مع زميل (بريد إلكتروني) أو فريق طفل».',
       '«التعاون»: «اتصالاتي»، «الطلبات المرسلة»، «الموارد المشتركة» و«النشاط الأخير».',
     ],

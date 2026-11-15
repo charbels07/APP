@@ -28,13 +28,14 @@ import {
 } from '../../lib/resources';
 import { applyOps } from '../../lib/profileDiff';
 import { followsContent, isRealName, materialTitle, resourceName } from '../../lib/resourceNames';
-import { search } from '../../lib/search';
+import { searchWords } from '../../lib/search';
 import { migrate } from '../../lib/storage';
 import type { ResourceData } from '../../backend/types';
 import type { Lang, Profile } from '../../model/types';
 import { useSession } from '../../state/Session';
 import { Btn, Field, Section, Segmented } from '../common';
 import { Icon, type IconName } from '../Icon';
+import { SearchBox } from '../SearchBox';
 import { Note, ss } from '../settings/SettingsScreen';
 import { Row, when } from '../settings/TeamTab';
 import { SymbolView } from '../SymbolView';
@@ -186,10 +187,11 @@ function WordPicker({ profile, onPick, lang }: { profile: Profile; onPick: (id: 
   const { uiLang } = useSession();
   const p = proStrings(uiLang);
   const [q, setQ] = useState('');
-  const results = useMemo(() => (q.trim() ? search(profile, q, 18).map((r) => r.concept) : []), [q, profile]);
+  const results = useMemo(() => (q.trim() ? searchWords(profile, q, 18).map((r) => r.concept) : []), [q, profile]);
   return (
     <View style={{ gap: 8 }}>
-      <TextInput value={q} onChangeText={setQ} placeholder={p.search} placeholderTextColor={C.placeholder} style={styles.input} accessibilityLabel={p.search} />
+      {/* The same ways in as the search of the board: type the word, or say it. */}
+      <SearchBox value={q} onChange={setQ} placeholder={p.search} lang={lang} profile={profile} uiLang={uiLang} />
       <View style={styles.grid}>
         {results.map((id) => (
           <Pressable key={id} onPress={() => onPick(id)} style={styles.word} accessibilityRole="button" accessibilityLabel={label(profile, id, lang)}>

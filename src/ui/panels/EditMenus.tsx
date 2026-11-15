@@ -32,7 +32,7 @@ import { pickTextFile } from '../../lib/pickTextFile';
 import { exportText } from '../../lib/platform';
 import { newResourceId } from '../../lib/resources';
 import type { Cell } from '../../model/types';
-import { useApp } from '../../state/AppState';
+import { useApp, useBack, type Overlay } from '../../state/AppState';
 import { useBoard } from '../../state/BoardContext';
 import { useSession } from '../../state/Session';
 import { Btn, Field, Panel, useNavRtl } from '../common';
@@ -87,6 +87,8 @@ function Header({ concept }: { concept: string }) {
 
 export function CellMenu({ board, index }: { board: string; index: number }) {
   const app = useApp();
+  // What this menu opens comes back here with "Back".
+  const menu: Overlay = { kind: 'cellMenu', board, index };
   const e = useE();
   const [msg, setMsg] = useState<string | null>(null);
   const [confirm, setConfirm] = useState(false);
@@ -108,9 +110,9 @@ export function CellMenu({ board, index }: { board: string; index: number }) {
           }}
         />
       ) : null}
-      <Item icon="pencil" text={e.edit} onPress={() => app.setOverlay({ kind: 'editor', board, index })} />
-      <Item icon="image" text={e.replaceImage} onPress={() => app.setOverlay({ kind: 'editor', board, index, only: 'image' })} />
-      {!cell.folder && <Item icon="mic" text={e.recordVoice} onPress={() => app.setOverlay({ kind: 'editor', board, index, only: 'voice' })} />}
+      <Item icon="pencil" text={e.edit} onPress={() => app.setOverlay({ kind: 'editor', board, index, back: menu })} />
+      <Item icon="image" text={e.replaceImage} onPress={() => app.setOverlay({ kind: 'editor', board, index, only: 'image', back: menu })} />
+      {!cell.folder && <Item icon="mic" text={e.recordVoice} onPress={() => app.setOverlay({ kind: 'editor', board, index, only: 'voice', back: menu })} />}
       {!cell.folder && board !== FAVOURITES_BOARD && (
         <Item
           icon="star"
@@ -187,7 +189,7 @@ export function TlaMenu({ id }: { id: string }) {
   return (
     <Panel title={e.tlaMenu} onClose={() => app.setOverlay(null)} tone="edit" maxWidth={460}>
       <Header concept={b.concept} />
-      <Item icon="pencil" text={e.rename} onPress={() => app.setOverlay({ kind: 'conceptEditor', concept: b.concept })} />
+      <Item icon="pencil" text={e.rename} onPress={() => app.setOverlay({ kind: 'conceptEditor', concept: b.concept, back: { kind: 'tlaMenu', id } })} />
       <Item
         icon="clipboard"
         text={e.duplicate}
@@ -210,13 +212,13 @@ export function TlaMenu({ id }: { id: string }) {
           setMsg(next ? e.arranged : e.arrangedAlready);
         }}
       />
-      <Item icon="link" text={e.share} onPress={() => app.setOverlay({ kind: 'shareTla', id })} />
+      <Item icon="link" text={e.share} onPress={() => app.setOverlay({ kind: 'shareTla', id, back: { kind: 'tlaMenu', id } })} />
       <Item
         icon="printer"
         text={e.print}
         onPress={() => {
           app.openTla(id);
-          app.setOverlay({ kind: 'print' });
+          app.setOverlay({ kind: 'print', back: { kind: 'tlaMenu', id } });
         }}
       />
       {msg && <Text style={st.msg}>{msg}</Text>}
@@ -228,6 +230,7 @@ export function TlaMenu({ id }: { id: string }) {
 
 export function ShareTlaPanel({ id }: { id: string }) {
   const app = useApp();
+  const back = useBack();
   const e = useE();
   const { api, account } = useSession();
   const [email, setEmail] = useState('');
@@ -238,7 +241,7 @@ export function ShareTlaPanel({ id }: { id: string }) {
   const title = label(app.profile, b.concept, app.lang);
   const canSend = !!account && account.provider !== 'device';
   return (
-    <Panel title={e.shareTitle(title)} onClose={() => app.setOverlay(null)} tone="edit" maxWidth={520}>
+    <Panel title={e.shareTitle(title)} onClose={() => app.setOverlay(null)} onBack={back} tone="edit" maxWidth={520}>
       <Header concept={b.concept} />
       {canSend && (
         <View style={st.card}>

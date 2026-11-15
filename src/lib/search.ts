@@ -89,6 +89,16 @@ export function locate(profile: Profile): Map<string, Location[]> {
   return map;
 }
 
+/**
+ * The search of the places where a word is chosen (a step, a card, a material): like `search`,
+ * without the folders' names, which are not words.
+ */
+export function searchWords(profile: Profile, query: string, max = 24): SearchResult[] {
+  return search(profile, query, max + 12)
+    .filter((r) => getConcept(profile, r.concept)?.cls !== 'folder')
+    .slice(0, max);
+}
+
 export function search(profile: Profile, query: string, max = 24): SearchResult[] {
   const q = normalize(query);
   if (!q) return [];

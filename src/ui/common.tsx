@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import {
   Platform,
   Pressable,
@@ -26,6 +26,7 @@ export function useNavRtl(): boolean {
 const RIGHT = { textAlign: 'right' as const, writingDirection: 'rtl' as const };
 
 const CLOSE = { fr: 'Fermer', en: 'Close', ar: 'إغلاق' } as const;
+const BACK = { fr: 'Retour', en: 'Back', ar: 'رجوع' } as const;
 
 /** The panels open at the moment, the last one on top (only that one answers Escape). */
 const openPanels: (() => void)[] = [];
@@ -82,6 +83,9 @@ function useDialog(onClose: () => void) {
   return ref;
 }
 
+/** Given by a panel to what it holds: freeze its scrolling (true) while a finger draws inside. */
+export const PanelScrollLock = createContext<(locked: boolean) => void>(() => {});
+
 export function Panel({
   title,
   onClose,
@@ -92,9 +96,15 @@ export function Panel({
   scroll = true,
   scrollLocked,
   footer,
+  onBack,
 }: {
   title: string;
   onClose: () => void;
+  /**
+   * The panel was opened from another panel: "Back" returns there (Escape and a touch beside
+   * the panel too), while the cross still closes everything.
+   */
+  onBack?: () => void;
   children: React.ReactNode;
   maxWidth?: number;
   tone?: 'default' | 'help' | 'edit';
@@ -108,12 +118,19 @@ export function Panel({
   const headerBg = tone === 'help' ? C.helpSoft : tone === 'edit' ? C.editSoft : C.surface;
   const rtl = useNavRtl();
   const navLang = useContext(NavLangContext);
-  const dialog = useDialog(onClose);
+  const dialog = useDialog(onBack ?? onClose);
+  const [heldByChild, setHeldByChild] = useState(false);
   return (
     <View style={styles.backdrop}>
-      <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessible={false} tabIndex={-1} />
+      <Pressable style={StyleSheet.absoluteFill} onPress={onBack ?? onClose} accessible={false} tabIndex={-1} />
       <View ref={dialog} style={[styles.panel, { maxWidth }]} role="dialog" aria-label={title} tabIndex={-1}>
-        <View style={[styles.panelHeader, rtl && styles.headerRtl, { backgroundColor: headerBg }]}>
+        <View style={[styles.panelHeader, rtl && styles.headerRtl, onBack && (rtl ? { paddingRight: 6 } : { paddingLeft: 6 }), { backgroundColor: headerBg }]}>
+          {onBack ? (
+            <Pressable onPress={onBack} style={({ pressed }) => [styles.backBtn, rtl && { flexDirection: 'row-reverse' }, pressed && { opacity: 0.6 }]} accessibilityRole="button" accessibilityLabel={BACK[navLang]}>
+              <Icon name={rtl ? 'chevronRight' : 'chevronLeft'} size={22} color={C.text} />
+              <Text style={styles.backText}>{BACK[navLang]}</Text>
+            </Pressable>
+          ) : null}
           <Text style={[styles.panelTitle, rtl && RIGHT]} numberOfLines={1}>
             {title}
           </Text>
@@ -123,8 +140,8 @@ export function Panel({
           </Pressable>
         </View>
         {scroll ? (
-          <ScrollView contentContainerStyle={styles.panelBody} keyboardShouldPersistTaps="handled" scrollEnabled={!scrollLocked}>
-            {children}
+          <ScrollView contentContainerStyle={styles.panelBody} keyboardShouldPersistTaps="handled" scrollEnabled={!scrollLocked && !heldByChild}>
+            <PanelScrollLock.Provider value={setHeldByChild}>{children}</PanelScrollLock.Provider>
           </ScrollView>
         ) : (
           <View style={[styles.panelBody, { flex: 1 }]}>{children}</View>
@@ -297,6 +314,8 @@ export const styles = StyleSheet.create({
   headerRtl: { flexDirection: 'row-reverse', paddingLeft: 6, paddingRight: 18 },
   panelTitle: { flex: 1, fontSize: 20, fontWeight: '700', color: C.text },
   closeBtn: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
+  backBtn: { flexDirection: 'row', alignItems: 'center', gap: 2, minHeight: 48, paddingHorizontal: 8, marginRight: 4, borderRadius: radius.md },
+  backText: { fontSize: 16, fontWeight: '700', color: C.text },
   panelBody: { padding: 18, gap: 14 },
   panelFooter: { borderTopWidth: 1, borderTopColor: C.border, backgroundColor: C.surface, paddingHorizontal: 16, paddingVertical: 10 },
   btn: {

@@ -75,12 +75,13 @@ export async function clearMedia(): Promise<void> {
   });
 }
 
-export function newMediaName(ext: string): string {
-  return `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+/** `tag`: a note kept in the name (a recording's start and stop moments: `trimSilence.ts`). */
+export function newMediaName(ext: string, tag?: string): string {
+  return `${Date.now()}_${Math.random().toString(36).slice(2, 8)}${tag ? `.${tag}` : ''}.${ext}`;
 }
 
-export async function saveMedia(sourceUri: string, ext: string): Promise<string> {
-  const name = newMediaName(ext);
+export async function saveMedia(sourceUri: string, ext: string, tag?: string): Promise<string> {
+  const name = newMediaName(ext, tag);
   const blob = await (await fetch(sourceUri)).blob();
   await put(name, blob);
   return name;
@@ -122,7 +123,8 @@ export async function deleteMedia(name: string): Promise<void> {
 
 export async function saveMediaBytes(bytes: Uint8Array, ext: string): Promise<string> {
   const name = newMediaName(ext);
-  const type = ext === 'webp' ? 'image/webp' : ext === 'png' ? 'image/png' : ext === 'jpg' ? 'image/jpeg' : 'application/octet-stream';
+  const type =
+    ext === 'webp' ? 'image/webp' : ext === 'png' ? 'image/png' : ext === 'jpg' ? 'image/jpeg' : ext === 'wav' ? 'audio/wav' : 'application/octet-stream';
   await put(name, new Blob([bytes as Uint8Array<ArrayBuffer>], { type }));
   return name;
 }

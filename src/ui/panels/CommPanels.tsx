@@ -1,7 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { aiAvailable, askAiToReadDrawing, type DrawingGuess, type Stroke } from '../../lib/aiPlanner';
-import { availableLangs, isRtl, label, langName, symbolOf } from '../../lib/lexicon';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { availableLangs, isFolderName, isRtl, label, langName, symbolOf } from '../../lib/lexicon';
 import { search, type Location } from '../../lib/search';
 import { speakText } from '../../lib/speech';
 import { typedChips } from '../../lib/typedWords';
@@ -11,12 +10,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { opensAlone, useApp } from '../../state/AppState';
 import { useBoard } from '../../state/BoardContext';
 import { Btn, Panel, Section, useNavRtl } from '../common';
-import { DrawPad } from '../DrawPad';
 import { usePictoLibrary } from '../PictoPicker';
 import { chipPicture } from '../SentenceStrip';
 import { Icon } from '../Icon';
 import { SymbolView } from '../SymbolView';
 import { C, radius } from '../theme';
+import { SearchBox } from '../SearchBox';
 import { VoiceButton } from '../VoiceButton';
 import { pressed } from '../a11y';
 
@@ -32,68 +31,17 @@ export function pathText(loc: Location, app: ReturnType<typeof useApp>): string 
 
 /**
  * Universal search (spec §11), 1 action from anywhere. First tab of the tools panel (ToolsPanel).
- * `onPen`: tells the panel a finger is drawing, so it stops scrolling meanwhile.
+ * The field itself (type, say, draw) is the one used everywhere a word is looked for: `SearchBox`.
  */
-export function SearchBody({ onPen }: { onPen: (down: boolean) => void }) {
+export function SearchBody() {
   const app = useApp();
   const { profile, lang, t } = app;
   const [q, setQ] = useState('');
-  const [drawing, setDrawing] = useState(false);
-  const [penDown, setPenDown] = useState(false);
-  // Searching by drawing needs the AI helper: without it the button is simply not there.
-  const [canDraw, setCanDraw] = useState(false);
-  useEffect(() => {
-    let alive = true;
-    void aiAvailable().then((ok) => alive && setCanDraw(ok));
-    return () => {
-      alive = false;
-    };
-  }, []);
-  useEffect(() => {
-    onPen(penDown);
-    return () => onPen(false);
-  }, [penDown, onPen]);
   const results = useMemo(() => search(profile, q), [profile, q]);
-  const wordOf = (g: DrawingGuess) => g[lang] || g.fr || g.en || g.ar || '';
 
   return (
     <>
-      {/* Three ways in: type, say the word, or draw it. */}
-      <View style={styles.ways}>
-        <View style={{ flexGrow: 1, flexBasis: 200 }}>
-          <VoiceButton compact lang={lang} label={t.sayWord} onPartial={setQ} onFinal={setQ} />
-        </View>
-        {canDraw && (
-          <Btn
-            kind={drawing ? 'primary' : 'secondary'}
-            icon="pencil"
-            label={t.drawWord}
-            onPress={() => setDrawing((d) => !d)}
-            style={{ flexGrow: 1, flexBasis: 160, minHeight: 48 }}
-          />
-        )}
-      </View>
-      {drawing && canDraw && <DrawSearch onWord={setQ} wordOf={wordOf} onPen={setPenDown} />}
-      <View style={styles.searchBox}>
-        <Icon name="search" size={22} color={C.textMuted} />
-        <TextInput
-          autoFocus
-          value={q}
-          onChangeText={setQ}
-          placeholder={t.searchPlaceholder}
-          placeholderTextColor={C.placeholder}
-          style={styles.searchInput}
-          autoCorrect={false}
-          autoCapitalize="none"
-          returnKeyType="search"
-        />
-        {q ? (
-          <Pressable onPress={() => setQ('')} accessibilityRole="button"
-accessibilityLabel={t.clear}>
-            <Icon name="x" size={20} color={C.textMuted} />
-          </Pressable>
-        ) : null}
-      </View>
+      <SearchBox autoFocus value={q} onChange={setQ} placeholder={t.searchPlaceholder} lang={lang} />
       {q.trim() && !results.length ? <Text style={styles.muted}>{t.noResults}</Text> : null}
       {results.map((r) => {
         const loc = r.locations.find((l) => l.path[0] === 'core') ?? r.locations[0];
@@ -113,102 +61,26 @@ accessibilityLabel={t.clear}>
                 {loc && !loc.visible ? `  (${t.hiddenAtLevel})` : ''}
               </Text>
             </View>
-            <Btn small icon="volume" accessibilityLabel={t.speak} onPress={() => app.speakConcept(r.concept)} />
-            <Btn
-              small
-              icon="plus"
-              accessibilityLabel={t.add}
-              onPress={() => {
-                app.touchConcept(r.concept);
-                app.setOverlay(null);
-              }}
-            />
+            {/* A folder is found to see where it is: its name is not a word to say or to add. */}
+            {!isFolderName(profile, r.concept) && (
+              <>
+                <Btn small icon="volume" accessibilityLabel={t.speak} onPress={() => app.speakConcept(r.concept)} />
+                <Btn
+                  small
+                  icon="plus"
+                  accessibilityLabel={t.add}
+                  onPress={() => {
+                    app.touchConcept(r.concept);
+                    app.setOverlay(null);
+                  }}
+                />
+              </>
+            )}
             <Btn small kind="primary" icon="target" label={t.showMe} disabled={!loc} onPress={() => loc && app.showMeWhere(loc)} />
           </View>
         );
       })}
     </>
-  );
-}
-
-/** Search by drawing: the drawing is recognised (AI), its guesses fill the search. */
-function DrawSearch({
-  onWord,
-  wordOf,
-  onPen,
-}: {
-  onWord: (w: string) => void;
-  wordOf: (g: DrawingGuess) => string;
-  onPen: (down: boolean) => void;
-}) {
-  const { t, profile } = useApp();
-  const [strokes, setStrokes] = useState<Stroke[]>([]);
-  const [size, setSize] = useState<[number, number]>([0, 0]);
-  const [state, setState] = useState<'idle' | 'thinking' | 'done' | 'failed' | 'unavailable' | 'off'>('idle');
-  const [guesses, setGuesses] = useState<DrawingGuess[]>([]);
-  const ctl = useRef<AbortController | null>(null);
-  useEffect(() => () => ctl.current?.abort(), []);
-
-  const find = async () => {
-    if (!profile.settings.aiSuggestions) return setState('off');
-    if (!(await aiAvailable())) return setState('unavailable');
-    ctl.current?.abort();
-    const c = new AbortController();
-    ctl.current = c;
-    setState('thinking');
-    const res = await askAiToReadDrawing(strokes, size[0], size[1], c.signal, profile.settings.arabic);
-    if (c.signal.aborted) return;
-    if (res === null) return setState('unavailable');
-    setGuesses(res);
-    setState(res.length ? 'done' : 'failed');
-    if (res.length) onWord(wordOf(res[0]));
-  };
-
-  return (
-    <View style={{ gap: 8 }}>
-      <Text style={styles.muted}>{t.drawHint}</Text>
-      <DrawPad strokes={strokes} onChange={setStrokes} onSize={(w, h) => setSize([w, h])} onPen={onPen} />
-      <View style={[styles.row, { flexWrap: 'wrap' }]}>
-        <Btn small icon="undo" label={t.undoStroke} disabled={!strokes.length} onPress={() => setStrokes((s) => s.slice(0, -1))} />
-        <Btn
-          small
-          kind="danger"
-          icon="trash"
-          label={t.clearDrawing}
-          disabled={!strokes.length}
-          onPress={() => {
-            setStrokes([]);
-            setGuesses([]);
-            setState('idle');
-          }}
-        />
-        <Btn
-          kind="primary"
-          icon="search"
-          label={t.findDrawing}
-          disabled={!strokes.length || state === 'thinking'}
-          onPress={find}
-          style={{ flexGrow: 1 }}
-        />
-      </View>
-      {state === 'thinking' && (
-        <View style={[styles.row, { alignItems: 'center' }]}>
-          <ActivityIndicator color={C.accent} />
-          <Text style={styles.muted}>{t.drawThinking}</Text>
-        </View>
-      )}
-      {state === 'done' && (
-        <View style={[styles.row, { flexWrap: 'wrap', alignItems: 'center' }]}>
-          <Text style={styles.resultLabel}>{t.drawGuesses}</Text>
-          {guesses.map((g, i) => (
-            <Btn key={i} small kind={i === 0 ? 'primary' : 'secondary'} label={wordOf(g)} onPress={() => onWord(wordOf(g))} />
-          ))}
-        </View>
-      )}
-      {state === 'failed' && <Text style={styles.warn}>{t.drawFailed}</Text>}
-      {state === 'unavailable' && <Text style={styles.warn}>{t.drawUnavailable}</Text>}
-      {state === 'off' && <Text style={styles.warn}>{t.drawAiOff}</Text>}
-    </View>
   );
 }
 
@@ -224,6 +96,8 @@ export function KeyboardBody() {
   const chips = useMemo(() => typedChips(profile, text, lang, lib || null), [profile, text, lang, lib]);
   return (
     <>
+      {/* Said instead of typed: what is heard is added after what is already written. */}
+      <VoiceButton compact lang={lang} label={t.sayWord} onFinal={(said) => setText((cur) => (cur.trim() ? `${cur.trim()} ` : '') + said)} />
       <TextInput
         autoFocus
         multiline
@@ -508,21 +382,9 @@ export function PinPanel() {
 }
 
 const styles = StyleSheet.create({
-  ways: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   warn: { fontSize: 14, backgroundColor: C.editSoft, color: C.edit, padding: 10, borderRadius: radius.md },
   pinWhy: { gap: 6, backgroundColor: C.surfaceAlt, borderRadius: radius.md, padding: 12 },
   pinWhyText: { fontSize: 15, lineHeight: 21, color: C.text },
-  searchBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    borderWidth: 2,
-    borderColor: C.accent,
-    borderRadius: radius.md,
-    paddingHorizontal: 12,
-    minHeight: 52,
-  },
-  searchInput: { flex: 1, fontSize: 18, color: C.text, minHeight: 48 },
   muted: { color: C.textMuted, fontSize: 14 },
   result: {
     flexDirection: 'row',

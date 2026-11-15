@@ -4,7 +4,7 @@ import { GUIDE, GUIDE_TRACK_INTRO, type GuideAction, type GuideChapter, type Gui
 import { tailoredChapter } from '../../data/guideTailored';
 import { locate } from '../../lib/search';
 import type { DemoStep } from '../../model/types';
-import { useApp } from '../../state/AppState';
+import { useApp, useBack } from '../../state/AppState';
 import { Btn, Panel, Segmented, useNavRtl } from '../common';
 import { PictoCredit } from '../PictoCredits';
 import { Icon } from '../Icon';
@@ -20,6 +20,7 @@ const EXAMPLE: DemoStep[] = ['i', 'want', 'play'].map((concept) => ({ kind: 'wor
 /** In-app guide, from A to Z, in two tracks (first steps / caregivers & professionals). */
 export function GuidePanel() {
   const app = useApp();
+  const back = useBack();
   const { t, profile, editMode } = app;
   const ui = profile.settings.uiLang;
   const [track, setTrack] = useState<GuideTrack>(editMode ? 'pro' : 'start');
@@ -77,7 +78,7 @@ export function GuidePanel() {
   };
 
   return (
-    <Panel title={t.guideTitle} onClose={() => app.setOverlay(null)}>
+    <Panel title={t.guideTitle} onClose={() => app.setOverlay(null)} onBack={back}>
       <Segmented
         value={track}
         onChange={(v: GuideTrack) => {

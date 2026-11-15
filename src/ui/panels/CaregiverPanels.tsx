@@ -19,14 +19,16 @@ import { exportJson, exportPdf, printDocument } from '../../lib/platform';
 import { boardCells, buildPrintHtml, conceptCell, type PrintOptions } from '../../lib/printHtml';
 import { canSpan } from '../../lib/boardOps';
 import { pictoCredit, pictoToMedia } from '../../lib/pictoLibrary';
-import { search } from '../../lib/search';
+import { searchWords } from '../../lib/search';
 import { listVoices, prepareVoices, speakText } from '../../lib/speech';
 import type { VoiceChoice } from '../../lib/voices';
 import { UI_LANG_NAMES } from '../../i18n/ui';
 import type { AppLink, ArabicDialect, CellDisplay, Lang, Profile, UiLang, WordClass } from '../../model/types';
-import { useApp } from '../../state/AppState';
+import { useApp, useBack } from '../../state/AppState';
 import { Btn, Field, Panel, Section, Segmented, Toggle } from '../common';
 import { PictoSearch } from '../PictoPicker';
+import { SearchBox } from '../SearchBox';
+import { VoiceButton } from '../VoiceButton';
 import { PrintPreview } from '../PrintPreview';
 import { SymbolView, useMediaUri } from '../SymbolView';
 import { useWiggle } from '../wiggle';
@@ -175,6 +177,7 @@ function setClass(d: Profile, id: string, cls: WordClass) {
 
 function CellEditor({ board, index }: { board: string; index: number }) {
   const app = useApp();
+  const back = useBack();
   const { profile, t } = app;
   const [spanError, setSpanError] = useState(false);
   const b = profile.boards[board];
@@ -185,6 +188,7 @@ function CellEditor({ board, index }: { board: string; index: number }) {
   const replace = () =>
     app.setOverlay({
       kind: 'picker',
+      back: { kind: 'editor', board, index },
       onPick: (conceptId) => {
         app.update((d) => {
           const c = d.boards[board].cells[index];
@@ -219,7 +223,7 @@ function CellEditor({ board, index }: { board: string; index: number }) {
   const strength = STRENGTHS.find((x) => x.v === cell.intensity)?.value ?? 'soft';
 
   return (
-    <Panel title={t.editWord} onClose={() => app.setOverlay(null)} tone="edit">
+    <Panel title={t.editWord} onClose={() => app.setOverlay(null)} onBack={back} tone="edit">
       <ConceptEditorBody conceptId={cell.concept} />
 
       <Section title={t.card}>
@@ -290,11 +294,12 @@ function CellEditor({ board, index }: { board: string; index: number }) {
 /** Double-tap menu → "Replace the picture" / "Record the pronunciation": just that part. */
 function PartEditor({ board, index, only }: { board: string; index: number; only: 'image' | 'voice' }) {
   const app = useApp();
+  const back = useBack();
   const cell = app.profile.boards[board]?.cells[index];
   if (!cell) return null;
   const e = editStrings(app.profile.settings.uiLang);
   return (
-    <Panel title={only === 'image' ? e.replaceImage : e.recordVoice} onClose={() => app.setOverlay(null)} tone="edit">
+    <Panel title={only === 'image' ? e.replaceImage : e.recordVoice} onClose={() => app.setOverlay(null)} onBack={back} tone="edit">
       <ConceptEditorBody conceptId={cell.concept} only={only} />
       <View style={[s.row, { flexWrap: 'wrap' }]}>
         <Btn icon="pencil" label={e.edit} onPress={() => app.setOverlay({ kind: 'editor', board, index })} style={{ flexGrow: 1 }} />
@@ -306,8 +311,9 @@ function PartEditor({ board, index, only }: { board: string; index: number; only
 
 function ConceptEditorPanel({ concept }: { concept: string }) {
   const app = useApp();
+  const back = useBack();
   return (
-    <Panel title={app.t.editWord} onClose={() => app.setOverlay(null)} tone="edit">
+    <Panel title={app.t.editWord} onClose={() => app.setOverlay(null)} onBack={back} tone="edit">
       <ConceptEditorBody conceptId={concept} />
       <Btn kind="primary" icon="check" label={app.t.close} onPress={() => app.setOverlay(null)} />
     </Panel>
@@ -599,6 +605,7 @@ function MediaThumb({ name, size }: { name: string; size: number }) {
 
 function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) => void }) {
   const app = useApp();
+  const cameFrom = useBack();
   const { profile, lang, t } = app;
   const [q, setQ] = useState('');
   const [creating, setCreating] = useState(false);
@@ -611,7 +618,8 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
   });
 
   const ids = useMemo(() => {
-    if (q.trim()) return search(profile, q, 60).map((r) => r.concept);
+    // Words only: a folder's name is not a word to put on a card or in a sequence.
+    if (q.trim()) return searchWords(profile, q, 60).map((r) => r.concept);
     return allConceptIds(profile)
       .filter((id) => getConcept(profile, id)?.cls !== 'folder')
       .sort((a, b) => label(profile, a, lang).localeCompare(label(profile, b, lang)));
@@ -653,11 +661,19 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
   };
 
   return (
-    <Panel title={title ?? t.chooseWord} onClose={() => app.setOverlay(null)} tone="edit">
+    <Panel
+      title={creating ? t.createWord : title ?? t.chooseWord}
+      onClose={() => app.setOverlay(null)}
+      // Back: out of "create a new word" first, then to the panel this one was opened from.
+      onBack={creating ? () => setCreating(false) : cameFrom}
+      tone="edit"
+    >
       {!creating ? (
         <Btn icon="plus" label={t.createWord} onPress={() => setCreating(true)} />
       ) : (
         <View style={s.createBox}>
+          {/* The new word can be said instead of typed (in the language of the board). */}
+          <VoiceButton compact lang={lang} label={t.sayWord} onPartial={(said) => setDraft((d) => ({ ...d, [lang]: said }))} onFinal={(said) => setDraft((d) => ({ ...d, [lang]: said }))} />
           <View style={s.row}>
             <View style={{ flex: 1 }}>
               <Field label="Français" value={draft.fr} onChangeText={(fr) => setDraft({ ...draft, fr })} />
@@ -747,23 +763,29 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
           />
         </View>
       )}
-      <TextInput autoFocus value={q} onChangeText={setQ} placeholder={t.searchPlaceholder} style={s.input} placeholderTextColor={C.placeholder} />
-      <View style={s.pickGrid}>
-        {ids.slice(0, 120).map((id) => (
-          <Pressable
-            key={id}
-            onPress={() => onPick(id)}
-            style={({ pressed }) => [s.pickItem, pressed && { opacity: 0.6 }]}
-            accessibilityRole="button"
-            accessibilityLabel={label(profile, id, lang)}
-          >
-            <SymbolView symbol={symbolOf(profile, id)} size={44} />
-            <Text style={s.pickText} numberOfLines={2}>
-              {label(profile, id, lang)}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+      {/* While a new word is being made, only that is on screen ("Back" returns to the list). */}
+      {!creating && (
+        <>
+          {/* The same ways in as the home search: type the word, or say it. */}
+          <SearchBox autoFocus value={q} onChange={setQ} placeholder={t.searchPlaceholder} lang={lang} />
+          <View style={s.pickGrid}>
+            {ids.slice(0, 120).map((id) => (
+              <Pressable
+                key={id}
+                onPress={() => onPick(id)}
+                style={({ pressed }) => [s.pickItem, pressed && { opacity: 0.6 }]}
+                accessibilityRole="button"
+                accessibilityLabel={label(profile, id, lang)}
+              >
+                <SymbolView symbol={symbolOf(profile, id)} size={44} />
+                <Text style={s.pickText} numberOfLines={2}>
+                  {label(profile, id, lang)}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </>
+      )}
     </Panel>
   );
 }
@@ -791,6 +813,7 @@ function ScheduleEditor({ id }: { id: string }) {
           onPress={() =>
             app.setOverlay({
               kind: 'picker',
+              back: { kind: 'scheduleEditor', id },
               onPick: (c) => {
                 mutate((x) => void (x.concept = c));
                 app.setOverlay({ kind: 'scheduleEditor', id });
@@ -835,6 +858,7 @@ function ScheduleEditor({ id }: { id: string }) {
         onPress={() =>
           app.setOverlay({
             kind: 'picker',
+            back: { kind: 'scheduleEditor', id },
             onPick: (c) => {
               mutate((x) => void x.steps.push({ id: `step_${Date.now().toString(36)}`, concept: c, done: false }));
               app.setOverlay({ kind: 'scheduleEditor', id });
@@ -1018,7 +1042,7 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
 
   return (
     <>
-      {!searching && <Btn icon="book" label={t.openGuide} onPress={() => app.setOverlay({ kind: 'guide' })} />}
+      {!searching && <Btn icon="book" label={t.openGuide} onPress={() => app.setOverlay({ kind: 'guide', back: { kind: 'settings' } })} />}
       <Found title={t.sCommunication}>
         <Text style={s.label}>{t.sCommLang}</Text>
         <Segmented value={st.lang} onChange={(v: Lang) => set((x) => void (x.lang = v))} options={langs.map((l) => ({ value: l, label: langName(st, l) }))} />
@@ -1340,6 +1364,7 @@ type PrintTarget = { kind: 'board'; id: string } | { kind: 'schedule'; id: strin
 /** `cards`: words chosen with the multi-selection, printed as picture cards. */
 function PrintPanel({ cards }: { cards?: string[] }) {
   const app = useApp();
+  const back = useBack();
   const { profile, t, lang, view, path, tlaId } = app;
   const currentBoard = view === 'tla' && tlaId ? tlaId : path[path.length - 1];
   const [target, setTarget] = useState<PrintTarget>(
@@ -1417,7 +1442,7 @@ function PrintPanel({ cards }: { cards?: string[] }) {
   const targetKey = target.kind === 'firstThen' ? 'ft' : target.kind === 'cards' ? 'cards' : `${target.kind === 'board' ? 'b' : 's'}:${target.id}`;
 
   return (
-    <Panel title={t.printTitle} onClose={() => app.setOverlay(null)} tone="edit" maxWidth={980}>
+    <Panel title={t.printTitle} onClose={() => app.setOverlay(null)} onBack={back} tone="edit" maxWidth={980}>
       <Section title={t.printWhat}>
         <View style={s.wrapRow}>
           {targets.map((x) => (

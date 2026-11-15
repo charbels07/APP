@@ -5,9 +5,11 @@ import {
   useAudioRecorder,
   useAudioRecorderState,
 } from 'expo-audio';
-import React, { useState } from 'react';
-import { Platform, Text, View } from 'react-native';
-import { deleteMedia, saveMedia } from '../../lib/media';
+import React, { useEffect, useRef, useState } from 'react';
+import { Text, View } from 'react-native';
+import { deleteMedia } from '../../lib/media';
+import { saveRecording } from '../../lib/recordingTrim';
+import type { Level } from '../../lib/trimSilence';
 import { playMedia } from '../../lib/speech';
 import { useApp } from '../../state/AppState';
 import { Btn } from '../common';
@@ -16,12 +18,20 @@ import { C } from '../theme';
 /**
  * Records a personal pronunciation for a word in one language (spec §13, §25):
  * used for names, dialect words, or words the synthetic voice gets wrong.
+ * The silence before and after the word is left out when the recording is saved (`saveRecording`).
  */
+// The loudness is measured while recording: in the tablet app it tells where the voice is.
+const OPTIONS = { ...RecordingPresets.HIGH_QUALITY, isMeteringEnabled: true };
+
 export function Recorder({ media, onChange }: { media?: string; onChange: (name: string | undefined) => void }) {
   const { t } = useApp();
-  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
-  const state = useAudioRecorderState(recorder);
+  const recorder = useAudioRecorder(OPTIONS);
+  const state = useAudioRecorderState(recorder, 60);
   const [error, setError] = useState<string | null>(null);
+  const levels = useRef<Level[]>([]);
+  useEffect(() => {
+    if (state.isRecording && typeof state.metering === 'number') levels.current.push({ ms: state.durationMillis ?? 0, db: state.metering });
+  }, [state.isRecording, state.metering, state.durationMillis]);
 
   const start = async () => {
     setError(null);
@@ -33,6 +43,7 @@ export function Recorder({ media, onChange }: { media?: string; onChange: (name:
       }
       await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
       await recorder.prepareToRecordAsync();
+      levels.current = [];
       recorder.record();
     } catch {
       setError(t.noMic);
@@ -41,11 +52,12 @@ export function Recorder({ media, onChange }: { media?: string; onChange: (name:
 
   const stop = async () => {
     try {
+      const totalMs = state.durationMillis ?? 0;
       await recorder.stop();
       await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
       const uri = recorder.uri;
       if (!uri) return;
-      const name = await saveMedia(uri, Platform.OS === 'web' ? 'webm' : 'm4a');
+      const name = await saveRecording(uri, levels.current, totalMs);
       if (media) deleteMedia(media);
       onChange(name);
     } catch {

@@ -5,7 +5,7 @@ import { createRepeatGuard } from '../lib/repeatGuard';
 import { APPS_NEED_TAP, appLinkOf, findAppInSentence, isIncomplete, openAppUrl } from '../lib/appLinks';
 import { clipFor } from '../lib/dialectVoice';
 import { joinTokens, renderStrip, tokenSegment, toSpeechPlan } from '../lib/grammar';
-import { audioOf, label } from '../lib/lexicon';
+import { audioOf, isFolderName, label } from '../lib/lexicon';
 import { locate, type Location } from '../lib/search';
 import { beep, prepareVoices, speakSegments, speakText, stopSpeech } from '../lib/speech';
 import type { Cell, DemoStep, Lang, Profile, StripItem, UiLang } from '../model/types';
@@ -29,25 +29,26 @@ export type Overlay =
   /** The child lock of this device (also in the settings). */
   | { kind: 'lock' }
   /** `cards`: print these words as picture cards (multi-selection). */
-  | { kind: 'print'; cards?: string[] }
+  | { kind: 'print'; cards?: string[]; back?: Overlay }
   /** `only`: just the picture or just the recorded pronunciation. */
-  | { kind: 'editor'; board: string; index: number; only?: 'image' | 'voice' }
+  | { kind: 'editor'; board: string; index: number; only?: 'image' | 'voice'; back?: Overlay }
   /** Edit mode, double tap: actions on a card or on an activity board. */
   | { kind: 'cellMenu'; board: string; index: number }
   | { kind: 'tlaMenu'; id: string }
   /** Share an activity board (send to someone, file). */
-  | { kind: 'shareTla'; id: string }
+  | { kind: 'shareTla'; id: string; back?: Overlay }
   /** Multi-selection: choose the activity board the cards go to. */
   | { kind: 'moveToTla' }
   /** Use mode, long press on a folder: its most requested words, without opening it. */
   | { kind: 'peek'; folder: string }
-  | { kind: 'conceptEditor'; concept: string }
-  | { kind: 'picker'; title?: string; onPick: (conceptId: string) => void }
+  | { kind: 'conceptEditor'; concept: string; back?: Overlay }
+  /** `back` (here and on the other panels that have it): the panel this one was opened from. */
+  | { kind: 'picker'; title?: string; onPick: (conceptId: string) => void; back?: Overlay }
   | { kind: 'scheduleEditor'; id: string }
   | { kind: 'model' }
   | { kind: 'newTla' }
   | { kind: 'newSequence' }
-  | { kind: 'guide' };
+  | { kind: 'guide'; back?: Overlay };
 
 /** Where a touched word sits, so a demonstration can replay the exact gesture. */
 export interface TapOrigin {
@@ -186,6 +187,21 @@ export function useApp(): AppCtx {
   const v = useContext(Ctx);
   if (!v) throw new Error('useApp outside provider');
   return v;
+}
+
+/** For the few shared pieces also used outside a board (search field, microphone): null there. */
+export function useAppMaybe(): AppCtx | null {
+  return useContext(Ctx);
+}
+
+/**
+ * For a panel: the "Back" of its header, when it was opened from another panel (that panel is
+ * kept in the overlay's `back`). Undefined when it was opened from the board: only the cross then.
+ */
+export function useBack(): (() => void) | undefined {
+  const { overlay, setOverlay } = useApp();
+  const back = overlay && 'back' in overlay ? overlay.back : undefined;
+  return back ? () => setOverlay(back) : undefined;
 }
 
 let keySeq = 0;
@@ -383,6 +399,8 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
     (conceptId: string, origin?: TapOrigin) => {
       const p = profileRef.current;
       const l = p.settings.lang;
+      // A folder's name is not a word: it is never said nor put in the sentence.
+      if (isFolderName(p, conceptId)) return;
       // Replays and dictation press words on purpose: only the user's own presses are limited.
       if (!playingRef.current && !repeatGuard(conceptId, (p.settings.repeatDelay ?? 0) * 1000)) return;
       record(origin ? { kind: 'tap', concept: conceptId, ...origin } : { kind: 'word', concept: conceptId });
@@ -634,13 +652,14 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
               viewRef.current = { view: 'board' };
               setPath(['core']);
               if (loc.path.length > 1) {
-                // Say which folder we open, and linger on it, so the child sees the way in.
+                // Show which folder we open, and linger on it, so the child sees the way in.
                 const folderIndex = p.boards.core.cells.findIndex((c) => c?.folder === loc!.board);
                 const folderConcept = p.boards.core.cells[folderIndex]?.concept ?? p.boards[loc.board]?.concept;
                 setDemoCaption({ text: `${ui.openingFolder} « ${label(p, folderConcept, l)} »`, concept: folderConcept });
                 await sleep(250);
-                // Pressed exactly like a word: the hand comes in, pushes the card, its name is said.
-                if (!(await press({ board: 'core', index: folderIndex }, () => speakConcept(folderConcept)))) return;
+                // The hand comes in and pushes the card, as a finger would. Nothing is said: a folder's
+                // name is not a word (touching a folder on the board says nothing either).
+                if (!(await press({ board: 'core', index: folderIndex }, () => pulse(folderConcept)))) return;
                 setPath(['core', loc.board]);
                 await sleep(400);
               }
@@ -678,7 +697,7 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
       if (alive() && opts.speakAtEnd) await speakStrip();
       if (alive()) stopPlaying();
     },
-    [addText, bestLocation, clearStrip, deleteLast, editStrip, speakConcept, speakStrip, stopPlaying, touchConcept],
+    [addText, bestLocation, clearStrip, deleteLast, editStrip, pulse, speakStrip, stopPlaying, touchConcept],
   );
 
   const [moveSource, setMoveSource] = useState<Slot | null>(null);

@@ -349,6 +349,7 @@ const fr = {
   sAi: 'Propositions par IA (TLA et dessins ; seul le sujet ou le dessin est envoyé)',
   // search by voice / drawing
   sayWord: 'Dire le mot',
+  clearSearch: 'Effacer la recherche',
   drawWord: 'Dessiner',
   drawHint: 'Dessinez l’objet (ou écrivez le mot) avec le doigt, puis touchez « Trouver ».',
   findDrawing: 'Trouver',
@@ -732,6 +733,7 @@ const en: Dict = {
   sAi: 'AI suggestions (boards and drawings; only the topic or the drawing is sent)',
   // search by voice / drawing
   sayWord: 'Say the word',
+  clearSearch: 'Clear the search',
   drawWord: 'Draw',
   drawHint: 'Draw the thing (or write the word) with a finger, then tap “Find”.',
   findDrawing: 'Find',
@@ -1107,6 +1109,7 @@ const ar: Dict = {
   later: 'لاحقاً',
   sAi: 'اقتراحات بالذكاء الاصطناعي (اللوحات والرسومات؛ يُرسل الموضوع أو الرسم فقط)',
   sayWord: 'قل الكلمة',
+  clearSearch: 'مسح البحث',
   drawWord: 'ارسم',
   drawHint: 'ارسم الشيء (أو اكتب الكلمة) بإصبعك، ثم المس «ابحث».',
   findDrawing: 'ابحث',

@@ -38,6 +38,14 @@ export function hasOverrideLabel(profile: Profile, id: string, lang: Lang): bool
   return !!profile.overrides[id]?.labels?.[lang];
 }
 
+/**
+ * A folder's name ("Body", "Food"…) is a way in to its words, never a word: the app does not say
+ * it, does not put it in the sentence and does not offer it where a word is chosen.
+ */
+export function isFolderName(profile: Profile, id: string): boolean {
+  return getConcept(profile, id)?.cls === 'folder';
+}
+
 export function wordClass(profile: Profile, id: string): WordClass {
   return profile.overrides[id]?.cls ?? getConcept(profile, id)?.cls ?? 'noun';
 }

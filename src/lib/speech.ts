@@ -10,6 +10,7 @@ import type { Segment } from './grammar';
 import { speechTag } from './lexicon';
 import { chooseVoice, forVoice, voiceGender, type VoiceChoice, type VoiceGender, type VoiceInfo } from './voices';
 import { mediaUri } from './media';
+import { spanOfName, type Span } from './trimSilence';
 import { clipUri } from './voiceClips';
 
 let generation = 0;
@@ -61,11 +62,15 @@ function speakOne(text: string, lang: Lang, settings: Settings, onWord?: (charIn
   });
 }
 
-/** `rate`: above 1 for the child voice of a dialect clip (faster and higher, like the synthetic child voice). */
-function playOne(uri: string, rate = 1): Promise<void> {
+/**
+ * `rate`: above 1 for the child voice of a dialect clip (faster and higher, like the synthetic child voice).
+ * `span`: only this piece is played (a recorded word without the silence around it).
+ */
+function playOne(uri: string, rate = 1, span?: Span): Promise<void> {
   return new Promise((resolve) => {
     let settled = false;
-    const p = createAudioPlayer(uri);
+    // With a piece to play, the position is followed closely enough to stop at its end.
+    const p = span ? createAudioPlayer(uri, { updateInterval: 40 }) : createAudioPlayer(uri);
     player = p;
     if (rate !== 1) {
       try {
@@ -81,10 +86,33 @@ function playOne(uri: string, rate = 1): Promise<void> {
       sub.remove();
       resolve();
     };
+    // A piece: go to its beginning once the sound is loaded, then play.
+    let started = !span || span.from < 0.02;
+    const start = () => {
+      if (started || settled) return;
+      started = true;
+      p.seekTo(span!.from)
+        .catch(() => {})
+        .then(() => {
+          if (!settled) p.play();
+        });
+    };
     const sub = p.addListener('playbackStatusUpdate', (status) => {
-      if (status.didJustFinish) done();
+      if (status.didJustFinish) return done();
+      if (!started && status.isLoaded) return start();
+      if (span && started && status.currentTime >= span.to) {
+        try {
+          p.pause();
+        } catch {
+          /* already stopped */
+        }
+        done();
+      }
     });
-    p.play();
+    if (started) p.play();
+    else if (p.isLoaded) start();
+    // If the player never says it is loaded, the word is still said (from where it can).
+    else setTimeout(start, 600);
     setTimeout(done, 15000);
   });
 }
@@ -106,7 +134,7 @@ export async function speakSegments(segments: Segment[], settings: Settings, onP
       else await speakOne(seg.text, seg.lang, settings);
     } else {
       const uri = await mediaUri(seg.media);
-      if (uri && mine === generation) await playOne(uri);
+      if (uri && mine === generation) await playOne(uri, 1, spanOfName(seg.media));
     }
   }
 }
@@ -118,7 +146,7 @@ export function speakText(text: string, lang: Lang, settings: Settings): Promise
 export async function playMedia(name: string): Promise<void> {
   stopSpeech();
   const uri = await mediaUri(name);
-  if (uri) await playOne(uri);
+  if (uri) await playOne(uri, 1, spanOfName(name));
 }
 
 let voiceList: Promise<VoiceInfo[]> | null = null;

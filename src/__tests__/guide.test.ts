@@ -53,6 +53,8 @@ describe('in-app guide', () => {
         ob.presentationAccess, t.lockTitle, t.lockShort, t.settings,
         // sequences (step lists) with suggested steps; settings are saved on demand; voice height; selection
         t.newSchedule, t.suggestSteps, t.createSeq, t.editSchedule, t.save, t.sDiscard, t.sPitch, e.selectAll, e.selectNone,
+        // a step is added through the word picker, which has a way back to the sequence
+        t.addStep, t.chooseWord, t.back,
         // professionals
         pro.nav.users, pro.nav.library, pro.createTitle, pro.searchItems, pro.libTemplates, pro.nav.learn, pro.sendForApproval, st.levels[1], st.levels[2], st.levels[3],
         // the certificate must be accepted first; writing to the app's team
@@ -111,6 +113,26 @@ describe('navigation language, separate from the words language', () => {
     expect([fr.toolFind, fr.toolNewWord, fr.toolModel]).toEqual(['Trouver dans le tableau', 'Un nouveau mot', 'Écrire pour modéliser']);
     // The button of the bar and the title of the panel keep their short name.
     expect(fr.search).toBe('Chercher');
+  });
+
+  it('tells what changed around searching, folders and recordings', () => {
+    const chapter = (id: string, lang: 'fr' | 'en' | 'ar') => GUIDE.find((c) => c.id === id)!.steps[lang].join(' ');
+    for (const lang of ['fr', 'en', 'ar'] as const) {
+      const t = strings(lang);
+      // "Say the word" is offered wherever a word is looked for or made, not only in the home search.
+      for (const id of ['search', 'keyboard', 'addWord']) expect(chapter(id, lang)).toContain(t.sayWord);
+      // The word picker has a way back to where it was opened from.
+      for (const id of ['addWord', 'editSchedule']) expect(chapter(id, lang)).toContain(t.back);
+      // The search still shows where a folder is.
+      expect(chapter('search', lang)).toContain(t.showMe);
+    }
+    // A folder's name is never said; the silence around a recorded word is removed.
+    expect(chapter('folders', 'en')).toMatch(/never said/);
+    expect(chapter('folders', 'fr')).toMatch(/jamais dit/);
+    expect(chapter('model', 'en')).toMatch(/never said/);
+    expect(chapter('editWord', 'en')).toMatch(/silence before and after/);
+    expect(chapter('editWord', 'fr')).toMatch(/silence avant et après/);
+    expect(chapter('editWord', 'ar')).toMatch(/الصمت/);
   });
 
   it('the two languages are stored separately', () => {

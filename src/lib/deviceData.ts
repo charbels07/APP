@@ -73,9 +73,12 @@ export async function forgetEverything(opts: { media?: boolean; beforeSignOut?: 
   if (opts.media) await clearMedia().catch(() => {});
 }
 
-/** The photos and recordings a profile uses (their file names follow one fixed pattern). */
+/**
+ * The photos and recordings a profile uses (their file names follow one fixed pattern; a
+ * recording can carry its start and stop moments: `1762000000001_zz99zz.t120-980.m4a`).
+ */
 export function mediaNamesIn(profile: unknown): string[] {
-  return [...new Set(JSON.stringify(profile ?? null).match(/\b\d{13}_[a-z0-9]{6}\.[a-z0-9]{2,4}\b/g) ?? [])];
+  return [...new Set(JSON.stringify(profile ?? null).match(/\b\d{13}_[a-z0-9]{6}(?:\.t\d+-\d+)?\.[a-z0-9]{2,4}\b/g) ?? [])];
 }
 
 /** A deleted child's photos and recordings leave this device too. */

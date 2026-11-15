@@ -12,13 +12,14 @@ function dir(): Directory {
   return d;
 }
 
-export function newMediaName(ext: string): string {
-  return `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+/** `tag`: a note kept in the name (a recording's start and stop moments: `trimSilence.ts`). */
+export function newMediaName(ext: string, tag?: string): string {
+  return `${Date.now()}_${Math.random().toString(36).slice(2, 8)}${tag ? `.${tag}` : ''}.${ext}`;
 }
 
 /** Copies a temporary file (camera, picker, recorder) — or downloads a web picture — into the media store. */
-export async function saveMedia(sourceUri: string, ext: string): Promise<string> {
-  const name = newMediaName(ext);
+export async function saveMedia(sourceUri: string, ext: string, tag?: string): Promise<string> {
+  const name = newMediaName(ext, tag);
   const dest = new File(dir(), name);
   if (/^https?:/i.test(sourceUri)) await File.downloadFileAsync(sourceUri, dest);
   else await new File(sourceUri).copy(dest);
@@ -34,7 +35,7 @@ export async function mediaDataUrl(name: string): Promise<string | undefined> {
   const f = new File(dir(), name);
   if (!f.exists) return undefined;
   const ext = name.split('.').pop()?.toLowerCase();
-  const mime = ext === 'png' ? 'image/png' : ext === 'm4a' ? 'audio/mp4' : 'image/jpeg';
+  const mime = ext === 'png' ? 'image/png' : ext === 'm4a' ? 'audio/mp4' : ext === 'wav' ? 'audio/wav' : 'image/jpeg';
   return `data:${mime};base64,${await f.base64()}`;
 }
 

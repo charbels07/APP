@@ -2,8 +2,9 @@ import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-spe
 import React, { useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { arabicLocale, label } from '../lib/lexicon';
-import type { Lang } from '../model/types';
-import { useApp } from '../state/AppState';
+import { strings } from '../i18n/ui';
+import type { Lang, Profile, UiLang } from '../model/types';
+import { useAppMaybe } from '../state/AppState';
 import { Icon } from './Icon';
 import { C, radius } from './theme';
 
@@ -18,6 +19,8 @@ export function VoiceButton({
   onPartial,
   label: idleLabel,
   compact,
+  profile: givenProfile,
+  uiLang,
 }: {
   lang: Lang;
   onFinal: (text: string) => void;
@@ -25,27 +28,39 @@ export function VoiceButton({
   onPartial?: (text: string) => void;
   label?: string;
   compact?: boolean;
+  /** Outside a board (a professional's pages): the profile and the menu language to use. */
+  profile?: Profile;
+  uiLang?: UiLang;
 }) {
-  const app = useApp();
-  const { t, profile } = app;
+  const app = useAppMaybe();
+  const profile = givenProfile ?? app?.profile;
+  const t = uiLang ? strings(uiLang) : app?.t ?? strings('fr');
   const [listening, setListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState(false);
   const finalText = useRef('');
+  // Several microphones can be on the same screen (a search field, a new word…): what is heard
+  // only goes to the one that was pressed.
+  const mine = useRef(false);
 
   useSpeechRecognitionEvent('result', (e) => {
+    if (!mine.current) return;
     const tx = e.results[0]?.transcript ?? '';
     setTranscript(tx);
     onPartial?.(tx);
     if (e.isFinal) finalText.current = tx;
   });
   useSpeechRecognitionEvent('end', () => {
+    if (!mine.current) return;
+    mine.current = false;
     setListening(false);
     const tx = finalText.current || transcript;
     finalText.current = '';
     if (tx.trim()) onFinal(tx);
   });
   useSpeechRecognitionEvent('error', () => {
+    if (!mine.current) return;
+    mine.current = false;
     setListening(false);
     setError(true);
   });
@@ -59,16 +74,19 @@ export function VoiceButton({
       const perm = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
       if (!perm.granted) throw new Error('denied');
       // Help the recogniser with the board's own words.
-      const vocab = profile.boards.core.cells
-        .filter(Boolean)
-        .map((c) => label(profile, c!.concept, lang))
-        .slice(0, 100);
+      const vocab = profile
+        ? profile.boards.core.cells
+            .filter(Boolean)
+            .map((c) => label(profile, c!.concept, lang))
+            .slice(0, 100)
+        : [];
       ExpoSpeechRecognitionModule.start({
-        lang: recognitionLang(lang, arabicLocale(profile.settings)),
+        lang: recognitionLang(lang, arabicLocale(profile?.settings ?? { arabic: 'lb' })),
         interimResults: true,
         continuous: false,
         contextualStrings: vocab,
       });
+      mine.current = true;
       setListening(true);
     } catch {
       setError(true);

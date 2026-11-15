@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { PICTO_LIBRARIES } from '../data/pictoLibraries';
 import { loadPictoLibrary, pictoImageUri } from '../lib/pictoLibrary';
 import { libraryOf, PICTO_AMBIGUOUS, PICTO_AR_AUTO, PICTO_FR_AUTO, searchPictos, type PreparedIndex } from '../lib/pictoSearch';
@@ -7,6 +7,7 @@ import { normalize } from '../lib/search';
 import type { Lang } from '../model/types';
 import { useApp } from '../state/AppState';
 import { Icon } from './Icon';
+import { SearchBox } from './SearchBox';
 import { C, radius } from './theme';
 import { checked } from './a11y';
 
@@ -158,19 +159,8 @@ export function PictoSearch({
 
   return (
     <View style={{ gap: 8 }}>
-      {showInput && (
-        <View style={styles.searchBox}>
-          <Icon name="search" size={20} color={C.textMuted} />
-          <TextInput
-            value={own}
-            onChangeText={setOwn}
-            placeholder={t.pictoLibrary}
-            placeholderTextColor={C.placeholder}
-            style={styles.input}
-            autoCorrect={false}
-          />
-        </View>
-      )}
+      {/* The same ways in as the home search: type the word, or say it. */}
+      {showInput && <SearchBox value={own} onChange={setOwn} placeholder={t.pictoLibrary} lang={l} />}
       {lib === null && <Text style={styles.note}>{t.pictoLoading}</Text>}
       {lib === false && <Text style={styles.note}>{t.pictoOffline}</Text>}
       {showInput && lib && (
@@ -200,17 +190,6 @@ export function PictoSearch({
 }
 
 const styles = StyleSheet.create({
-  searchBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    borderWidth: 1.5,
-    borderColor: C.inputBorder,
-    borderRadius: radius.md,
-    paddingHorizontal: 10,
-    minHeight: 46,
-  },
-  input: { flex: 1, fontSize: 16, color: C.text, minHeight: 44 },
   note: { fontSize: 13, color: C.textMuted },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   thumb: {

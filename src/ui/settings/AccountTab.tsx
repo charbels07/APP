@@ -353,7 +353,7 @@ function Help({ x }: { x: SettingsStrings }) {
   const app = useApp();
   return (
     <Section title={x.help}>
-      <Btn small icon="book" label={x.openGuide} onPress={() => app.setOverlay({ kind: 'guide' })} />
+      <Btn small icon="book" label={x.openGuide} onPress={() => app.setOverlay({ kind: 'guide', back: { kind: 'settings' } })} />
       <Note text={`${x.version} ${Constants.expoConfig?.version ?? ''}`} />
     </Section>
   );

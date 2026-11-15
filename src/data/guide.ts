@@ -114,12 +114,12 @@ const BASE: BaseChapter[] = [
     steps: {
       fr: [
         'Les cases blanches avec un onglet sont des dossiers : personnes, nourriture, émotions, activités, applis…',
-        'Touchez un dossier pour voir ses mots, puis un mot pour l’ajouter à la phrase.',
+        'Touchez un dossier pour voir ses mots, puis un mot pour l’ajouter à la phrase. Le nom du dossier (« corps », « nourriture »…) n’est jamais dit ni ajouté à la phrase : ce n’est pas un mot, c’est la porte vers ses mots.',
         'Retour revient en arrière ; Accueil ou CAA ramène au tableau principal.',
       ],
       en: [
         'White cards with a tab are folders: people, food, feelings, activities, apps…',
-        'Touch a folder to see its words, then a word to add it to the sentence.',
+        'Touch a folder to see its words, then a word to add it to the sentence. The folder’s name (“body”, “food”…) is never said nor added to the sentence: it is not a word, it is the way in to its words.',
         'Back goes back; Home or AAC returns to the main board.',
       ],
     },
@@ -138,12 +138,14 @@ const BASE: BaseChapter[] = [
       fr: [
         'Chercher (la loupe), premier onglet (Trouver dans le tableau), puis au choix : tapez le mot (les fautes sont comprises : « pome » trouve « pomme »), ou touchez Dire le mot et dites-le. Quand l’aide par IA est disponible, un bouton Dessiner s’ajoute : dessinez l’objet avec le doigt puis Trouver.',
         'Montre-moi où fait clignoter le chemin : d’abord le dossier, puis le mot. L’enfant apprend ainsi où il se trouve.',
-        'Le bouton + ajoute le mot directement à la phrase ; le haut-parleur le dit.',
+        'Le bouton + ajoute le mot directement à la phrase ; le haut-parleur le dit. Un dossier trouvé n’a que Montre-moi où : son nom n’est pas un mot à dire.',
+        'La même recherche est partout où l’on cherche un mot ou une image : Choisir un mot (pour une case ou une étape de séquence), la bibliothèque de pictogrammes, les supports d’un professionnel. Partout : écrivez, ou touchez Dire le mot.',
       ],
       en: [
         'Search (the magnifying glass), first tab (Find on the board), then either type the word (typos are fine: “aple” finds “apple”), or touch Say the word and say it. When the AI helper is available, a Draw button is added: draw the thing with a finger, then Find.',
         'Show me where lights up the way: first the folder, then the word. This is how the child learns where it is.',
-        'The + button adds the word straight to the sentence; the speaker button says it.',
+        'The + button adds the word straight to the sentence; the speaker button says it. A folder that is found only has Show me where: its name is not a word to say.',
+        'The same search is everywhere a word or a picture is looked for: Choose a word (for a card or a step of a sequence), the pictogram library, a professional’s materials. Everywhere: type, or touch Say the word.',
       ],
     },
     tip: {
@@ -276,8 +278,8 @@ const BASE: BaseChapter[] = [
     icon: 'keyboard',
     title: { fr: 'Le clavier', en: 'The keyboard' },
     steps: {
-      fr: ['Pour ceux qui savent écrire : Chercher (la loupe), onglet Un nouveau mot, écrivez, puis Parler ou Ajouter à la phrase. Chaque mot écrit arrive dans la phrase avec son pictogramme (celui du tableau, sinon celui de la bibliothèque) et il est dit tel qu’il est écrit.'],
-      en: ['For those who can write: Search (the magnifying glass), A new word tab, type, then Speak or Add to sentence. Each typed word goes into the sentence with its pictogram (the one of the board, else one from the library) and is said exactly as written.'],
+      fr: ['Pour ceux qui savent écrire : Chercher (la loupe), onglet Un nouveau mot, écrivez (ou touchez Dire le mot et dites-le), puis Parler ou Ajouter à la phrase. Chaque mot écrit arrive dans la phrase avec son pictogramme (celui du tableau, sinon celui de la bibliothèque) et il est dit tel qu’il est écrit.'],
+      en: ['For those who can write: Search (the magnifying glass), A new word tab, type (or touch Say the word and say it), then Speak or Add to sentence. Each typed word goes into the sentence with its pictogram (the one of the board, else one from the library) and is said exactly as written.'],
     },
     action: 'keyboard',
   },
@@ -354,14 +356,14 @@ const BASE: BaseChapter[] = [
       fr: [
         'En mode accompagnant, touchez la case : libellés en français, en anglais et dans l’arabe choisi.',
         'Image, deux choix : Bibliothèque de l’application (environ 24 000 pictogrammes hors ligne ; cherchez en français, en anglais ou en arabe, et touchez le nom d’une banque — Mulberry, OpenMoji… — pour ne voir que la sienne) ou Votre bibliothèque (Choisir une image enregistrée sur l’appareil, ou Prendre une photo). Sur une tablette, le système demande la première fois quelles photos l’application peut voir (celles que vous choisissez, toutes, ou aucune) ; dans un navigateur, seule l’image que vous choisissez est transmise. La source et la licence d’un pictogramme sont gardées avec le mot.',
-        'Voix enregistrée : enregistrez votre voix ou celle d’un proche pour ce mot, une fois par langue (français, anglais, arabe ; une coche montre les langues déjà enregistrées). L’enregistrement remplace alors la voix de l’appareil chaque fois que le mot est touché ou dit dans une phrase ; quand la grammaire change le mot (« vouloir » dit « veux »), c’est la voix de l’appareil qui le dit. Idéal pour les prénoms et pour l’arabe parlé à la maison. L’enregistrement reste sur l’appareil où il a été fait.',
+        'Voix enregistrée : enregistrez votre voix ou celle d’un proche pour ce mot, une fois par langue (français, anglais, arabe ; une coche montre les langues déjà enregistrées). L’enregistrement remplace alors la voix de l’appareil chaque fois que le mot est touché ou dit dans une phrase ; quand la grammaire change le mot (« vouloir » dit « veux »), c’est la voix de l’appareil qui le dit. Idéal pour les prénoms et pour l’arabe parlé à la maison. Le silence avant et après le mot est retiré tout seul : pas besoin de vous dépêcher entre le bouton et le mot. L’enregistrement reste sur l’appareil où il a été fait.',
         'Catégorie (couleur) et Affichage de la case (image + texte, image seule, texte seul).',
         'Carte : taille, agrandir sur les cases vides voisines, intensité de la couleur pour attirer l’attention.',
       ],
       en: [
         'In caregiver mode, touch the card: labels in French, English and the Arabic you chose.',
         'Picture, two choices: App’s library (about 24,000 offline pictograms; search in French, English or Arabic, and touch a library’s name — Mulberry, OpenMoji… — to see only its pictures) or Your library (Choose a picture saved on the device, or Take a photo). On a tablet, the system asks the first time which photos the app may see (the ones you select, all, or none); in a browser, only the picture you choose is passed on. A pictogram’s source and licence are kept with the word.',
-        'Recorded voice: record your voice or a relative’s for this word, once per language (French, English, Arabic; a tick shows the languages already recorded). The recording then replaces the device’s voice every time the word is touched or said in a sentence; when grammar changes the word (“want” said “wants”), the device’s voice says it. Ideal for names and for the Arabic spoken at home. The recording stays on the device where it was made.',
+        'Recorded voice: record your voice or a relative’s for this word, once per language (French, English, Arabic; a tick shows the languages already recorded). The recording then replaces the device’s voice every time the word is touched or said in a sentence; when grammar changes the word (“want” said “wants”), the device’s voice says it. Ideal for names and for the Arabic spoken at home. The silence before and after the word is removed by itself: no need to hurry between the button and the word. The recording stays on the device where it was made.',
         'Category (colour) and Cell display (picture + text, picture only, text only).',
         'Card: size, spread over empty neighbouring slots, colour strength to draw attention.',
       ],
@@ -398,13 +400,13 @@ const BASE: BaseChapter[] = [
     title: { fr: 'Ajouter, remplacer, déplacer, retirer', en: 'Adding, replacing, moving, removing' },
     steps: {
       fr: [
-        'Case vide → Créer un nouveau mot (le pictogramme est proposé tout seul, ou choisissez Votre bibliothèque pour une image à vous) ou choisissez un mot existant.',
+        'Case vide → Créer un nouveau mot (écrivez-le ou touchez Dire le mot ; le pictogramme est proposé tout seul, ou choisissez Votre bibliothèque pour une image à vous) ou choisissez un mot existant (écrivez ou dites-le pour le trouver). Retour, en haut de l’écran, revient à l’écran d’avant ; la croix ferme tout.',
         'Sur une case : Remplacer par un autre mot, ou Retirer de ce tableau.',
         'Déplacer cette case, puis touchez la nouvelle place (une case vide, ou un mot pour les échanger). Pour les mots de base : à décider avec l’orthophoniste.',
         'Le dossier « mes mots » est prévu pour les mots de l’enfant : prénoms, jeux préférés, lieux familiers.',
       ],
       en: [
-        'Empty card → Create a new word (the pictogram is suggested automatically, or choose Your library for a picture of your own) or choose an existing word.',
+        'Empty card → Create a new word (type it or touch Say the word; the pictogram is suggested automatically, or choose Your library for a picture of your own) or choose an existing word (type or say it to find it). Back, at the top of the screen, returns to the screen before; the cross closes everything.',
         'On a card: Replace with another word, or Remove from this board.',
         'Move this card, then touch the new place (an empty slot, or a word to swap them). For core words: decide with the speech therapist.',
         'The “my words” folder is meant for the child’s own words: names, favourite games, familiar places.',
@@ -443,13 +445,13 @@ const BASE: BaseChapter[] = [
     steps: {
       fr: [
         'Planning → Nouvelle séquence (mode accompagnant) : écrivez le sujet (ex. « se brosser les dents »), Proposer des étapes, changez l’ordre (appui long puis glisser), puis Créer la séquence. Modifier la séquence change son nom et ses étapes.',
-        'Chaque étape : un pictogramme, un TLA lié et une durée de minuteur si besoin.',
+        'Chaque étape : un pictogramme, un TLA lié et une durée de minuteur si besoin. Ajouter une étape ouvre Choisir un mot : choisissez le mot, ou Retour pour revenir à la séquence sans rien ajouter (la croix, elle, ferme tout).',
         'D’abord / Ensuite : en mode accompagnant, touchez chaque case pour choisir l’image.',
         'Semaine et Mois (à activer dans Réglages → Tableau → Barre universelle, sous Planning) : en mode accompagnant, + ajoute un pictogramme à un jour, toucher un pictogramme le retire.',
       ],
       en: [
         'Schedule → New sequence (caregiver mode): type the topic (e.g. “brushing teeth”), Suggest steps, change the order (hold then slide), then Create the sequence. Edit sequence changes its name and its steps.',
-        'Each step: a pictogram, a linked activity board and a timer duration if needed.',
+        'Each step: a pictogram, a linked activity board and a timer duration if needed. Add a step opens Choose a word: choose the word, or Back to return to the sequence without adding anything (the cross closes everything).',
         'First / Then: in caregiver mode, touch each card to choose the picture.',
         'Week and Month (turn them on in Settings → Board → Universal bar, under Schedule): in caregiver mode, + adds a picture to a day, touching a picture removes it.',
       ],
@@ -463,12 +465,12 @@ const BASE: BaseChapter[] = [
     title: { fr: 'Modéliser (Écrire pour modéliser)', en: 'Modelling (Write to model)' },
     steps: {
       fr: [
-        'Chercher (la loupe), onglet Écrire pour modéliser. Dicter une phrase, ou l’écrire, puis Montrer sur la grille : une main animée appuie sur chaque mot, dossiers compris, et le bandeau dit où elle va. Puis la phrase est lue.',
+        'Chercher (la loupe), onglet Écrire pour modéliser. Dicter une phrase, ou l’écrire, puis Montrer sur la grille : une main animée appuie sur chaque mot, en ouvrant les dossiers sur le chemin (leur nom est écrit dans le bandeau, jamais dit), et le bandeau montre où elle va. Puis la phrase est lue.',
         'Enregistrer une démonstration : touchez les mots comme l’enfant devrait le faire, puis Terminer et garder. Rejouer la montre autant de fois que nécessaire.',
         'Vitesse : lente, normale ou rapide.',
       ],
       en: [
-        'Search (the magnifying glass), Write to model tab. Dictate a sentence, or type it, then Show on the board: an animated hand presses each word, folders included, and the banner says where it goes. Then the sentence is read.',
+        'Search (the magnifying glass), Write to model tab. Dictate a sentence, or type it, then Show on the board: an animated hand presses each word, opening the folders on the way (their name is written in the banner, never said), and the banner shows where it goes. Then the sentence is read.',
         'Record a demonstration: touch the words the way the child should, then Finish and keep. Replay shows it as often as needed.',
         'Speed: slow, normal or fast.',
       ],
@@ -733,7 +735,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
     title: 'المجلدات',
     steps: [
       'البطاقات البيضاء ذات اللسان هي مجلدات: الأشخاص، الأكل، المشاعر، النشاطات، التطبيقات…',
-      'المس مجلداً لترى كلماته، ثم كلمة لإضافتها إلى الجملة.',
+      'المس مجلداً لترى كلماته، ثم كلمة لإضافتها إلى الجملة. اسم المجلد («جسمي»، «أكل»…) لا يُقال أبداً ولا يُضاف إلى الجملة: ليس كلمة، بل هو الباب إلى كلماته.',
       '«رجوع» يعود خطوة؛ «الرئيسية» أو «التواصل» يعيدان إلى اللوحة الرئيسية.',
     ],
     tip: 'زر «جرّب» يضيء الطريق إلى كلمة «طابة».',
@@ -743,7 +745,8 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
     steps: [
       '«بحث» (العدسة المكبّرة)، التبويب الأول («البحث في اللوحة»)، ثم اختر: اكتب الكلمة (الأخطاء الإملائية مقبولة)، أو المس «قل الكلمة» وقلها. عندما يكون المساعد بالذكاء الاصطناعي متاحاً يُضاف زر «ارسم»: ارسم الشيء بإصبعك ثم «ابحث».',
       '«أرني المكان» يضيء الطريق: المجلد أولاً، ثم الكلمة. هكذا يتعلّم الطفل مكانها.',
-      'زر + يضيف الكلمة مباشرة إلى الجملة، وزر مكبّر الصوت يقولها.',
+      'زر + يضيف الكلمة مباشرة إلى الجملة، وزر مكبّر الصوت يقولها. المجلد الذي يُعثر عليه له فقط «أرني المكان»: اسمه ليس كلمة تُقال.',
+      'البحث نفسه موجود في كل مكان تُبحث فيه كلمة أو صورة: «اختر كلمة» (لبطاقة أو لخطوة في تسلسل)، مكتبة الرموز، موادّ الأخصائي. في كل مكان: اكتب، أو المس «قل الكلمة».',
     ],
     tip: 'زر «ارسم» يظهر فقط عندما يكون المساعد بالذكاء الاصطناعي متاحاً: التعرّف على الرسومات يستخدمه (يُرسل الرسم فقط)، ويمكن إيقافه في الإعدادات.',
   },
@@ -799,7 +802,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   },
   keyboard: {
     title: 'لوحة المفاتيح',
-    steps: ['لمن يعرف الكتابة: «بحث» (العدسة المكبّرة)، تبويب «كلمة جديدة»، اكتب، ثم «تكلّم» أو «أضف إلى الجملة». تدخل كل كلمة مكتوبة إلى الجملة مع رمزها (رمز اللوحة، وإلا رمز من المكتبة) وتُقال كما كُتبت.'],
+    steps: ['لمن يعرف الكتابة: «بحث» (العدسة المكبّرة)، تبويب «كلمة جديدة»، اكتب (أو المس «قل الكلمة» وقلها)، ثم «تكلّم» أو «أضف إلى الجملة». تدخل كل كلمة مكتوبة إلى الجملة مع رمزها (رمز اللوحة، وإلا رمز من المكتبة) وتُقال كما كُتبت.'],
   },
   caregiver: {
     title: 'وضع المرافق',
@@ -833,7 +836,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
     steps: [
       'في وضع المرافق، المس البطاقة: التسميات بالفرنسية والإنجليزية وبالعربية التي اخترتها.',
       'الصورة، خياران: «مكتبة التطبيق» (نحو 24 ألف رمز دون إنترنت؛ ابحث بالفرنسية أو الإنجليزية أو العربية، والمس اسم مكتبة — Mulberry أو OpenMoji… — لترى صورها فقط) أو «مكتبتك» («اختيار صورة» محفوظة على الجهاز، أو «التقاط صورة»). على الجهاز اللوحي يسأل النظام في المرة الأولى أيّ الصور يستطيع التطبيق رؤيتها (التي تختارها، كلها، أو لا شيء)؛ في المتصفح لا تُرسَل إلا الصورة التي تختارها. يُحفظ مصدر الرمز وترخيصه مع الكلمة.',
-      '«صوت مسجّل»: سجّل صوتك أو صوت أحد الأقارب لهذه الكلمة، مرة لكل لغة (الفرنسية، الإنجليزية، العربية؛ علامة ✓ تبيّن اللغات المسجّلة). يحلّ التسجيل عندها محلّ صوت الجهاز كلما لُمست الكلمة أو قيلت في جملة؛ وعندما تغيّر القواعد شكل الكلمة يقولها صوت الجهاز. مثالي للأسماء وللعربية المحكية في البيت. يبقى التسجيل على الجهاز الذي سُجّل عليه.',
+      '«صوت مسجّل»: سجّل صوتك أو صوت أحد الأقارب لهذه الكلمة، مرة لكل لغة (الفرنسية، الإنجليزية، العربية؛ علامة ✓ تبيّن اللغات المسجّلة). يحلّ التسجيل عندها محلّ صوت الجهاز كلما لُمست الكلمة أو قيلت في جملة؛ وعندما تغيّر القواعد شكل الكلمة يقولها صوت الجهاز. مثالي للأسماء وللعربية المحكية في البيت. يُزال الصمت قبل الكلمة وبعدها تلقائياً: لا حاجة للاستعجال بين الزر والكلمة. يبقى التسجيل على الجهاز الذي سُجّل عليه.',
       '«الفئة (اللون)» و«عرض الخانة» (صورة + نص، صورة فقط، نص فقط).',
       'البطاقة: الحجم، التوسّع على الخانات الفارغة المجاورة، شدّة اللون لجذب الانتباه.',
     ],
@@ -851,7 +854,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   addWord: {
     title: 'إضافة، استبدال، نقل، إزالة',
     steps: [
-      'خانة فارغة ← «إنشاء كلمة جديدة» (يُقترح الرمز تلقائياً، أو اختر «مكتبتك» لصورة من عندك) أو اختر كلمة موجودة.',
+      'خانة فارغة ← «إنشاء كلمة جديدة» (اكتبها أو المس «قل الكلمة»؛ يُقترح الرمز تلقائياً، أو اختر «مكتبتك» لصورة من عندك) أو اختر كلمة موجودة (اكتبها أو قلها للعثور عليها). «رجوع»، في أعلى الشاشة، يعيد إلى الشاشة السابقة؛ وعلامة الإغلاق تغلق كل شيء.',
       'على البطاقة: «استبدال بكلمة أخرى» أو «إزالة من هذه اللوحة».',
       '«نقل هذه البطاقة»، ثم المس المكان الجديد (خانة فارغة، أو كلمة لتبديل مكانيهما). بالنسبة للكلمات الأساسية: يُقرَّر ذلك مع أخصائية النطق.',
       'مجلد «كلماتي» مخصّص لكلمات الطفل الخاصة: الأسماء، الألعاب المفضلة، الأماكن المألوفة.',
@@ -871,7 +874,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
     title: 'تحضير جدول',
     steps: [
       '«الجدول» ← «تسلسل جديد» (وضع المرافق): اكتب الموضوع (مثلاً «تنظيف الأسنان»)، «اقترح خطوات»، غيّر الترتيب (ضغطة طويلة ثم سحب)، ثم «إنشاء التسلسل». «تعديل التسلسل» يغيّر اسمه وخطواته.',
-      'كل خطوة: رمز، ولوحة مرتبطة، ومدة للمؤقت عند الحاجة.',
+      'كل خطوة: رمز، ولوحة مرتبطة، ومدة للمؤقت عند الحاجة. «إضافة خطوة» يفتح «اختر كلمة»: اختر الكلمة، أو «رجوع» للعودة إلى التسلسل دون إضافة شيء (أما علامة الإغلاق فتغلق كل شيء).',
       '«أولاً / ثم»: في وضع المرافق، المس كل خانة لاختيار الصورة.',
       'الأسبوع والشهر (فعّلهما من الإعدادات ← اللوحة ← الشريط الدائم، تحت «الجدول»): في وضع المرافق، + يضيف صورة إلى يوم، ولمس صورة يزيلها.',
     ],
@@ -879,7 +882,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   model: {
     title: 'النمذجة («الكتابة للنمذجة»)',
     steps: [
-      '«بحث» (العدسة المكبّرة)، تبويب «الكتابة للنمذجة». «إملاء جملة» أو كتابتها، ثم «أظهر على اللوحة»: يد متحركة تضغط على كل كلمة، بما في ذلك المجلدات، ويقول الشريط إلى أين تذهب. ثم تُقرأ الجملة.',
+      '«بحث» (العدسة المكبّرة)، تبويب «الكتابة للنمذجة». «إملاء جملة» أو كتابتها، ثم «أظهر على اللوحة»: يد متحركة تضغط على كل كلمة، وتفتح المجلدات في الطريق (اسمها يُكتب في الشريط ولا يُقال أبداً)، ويُظهر الشريط إلى أين تذهب. ثم تُقرأ الجملة.',
       '«تسجيل عرض»: المس الكلمات كما يجب أن يفعل الطفل، ثم «إنهاء وحفظ». «إعادة العرض» يُظهره كلما احتجت.',
       'السرعة: بطيئة، عادية أو سريعة.',
     ],

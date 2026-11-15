@@ -87,6 +87,14 @@ const results = [];
       await step(n, async () => { await btn(label).click(); await p.waitForTimeout(700); if (tab) { await p.getByRole('tab', { name: tab, exact: true }).click(); await p.waitForTimeout(500); } await scan(n); await p.keyboard.press('Escape').catch(() => {}); const x = p.getByRole('button', { name: /^(close|Close)$/ }).first(); if (await x.count()) await x.click().catch(() => {}); await btn('AAC').click().catch(() => {}); });
     await step('17-caregiver', async () => { await btn(L.caregiver).click(); await p.waitForTimeout(600); await scan('17-caregiver-mode'); });
     await step('18-editor', async () => { const c = await centerOf('want'); await p.mouse.click(c.x, c.y); await p.waitForTimeout(900); await scan('18-word-editor'); const x = p.getByRole('button', { name: /^(close|Close)$/ }).first(); if (await x.count()) await x.click(); });
+    // The word picker opened from the word editor: its search (type or say), its "Back", and the new-word form.
+    await step('18b-word-picker', async () => {
+      const c = await centerOf('want'); await p.mouse.click(c.x, c.y); await p.waitForTimeout(900);
+      await btn('Replace with another word').click(); await p.waitForTimeout(700); await scan('18b-word-picker');
+      await btn('Create a new word').click(); await p.waitForTimeout(500); await scan('18c-new-word');
+      await btn('Back').click(); await p.waitForTimeout(300); await btn('Back').click(); await p.waitForTimeout(400);
+      const x = p.getByRole('button', { name: /^(close|Close)$/ }).first(); if (await x.count()) await x.click();
+    });
     await step('19-settings', async () => {
       await btn(L.settings).click(); await p.waitForTimeout(700); await scan('19-settings-board');
       for (const [i, t] of L.tabs.entries()) { const tb = p.getByRole('radio', { name: new RegExp(`^${t}`) }).first(); if (await tb.count()) { await tb.click(); await p.waitForTimeout(600); await scan(`19-settings-${t.toLowerCase()}`); } }

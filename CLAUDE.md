@@ -130,4 +130,18 @@
   board), no page bounce or pull-to-refresh (`overscroll-behavior` + stopping finger moves that scroll
   nothing: `canScrollWith`), a question before the page closes. A site cannot block Safari's swipe-down
   out of full screen: never promise that the browser lock keeps a child in (Guided Access does).
+- A panel opened from another panel carries it in the overlay's `back` (`src/state/AppState.tsx`); the
+  panel passes `onBack={useBack()}` to `Panel`, which shows "Back" (Escape and a touch beside go back, the
+  cross closes everything). When a panel opens another one, give `back`; never leave only the cross.
+- Searching a word or a picture always goes through `src/ui/SearchBox.tsx` (say the word, draw when
+  `aiAvailable()`, type): never a bare `TextInput` for a search. It works outside a board too (`profile`,
+  `uiLang` props; `useAppMaybe`). Several `VoiceButton`s can be on one screen: each only hears its own session.
+- A folder's name is not a word (`isFolderName` in `src/lib/lexicon.ts`): the app never says it, never puts
+  it in the sentence (`touchConcept` ignores it; a replay opens the folder silently) and never offers it where
+  a word is chosen (`searchWords`, not `search`, in pickers). The home search still finds folders, with
+  "Show me where" only.
+- Recorded words are saved through `saveRecording` (`src/lib/recordingTrim(.web).ts`), which leaves out the
+  silence before and after (`src/lib/trimSilence.ts`, pure and tested): the browser cuts the sound and saves
+  a WAV; the tablet app keeps the file and writes the two moments in its name (`.t120-980.m4a`, read by
+  `spanOfName` when playing). `mediaNamesIn` (`deviceData.ts`) must keep recognising every media name.
 - Services and keys: `docs/API-KEYS.md` (keep it up to date when a feature starts needing one).

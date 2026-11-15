@@ -6,7 +6,7 @@
  * They were three buttons of the bar; the tab that is open is the kind of the overlay
  * (`search`, `keyboard`, `model`), so the guide and the shortcuts still open the right one.
  */
-import React, { useState } from 'react';
+import React from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useApp } from '../../state/AppState';
 import { selected } from '../a11y';
@@ -30,12 +30,10 @@ export function ToolsPanel({ tool }: { tool: Tool }) {
   // Three names of several words do not fit beside their icons on a phone or a small tablet:
   // there the name goes under the icon, on up to three lines.
   const narrow = useWindowDimensions().width < 700;
-  // While a finger draws a word to search, the panel must not scroll.
-  const [drawing, setDrawing] = useState(false);
   // Named by what each one is for: find a word of the board, write a word that is not on it, write a sentence to model.
   const names: Record<Tool, string> = { search: t.toolFind, keyboard: t.toolNewWord, model: t.toolModel };
   return (
-    <Panel title={t.search} onClose={() => app.setOverlay(null)} scrollLocked={drawing}>
+    <Panel title={t.search} onClose={() => app.setOverlay(null)}>
       <View style={[styles.tabs, rtl && { flexDirection: 'row-reverse' }]} accessibilityRole="tablist">
         {TOOLS.map(({ tool: k, icon }) => {
           const on = k === tool;
@@ -56,7 +54,7 @@ export function ToolsPanel({ tool }: { tool: Tool }) {
           );
         })}
       </View>
-      {tool === 'search' && <SearchBody onPen={setDrawing} />}
+      {tool === 'search' && <SearchBody />}
       {tool === 'keyboard' && <KeyboardBody />}
       {tool === 'model' && <ModelBody />}
     </Panel>

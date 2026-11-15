@@ -130,7 +130,8 @@ table, `admins`, that nobody can read or change from the app.
 5. For the pages **Product**, **Requests** (votes) and **Bugs**: run
    `migrations/20261117000000_product.sql` in the SQL Editor, once. It adds the feature counters
    and the technical problems (only for families who agreed, see `docs/SECURITY.md`), the
-   subjects of the messages and the ideas to vote for. Until it is run, those pages show an error.
+   subjects of the messages and the ideas to vote for. Until it is run, those pages say which file
+   to run; the rest of the back office works, and messages still arrive.
 
 The back office has seven pages: Professionals, Administration, Product, Requests, Bugs, Content,
 Security. Content is counted from the app's own files and needs nothing from the server.

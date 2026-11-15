@@ -62,6 +62,7 @@ export function BackOffice() {
   const [product, setProduct] = useState<AdminProduct | null>(null);
   const [bugs, setBugs] = useState<AdminBugs | null>(null);
   const [ideas, setIdeas] = useState<AdminRoadmapItem[]>([]);
+  const [installed, setInstalled] = useState(true);
   const [requests, setRequests] = useState<AdminVerification[] | null>(null);
   const [messages, setMessages] = useState<Feedback[]>([]);
   const [log, setLog] = useState<AdminLogEntry[]>([]);
@@ -72,14 +73,17 @@ export function BackOffice() {
     setBusy(true);
     setError(null);
     try {
+      // The three newest pages need the latest database update: while it is not installed, the
+      // other pages still open (and those three say what to run).
+      const soft = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null);
       const [r, o, m, l, pr, b, i] = await Promise.all([
         api.adminVerifications(),
         api.adminOverview(),
         api.adminFeedback(),
         api.adminLog(),
-        api.adminProduct(),
-        api.adminBugs(),
-        api.adminRoadmap(),
+        soft(api.adminProduct()),
+        soft(api.adminBugs()),
+        soft(api.adminRoadmap()),
       ]);
       setRequests(r);
       setOverview(o);
@@ -87,7 +91,8 @@ export function BackOffice() {
       setLog(l);
       setProduct(pr);
       setBugs(b);
-      setIdeas(i);
+      setIdeas(i ?? []);
+      setInstalled(!!pr && !!b && !!i);
     } catch (e) {
       setError(errorText(s, e));
     } finally {
@@ -166,10 +171,9 @@ export function BackOffice() {
               </>
             )
           ) : tab === 'product' ? (
-            overview &&
-            product && (
+            overview && (
               <>
-                <ProductView o={overview} product={product} />
+                {product ? <ProductView o={overview} product={product} /> : <Note text={x.notInstalled} />}
                 <AiCard a={a} o={overview} />
                 <Text style={[st.h2, rtl && ss.rtl]} accessibilityRole="header">
                   {x.boardUse}
@@ -178,13 +182,16 @@ export function BackOffice() {
               </>
             )
           ) : tab === 'feedback' ? (
-            <RequestsView a={a} messages={messages} ideas={ideas} onChanged={load} />
+            <>
+              {!installed && <Note text={x.notInstalled} />}
+              <RequestsView a={a} messages={messages} ideas={ideas} onChanged={load} />
+            </>
           ) : tab === 'bugs' ? (
-            overview && bugs && <BugsView a={a} o={overview} bugs={bugs} messages={messages} onChanged={load} />
+            overview && (bugs ? <BugsView a={a} o={overview} bugs={bugs} messages={messages} onChanged={load} /> : <Note text={x.notInstalled} />)
           ) : tab === 'content' ? (
             <ContentView />
           ) : (
-            overview && product && <SecurityView a={a} o={overview} product={product} log={<History a={a} list={log} />} />
+            overview && <SecurityView a={a} o={overview} agreed={product?.agreed ?? 0} log={<History a={a} list={log} />} />
           )}
           {overview && <Note text={a.updated(when(Date.parse(overview.at), uiLang))} />}
         </View>

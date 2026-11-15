@@ -719,7 +719,15 @@ export class SupabaseBackend implements Backend {
   // ── Messages to the app's team ──
 
   async sendFeedback(input: { kind: FeedbackKind; text: string; platform: string; appVersion: string }): Promise<void> {
-    await data(this.sb.rpc('send_feedback', { p_kind: input.kind, p_text: input.text, p_platform: input.platform, p_version: input.appVersion }));
+    const send = (kind: string, text: string) => data(this.sb.rpc('send_feedback', { p_kind: kind, p_text: text, p_platform: input.platform, p_version: input.appVersion }));
+    try {
+      await send(input.kind, input.text);
+    } catch (e) {
+      // A database that was not updated yet only knows "problem", "idea" and "other": the message
+      // is not lost, it is filed under the nearest of them with its subject written first.
+      if (input.kind === 'problem' || input.kind === 'other' || !(e instanceof BackendError) || !/kind/.test(e.message)) throw e;
+      await send(input.kind === 'access' ? 'problem' : 'idea', `[${input.kind}] ${input.text}`);
+    }
   }
 
   async roadmapList(): Promise<RoadmapItem[]> {

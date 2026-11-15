@@ -567,7 +567,9 @@ officer) should confirm the list at the end of `docs/SECURITY.md`, section "Figu
 ### What you must do
 
 1. Supabase → SQL Editor → paste and run `supabase/migrations/20261117000000_product.sql` (once).
-   Until then the real back office shows an error on the three new pages.
+   Until then the pages Product, Requests (votes) and Bugs of the real back office say which file
+   to run, the other pages work as before, and a message written in the new form still arrives
+   (filed under the nearest older subject, with its real subject written first).
 2. Nothing else: the website rebuilds by itself.
 
 | Tests | |

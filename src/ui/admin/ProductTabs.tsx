@@ -404,7 +404,7 @@ export function ContentView() {
 
 // ───────────────────────── Security ─────────────────────────
 
-export function SecurityView({ a, o, product, log }: { a: AdminStrings; o: AdminOverview; product: AdminProduct; log: React.ReactNode }) {
+export function SecurityView({ a, o, agreed, log }: { a: AdminStrings; o: AdminOverview; agreed: number; log: React.ReactNode }) {
   const { uiLang } = useSession();
   const x = productStrings(uiLang);
   const d = dataStrings(uiLang);
@@ -414,7 +414,7 @@ export function SecurityView({ a, o, product, log }: { a: AdminStrings; o: Admin
   return (
     <>
       <PageIntro text={x.intro.security} />
-      <ChartCard title={x.consentTitle} note={x.sharingLine(o.families.sharing, product.agreed, o.families.children)}>
+      <ChartCard title={x.consentTitle} note={x.sharingLine(o.families.sharing, agreed, o.families.children)}>
         <Text style={[st.sub, rtl && ss.rtl]}>{a.consent}</Text>
         <BarList items={collection} />
       </ChartCard>

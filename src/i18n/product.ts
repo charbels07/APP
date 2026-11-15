@@ -51,6 +51,9 @@ const fr = {
     security: 'Ce que les familles ont accepté de partager, ce qui n’est jamais collecté, et l’historique de ce que l’équipe a fait ici.',
   } as Record<string, string>,
 
+  notInstalled:
+    'Cette page a besoin de la dernière mise à jour de la base de données : dans Supabase, Éditeur SQL, lancez le fichier supabase/migrations/20261117000000_product.sql (une seule fois), puis touchez Actualiser.',
+
   // ── Product ──
   adoption: 'Utilisation de chaque fonction',
   adoptionNote: (n: number, days: number) =>
@@ -272,6 +275,9 @@ const en: Dict = {
     security: 'What the families agreed to share, what is never collected, and the history of what the team did here.',
   },
 
+  notInstalled:
+    'This page needs the latest database update: in Supabase, SQL Editor, run the file supabase/migrations/20261117000000_product.sql (once), then touch Refresh.',
+
   adoption: 'Use of each feature',
   adoptionNote: (n, days) =>
     `${n} children whose family shares these figures, over ${days} days. Regular: 4 days or more in the last 30 days. Now and then: 1 to 3 days. Given up: used before, not in the last 30 days.`,
@@ -484,6 +490,9 @@ const ar: Dict = {
     content: 'ما يحتويه التطبيق: الرموز، الكلمات، اللغات، الدليل.',
     security: 'ما وافقت العائلات على مشاركته، ما لا يُجمع أبداً، وسجلّ ما قام به الفريق هنا.',
   },
+
+  notInstalled:
+    'هذه الصفحة تحتاج إلى آخر تحديث لقاعدة البيانات: في Supabase، محرّر SQL، شغّل الملف supabase/migrations/20261117000000_product.sql (مرة واحدة)، ثم المس «تحديث».',
 
   adoption: 'استعمال كل وظيفة',
   adoptionNote: (n, days) =>

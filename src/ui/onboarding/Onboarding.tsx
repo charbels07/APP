@@ -37,6 +37,7 @@ import { prepareVoices, speakText } from '../../lib/speech';
 import { forgetLegacyProfile, loadLegacyProfile, migrate } from '../../lib/storage';
 import type { Lang, Profile } from '../../model/types';
 import { AppProvider } from '../../state/AppState';
+import { useOwnCode } from '../../state/ownCode';
 import { useSession } from '../../state/Session';
 import { Btn, Field, Panel, Segmented, Toggle } from '../common';
 import { setupHelp, type SetupHelpId } from '../../data/setupHelp';
@@ -133,7 +134,7 @@ export function Onboarding() {
         answers={a}
         base={baseProfile(a, legacy, imported)}
         siblingId={a.vocab === 'copy' ? a.copyFrom : undefined}
-        freeEdit={pro}
+        pro={pro}
         onBack={back}
         onDone={async (data) => {
           const rec = await api.createProfile({ name: a.name.trim(), age: a.age, intake: intakeOf(a), data });
@@ -796,19 +797,20 @@ function TryBoard({
   answers,
   base,
   siblingId,
-  freeEdit,
+  pro,
   onBack,
   onDone,
 }: {
   answers: Answers;
   base: Profile;
   siblingId?: string;
-  /** A professional's try: the caregiver code is the family's to choose later. */
-  freeEdit?: boolean;
+  /** A professional's try: the code asked is her own (the family will choose its own later). */
+  pro?: boolean;
   onBack: () => void;
   onDone: (p: Profile) => Promise<void>;
 }) {
   const sess = useSession();
+  const ownCode = useOwnCode();
   const o = onboardingStrings(sess.uiLang);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [busy, setBusy] = useState(false);
@@ -840,7 +842,7 @@ function TryBoard({
     <View style={[s.tryBanner, rtl && { flexDirection: 'row-reverse' }]}>
       <Icon name="sparkles" size={22} color={C.success} />
       <Text style={[s.tryText, rtl && { textAlign: 'right' }]} numberOfLines={3}>
-        {error ?? (freeEdit ? proStrings(sess.uiLang).tryBanner : o.tryBanner)}
+        {error ?? (pro ? proStrings(sess.uiLang).tryBanner : o.tryBanner)}
       </Text>
       <Btn small label={o.back} onPress={onBack} disabled={busy} />
       <Btn
@@ -864,7 +866,7 @@ function TryBoard({
     </View>
   );
   return (
-    <AppProvider initial={profile} onChange={(p) => (latest.current = p)} uiLang={sess.uiLang} setUiLang={sess.setUiLang} freeEdit={freeEdit}>
+    <AppProvider initial={profile} onChange={(p) => (latest.current = p)} uiLang={sess.uiLang} setUiLang={sess.setUiLang} freeEdit={sess.isAdmin} ownCode={pro ? ownCode : undefined}>
       <Root banner={banner} />
     </AppProvider>
   );

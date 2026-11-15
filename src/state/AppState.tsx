@@ -104,6 +104,8 @@ export interface TimerState {
 interface AppCtx {
   /** The child's profile (settings.uiLang is the language of the person using the app). */
   profile: Profile;
+  /** Set on a professional's boards: the code asked is hers (see `OwnCode`). */
+  ownCode?: OwnCode;
   update: (recipe: (draft: Profile) => void) => void;
   replaceProfile: (p: Profile) => void;
   /** Navigation language of the person (kept with their account, not in the child's profile). */
@@ -246,15 +248,25 @@ export interface AppProviderProps {
   /** Communication data (with the family's consent): touches, sentences, pages… */
   onUsage?: (e: UsageEvent) => void;
   /**
-   * Caregiver tools open without the caregiver code: a professional's own draft of a board, on
-   * their own account (the code keeps the child out of the tools on the child's device; here
-   * nothing reaches the child before the server checked the person's rights).
+   * Caregiver tools open without the caregiver code: only for the accounts of the app's own team
+   * (the owner's decision). Never for anyone else, a professional included.
    */
   freeEdit?: boolean;
+  /**
+   * The code to ask is the signed-in professional's own code, not the one kept in the child's
+   * profile (which belongs to the family): on every board a professional opens.
+   */
+  ownCode?: OwnCode;
   children: React.ReactNode;
 }
 
-export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, preview = false, locked = false, onUsage, freeEdit = false, children }: AppProviderProps) {
+/** A professional's own caregiver code: its value (empty = not chosen yet) and how to keep a new one. */
+export interface OwnCode {
+  value?: string;
+  save: (code: string) => void;
+}
+
+export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, preview = false, locked = false, onUsage, freeEdit = false, ownCode, children }: AppProviderProps) {
   const usageRef = useRef(onUsage);
   usageRef.current = onUsage;
   const lockedRef = useRef(locked);
@@ -313,8 +325,8 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
   const freeEditRef = useRef(freeEdit);
   freeEditRef.current = freeEdit;
   /**
-   * Opening a panel; where the caregiver code is not asked (freeEdit: a professional's draft
-   * board, and any board opened by an account of the app's team), "ask the code" opens the tools at once.
+   * Opening a panel; where the caregiver code is not asked (freeEdit: a board opened by an
+   * account of the app's team), "ask the code" opens the tools at once.
    */
   const setOverlay = useCallback((o: Overlay) => {
     if (o?.kind === 'guide') countFeature('guide');
@@ -849,6 +861,7 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
   const value: AppCtx = useMemo(
     () => ({
       profile,
+      ownCode,
       update,
       replaceProfile,
       setUiLang,
@@ -909,6 +922,7 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
       setTimerOpen,
     }),
     [
+      ownCode,
       profile, update, replaceProfile, setUiLang, preview, t, lang, view, path, tlaId, overlay, editMode, setEditMode, strip,
       stripState.history.length, touchConcept, addText, speakStrip, speakConcept, deleteLast, clearStrip, undo, goHome,
       openFolder, goBack, openTla, openSchedule, pressHelp, recording, startRecording, finishRecording,

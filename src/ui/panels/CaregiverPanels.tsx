@@ -922,11 +922,14 @@ export function useSettingsDraft(): SettingsDraft {
   const app = useApp();
   const { profile } = app;
   const [draft, setDraft] = useState(() => ({ settings: copyOf(profile.settings), help: copyOf(profile.help) }));
-  const [pin, setPin] = useState(profile.settings.pin);
+  // On a professional's board the code shown and changed here is her own, not the family's.
+  const own = app.ownCode;
+  const savedPin = own ? own.value ?? '' : profile.settings.pin;
+  const [pin, setPin] = useState(savedPin);
   // The menus' language and the code are compared apart.
   const core = (x: Profile['settings']) => stable({ ...x, uiLang: undefined, pin: undefined });
-  const pinOk = pin === profile.settings.pin || (/^\d{4}$/.test(pin) && !pinTooEasy(pin));
-  const dirty = core(draft.settings) !== core(profile.settings) || stable(draft.help) !== stable(profile.help) || (pinOk && pin !== profile.settings.pin);
+  const pinOk = pin === savedPin || (/^\d{4}$/.test(pin) && !pinTooEasy(pin));
+  const dirty = core(draft.settings) !== core(profile.settings) || stable(draft.help) !== stable(profile.help) || (pinOk && pin !== savedPin);
   const dirtyRef = useRef(dirty);
   dirtyRef.current = dirty;
   // Listening to a voice in Settings prepares it for the whole app: when the settings close,
@@ -938,8 +941,9 @@ export function useSettingsDraft(): SettingsDraft {
   useEffect(() => {
     if (dirtyRef.current) return;
     setDraft({ settings: copyOf(profile.settings), help: copyOf(profile.help) });
-    setPin(profile.settings.pin);
-  }, [profile.settings, profile.help]);
+    setPin(savedPin);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile.settings, profile.help, savedPin]);
   return {
     st: draft.settings,
     help: draft.help,
@@ -959,14 +963,17 @@ export function useSettingsDraft(): SettingsDraft {
         return { ...d, help };
       }),
     dirty,
-    save: () =>
+    save: () => {
+      if (own && pinOk && pin !== savedPin) own.save(pin);
       app.update((d) => {
-        d.settings = { ...copyOf(draft.settings), uiLang: d.settings.uiLang, pin: pinOk ? pin : d.settings.pin };
+        // The family's code is never touched from a professional's board.
+        d.settings = { ...copyOf(draft.settings), uiLang: d.settings.uiLang, pin: !own && pinOk ? pin : d.settings.pin };
         d.help = copyOf(draft.help);
-      }),
+      });
+    },
     cancel: () => {
       setDraft({ settings: copyOf(profile.settings), help: copyOf(profile.help) });
-      setPin(profile.settings.pin);
+      setPin(savedPin);
     },
   };
 }
@@ -1329,8 +1336,9 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
       </Found>
 
       <Found title={t.sSecurity}>
-        <Field label={t.sPin} value={pin} keyboardType="number-pad" maxLength={4} onChangeText={(v) => setPin(v.replace(/\D/g, ''))} />
+        <Field label={app.ownCode ? t.sPinOwn : t.sPin} value={pin} keyboardType="number-pad" maxLength={4} onChangeText={(v) => setPin(v.replace(/\D/g, ''))} />
         {!draft.pinOk && <Text style={s.note}>{pin.length === 4 ? t.pinTooEasy : t.sPinFour}</Text>}
+        {app.ownCode && <Text style={s.note}>{t.sPinOwnNote}</Text>}
       </Found>
 
       <Found title={t.sData}>

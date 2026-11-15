@@ -76,9 +76,12 @@
 - A verified `pro` account can create a child's profile and hand it to the parents (the role-`parent`
   invitation it wrote: `join_profile`; `ParentsCard` in `src/ui/pro/Workspace.tsx`). While a professional
   owns a profile, recording and sharing stay off (database + `LocalBackend`); never offer those controls there.
-  In the professional's own draft board the caregiver code is not asked (`freeEdit`). The accounts of the
-  app's own team are never asked it either, on any board they open (`freeEdit={sess.isAdmin}` in
-  `src/ui/Stages.tsx`: the owner's decision, November 2026). Never use `freeEdit` for anyone else.
+  On every board a professional opens (her draft of a child's board, the try-board of the set-up, the
+  "Settings" shortcut of her workspace) the caregiver code IS asked: her own code (`useOwnCode` in
+  `src/state/ownCode.ts`, kept in her account's `prefs.pin`, chosen the first time with `t.pinWhyPro`),
+  never the family's, which she neither sees nor changes (`AppProvider ownCode`). Only the accounts of
+  the app's own team are never asked a code, on any board they open (`freeEdit={sess.isAdmin}`: the
+  owner's decision, November 2026). Never use `freeEdit` for anyone else, a professional included.
 - Notices are stored as sentences by the server: a new notice gets its three versions in
   `src/lib/notices.ts` (shown with `noticeText`), with a line in `src/__tests__/notices.test.ts`.
 - Professionals' materials: no separate "create" page and no title field; the library creates
@@ -111,7 +114,7 @@
 - The board's bar has "Settings" and "Lock" (child lock) for the parents: outside caregiver mode they
   always go through the code (`{ kind: 'pin', then: { kind: 'settings' | 'lock' } }`), and open without
   turning caregiver mode on (`opensAlone`). Never open the settings or the lock from the bar without the code
-  (the only exception is an account of the app's team, see `freeEdit`).
+  (the only exception is an account of the app's team, see `freeEdit`; a professional types her own code).
 - The way back to the back office is a button only the app's team sees (`isAdmin` from the session, which
   asks the database): at the bottom of the bar of their own board (no code: the team is never asked one)
   and in the header of the professional workspace. Never show it to another account; hiding it is comfort

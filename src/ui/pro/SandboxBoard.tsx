@@ -19,6 +19,7 @@ import { migrate } from '../../lib/storage';
 import type { Profile } from '../../model/types';
 import { AppProvider, useApp, type Overlay } from '../../state/AppState';
 import { ProBoardContext, type MyAccess } from '../../state/BoardContext';
+import { useOwnCode } from '../../state/ownCode';
 import { useSession } from '../../state/Session';
 import { Btn, Panel, Section } from '../common';
 import { Icon, type IconName } from '../Icon';
@@ -152,6 +153,7 @@ export function ChildDraftBoard({
 }) {
   const sess = useSession();
   const { api, uiLang, setUiLang } = sess;
+  const ownCode = useOwnCode();
   const p = proStrings(uiLang);
   const [base, setBase] = useState<{ data: Profile; version: number; name: string } | null>(null);
   const [access, setAccess] = useState<MyAccess | null>(null);
@@ -245,11 +247,24 @@ export function ChildDraftBoard({
   );
   return (
     <>
-      {/* The caregiver code is the family's, for the child's device: not asked on a professional's own draft. */}
+      {/* The family's code is the family's. A professional who may prepare changes is asked her own
+          code (a child is often in front of her device); only the app's team is never asked one. */}
       <ProBoardContext.Provider value={{ profileId, childName: base.name, access }}>
-        <AppProvider key={key} initial={draft} onChange={setDraft} uiLang={uiLang} setUiLang={setUiLang} freeEdit={canPrepareChanges(access)}>
+        <AppProvider
+          key={key}
+          initial={draft}
+          onChange={setDraft}
+          uiLang={uiLang}
+          setUiLang={setUiLang}
+          freeEdit={sess.isAdmin && canPrepareChanges(access)}
+          ownCode={canPrepareChanges(access) ? ownCode : undefined}
+        >
           <Root banner={banner} />
-          {toSettings && <StartAt edit={canPrepareChanges(access)} overlay={{ kind: 'settings' }} onStarted={() => setToSettings(false)} />}
+          {/* "Settings" beside a user's name: through the professional's code, like the button of the bar
+              (someone who may only use the board reads the settings without the adults' tools). */}
+          {toSettings && (
+            <StartAt overlay={canPrepareChanges(access) ? { kind: 'pin', then: { kind: 'settings' } } : { kind: 'settings' }} onStarted={() => setToSettings(false)} />
+          )}
         </AppProvider>
       </ProBoardContext.Provider>
       {sending && (

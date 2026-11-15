@@ -178,6 +178,20 @@ describe('demo server: a parent and a therapist working together', () => {
     expect((await api.adminLog())[0]).toMatchObject({ action: 'open_document', targetName: 'Maya Haddad' });
   });
 
+  it('a professional keeps her own caregiver code with her account; nobody else receives it', async () => {
+    await api.signIn({ email: 'sarah@clinic.fr', password: 'therapy123' });
+    expect((await api.currentAccount())!.prefs.pin).toBeUndefined();
+    expect((await api.updateAccount({ prefs: { pin: '4821' } })).prefs.pin).toBe('4821');
+    // Kept after signing in again, and changing it does not touch her other preferences.
+    await api.signIn({ email: 'sarah@clinic.fr', password: 'therapy123' });
+    const me = (await api.currentAccount())!;
+    expect(me.prefs).toMatchObject({ pin: '4821', textSize: 'normal' });
+    // The family she works with sees her name on the team, never her code; its own code stays in the child's profile.
+    await api.signIn({ email: 'rita@example.com', password: 'secret123' });
+    const profiles = await api.listProfiles();
+    expect(JSON.stringify([await api.listMembers(profiles[0].id), profiles])).not.toContain('4821');
+  });
+
   it('anyone writes to the team; only the back office reads the messages and the figures', async () => {
     await api.signIn({ email: 'rita@example.com', password: 'secret123' });
     await api.sendFeedback({ kind: 'pictogram', text: 'Plus de pictogrammes de sport', platform: 'ios', appVersion: '1.0.0' });

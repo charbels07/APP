@@ -109,6 +109,10 @@ let bad = 0;
     await p.waitForTimeout(500);
     await p.getByRole('button', { name: 'Settings · Adam' }).click();
     await p.waitForTimeout(1500);
+    // A professional is asked her own caregiver code (chosen here, the first time, with its explanation).
+    await scan('17-professional-code');
+    for (const d of '25802580') { await p.getByRole('dialog').getByRole('button', { name: d, exact: true }).click(); await p.waitForTimeout(120); }
+    await p.waitForTimeout(900);
     for (const tab of ['Team', 'Progress', 'Account']) {
       await p.getByRole('radio', { name: new RegExp('^' + tab) }).first().click();
       await p.waitForTimeout(700);

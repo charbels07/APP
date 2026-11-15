@@ -25,6 +25,12 @@ export interface AccountPrefs {
   tipsSeen?: string[];
   /** The child profile opened last. */
   activeProfileId?: string;
+  /**
+   * A professional's own caregiver code (4 digits), asked on every board she opens before the
+   * adults' tools (caregiver mode, settings, lock). It is hers: a family's code belongs to the
+   * family and stays in the child's profile. Empty or missing: not chosen yet.
+   */
+  pin?: string;
 }
 
 export interface Account {

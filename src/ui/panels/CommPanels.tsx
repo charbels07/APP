@@ -292,10 +292,13 @@ export function PinPanel() {
   const { t, profile } = app;
   const [code, setCode] = useState('');
   const [msg, setMsg] = useState<string | null>(null);
+  // On a professional's board the code is her own (kept with her account), never the family's.
+  const own = app.ownCode;
+  const pin = own ? own.value ?? '' : profile.settings.pin;
   // "1234" is only the value a new profile starts with: it means "not chosen yet".
-  const unset = profile.settings.pin === '1234';
+  const unset = own ? !/^\d{4}$/.test(pin) : pin === '1234';
   // In a child's profile the family chooses the code (the preview has no account: anyone trying it does).
-  const canChoose = !board || board.manager;
+  const canChoose = !!own || !board || board.manager;
   const [step, setStep] = useState<'enter' | 'choose' | 'repeat'>(unset && canChoose ? 'choose' : 'enter');
   const [chosen, setChosen] = useState('');
   const [lock, setLock] = useState({ fails: 0, until: 0 });
@@ -339,7 +342,7 @@ export function PinPanel() {
     setCode(next);
     if (next.length < 4) return;
     if (step === 'enter') {
-      if (next !== profile.settings.pin) {
+      if (next !== pin) {
         const fails = lock.fails + 1;
         saveLock({ fails, until: Date.now() + pinPause(fails) });
         return again(t.pinWrong);
@@ -352,9 +355,11 @@ export function PinPanel() {
       setStep('repeat');
       setCode('');
     } else if (next === chosen) {
-      app.update((p) => {
-        p.settings.pin = next;
-      });
+      if (own) own.save(next);
+      else
+        app.update((p) => {
+          p.settings.pin = next;
+        });
       open();
     } else {
       setStep('choose');
@@ -374,7 +379,7 @@ export function PinPanel() {
       {step !== 'enter' && (
         // Choosing a code: what it is and what it protects, before the digits.
         <View style={styles.pinWhy}>
-          {t.pinWhy.map((line, i) => (
+          {(own ? t.pinWhyPro : t.pinWhy).map((line, i) => (
             <Text key={i} style={[styles.pinWhyText, rtl && { textAlign: 'right', writingDirection: 'rtl' }]}>
               {line}
             </Text>

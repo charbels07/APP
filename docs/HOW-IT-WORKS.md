@@ -579,15 +579,29 @@ officer) should confirm the list at the end of `docs/SECURITY.md`, section "Figu
 | In a browser | The seven pages at two sizes with the accessibility scan; a parent going through the set-up switch, the form, a vote, and the consent card. |
 | Found on the way | On a phone, the 30 thin bars of a daily chart were each too small to touch (an older fault the scan had not seen, because those charts were lower on the page). `ColumnChart` (`src/ui/data/Charts.tsx`) now becomes one picture that reads all its values, and a touch anywhere reads the day under the finger. |
 
+## Round 32 — A therapist's account is asked a code too
+
+Your aunt, testing with a therapist's account, could open the settings without a code and
+without being in caregiver mode.
+
+| What | How it was done |
+|---|---|
+| Why it happened | It was a rule of the app, not an accident: on a professional's board the code was skipped (`freeEdit`), because the caregiver code belongs to the family and a therapist does not know it. But a child is often in front of the therapist's tablet, so the adults' tools must be protected there too. |
+| The fix | A professional now has **her own code**. She chooses it the first time she opens the adults' tools (the keypad explains: "This code is yours… it is not the families' code"). After that it is asked for Caregiver mode and for Settings on every board she opens, and for the "Settings" shortcut beside a child's name in her workspace. `src/state/ownCode.ts`, `PinPanel` in `src/ui/panels/CommPanels.tsx`. |
+| Where her code lives | With her account (`prefs.pin`), which only she can read, so it follows her on every device. A family's code stays in the child's profile. |
+| The family's code stays the family's | In the settings of a board she opens, "Security" now shows **her** code (to change it), not the family's: before, the family's code was shown there. |
+| Who is still never asked | Only the accounts of the app's own team (your decision). |
+| Tested | In a browser, with a therapist's account from sign-up to the workspace, at computer and phone size: choosing the code (a code too easy is refused), then Settings, Caregiver mode and the shortcut each ask it; a wrong code is refused. |
+
 ## How everything is checked
 
 | Check | What it does |
 |---|---|
 | `npm run typecheck` | TypeScript reads the whole code and refuses mistakes such as a missing field or a wrong type. |
-| `npm test` | 279 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office, colour contrast. |
+| `npm test` | 280 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office, colour contrast. |
 | `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger, a tablet and a member of our team; then every attack found by the security review, which must fail; then a professional who prepares a profile and hands it to the parents; then the e-mails to the team; then the figures for the team, the problems and the votes; 176 checks. |
 | `npm run test:live` | The same story on a second, empty Supabase project (never the one families use), through the app's own code: 13 steps, including devices, history undo, invitation codes, revisions and materials (needs "Confirm email" off while it runs). Last full run: before the back office (all 13 passed); **to run again once the back-office migration is on the real project**. |
-| `npm run test:a11y` | Accessibility: 202 scans of 56 screens against WCAG 2.2 AA (four sizes, Arabic), then a keyboard-only run. Last run: 0 rule break. |
+| `npm run test:a11y` | Accessibility: 204 scans of 57 screens against WCAG 2.2 AA (four sizes, Arabic), then a keyboard-only run. Last run: 0 rule break. |
 | Browser walkthroughs | Playwright drives the web version like a person: the parent journey, the team (invite, undo, join with a code), the professional journey (verification, tour, request, draft, proposal, approval), and the Arabic screens. |
 
 ## Not done yet (honest list)

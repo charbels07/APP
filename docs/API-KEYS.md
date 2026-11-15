@@ -20,7 +20,7 @@ Supabase values are allowed inside the app.
 
 | Service | What it does | Key | Where it goes | Today |
 |---|---|---|---|---|
-| **Server function `caa-mail`** | Sends the team an e-mail when a professional applies, and the figures of the week every Monday | The same Gmail address and an app password of its own (`SMTP_USER`, `SMTP_PASS`), plus the team's address (`MAIL_TO`) | Supabase → Edge Functions → Secrets (never in the app) | Written and tested here; to switch on once (`supabase/README.md`, section 10) |
+| **Server function `caa-mail`** | Sends the team an e-mail when a professional applies, and the figures of the week every Monday | The same Gmail address and an app password of its own (`SMTP_USER`, `SMTP_PASS`), plus the team's address (`MAIL_TO`) | Supabase → Edge Functions → Secrets (never in the app) | On since 15 November 2026: the test e-mail arrived in the team's mailbox (`supabase/README.md`, section 10) |
 
 ## 2. Sign-in
 

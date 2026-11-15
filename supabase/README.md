@@ -262,7 +262,7 @@ select * from public.team_mail_check();
 | Connected: no | run step 3 again |
 | pg_net or pg_cron: missing | *Database → Extensions*: turn on `pg_net` and `pg_cron`, then run `select public.team_mail_plan();` |
 | Weekly job planned: no | run `select public.team_mail_plan();` |
-| Last answers of the function: 401 | *Verify JWT* is still on (step 1) |
+| Last answers of the function: 401 | *Verify JWT* is still on (step 1). It can come back on when the function is deployed again: look at it after each deploy, then run `select public.team_mail_poke();` to send what was waiting |
 | … 404 | the function is not deployed, or is not called `caa-mail` |
 | … 503 | a secret of step 2 is missing, or the function is an older copy: paste `index.ts` again and deploy |
 | Last error from the mailbox: "Invalid login" | the app password is wrong: make a new one and replace `SMTP_PASS` |

@@ -4,6 +4,7 @@
  * it is unavailable and the app uses the situation library and the pictogram library's categories instead.
  * The browser demo uses aiPlanner.web.ts. Only the topic or the photo is sent (spec GEN-04).
  */
+import { reportProblem } from './product';
 import { backend } from '../backend';
 import type { AiPhoto } from './photoForAi';
 import type { AiPlan } from './tlaPlanner';
@@ -36,8 +37,11 @@ export async function askAiForTla(topic: string, signal?: AbortSignal, arabic?: 
   if (!api.askAi) return null;
   try {
     return asPlan(await api.askAi({ task: 'tla', topic, arabic }, signal));
-  } catch {
-    if (!signal?.aborted) aiWentDown();
+  } catch (e) {
+    if (!signal?.aborted) {
+      aiWentDown();
+      reportProblem('ai', e);
+    }
     return null;
   }
 }
@@ -48,8 +52,11 @@ export async function askAiForPhoto(photo: AiPhoto, hint: string, signal?: Abort
   if (!api.askAi) return null;
   try {
     return asPlan(await api.askAi({ task: 'photo', hint, arabic, image: { data: photo.data, mediaType: photo.mediaType } }, signal));
-  } catch {
-    if (!signal?.aborted) aiWentDown();
+  } catch (e) {
+    if (!signal?.aborted) {
+      aiWentDown();
+      reportProblem('ai', e);
+    }
     return null;
   }
 }

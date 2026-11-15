@@ -127,6 +127,14 @@ table, `admins`, that nobody can read or change from the app.
    team accounts see that button, and they are never asked the caregiver code: do not hand a
    tablet signed in with a team account to a child.
 
+5. For the pages **Product**, **Requests** (votes) and **Bugs**: run
+   `migrations/20261117000000_product.sql` in the SQL Editor, once. It adds the feature counters
+   and the technical problems (only for families who agreed, see `docs/SECURITY.md`), the
+   subjects of the messages and the ideas to vote for. Until it is run, those pages show an error.
+
+The back office has seven pages: Professionals, Administration, Product, Requests, Bugs, Content,
+Security. Content is counted from the app's own files and needs nothing from the server.
+
 The back office is a page **of the app**: it is not in the Supabase dashboard, and the demo link
 cannot show the real one (the demo never talks to this server). It opens wherever the real app
 runs: a tablet or phone build, or the web version (`npx expo start --web`, or the web export put

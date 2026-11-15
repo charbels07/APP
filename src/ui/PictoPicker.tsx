@@ -3,6 +3,7 @@ import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'rea
 import { PICTO_LIBRARIES } from '../data/pictoLibraries';
 import { loadPictoLibrary, pictoImageUri } from '../lib/pictoLibrary';
 import { libraryOf, PICTO_AMBIGUOUS, PICTO_AR_AUTO, PICTO_FR_AUTO, searchPictos, type PreparedIndex } from '../lib/pictoSearch';
+import { reportProblem } from '../lib/product';
 import { normalize } from '../lib/search';
 import type { Lang } from '../model/types';
 import { useApp } from '../state/AppState';
@@ -18,7 +19,10 @@ export function usePictoLibrary(): PreparedIndex | null | false {
     let alive = true;
     loadPictoLibrary()
       .then((l) => alive && setLib(l))
-      .catch(() => alive && setLib(false));
+      .catch((e) => {
+        reportProblem('picto', e);
+        if (alive) setLib(false);
+      });
     return () => {
       alive = false;
     };

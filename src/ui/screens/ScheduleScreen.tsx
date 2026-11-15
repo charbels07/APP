@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -9,6 +9,7 @@ import {
   type LayoutChangeEvent,
 } from "react-native";
 import { isRtl, label, symbolOf } from "../../lib/lexicon";
+import { countFeature } from "../../lib/product";
 import type { Schedule, ScheduleStep } from "../../model/types";
 import { useApp } from "../../state/AppState";
 import { Btn, Segmented } from "../common";
@@ -45,6 +46,10 @@ export function ScheduleScreen() {
       ? "sequence"
       : mode;
   const dayPlan = shown === "sequence" || shown === "firstThen";
+  // For the app's team (families who agreed): "First / Then" was shown.
+  useEffect(() => {
+    if (shown === "firstThen") countFeature("firstThen");
+  }, [shown]);
   const schedule =
     profile.schedules.find((s) => s.id === profile.activeSchedule) ??
     profile.schedules[0];

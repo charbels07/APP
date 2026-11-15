@@ -42,7 +42,7 @@ const NONE: PermissionSet = {
 };
 
 /** Settings only the family may change: what is collected about the child and who gets it. */
-const CONSENT_SETTINGS = new Set(['dataCollection', 'shareStats']);
+const CONSENT_SETTINGS = new Set(['dataCollection', 'shareStats', 'shareTerms']);
 
 /** Suggested starting points; the parent narrows or widens them for each person. */
 export const ROLE_PRESETS: Record<CollaboratorRole, { level: AccessLevel; perms: PermissionSet }> = {

@@ -8,14 +8,22 @@ import type { AiRequest } from '../../supabase/functions/_shared/aiPrompts';
 import type { Profile } from '../model/types';
 import type { Op } from '../lib/profileDiff';
 import type { AccessLevel, CollaboratorRole, PermissionSet } from '../lib/permissions';
+import type { ProblemItem } from '../lib/product';
+import type { UiLang } from '../model/types';
 import type {
   Observation,
   UsageDay,
   Account,
   AccountPrefs,
+  AdminBugs,
   AdminLogEntry,
   AdminOverview,
+  AdminProduct,
+  AdminRoadmapItem,
   AdminVerification,
+  FeatureDay,
+  RoadmapItem,
+  RoadmapStatus,
   Feedback,
   FeedbackKind,
   ChildRecord,
@@ -169,9 +177,18 @@ export interface Backend {
   /** Demonstration only (local backend): fills the progress pages with an example. */
   demoSeedUsage?(profileId: string, label: (id: string) => string): Promise<void>;
 
-  // ── Messages to the app's team ──
-  /** An idea or a problem, written from the app (never about a child by name). */
+  // ── Figures for the app's team, only from the families who agreed (src/lib/product.ts) ──
+  /** What this device counted today: feature names from a fixed list and numbers. Refused without the family's agreement. */
+  saveFeatureDay(profileId: string, day: FeatureDay): Promise<void>;
+  /** Technical problems met on this device (kind, screen, place in the code): stored without any link to the child. */
+  reportProblems(profileId: string, items: (ProblemItem & { platform: string; form: string; version: string })[]): Promise<void>;
+
+  // ── Messages to the app's team ("Help us improve") ──
+  /** A request or a problem, written from the app (never about a child by name). */
   sendFeedback(input: { kind: FeedbackKind; text: string; platform: string; appVersion: string }): Promise<void>;
+  /** The ideas the team puts to the vote, with the number of votes and whether I voted. */
+  roadmapList(): Promise<RoadmapItem[]>;
+  roadmapVote(id: string, on: boolean): Promise<void>;
 
   // ── Back office: the app's own team only (the server refuses everybody else) ──
   isAdmin(): Promise<boolean>;
@@ -189,6 +206,13 @@ export interface Backend {
   adminLog(): Promise<AdminLogEntry[]>;
   adminFeedback(): Promise<Feedback[]>;
   adminSetFeedback(id: string, status: 'new' | 'done'): Promise<void>;
+  /** Feature adoption and task figures: sums over at least 5 children of 5 families who agreed. */
+  adminProduct(): Promise<AdminProduct>;
+  /** Technical problems of the last 30 days. */
+  adminBugs(): Promise<AdminBugs>;
+  adminRoadmap(): Promise<AdminRoadmapItem[]>;
+  /** Adds an idea to vote for (no `id`) or changes its title or status. */
+  adminRoadmapSave(input: { id?: string; title: Record<UiLang, string>; status: RoadmapStatus }): Promise<void>;
   /** Demonstration only (local backend): signs in as the app's team, with example requests and figures. */
   demoOpenBackOffice?(): Promise<Account>;
 

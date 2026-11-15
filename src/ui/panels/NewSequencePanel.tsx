@@ -9,6 +9,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { aiAvailable, askAiForTla } from '../../lib/aiPlanner';
+import { countFeature } from '../../lib/product';
 import { planFromAi, planFromLibrary, type PlanItem, type TlaPlan } from '../../lib/tlaPlanner';
 import type { Schedule } from '../../model/types';
 import { useApp } from '../../state/AppState';
@@ -35,6 +36,8 @@ export function NewSequencePanel() {
 
   useEffect(() => {
     aiAvailable().then(setAiOk);
+    // For the app's team (families who agreed): a sequence was started (and, below, finished).
+    countFeature('seqStart');
     return () => aiCtl.current?.abort();
   }, []);
 
@@ -44,6 +47,7 @@ export function NewSequencePanel() {
     const ctl = new AbortController();
     aiCtl.current = ctl;
     setThinking(true);
+    countFeature('ai');
     const ai = await askAiForTla(topic, ctl.signal, profile.settings.arabic);
     if (ctl.signal.aborted) return;
     setThinking(false);
@@ -101,6 +105,7 @@ export function NewSequencePanel() {
       d.schedules.push(schedule);
       d.activeSchedule = id;
     });
+    countFeature('seqDone');
     setBusy(false);
     // An empty sequence opens in its editor (to add steps); a ready one is shown at once.
     app.setOverlay(schedule.steps.length ? null : { kind: 'scheduleEditor', id });

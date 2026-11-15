@@ -14,7 +14,8 @@ import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
 import { sessionStore } from '../lib/keepSignedIn';
-import type { Profile } from '../model/types';
+import type { Profile, UiLang } from '../model/types';
+import type { ProblemItem } from '../lib/product';
 import type { Op } from '../lib/profileDiff';
 import type { AccessLevel, CollaboratorRole, PermissionSet } from '../lib/permissions';
 import { BackendError, type Backend, type CodeSent, type SignInMethods, type SignUpInput } from './Backend';
@@ -40,14 +41,27 @@ import {
   type Role,
   type SaveResult,
   type Verification,
+  type AdminBugs,
   type AdminLogEntry,
   type AdminOverview,
+  type AdminProduct,
+  type AdminRoadmapItem,
   type AdminVerification,
+  type FeatureDay,
+  type RoadmapItem,
+  type RoadmapStatus,
   type Feedback,
   type FeedbackKind,
 } from './types';
 
 type Row = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+
+/** An idea's title in the three languages (a missing one is an empty text). */
+const titleOf = (t: unknown): Record<UiLang, string> => {
+  const o = (t ?? {}) as Record<string, unknown>;
+  const text = (k: string) => (typeof o[k] === 'string' ? (o[k] as string) : '');
+  return { fr: text('fr'), en: text('en'), ar: text('ar') };
+};
 
 const ms = (iso?: string | null) => (iso ? Date.parse(iso) : undefined);
 const iso = (t?: number | null) => (t ? new Date(t).toISOString() : null);
@@ -708,7 +722,51 @@ export class SupabaseBackend implements Backend {
     await data(this.sb.rpc('send_feedback', { p_kind: input.kind, p_text: input.text, p_platform: input.platform, p_version: input.appVersion }));
   }
 
+  async roadmapList(): Promise<RoadmapItem[]> {
+    return (await data<Row[]>(this.sb.rpc('roadmap_list'))).map((r) => ({ id: r.id, title: titleOf(r.title), status: r.status, votes: r.votes ?? 0, mine: !!r.mine }));
+  }
+
+  async roadmapVote(id: string, on: boolean): Promise<void> {
+    await data(this.sb.rpc('roadmap_vote', { p_item: id, p_on: on }));
+  }
+
+  // ── Figures for the app's team (the database checks the family's agreement and keeps known names and numbers only) ──
+
+  async saveFeatureDay(profileId: string, d: FeatureDay): Promise<void> {
+    await data(
+      this.sb.rpc('save_feature_day', { p_id: profileId, p_dev: d.deviceId, p_day: d.day, p_counts: d.counts, p_platform: d.platform, p_form: d.form, p_version: d.appVersion }),
+    );
+  }
+
+  async reportProblems(profileId: string, items: (ProblemItem & { platform: string; form: string; version: string })[]): Promise<void> {
+    await data(this.sb.rpc('report_problems', { p_id: profileId, p_items: items }));
+  }
+
   // ── Back office (every function checks, in the database, that the account is in the app's team) ──
+
+  async adminProduct(): Promise<AdminProduct> {
+    return data<AdminProduct>(this.sb.rpc('admin_product'));
+  }
+
+  async adminBugs(): Promise<AdminBugs> {
+    return data<AdminBugs>(this.sb.rpc('admin_bugs'));
+  }
+
+  async adminRoadmap(): Promise<AdminRoadmapItem[]> {
+    return (await data<Row[]>(this.sb.rpc('admin_roadmap'))).map((r) => ({
+      id: r.id,
+      title: titleOf(r.title),
+      status: r.status,
+      votes: r.votes ?? 0,
+      parents: r.parents ?? 0,
+      pros: r.pros ?? 0,
+      createdAt: Date.parse(r.created_at),
+    }));
+  }
+
+  async adminRoadmapSave(input: { id?: string; title: Record<UiLang, string>; status: RoadmapStatus }): Promise<void> {
+    await data(this.sb.rpc('admin_roadmap_save', { p_id: input.id ?? null, p_title: input.title, p_status: input.status }));
+  }
 
   async isAdmin(): Promise<boolean> {
     return !!(await data<boolean>(this.sb.rpc('is_admin')));

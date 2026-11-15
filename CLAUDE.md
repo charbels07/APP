@@ -144,4 +144,19 @@
   silence before and after (`src/lib/trimSilence.ts`, pure and tested): the browser cuts the sound and saves
   a WAV; the tablet app keeps the file and writes the two moments in its name (`.t120-980.m4a`, read by
   `spanOfName` when playing). `mediaNamesIn` (`deviceData.ts`) must keep recognising every media name.
+- Figures for the app's team (`src/lib/product.ts`, migration `20261117000000_product.sql`): a screen counts
+  with `countFeature('name')` and reports with `reportProblem('kind', e)`; both do nothing unless the open
+  board's family agreed (`sharesProduct`: `shareStats` + `shareTerms` ≥ `SHARE_TERMS`). Names come from fixed
+  lists that the app and the database share (`product.test.ts` compares them): a new counter is added in
+  both. Never send a word, a sentence, a board's name, free text or an error's message; never count from a
+  `pro` or team account; never show a figure under 5 children of 5 families (a group of 1–4 is `few` /
+  `hidden`, not a number). If what is shared grows, raise `SHARE_TERMS` and update `shareNote` (three
+  languages): families are then asked again before anything new is sent.
+- Back office pages (`src/ui/admin/BackOffice.tsx` + `ProductTabs.tsx`, words in `src/i18n/product.ts`):
+  Professionals, Administration, Product, Requests, Bugs, Content, Security. A new figure goes to the page
+  it belongs to, with a one-line intro kept short. The demo server answers with invented figures
+  (`src/lib/demoBackOffice.ts`, flagged `example`). Content is counted from the app's own data files.
+- "Help us improve Empower" (`src/ui/admin/WriteTeam.tsx`): six subjects (`FeedbackKind`) plus votes
+  (`roadmap`, one vote per account, ideas written by the team in three languages). It is a message sent on
+  purpose: it never depends on the sharing switch. Keep the "no personal or medical information" reminder.
 - Services and keys: `docs/API-KEYS.md` (keep it up to date when a feature starts needing one).

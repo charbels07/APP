@@ -6,6 +6,7 @@ import { APPS_NEED_TAP, appLinkOf, findAppInSentence, isIncomplete, openAppUrl }
 import { clipFor } from '../lib/dialectVoice';
 import { joinTokens, renderStrip, tokenSegment, toSpeechPlan } from '../lib/grammar';
 import { audioOf, isFolderName, label } from '../lib/lexicon';
+import { countFeature, setScreen, type Screen } from '../lib/product';
 import { locate, type Location } from '../lib/search';
 import { beep, prepareVoices, speakSegments, speakText, stopSpeech } from '../lib/speech';
 import type { Cell, DemoStep, Lang, Profile, StripItem, UiLang } from '../model/types';
@@ -183,6 +184,26 @@ interface AppCtx {
 
 const Ctx = createContext<AppCtx | null>(null);
 
+/** The kind of screen each panel counts as, for technical problems (`SCREENS` in src/lib/product.ts). */
+const OVERLAY_SCREEN: Partial<Record<NonNullable<Overlay>['kind'], Screen>> = {
+  search: 'search',
+  keyboard: 'keyboard',
+  model: 'model',
+  editor: 'editor',
+  cellMenu: 'editor',
+  conceptEditor: 'editor',
+  picker: 'picker',
+  settings: 'settings',
+  guide: 'guide',
+  print: 'print',
+  newTla: 'newTla',
+  newSequence: 'newSeq',
+  scheduleEditor: 'newSeq',
+  help: 'help',
+  lock: 'lock',
+  pin: 'lock',
+};
+
 export function useApp(): AppCtx {
   const v = useContext(Ctx);
   if (!v) throw new Error('useApp outside provider');
@@ -255,6 +276,8 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
   const update = useCallback((recipe: (draft: Profile) => void) => {
     const draft = structuredClone(storedRef.current);
     recipe(draft);
+    // "The board was personalised" (a count, never what was changed).
+    if (editModeRef.current) countFeature('edit');
     storedRef.current = draft;
     setProfile(draft);
     onChangeRef.current(draft);
@@ -294,6 +317,7 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
    * board, and any board opened by an account of the app's team), "ask the code" opens the tools at once.
    */
   const setOverlay = useCallback((o: Overlay) => {
+    if (o?.kind === 'guide') countFeature('guide');
     if (o?.kind === 'pin' && freeEditRef.current) {
       if (!opensAlone(o.then)) setEditModeState(true);
       setOverlayState(o.then ?? null);
@@ -410,6 +434,8 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
         concept: conceptId,
         mode: !origin ? 'quick' : origin.board === 'core' ? 'core' : boardKind === 'tla' ? 'tla' : 'folder',
       });
+      // For the app's team (families who agreed): "the board was used", "an activity board was used".
+      if (!playingRef.current && !recordRef.current) countFeature(boardKind === 'tla' ? 'tla' : 'board');
       const item: StripItem = { key: newKey(), kind: 'concept', concept: conceptId, lang: l };
       if (p.settings.speakOnTap || !p.settings.addToStrip) {
         if (p.settings.addToStrip) {
@@ -436,6 +462,7 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
       if (!clean) return;
       record({ kind: 'text', text: clean });
       emit({ type: 'keyboard' });
+      if (!playingRef.current) countFeature('keyboard');
       const lang = profileRef.current.settings.lang;
       // One card per word, each with its picture when there is one; said exactly as typed.
       const parts = chips?.length ? chips : typedChips(profileRef.current, clean, lang);
@@ -544,6 +571,7 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
   );
 
   const openSchedule = useCallback(() => {
+    countFeature('schedule');
     viewRef.current = { view: 'schedule' };
     setView('schedule');
     setOverlay(null);
@@ -614,6 +642,7 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
   const playSteps = useCallback(
     async (steps: DemoStep[], opts: { speakAtEnd?: boolean } = {}) => {
       const mine = ++playToken.current;
+      countFeature('model');
       playingRef.current = true;
       setPlaying(true);
       setOverlay(null);
@@ -739,6 +768,12 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
   useEffect(() => {
     emit({ type: 'page', page: pageId });
   }, [pageId, emit]);
+  // The kind of screen (never a board's own name): told with a technical problem, if one happens.
+  const overlayKind = overlay?.kind;
+  const inFolder = path.length > 1;
+  useEffect(() => {
+    setScreen((overlayKind && OVERLAY_SCREEN[overlayKind]) || (overlayKind ? 'other' : view === 'board' ? (inFolder ? 'folder' : 'board') : view === 'tla' ? 'tla' : 'schedule'));
+  }, [overlayKind, view, inFolder]);
 
   const setEditMode = useCallback((on: boolean) => {
     setEditModeState(on);
@@ -756,6 +791,7 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
     open: false,
   });
   const startTimer = useCallback((minutes: number, concept?: string | null) => {
+    countFeature('timer');
     const ms = Math.max(1, Math.round(minutes * 60000));
     setTimer((cur) => ({
       totalMs: ms,

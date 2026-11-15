@@ -3,7 +3,8 @@
  * decision, example messages and example figures. Nothing here is a real person or a real number;
  * the back-office page says so while it shows them.
  */
-import type { AdminOverview, Feedback, Verification, VerificationDoc } from '../backend/types';
+import type { AdminBugs, AdminOverview, AdminProduct, Feedback, RoadmapStatus, Verification, VerificationDoc } from '../backend/types';
+import type { UiLang } from '../model/types';
 
 const HOUR = 3600000;
 const DAY = 24 * HOUR;
@@ -50,9 +51,13 @@ export function exampleRequests(now: number): {
       }),
     ],
     messages: [
-      { kind: 'idea', text: 'Ce serait bien d’avoir plus de pictogrammes sur le football et les jeux de ballon.', platform: 'ios', appVersion: '1.0.0', status: 'new', createdAt: now - 3 * HOUR, fromName: 'Parent (exemple)', fromRole: 'parent', fromEmail: 'parent@exemple.test' },
+      { kind: 'pictogram', text: 'Ce serait bien d’avoir plus de pictogrammes sur le football et les jeux de ballon.', platform: 'ios', appVersion: '1.0.0', status: 'new', createdAt: now - 3 * HOUR, fromName: 'Parent (exemple)', fromRole: 'parent', fromEmail: 'parent@exemple.test' },
       { kind: 'problem', text: 'La voix se coupe parfois quand la phrase est longue, sur une tablette Android.', platform: 'android', appVersion: '1.0.0', status: 'new', createdAt: now - 1 * DAY, fromName: 'Orthophoniste (exemple)', fromRole: 'pro', fromEmail: 'pro@exemple.test' },
       { kind: 'other', text: 'Merci pour le dialecte jordanien, mon fils reconnaît enfin les mots de la maison.', platform: 'ios', appVersion: '1.0.0', status: 'done', createdAt: now - 4 * DAY, fromName: 'Parent (exemple)', fromRole: 'parent', fromEmail: 'parent2@exemple.test' },
+      { kind: 'feature', text: 'Pouvoir relier le planning à l’agenda de la famille.', platform: 'ios', appVersion: '1.0.0', status: 'new', createdAt: now - 7 * HOUR, fromName: 'Parent (exemple)', fromRole: 'parent', fromEmail: 'parent2@exemple.test' },
+      { kind: 'vocabulary', text: 'Il manque des mots pour la récréation : toboggan, cache-cache, chacun son tour.', platform: 'web', appVersion: '1.0.0', status: 'new', createdAt: now - 2 * DAY, fromName: 'Orthophoniste (exemple)', fromRole: 'pro', fromEmail: 'pro@exemple.test' },
+      { kind: 'language', text: 'Le dialecte marocain serait très utile pour plusieurs familles que je suis.', platform: 'android', appVersion: '1.0.0', status: 'new', createdAt: now - 3 * DAY, fromName: 'Éducatrice (exemple)', fromRole: 'pro', fromEmail: 'pro@exemple.test' },
+      { kind: 'access', text: 'Les cases sont trop petites pour mon fils quand la grille complète est affichée sur un téléphone.', platform: 'android', appVersion: '1.0.0', status: 'new', createdAt: now - 6 * DAY, fromName: 'Parent (exemple)', fromRole: 'parent', fromEmail: 'parent2@exemple.test' },
     ],
   };
 }
@@ -200,4 +205,102 @@ export function exampleOverview(now: number): AdminOverview {
       averages: { activityBoards: 3.8, ownWords: 11.6, changedWords: 7.2, schedules: 2.1, demonstrations: 0.9 },
     },
   };
+}
+
+/** Feature adoption and task figures (invented). The last two lines show what a small group looks like. */
+export function exampleProduct(now: number): AdminProduct {
+  const f = (key: string, regular: number, occasional: number, abandoned: number, never: number) => ({ key, regular, occasional, abandoned, never });
+  return {
+    at: new Date(now).toISOString(),
+    example: true,
+    agreed: 163,
+    children: 148,
+    minimum: 5,
+    enough: true,
+    days: 90,
+    features: [
+      f('board', 121, 15, 7, 5),
+      f('tla', 70, 37, 15, 26),
+      f('schedule', 81, 30, 12, 25),
+      f('firstThen', 46, 41, 18, 43),
+      f('timer', 59, 37, 15, 37),
+      f('search', 52, 48, 20, 28),
+      f('keyboard', 24, 30, 16, 78),
+      f('model', 22, 27, 33, 66),
+      f('edit', 64, 52, 14, 18),
+      f('photo', 18, 40, 22, 68),
+      f('recording', 12, 31, 20, 85),
+      f('print', 15, 38, 19, 76),
+      f('followUp', 30, 22, 22, 74),
+      f('ai', 31, 40, 24, 53),
+      f('guide', 20, 55, 40, 33),
+      { key: 'lock', few: 'using' },
+    ],
+    children30: 131,
+    tasks: {
+      search: 2140,
+      searchNone: 385,
+      searchPick: 1320,
+      tlaStart: 310,
+      tlaDone: 221,
+      tlaMs: 221 * 222000,
+      tlaPhoto: 34,
+      tlaKept: 84,
+      tlaChanged: 137,
+      seqStart: 140,
+      seqDone: 118,
+      pictoSwap: 264,
+      edit: 1930,
+      print: 96,
+      printTla: 41,
+      printSchedule: 38,
+    },
+    forms: { tablet: 109, phone: 31, computer: 8 },
+  };
+}
+
+/** Technical problems (invented): what the page looks like after a month. */
+export function exampleBugs(now: number): AdminBugs {
+  // 84 problems in all: the same total by day, by kind, by version, by system and by screen.
+  const perDay = [2, 1, 4, 3, 0, 2, 5, 9, 7, 3, 2, 1, 0, 2, 3, 2, 1, 4, 2, 0, 1, 3, 2, 2, 8, 6, 2, 1, 3, 3];
+  const ago = (d: number) => ymd(now - d * DAY);
+  return {
+    at: new Date(now).toISOString(),
+    example: true,
+    days: 30,
+    total: perDay.reduce((a, b) => a + b, 0),
+    kinds: { sync: 31, crash: 14, speech: 12, promise: 9, mic: 7, audio: 6, print: 3, picto: 2 },
+    versions: { '1.2.0': 21, '1.1.0': 40, '1.0.0': 23 },
+    platforms: { ios: 47, android: 29, web: 8 },
+    screens: { board: 22, editor: 14, schedule: 11, settings: 9, search: 6, other: 22 },
+    daily: perDay.map((n, i) => ({ day: ago(29 - i), n })),
+    top: [
+      { kind: 'sync', name: 'BackendError', at: '', screen: 'board', version: '1.0.0', platform: 'ios', n: 19, last: ago(1) },
+      { kind: 'crash', name: 'TypeError', at: '1:482211', screen: 'schedule', version: '1.0.0', platform: 'android', n: 9, last: ago(3) },
+      { kind: 'speech', name: 'Error', at: '', screen: 'board', version: '1.0.0', platform: 'android', n: 8, last: ago(2) },
+      { kind: 'mic', name: 'NotAllowedError', at: '', screen: 'editor', version: '1.2.0', platform: 'web', n: 7, last: ago(0) },
+      { kind: 'promise', name: 'TypeError', at: '1:91804', screen: 'editor', version: '1.1.0', platform: 'ios', n: 5, last: ago(6) },
+      { kind: 'crash', name: 'RangeError', at: '1:230417', screen: 'settings', version: '1.0.0', platform: 'ios', n: 3, last: ago(12) },
+    ],
+  };
+}
+
+/** Ideas to vote for (invented votes), so the demonstration has a list. */
+export function exampleRoadmap(
+  now: number,
+): { id: string; title: Record<UiLang, string>; status: RoadmapStatus; createdAt: number; base: { parents: number; pros: number } }[] {
+  const idea = (n: number, fr: string, en: string, ar: string, parents: number, pros: number, status: RoadmapStatus = 'open') => ({
+    id: `example-idea-${n}`,
+    title: { fr, en, ar },
+    status,
+    createdAt: now - (40 - n) * DAY,
+    base: { parents, pros },
+  });
+  return [
+    idea(1, 'D’autres dialectes arabes', 'More Arabic dialects', 'لهجات عربية أخرى', 61, 25),
+    idea(2, 'Plus d’outils de mesure pour le suivi', 'More measurement tools for the follow-up', 'أدوات قياس أكثر للمتابعة', 12, 61, 'planned'),
+    idea(3, 'Des scènes visuelles (une photo avec des zones à toucher)', 'Visual scenes (a photo with areas to touch)', 'مشاهد بصرية (صورة فيها مناطق للّمس)', 38, 26),
+    idea(4, 'Relier le planning à un agenda', 'Link the schedule to a calendar', 'ربط الجدول بتقويم', 35, 13),
+    idea(5, 'D’autres styles de pictogrammes', 'More pictogram styles', 'أنماط أخرى من الرموز', 27, 12),
+  ];
 }

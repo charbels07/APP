@@ -202,6 +202,12 @@ export interface Settings {
   dataCollection: 'off' | 'usage' | 'vocabulary' | 'language';
   /** The family lets the app's team use anonymous statistics (no name, no words). */
   shareStats: 'none' | 'anonymous';
+  /**
+   * Which list of "what is shared" the family agreed to (`SHARE_TERMS` in `src/lib/product.ts`).
+   * The feature counters and technical problems came with list 2: a family that agreed before
+   * is asked again, and nothing new is sent until it says yes.
+   */
+  shareTerms?: number;
 }
 
 /** A picture in the week plan (for one weekday). */

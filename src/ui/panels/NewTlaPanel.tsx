@@ -4,6 +4,7 @@ import { SYMBOL_DEFAULTS } from '../../data/symbolMap';
 import { TLA_CORE, TLA_FUNCTIONS } from '../../data/defaults';
 import { editStrings } from '../../i18n/edit';
 import { aiAvailable, askAiForPhoto, askAiForTla } from '../../lib/aiPlanner';
+import { countFeature } from '../../lib/product';
 import { mainBoardOrder, tlaLayout, type Placed } from '../../lib/boardOrder';
 import { pickPhotoForAi, type AiPhoto } from '../../lib/photoForAi';
 import { allConceptIds, getConcept, label, symbolOf } from '../../lib/lexicon';
@@ -200,6 +201,17 @@ export function NewTlaPanel() {
   const aiCtl = useRef<AbortController | null>(null);
   const aiEnabled = aiOk && profile.settings.aiSuggestions !== false;
   const e = editStrings(ui);
+  // For the app's team (families who agreed): a board was started, finished, in how long, and
+  // whether the suggestion was kept as it was. Never its name or its words.
+  const startedAt = useRef(Date.now());
+  const edited = useRef(false);
+  useEffect(() => {
+    countFeature('tlaStart');
+  }, []);
+  const editPlan = (p: TlaPlan) => {
+    edited.current = true;
+    setPlan(p);
+  };
   // Photo → activity board.
   const [photo, setPhoto] = useState<AiPhoto | null>(null);
   const [hint, setHint] = useState('');
@@ -218,6 +230,8 @@ export function NewTlaPanel() {
     const ctl = new AbortController();
     aiCtl.current = ctl;
     setReading(true);
+    countFeature('ai');
+    edited.current = false;
     const ai = await askAiForPhoto(p, hint || topic, ctl.signal, profile.settings.arabic);
     if (ctl.signal.aborted) return;
     setReading(false);
@@ -257,6 +271,7 @@ export function NewTlaPanel() {
     const ctl = new AbortController();
     aiCtl.current = ctl;
     setThinking(true);
+    countFeature('ai');
     const ai = await askAiForTla(topic, ctl.signal, profile.settings.arabic);
     if (ctl.signal.aborted) return;
     setThinking(false);
@@ -271,6 +286,7 @@ export function NewTlaPanel() {
 
   const suggest = () => {
     if (!lib || !topic.trim()) return;
+    edited.current = false;
     setAdding(null);
     const fromLibrary = planFromLibrary(lib, topic, ui);
     if (fromLibrary) setPlan(fromLibrary);
@@ -323,6 +339,11 @@ export function NewTlaPanel() {
       }
     });
     setBusy(false);
+    countFeature('tlaDone');
+    countFeature('tlaMs', Math.min(Date.now() - startedAt.current, 30 * 60 * 1000));
+    if (p?.source === 'ai') countFeature('tlaAi');
+    if (photo) countFeature('tlaPhoto');
+    if (p) countFeature(edited.current ? 'tlaChanged' : 'tlaKept');
     app.openTla(boardId);
   };
 
@@ -411,7 +432,7 @@ export function NewTlaPanel() {
                   id={item.id}
                   caption={caption(item)}
                   removable
-                  onPress={() => setPlan({ ...plan, words: plan.words.filter((x) => x.id !== item.id) })}
+                  onPress={() => editPlan({ ...plan, words: plan.words.filter((x) => x.id !== item.id) })}
                 />
               ))}
             </View>
@@ -420,7 +441,7 @@ export function NewTlaPanel() {
                 lang={ui}
                 onPick={(id) => {
                   if (!plan.words.some((x) => x.id === id) && plan.words.length < MAX_WORDS)
-                    setPlan({ ...plan, words: [...plan.words, { id }] });
+                    editPlan({ ...plan, words: [...plan.words, { id }] });
                 }}
               />
             ) : (
@@ -429,7 +450,7 @@ export function NewTlaPanel() {
           </Section>
 
           <Section title={`${t.stepsTitle} (${plan.steps.length})`}>
-            <StepsEditor steps={plan.steps} onChange={(steps) => setPlan({ ...plan, steps })} onHolding={setHolding} />
+            <StepsEditor steps={plan.steps} onChange={(steps) => editPlan({ ...plan, steps })} onHolding={setHolding} />
             {plan.steps.length > 0 && <Toggle label={t.makeSchedule} value={makeSchedule} onChange={setMakeSchedule} />}
           </Section>
 

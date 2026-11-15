@@ -38,7 +38,7 @@ import { forgetLegacyProfile, loadLegacyProfile, migrate } from '../../lib/stora
 import type { Lang, Profile } from '../../model/types';
 import { AppProvider } from '../../state/AppState';
 import { useSession } from '../../state/Session';
-import { Btn, Field, Panel, Segmented } from '../common';
+import { Btn, Field, Panel, Segmented, Toggle } from '../common';
 import { setupHelp, type SetupHelpId } from '../../data/setupHelp';
 import { Icon } from '../Icon';
 import { Root } from '../Root';
@@ -785,6 +785,8 @@ function DataStep({ o, a, set }: StepProps) {
         <Option key={l} label={d.levels[l]} note={d.levelNotes[l]} selected={a.dataCollection === l} onPress={() => set({ dataCollection: l })} />
       ))}
       <T style={{ color: C.textMuted, fontSize: 14 }}>{o.dataLater}</T>
+      {/* A separate choice, off unless the family turns it on: anonymous figures for the app's team. */}
+      <Toggle label={d.shareTitle} note={d.shareNote} value={!!a.shareStats} onChange={(v) => set({ shareStats: v })} />
     </>
   );
 }

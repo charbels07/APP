@@ -31,10 +31,10 @@ async function sendPending(maxMs = 4000): Promise<void> {
 /** One child leaves this device (access removed, profile deleted). */
 export async function forgetChild(profileId: string): Promise<void> {
   gone.add(profileId);
-  await AsyncStorage.multiRemove([`caa.child.${profileId}`, `caa.usage.${profileId}`]).catch(() => {});
+  await AsyncStorage.multiRemove([`caa.child.${profileId}`, `caa.usage.${profileId}`, `caa.product.${profileId}`]).catch(() => {});
 }
 
-const CHILD_DATA = /^caa\.(child|usage|onboarding)\./;
+const CHILD_DATA = /^caa\.(child|usage|product|onboarding)\./;
 const OTHER_KEYS = ['caa.pendingRole', 'caa.pinlock'];
 
 /** True when a previous account left children's data here (session ended without a clean sign-out). */
@@ -62,10 +62,10 @@ export async function forgetEverything(opts: { media?: boolean; beforeSignOut?: 
         /* unreadable: erased */
       }
     }
-    mine = mine.filter((k) => !unsent.has(k.replace(/^caa\.(child|usage)\./, '')));
+    mine = mine.filter((k) => !unsent.has(k.replace(/^caa\.(child|usage|product)\./, '')));
   }
   for (const k of mine) {
-    const m = /^caa\.(?:child|usage)\.(.+)$/.exec(k);
+    const m = /^caa\.(?:child|usage|product)\.(.+)$/.exec(k);
     if (m) gone.add(m[1]);
   }
   await AsyncStorage.multiRemove(mine).catch(() => {});

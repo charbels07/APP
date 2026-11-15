@@ -75,7 +75,8 @@ const results = [];
   await p.getByRole('tab').nth(1).waitFor();
   await scan('20-backoffice-requests');
   await step('21-request', async () => { await p.getByText('Maya Haddad').first().click(); await p.waitForTimeout(500); await scan('21-backoffice-request'); });
-  for (const [i, n] of [[1, '22-backoffice-overview'], [2, '23-backoffice-usage'], [3, '24-backoffice-messages'], [4, '25-backoffice-history']])
+  // The seven pages of the back office (the first one, Professionals, was scanned above).
+  for (const [i, n] of [[1, '22-backoffice-administration'], [2, '23-backoffice-product'], [3, '24-backoffice-requests'], [4, '25-backoffice-bugs'], [5, '25b-backoffice-content'], [6, '25c-backoffice-security']])
     await step(n, async () => { await p.getByRole('tab').nth(i).click(); await scan(n); });
   await p.getByRole('button').filter({ hasText: L.openApp }).click();
   await p.waitForTimeout(2500);

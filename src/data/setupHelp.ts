@@ -297,16 +297,19 @@ export const SETUP_HELP: Record<SetupHelpId, SetupHelp> = {
         'L’application peut tenir un journal de la façon dont l’enfant utilise son tableau, pour voir ses progrès avec l’équipe. Vous choisissez jusqu’où : rien ; l’utilisation seulement (quand, combien de temps) ; l’utilisation et les mots ; ou l’utilisation, les mots et les phrases.',
         'Ce journal reste avec le profil de l’enfant. Les professionnels ne le voient que si vous le leur permettez, et vous pouvez tout effacer à tout moment (Réglages → Suivi).',
         'Ne rien choisir, c’est ne rien enregistrer.',
+        'Tout en bas, « Aider à améliorer l’application » est un autre choix, éteint au départ : il envoie à l’équipe de l’application des chiffres anonymes (quelles fonctions servent, quels problèmes techniques), jamais le nom, les mots ni les phrases de l’enfant.',
       ],
       en: [
         'The app can keep a diary of how the child uses the board, to see progress with the team. You choose how far: nothing; use only (when, how long); use and words; or use, words and sentences.',
         'This diary stays with the child’s profile. Professionals only see it if you allow them, and you can erase everything at any time (Settings → Progress).',
         'Choosing nothing means recording nothing.',
+        'At the bottom, “Help improve the app” is another choice, off to start with: it sends the app’s team anonymous figures (which features are used, which technical problems happen), never the child’s name, words or sentences.',
       ],
       ar: [
         'يستطيع التطبيق أن يحفظ سجلاً لطريقة استعمال الطفل للوحته، لمتابعة تقدّمه مع الفريق. أنت تختار المدى: لا شيء؛ الاستعمال فقط (متى وكم من الوقت)؛ الاستعمال والكلمات؛ أو الاستعمال والكلمات والجمل.',
         'يبقى هذا السجل مع ملف الطفل. لا يراه المختصون إلا إذا سمحت لهم، ويمكنك محو كل شيء في أي وقت (الإعدادات ← المتابعة).',
         'عدم الاختيار يعني عدم تسجيل أي شيء.',
+        'في الأسفل، «المساعدة في تحسين التطبيق» خيار آخر، متوقّف في البداية: يرسل إلى فريق التطبيق أرقاماً مجهولة الهوية (أيّ الوظائف تُستعمل، وأيّ المشاكل التقنية تحدث)، ولا يرسل أبداً اسم الطفل ولا كلماته ولا جمله.',
       ],
     },
     guide: [

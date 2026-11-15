@@ -8,6 +8,7 @@
 import type { Board, Concept, ConceptOverride, Profile, Schedule, UiLang } from '../model/types';
 import type { Op } from '../lib/profileDiff';
 import type { AccessLevel, CollaboratorRole, PermissionSet } from '../lib/permissions';
+import type { Counter, DeviceForm } from '../lib/product';
 
 export type Role = 'parent' | 'pro';
 /** 'device': a tablet linked with a pairing code (no email, no password). */
@@ -212,7 +213,9 @@ export interface AdminLogEntry {
   createdAt: number;
 }
 
-export type FeedbackKind = 'problem' | 'idea' | 'other';
+/** What a message to the team is about ("Help us improve"). */
+export type FeedbackKind = 'feature' | 'vocabulary' | 'pictogram' | 'language' | 'access' | 'problem' | 'other';
+export const FEEDBACK_KINDS: FeedbackKind[] = ['feature', 'vocabulary', 'pictogram', 'language', 'access', 'problem', 'other'];
 /** A message someone sent to the app's team from the app. */
 export interface Feedback {
   id: string;
@@ -228,6 +231,77 @@ export interface Feedback {
 }
 
 type Counts = Record<string, number>;
+
+/** What one device counted in a day for the app's team: names from a fixed list, numbers only. */
+export interface FeatureDay {
+  day: string;
+  deviceId: string;
+  counts: Partial<Record<Counter, number>>;
+  platform: string;
+  form: DeviceForm;
+  appVersion: string;
+}
+
+/**
+ * How the children use one feature. A group of 1 to 4 children is never a number: the server
+ * then only says which side is the small one (`few`), or nothing (`hidden`).
+ */
+export type FeatureAdoption =
+  | { key: string; regular: number; occasional: number; abandoned: number; never: number }
+  | { key: string; using: number; notUsing: number }
+  | { key: string; few: 'using' | 'notUsing' }
+  | { key: string; hidden: true };
+
+/** Product figures of the back office: sums over at least `minimum` children of as many families. */
+export interface AdminProduct {
+  at: string;
+  example?: boolean;
+  /** Families who agreed to share the feature counters. */
+  agreed: number;
+  /** Children whose devices sent something in the last `days` days. */
+  children: number;
+  minimum: number;
+  enough: boolean;
+  days: number;
+  features?: FeatureAdoption[];
+  children30?: number;
+  /** Sums of the last 30 days (a sum is missing when fewer than `minimum` children took part). */
+  tasks?: Counts;
+  forms?: Counts;
+}
+
+/** Technical problems of the last `days` days: counters that belong to nobody. */
+export interface AdminBugs {
+  at: string;
+  example?: boolean;
+  days: number;
+  total: number;
+  kinds: Counts;
+  versions: Counts;
+  platforms: Counts;
+  screens: Counts;
+  daily: { day: string; n: number }[];
+  top: { kind: string; name: string; at: string; screen: string; version: string; platform: string; n: number; last: string }[];
+}
+
+/** An idea the team puts to the vote. */
+export interface RoadmapItem {
+  id: string;
+  title: Record<UiLang, string>;
+  status: 'open' | 'planned';
+  votes: number;
+  mine: boolean;
+}
+export type RoadmapStatus = 'open' | 'planned' | 'done' | 'hidden';
+export interface AdminRoadmapItem {
+  id: string;
+  title: Record<UiLang, string>;
+  status: RoadmapStatus;
+  votes: number;
+  parents: number;
+  pros: number;
+  createdAt: number;
+}
 /**
  * Every figure of the back office. Counts only: no name, no word, no sentence.
  * `usage` and `setup` come from the children's profiles: only the families who share anonymous

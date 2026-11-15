@@ -2,7 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, AppState as RNAppState, Platform, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, AppState as RNAppState, Dimensions, Platform, StyleSheet, Text, View } from 'react-native';
 import { BackendError } from '../backend/Backend';
 import { createDefaultProfile } from '../data/defaults';
 import { errorText } from '../i18n/account';
@@ -13,7 +13,9 @@ import type { Profile } from '../model/types';
 import { AppProvider, useApp } from '../state/AppState';
 import { BoardContext, useBoard, type MyAccess } from '../state/BoardContext';
 import { ProfileSync } from '../state/profileSync';
+import { ProductCounter } from '../state/productCounters';
 import { UsageTracker } from '../state/usageTracker';
+import { deviceForm, setProductSink, sharesProduct } from '../lib/product';
 import { useSession } from '../state/Session';
 import { Btn } from './common';
 import { Icon } from './Icon';
@@ -108,6 +110,11 @@ function BoardStage({ profileId }: { profileId: string }) {
   const [note, setNote] = useState<string | null>(null);
   const [access, setAccess] = useState<MyAccess | null>(null);
   const [tracker, setTracker] = useState<UsageTracker | null>(null);
+  // Feature counters for the app's team: the family's own devices and the child's tablets only
+  // (not a professional's account, not the team's test accounts), and only if the family agreed.
+  const product = useRef<ProductCounter | null>(null);
+  const outsider = useRef(false);
+  outsider.current = sess.account?.role === 'pro' || sess.isAdmin;
 
   useEffect(() => {
     let alive = true;
@@ -116,6 +123,7 @@ function BoardStage({ profileId }: { profileId: string }) {
     const sendNow = async () => {
       await opened?.flush();
       await usage?.flush();
+      await product.current?.flush();
     };
     ProfileSync.open(api, profileId).then(
       (sy) => {
@@ -138,6 +146,19 @@ function BoardStage({ profileId }: { profileId: string }) {
           sy.subscribe(() => t.setOnline(sy.state !== 'offline'));
           setTracker(t);
         });
+        const size = Dimensions.get('window');
+        const touch = Platform.OS !== 'web' || (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0);
+        void ProductCounter.open(
+          api,
+          profileId,
+          sess.deviceId,
+          { platform: Platform.OS, form: deviceForm(Platform.OS, size.width, size.height, touch), version: APP_VERSION },
+          () => !outsider.current && sharesProduct(sy.copy.data.settings),
+        ).then((c) => {
+          if (!alive) return c.close();
+          product.current = c;
+          setProductSink(c);
+        });
         void api.myAccess(profileId).then((a) => alive && setAccess(a)).catch(() => {});
         // This device appears in "Devices and sync"; a removed device is signed out.
         void api
@@ -156,6 +177,12 @@ function BoardStage({ profileId }: { profileId: string }) {
         void usage.flush();
         usage.close();
       }
+      setProductSink(null);
+      if (product.current) {
+        void product.current.flush();
+        product.current.close();
+        product.current = null;
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [api, profileId]);
@@ -170,6 +197,8 @@ function BoardStage({ profileId }: { profileId: string }) {
         for (let i = 0; i < added; i++) tracker.record({ type: 'tlaCreated' });
         if (p.settings.dataCollection === 'off' && before.settings.dataCollection !== 'off') void tracker.forget();
       }
+      // The family stopped sharing with the app's team: what this device counted is erased (the server erases its side).
+      if (sharesProduct(before.settings) && !sharesProduct(p.settings)) void product.current?.forget();
       sync.change(p);
     },
     [sync, tracker],
@@ -184,6 +213,7 @@ function BoardStage({ profileId }: { profileId: string }) {
       else {
         void sync.flush();
         void tracker?.flush();
+        void product.current?.flush();
       }
     });
     return () => {

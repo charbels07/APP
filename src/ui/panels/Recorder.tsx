@@ -8,6 +8,7 @@ import {
 import React, { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { deleteMedia } from '../../lib/media';
+import { countFeature, reportProblem } from '../../lib/product';
 import { saveRecording } from '../../lib/recordingTrim';
 import type { Level } from '../../lib/trimSilence';
 import { playMedia } from '../../lib/speech';
@@ -60,7 +61,9 @@ export function Recorder({ media, onChange }: { media?: string; onChange: (name:
       const name = await saveRecording(uri, levels.current, totalMs);
       if (media) deleteMedia(media);
       onChange(name);
-    } catch {
+      countFeature('recording');
+    } catch (e) {
+      reportProblem('mic', e);
       setError(t.noMic);
     }
   };

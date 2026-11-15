@@ -19,6 +19,7 @@ import { exportJson, exportPdf, printDocument } from '../../lib/platform';
 import { boardCells, buildPrintHtml, conceptCell, type PrintOptions } from '../../lib/printHtml';
 import { canSpan } from '../../lib/boardOps';
 import { pictoCredit, pictoToMedia } from '../../lib/pictoLibrary';
+import { countFeature, reportProblem } from '../../lib/product';
 import { searchWords } from '../../lib/search';
 import { listVoices, prepareVoices, speakText } from '../../lib/speech';
 import type { VoiceChoice } from '../../lib/voices';
@@ -98,6 +99,7 @@ function ChildLock() {
           else exitFullscreen();
           sess.setChildLock(on);
           if (on) {
+            countFeature('lock');
             app.setEditMode(false);
             app.setOverlay(null);
           }
@@ -366,7 +368,9 @@ function ConceptEditorBody({ conceptId, only }: { conceptId: string; only?: 'ima
 
   const photo = async (source: 'library' | 'camera') => {
     const name = await pickPhoto(source);
-    if (name) setSymbol({ kind: 'media', name });
+    if (!name) return;
+    setSymbol({ kind: 'media', name });
+    countFeature('photo');
   };
 
   return (
@@ -401,7 +405,10 @@ function ConceptEditorBody({ conceptId, only }: { conceptId: string; only?: 'ima
                 lang={profile.settings.uiLang}
                 onPick={async (id) => {
                   const name = await pictoToMedia(id);
-                  if (name) setSymbol({ kind: 'media', name }, await pictoCredit(id));
+                  if (!name) return;
+                  setSymbol({ kind: 'media', name }, await pictoCredit(id));
+                  // For the app's team (families who agreed): a picture was swapped (never which one).
+                  countFeature('pictoSwap');
                 }}
               />
             </>
@@ -1417,6 +1424,13 @@ function PrintPanel({ cards }: { cards?: string[] }) {
     setBusy(true);
     try {
       await fn();
+      // For the app's team (families who agreed): something was printed, and which kind of support.
+      countFeature('print');
+      if (target.kind === 'schedule' || target.kind === 'firstThen') countFeature('printSchedule');
+      else if (target.kind === 'board' && target.id !== 'core' && profile.boards[target.id]?.kind === 'tla') countFeature('printTla');
+    } catch (e) {
+      reportProblem('print', e);
+      throw e;
     } finally {
       setBusy(false);
     }

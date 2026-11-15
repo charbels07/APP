@@ -7,6 +7,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { BackendError } from '../../backend/Backend';
+import { countFeature, shareChoice, sharesProduct, SHARE_TERMS } from '../../lib/product';
 import type { CommFunction, Observation, UsageDay } from '../../backend/types';
 import { dataStrings, type DataStrings } from '../../i18n/data';
 import {
@@ -50,13 +51,16 @@ export interface DataDashboardProps {
   /** Owner or team manager: may change the consent and erase the data. */
   manager: boolean;
   /** Changes the consent (only given where the profile can be saved). */
-  onConsent?: (patch: { dataCollection?: CollectLevel; shareStats?: 'none' | 'anonymous' }) => void;
+  onConsent?: (patch: { dataCollection?: CollectLevel; shareStats?: 'none' | 'anonymous'; shareTerms?: number }) => void;
   /** This device's recorder (its days are shown even offline). */
   tracker?: UsageTracker | null;
 }
 
 export function DataDashboard({ profileId, childName, profile, manager, onConsent, tracker }: DataDashboardProps) {
   const { api, uiLang, account } = useSession();
+  useEffect(() => {
+    countFeature('followUp');
+  }, []);
   const x = dataStrings(uiLang);
   const rtl = useNavRtl();
   const level = profile.settings.dataCollection ?? 'off';
@@ -190,6 +194,7 @@ export function DataDashboard({ profileId, childName, profile, manager, onConsen
         x={x}
         level={level}
         share={profile.settings.shareStats ?? 'none'}
+        agreed={sharesProduct(profile.settings)}
         manager={manager}
         onConsent={onConsent}
         onErase={
@@ -278,6 +283,7 @@ function ConsentCard({
   x,
   level,
   share,
+  agreed,
   manager,
   onConsent,
   onErase,
@@ -285,6 +291,8 @@ function ConsentCard({
   x: DataStrings;
   level: CollectLevel;
   share: 'none' | 'anonymous';
+  /** The family agreed to today's list of what is shared (not only to an older, shorter one). */
+  agreed: boolean;
   manager: boolean;
   onConsent?: DataDashboardProps['onConsent'];
   onErase?: () => Promise<void>;
@@ -329,8 +337,14 @@ function ConsentCard({
         ))}
       {open && <Btn small kind="ghost" label={x.cancel} onPress={() => setOpen(false)} style={{ alignSelf: rtl ? 'flex-end' : 'flex-start' }} />}
       {!open && level !== 'off' && <Note text={x.levelNotes[level]} />}
-      {editable && level !== 'off' && (
-        <Toggle label={x.shareTitle} note={x.shareNote} value={share === 'anonymous'} onChange={(v) => onConsent?.({ shareStats: v ? 'anonymous' : 'none' })} />
+      {/* Its own choice: helping the team does not need the child's follow-up to be on. */}
+      {editable && <Toggle label={x.shareTitle} note={x.shareNote} value={share === 'anonymous'} onChange={(v) => onConsent?.(shareChoice(v))} />}
+      {editable && share === 'anonymous' && !agreed && (
+        <View style={st.confirm}>
+          <Text style={[ss.title, rtl && RIGHT]}>{x.shareChanged}</Text>
+          <Note text={x.shareChangedNote} />
+          <Btn small kind="primary" icon="check" label={x.shareAgree} onPress={() => onConsent?.({ shareTerms: SHARE_TERMS })} style={{ alignSelf: rtl ? 'flex-end' : 'flex-start' }} />
+        </View>
       )}
       {onErase && !confirm && <Btn small kind="danger" icon="trash" label={x.erase} onPress={() => setConfirm('erase')} style={{ alignSelf: rtl ? 'flex-end' : 'flex-start' }} />}
       {confirm && (

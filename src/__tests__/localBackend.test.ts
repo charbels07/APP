@@ -180,13 +180,13 @@ describe('demo server: a parent and a therapist working together', () => {
 
   it('anyone writes to the team; only the back office reads the messages and the figures', async () => {
     await api.signIn({ email: 'rita@example.com', password: 'secret123' });
-    await api.sendFeedback({ kind: 'idea', text: 'Plus de pictogrammes de sport', platform: 'ios', appVersion: '1.0.0' });
+    await api.sendFeedback({ kind: 'pictogram', text: 'Plus de pictogrammes de sport', platform: 'ios', appVersion: '1.0.0' });
     await expectCode(api.adminFeedback(), 'forbidden');
     await expectCode(api.adminOverview(), 'forbidden');
     await expectCode(api.adminLog(), 'forbidden');
     await api.demoOpenBackOffice();
     const mine = (await api.adminFeedback()).find((f) => f.text.includes('sport'))!;
-    expect(mine).toMatchObject({ status: 'new', fromName: 'Rita', kind: 'idea' });
+    expect(mine).toMatchObject({ status: 'new', fromName: 'Rita', kind: 'pictogram' });
     await api.adminSetFeedback(mine.id, 'done');
     expect((await api.adminFeedback()).find((f) => f.id === mine.id)?.status).toBe('done');
     const o = await api.adminOverview();

@@ -8,11 +8,12 @@
  * Passwords are stored as salted SHA-256 hashes (the real server uses its own login system).
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { Profile } from '../model/types';
+import type { Profile, UiLang } from '../model/types';
 import type { Op } from '../lib/profileDiff';
 import { type AccessLevel, type CollaboratorRole, type PermissionSet, preset } from '../lib/permissions';
 import { deleteMedia, mediaUri, saveMedia } from '../lib/media';
-import { exampleDocument, exampleOverview, exampleRequests } from '../lib/demoBackOffice';
+import { exampleBugs, exampleDocument, exampleOverview, exampleProduct, exampleRequests, exampleRoadmap } from '../lib/demoBackOffice';
+import { COUNTERS, PROBLEM_KINDS, SCREENS, sharesProduct, type ProblemItem } from '../lib/product';
 import { demoObservations, demoUsage } from '../lib/demoUsage';
 import { limitToConsent } from '../lib/usageConsent';
 import { BackendError, type Backend, type CodeSent, type SignUpInput } from './Backend';
@@ -22,9 +23,15 @@ import {
   type UsageDay,
   type Account,
   type AccountPrefs,
+  type AdminBugs,
   type AdminLogEntry,
   type AdminOverview,
+  type AdminProduct,
+  type AdminRoadmapItem,
   type AdminVerification,
+  type FeatureDay,
+  type RoadmapItem,
+  type RoadmapStatus,
   type ChildRecord,
   type Feedback,
   type FeedbackKind,
@@ -82,6 +89,12 @@ interface DB {
   admins?: string[];
   adminLog?: AdminLogEntry[];
   feedback?: (Feedback & { userId: string })[];
+  /** Feature counters of the families who agreed, and technical problems (which belong to nobody). */
+  featureDays?: { profileId: string; data: FeatureDay }[];
+  problems?: Record<string, AdminBugs['top'][number]>;
+  /** Ideas put to the vote (`base`: invented votes of the demonstration). */
+  roadmap?: { id: string; title: Record<UiLang, string>; status: RoadmapStatus; createdAt: number; base?: { parents: number; pros: number } }[];
+  roadmapVotes?: { itemId: string; userId: string; role: string }[];
   /** The example requests of the back-office demonstration were added. */
   backOfficeSeeded?: boolean;
 }
@@ -446,6 +459,8 @@ export class LocalBackend implements Backend {
         data.settings.dataCollection = 'off';
         data.settings.shareStats = 'none';
       }
+      // An agreement only counts with the family's own choice to share.
+      if (data.settings.shareStats !== 'anonymous') delete data.settings.shareTerms;
       const rec: StoredProfile = {
         id: uid('p'),
         ownerId: me.id,
@@ -486,10 +501,15 @@ export class LocalBackend implements Backend {
       // What is recorded, what is shared and the caregiver code are the family's own decisions.
       const was = p.data.settings;
       const now = data.settings;
-      const consentChanged = (now.dataCollection ?? 'off') !== (was.dataCollection ?? 'off') || (now.shareStats ?? 'none') !== (was.shareStats ?? 'none');
+      const consentChanged =
+        (now.dataCollection ?? 'off') !== (was.dataCollection ?? 'off') ||
+        (now.shareStats ?? 'none') !== (was.shareStats ?? 'none') ||
+        (now.shareTerms ?? 0) !== (was.shareTerms ?? 0);
       if (!manager && (consentChanged || now.pin !== was.pin)) throw new BackendError('consent_protected');
       // A professional who created the profile edits everything except these two choices.
       if (a.owner && me.role === 'pro' && consentChanged) throw new BackendError('consent_protected');
+      // The family stops sharing: what was counted for the team is erased at once.
+      if (was.shareStats === 'anonymous' && now.shareStats !== 'anonymous') db.featureDays = (db.featureDays ?? []).filter((f) => f.profileId !== p.id);
       Object.assign(p, { data: clone(data), version: p.version + 1, updatedAt: Date.now(), updatedBy: me.id });
       return { ok: true, version: p.version };
     });
@@ -1052,6 +1072,80 @@ export class LocalBackend implements Backend {
     });
   }
 
+  async roadmapList(): Promise<RoadmapItem[]> {
+    return this.tx((db, m) => {
+      const me = LocalBackend.need(m);
+      const votes = db.roadmapVotes ?? [];
+      return LocalBackend.ideas(db)
+        .filter((r) => r.status === 'open' || r.status === 'planned')
+        .map((r) => ({
+          id: r.id,
+          title: clone(r.title),
+          status: r.status as RoadmapItem['status'],
+          votes: (r.base?.parents ?? 0) + (r.base?.pros ?? 0) + votes.filter((v) => v.itemId === r.id).length,
+          mine: votes.some((v) => v.itemId === r.id && v.userId === me.id),
+        }));
+    });
+  }
+
+  async roadmapVote(id: string, on: boolean): Promise<void> {
+    await this.tx((db, m) => {
+      const me = LocalBackend.need(m);
+      if (me.provider === 'device') throw new BackendError('forbidden');
+      const item = LocalBackend.ideas(db).find((r) => r.id === id && (r.status === 'open' || r.status === 'planned'));
+      if (!item) throw new BackendError('not_found');
+      db.roadmapVotes = (db.roadmapVotes ?? []).filter((v) => !(v.itemId === id && v.userId === me.id));
+      if (on) db.roadmapVotes.push({ itemId: id, userId: me.id, role: me.role });
+    });
+  }
+
+  /** The ideas to vote for; the demonstration starts with a few examples. */
+  private static ideas(db: DB) {
+    return (db.roadmap ??= exampleRoadmap(Date.now()));
+  }
+
+  // ── Figures for the app's team: only what the family agreed to, known names and numbers ──
+
+  async saveFeatureDay(profileId: string, day: FeatureDay): Promise<void> {
+    await this.tx((db, m) => {
+      const me = LocalBackend.need(m);
+      LocalBackend.requireAccess(db, profileId, me);
+      if (!sharesProduct(db.profiles[profileId].data.settings)) throw new BackendError('forbidden');
+      if (me.role === 'pro' || (db.admins ?? []).includes(me.id)) throw new BackendError('forbidden');
+      const counts: FeatureDay['counts'] = {};
+      for (const k of COUNTERS) {
+        const v = (day.counts as Record<string, unknown>)[k];
+        if (typeof v === 'number' && Number.isFinite(v)) counts[k] = Math.floor(Math.max(0, Math.min(v, k.endsWith('Ms') ? 86400000 : 100000)));
+      }
+      db.featureDays = (db.featureDays ?? []).filter((f) => !(f.profileId === profileId && f.data.deviceId === day.deviceId && f.data.day === day.day));
+      db.featureDays.push({ profileId, data: { day: day.day, deviceId: day.deviceId, counts, platform: day.platform, form: day.form, appVersion: day.appVersion } });
+    });
+  }
+
+  async reportProblems(profileId: string, items: (ProblemItem & { platform: string; form: string; version: string })[]): Promise<void> {
+    await this.tx((db, m) => {
+      const me = LocalBackend.need(m);
+      LocalBackend.requireAccess(db, profileId, me);
+      if (!sharesProduct(db.profiles[profileId].data.settings)) throw new BackendError('forbidden');
+      const today = new Date().toISOString().slice(0, 10);
+      for (const it of items.slice(0, 40)) {
+        if (!PROBLEM_KINDS.includes(it.kind)) continue;
+        // Known values only, and nothing that says who (same rules as the real server).
+        const row = {
+          kind: it.kind,
+          name: /^[A-Za-z]{1,30}$/.test(it.name) ? it.name : 'Error',
+          at: /^\d{1,7}:\d{1,7}$/.test(it.at) ? it.at : '',
+          screen: SCREENS.includes(it.screen) ? it.screen : 'other',
+          version: /^[0-9A-Za-z.+-]{1,20}$/.test(it.version) ? it.version : '',
+          platform: ['ios', 'android', 'web'].includes(it.platform) ? it.platform : '?',
+        };
+        const key = Object.values(row).join('|');
+        const had = (db.problems ??= {})[key];
+        db.problems[key] = { ...row, n: (had?.n ?? 0) + Math.max(1, Math.min(50, Math.floor(it.n || 1))), last: today };
+      }
+    });
+  }
+
   // ── Back office (the app's own team) ──
 
   async isAdmin(): Promise<boolean> {
@@ -1165,6 +1259,61 @@ export class LocalBackend implements Backend {
       const f = (db.feedback ?? []).find((x) => x.id === id);
       if (!f) throw new BackendError('not_found');
       f.status = status;
+    });
+  }
+
+  /** The demo has no real families: example figures (the page says so). */
+  async adminProduct(): Promise<AdminProduct> {
+    return this.tx((db, m) => {
+      LocalBackend.requireAdmin(db, m);
+      return exampleProduct(Date.now());
+    });
+  }
+
+  /** Example figures, plus the problems really met on this device by a board whose family agreed. */
+  async adminBugs(): Promise<AdminBugs> {
+    return this.tx((db, m) => {
+      LocalBackend.requireAdmin(db, m);
+      const o = exampleBugs(Date.now());
+      for (const p of Object.values(db.problems ?? {})) {
+        o.total += p.n;
+        o.kinds[p.kind] = (o.kinds[p.kind] ?? 0) + p.n;
+        o.screens[p.screen] = (o.screens[p.screen] ?? 0) + p.n;
+        o.platforms[p.platform] = (o.platforms[p.platform] ?? 0) + p.n;
+        o.versions[p.version || '?'] = (o.versions[p.version || '?'] ?? 0) + p.n;
+        o.daily[o.daily.length - 1].n += p.n;
+        o.top.unshift(clone(p));
+      }
+      return o;
+    });
+  }
+
+  async adminRoadmap(): Promise<AdminRoadmapItem[]> {
+    return this.tx((db, m) => {
+      LocalBackend.requireAdmin(db, m);
+      const votes = db.roadmapVotes ?? [];
+      const count = (id: string, role: string) => votes.filter((v) => v.itemId === id && v.role === role).length;
+      return LocalBackend.ideas(db)
+        .map((r) => {
+          const parents = (r.base?.parents ?? 0) + count(r.id, 'parent');
+          const pros = (r.base?.pros ?? 0) + count(r.id, 'pro');
+          return { id: r.id, title: clone(r.title), status: r.status, votes: parents + pros, parents, pros, createdAt: r.createdAt };
+        })
+        .sort((a, b) => Number(a.status === 'hidden') - Number(b.status === 'hidden') || b.votes - a.votes || a.createdAt - b.createdAt);
+    });
+  }
+
+  async adminRoadmapSave(input: { id?: string; title: Record<UiLang, string>; status: RoadmapStatus }): Promise<void> {
+    await this.tx((db, m) => {
+      const me = LocalBackend.requireAdmin(db, m);
+      const title = { fr: (input.title.fr ?? '').trim().slice(0, 120), en: (input.title.en ?? '').trim().slice(0, 120), ar: (input.title.ar ?? '').trim().slice(0, 120) };
+      if (!title.fr && !title.en && !title.ar) throw new BackendError('incomplete');
+      const list = LocalBackend.ideas(db);
+      const had = input.id ? list.find((r) => r.id === input.id) : undefined;
+      if (input.id && !had) throw new BackendError('not_found');
+      if (had) Object.assign(had, { title, status: input.status });
+      else list.push({ id: uid('r'), title, status: input.status, createdAt: Date.now() });
+      LocalBackend.adminNote(db, me, 'roadmap', title.en || title.fr || title.ar, input.status);
     });
   }
 

@@ -5,6 +5,7 @@
  * first (its "reveal level"): hidden words keep their place and appear later without anything
  * moving, so the child's motor memory is never broken.
  */
+import { shareChoice } from './product';
 import type { Intake } from '../backend/types';
 import type { ArabicDialect, Lang, Profile } from '../model/types';
 
@@ -59,6 +60,8 @@ export interface Answers {
   planMonth: boolean;
   /** Communication follow-up: nothing is pre-chosen; not answered = off. */
   dataCollection?: 'off' | 'usage' | 'vocabulary' | 'language';
+  /** "Help improve the app" (anonymous figures for the team): off unless the family turns it on. */
+  shareStats?: boolean;
 }
 
 export function emptyAnswers(lang: Lang): Answers {
@@ -144,6 +147,9 @@ export function applyAnswers(base: Profile, a: Answers, custom: { id: string; la
   st.repeatDelay = a.repeatDelay;
   st.plans = { week: !!a.planWeek, month: !!a.planMonth };
   st.dataCollection = a.dataCollection ?? 'off';
+  // Turning it on in the set-up is agreeing to the list shown there (today's list).
+  delete st.shareTerms;
+  Object.assign(st, shareChoice(!!a.shareStats));
 
   for (const c of custom) {
     p.customConcepts[c.id] = {

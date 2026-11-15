@@ -499,15 +499,93 @@ order, by itself.
 | The guide | `src/data/guide.ts`, three languages: folders (their name is never said), finding a word (the same search everywhere; a folder only has "Show me where"), the keyboard and adding a word ("Say the word", "Back"), editing a word (the silence is removed), sequences ("Add a step", then "Back"), modelling (folders are opened without their name being said). |
 | Tests | `trimSilence.test.ts` (9 tests on made-up sounds: quiet room, noisy room, soft voice, a click before the word, a word in two parts, nothing said, the WAV file, the tablet's loudness measures, the names); `search.test.ts` (a folder is found by the home search and never offered as a word); `guide.test.ts`. In a browser: the video's path with Back / Escape / the cross, at three sizes and in Arabic; a 3-second recording through a fake microphone (1 s of quiet, a 0.6 s word, quiet) was saved as 0.8 s with the word whole; "I want apple" replayed says "I", "want", "apple" and no longer "food". **Speech recognition itself cannot be tried in this test browser** (it has no recogniser): the buttons are there and wired like the home search's button, which you already use. |
 
+## Round 31 — The back office rebuilt around your aunt's list (the essential)
+
+Your aunt's list has 41 sections. This round builds what the app can really measure today, and
+leaves out what needs things that do not exist yet (payments, shops, costs). The rule behind
+everything: **the app should know its features very well, and the families' lives as little as
+possible.**
+
+### The back office now has seven pages
+
+| Page | What you see there |
+|---|---|
+| **Professionals** | The verification requests, as before (accept, ask for more, refuse). |
+| **Administration** | Accounts, children's profiles, devices, professionals, teamwork. Numbers only. |
+| **Product** | For each feature, how many children use it **regularly / now and then / gave it up / never** (the chart of your aunt's screenshot), then "what to look at to decide": searches without a result, activity boards started and finished, the time to create one, suggestions kept as they were, pictograms swapped by hand, prints that are schedules. Then the languages and settings chosen, and how the board is used. |
+| **Requests** | What parents and professionals wrote, sorted by subject, and the ideas they vote for (with the votes of families and of professionals apart). You add an idea and choose where it stands: open to votes, planned, done, hidden. |
+| **Bugs** | The tab you asked for. Technical problems counted by the app (by day, kind, screen, version, system, and the most frequent ones with their place in the code), devices waiting to send, and the problems people wrote themselves. |
+| **Content** | What ships with the app: pictograms per library with their licence, words per category, languages and dialects, guide chapters. Read-only: content comes with each version of the app. |
+| **Security** | What the families agreed to share, what the team never receives, how long things are kept, and the history of what the team did. |
+
+### How it works
+
+| What | How it was done |
+|---|---|
+| "Help us improve Empower" | The form of your aunt's screenshot, on the account page of parents and of professionals (`src/ui/admin/WriteTeam.tsx`): six subjects to write about, or "Vote for upcoming features". The text field reminds people not to write personal or medical information. A message is sent on purpose by an adult, so it does not need the "Help improve the app" switch. |
+| Votes | The team writes ideas (in three languages) in the Requests page; people vote once per account (a child's tablet does not vote). Tables `roadmap` and `roadmap_votes`. |
+| Feature counters | A fixed list of 30 names in `src/lib/product.ts` (16 features such as `timer`, `print`, and 14 "inside a task" counters such as `searchNone`). Any screen says `countFeature('print')`. The device adds them up **per day**: "timer: 3". No word, no sentence, no text, no time of day. `src/state/productCounters.ts` keeps the day on the device and sends it. |
+| Technical problems | The app listens for errors nobody caught, and a few known failures (microphone, printing, AI, pictogram library). What is sent is only: the kind, the error's type (`TypeError`), the place in the code as "line:column", the kind of screen, the system, the app's version. **Never the error's message**, because a message can quote what somebody typed. In the database a problem is a counter that belongs to nobody: no child, no account, no device. |
+| Who is counted | Only the families who turned on "Help improve the app" **and** agreed to today's list (see below). Never from a professional's account (her way of working is not measured), never from the team's own test accounts. |
+| The database decides | `supabase/migrations/20261117000000_product.sql` (**SQL**). It checks the family's agreement again, keeps only the known names with whole numbers, drops everything else, and answers the back office only with **sums over at least 5 children of 5 families**. A group of 1 to 4 children is never a number: the page then says "fewer than 5 children use it". |
+| The agreement, version 2 | Families who agreed before had agreed to a shorter list (durations, touches, settings). Counting features and problems is new, so the profile now remembers which list was agreed to (`settings.shareTerms`). An "old" agreement sends nothing new: the app shows "What is shared has changed" with a button to agree. Only the family can change it (the database refuses anyone else). |
+| The switch is now its own choice | Before, "Help improve the app" only appeared when the child's follow-up was on. It is now separate (Settings → Progress, always visible to the family) and also offered at the end of the set-up, **off unless the family turns it on**. |
+| Stopping | When the family turns the switch off, the device forgets what it counted and the database erases that child's counters at once (a trigger). Everything is erased after 180 days anyway. |
+| The demonstration | The demo has no real families: its back office shows invented figures (it says so on every page). A problem met on the demo device, a message sent or a vote given there do appear. |
+
+### What is not there, and why
+
+| From the list | Why not now |
+|---|---|
+| Subscriptions, payments, invoices, revenue, costs, profitability (parts 4, 24, 26) | Billing does not exist in the app yet. |
+| Downloads, installs, shop conversion (part 7) | Needs the App Store / Google Play accounts and their own figures. |
+| Onboarding abandoned step by step (part 8) | It happens **before** the family has an account or has agreed to anything: counting it would be counting without consent. |
+| Retention after 1 / 7 / 30 / 90 days per person, discovery-to-first-use delays (parts 9, 41) | They need each person to be followed over time. The adoption chart gives the useful part (regular / gave up / never) from daily counters, without a history per person being shown to anyone. |
+| Scanning, switches, eye gaze figures (part 15) | Those access methods are not in the app yet. The access settings that exist are already in Product (settings chosen). |
+| AI figures beyond the number of calls (part 17) | The AI helper is not switched on on the real project. |
+| Satisfaction ratings before / after an update (parts 23, 27) | Needs a small survey in the app: not built. Votes and messages are the first step. |
+| Support tickets, data-request register, administrator roles with two-step sign-in (parts 36–38) | Messages serve as tickets for now; the team's history exists; the rest is organisation work as much as code. |
+| Editing pictograms, words or languages from the back office (parts 29–35) | Content ships inside the app (it works offline). The Content page shows what is there; changing it means a new version. |
+
+### Privacy: what was checked, and what a lawyer must confirm
+
+Built on the rules of the GDPR as I understand them. **I am not a lawyer and this is not a
+legal certificate.** Before real families use these figures, a lawyer (or a data-protection
+officer) should confirm the list at the end of `docs/SECURITY.md`, section "Figures for the team".
+
+| Rule | How the app follows it |
+|---|---|
+| Ask first, and freely | Off by default; asked in the set-up and in Settings; the app works exactly the same without it. |
+| Say exactly what | The switch lists what is counted and what never is. When the list grows, the app asks again. |
+| As little as possible | Names from a fixed list and numbers. No word, sentence, photo, recording, message, location, device address. |
+| Only the family decides | A professional or an editor cannot turn it on (the database refuses). |
+| Easy to stop, and erased | Turning it off erases the child's counters on the device and on the server. |
+| Not kept for ever | 180 days at most. |
+| Nobody recognisable | The team only sees sums over 5 children of 5 families; small groups are hidden. Problems are stored with no link to anyone. |
+| Nothing sold, no advertising | No advertising or tracking service is used; figures only help improve the app. |
+
+### What you must do
+
+1. Supabase → SQL Editor → paste and run `supabase/migrations/20261117000000_product.sql` (once).
+   Until then the real back office shows an error on the three new pages.
+2. Nothing else: the website rebuilds by itself.
+
+| Tests | |
+|---|---|
+| `product.test.ts` | 15 tests: the app's lists are the same as the database's; a problem never carries a message; nothing is counted or sent without the agreement; the device forgets when the family stops; votes; the demo server follows the same rules. |
+| `supabase/tests/product_scenario.sql` | 36 checks on a real PostgreSQL: who is refused (stranger, old agreement, professional, unknown device), only known names and numbers are kept, nothing shown under 5 children, small groups hidden, withdrawal erases, problems hold nothing that says who, votes. |
+| In a browser | The seven pages at two sizes with the accessibility scan; a parent going through the set-up switch, the form, a vote, and the consent card. |
+| Found on the way | On a phone, the 30 thin bars of a daily chart were each too small to touch (an older fault the scan had not seen, because those charts were lower on the page). `ColumnChart` (`src/ui/data/Charts.tsx`) now becomes one picture that reads all its values, and a touch anywhere reads the day under the finger. |
+
 ## How everything is checked
 
 | Check | What it does |
 |---|---|
 | `npm run typecheck` | TypeScript reads the whole code and refuses mistakes such as a missing field or a wrong type. |
-| `npm test` | 264 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office, colour contrast. |
-| `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger, a tablet and a member of our team; then every attack found by the security review, which must fail; then a professional who prepares a profile and hands it to the parents; then the e-mails to the team; 140 checks. |
+| `npm test` | 279 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office, colour contrast. |
+| `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger, a tablet and a member of our team; then every attack found by the security review, which must fail; then a professional who prepares a profile and hands it to the parents; then the e-mails to the team; then the figures for the team, the problems and the votes; 176 checks. |
 | `npm run test:live` | The same story on a second, empty Supabase project (never the one families use), through the app's own code: 13 steps, including devices, history undo, invitation codes, revisions and materials (needs "Confirm email" off while it runs). Last full run: before the back office (all 13 passed); **to run again once the back-office migration is on the real project**. |
-| `npm run test:a11y` | Accessibility: 190 scans of 54 screens against WCAG 2.2 AA (four sizes, Arabic), then a keyboard-only run. Last run: 0 rule break. |
+| `npm run test:a11y` | Accessibility: 202 scans of 56 screens against WCAG 2.2 AA (four sizes, Arabic), then a keyboard-only run. Last run: 0 rule break. |
 | Browser walkthroughs | Playwright drives the web version like a person: the parent journey, the team (invite, undo, join with a code), the professional journey (verification, tour, request, draft, proposal, approval), and the Arabic screens. |
 
 ## Not done yet (honest list)

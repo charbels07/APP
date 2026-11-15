@@ -134,6 +134,50 @@ function sends them. What keeps it safe:
 
 `supabase/tests/team_mail_scenario.sql` plays each of these.
 
+### Added later: figures for the team, technical problems, requests (November 2026)
+
+The back office can now show how the features are used and which technical problems happen
+(`supabase/migrations/20261117000000_product.sql`, `src/lib/product.ts`). What keeps it safe:
+
+- **the family's agreement, checked by the database**: `save_feature_day` and `report_problems`
+  refuse a child whose family did not turn on "Help improve the app" *and* agree to the list that
+  mentions these counters (`shareTerms` 2). An older agreement is not enough. Only the family can
+  change it (`guard_share_terms`), and a new profile cannot arrive "already agreed";
+- **known names and numbers only**: a counter has one of 30 names and a whole number; a problem
+  has a kind, an error type, a screen and a system from fixed lists, a version, and a place in
+  the code as digits. Anything else is dropped by the database, so no text can travel
+  (the error's message is never even read by the app);
+- **not from professionals or the team**: their accounts are refused;
+- **problems belong to nobody**: the table `error_counts` has no column for a child, an account
+  or a device;
+- **nothing shown under 5 children of 5 families**, and a group of 1 to 4 children is never given
+  as a number (`admin_product`);
+- **withdrawal erases**: turning sharing off deletes the child's counters (trigger
+  `forget_product`); everything is deleted after 180 days;
+- **votes**: one per account, not from a child's tablet; only the team adds or hides an idea, and
+  that is written in the team's history;
+- the tables are closed to the app; every `admin_` function checks `is_admin()`.
+
+`supabase/tests/product_scenario.sql` plays each of these.
+
+**To confirm with a lawyer or a data-protection officer** (this review is technical, not legal):
+
+1. A written privacy policy that lists these counters, the technical problems and the messages,
+   why they are collected, for how long, where they are stored, and how to ask for access or
+   deletion. The texts in the app are explanations, not a legal policy.
+2. The wording of the agreement. A child's use of a communication aid can be read as
+   information about a disability (a "special category" under the GDPR): the consent may need to
+   be explicit in a stricter sense, and it must come from a parent.
+3. Whether an impact assessment (DPIA) is required: children plus health-related data usually
+   means yes.
+4. Where the data lives: the region of the Supabase project, and the contracts with the
+   services used (Supabase, Cloudflare, the mailbox that sends the codes).
+5. The laws of the countries where families live outside the EU (Lebanon, Saudi Arabia, Jordan…).
+6. Until they are added up, the counters are personal data (they are stored per child): the
+   "5 children" rule protects what the team sees, it is not a legal proof of anonymity.
+7. Messages written to the team carry a name and an e-mail address: who answers access and
+   deletion requests, and how long they are kept.
+
 ## 4. What only you can do
 
 ### Now (10 minutes)
@@ -193,8 +237,8 @@ Names move a little between versions of the dashboard; look for the nearest word
 
 | Command | What it proves |
 |---|---|
-| `npm run test:db` | 140 checks on a throw-away database: the normal story, then **every attack of this review, which must fail**, then the hand-over of a profile created by a professional, then the e-mails to the team. |
-| `npm test` | 264 tests; `security.test.ts` covers links, other people's changes, what stays on the device, the print page, the website protections. |
+| `npm run test:db` | 176 checks on a throw-away database: the normal story, then **every attack of this review, which must fail**, then the hand-over of a profile created by a professional, then the e-mails to the team, then the figures for the team, the technical problems and the votes. |
+| `npm test` | 279 tests; `security.test.ts` covers links, other people's changes, what stays on the device, the print page, the website protections. |
 | `npm audit` | Known flaws in libraries. Today: none in what ships to families (4 medium ones in build tools only). |
 | `npm run test:a11y` | The screens still pass the accessibility scan after these changes. |
 

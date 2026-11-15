@@ -37,7 +37,12 @@ const fr = {
   confirm: 'Confirmer',
   cancel: 'Annuler',
   shareTitle: 'Aider à améliorer l’application',
-  shareNote: 'Partager des statistiques anonymes (nombres seulement : âge, durées, nombre de touches, longueur des phrases, et les réglages choisis comme la langue). Jamais le nom, les mots ni les phrases. Désactivé par défaut.',
+  shareNote:
+    'Partager des chiffres anonymes avec l’équipe de l’application : quelles fonctions sont utilisées et combien de fois (jamais quels mots), les problèmes techniques rencontrés (quel écran, quelle version), les réglages choisis comme la langue et, si le suivi est activé, l’âge, les durées, le nombre de touches et la longueur des phrases. Jamais le nom, les mots, les phrases, les photos ni les enregistrements. Désactivé par défaut. Vous pouvez arrêter à tout moment : ce qui a été compté pour l’enfant est alors effacé (les problèmes techniques ne sont reliés à personne).',
+  shareChanged: 'Ce qui est partagé a changé',
+  shareChangedNote:
+    'Depuis votre accord, deux choses se sont ajoutées à la liste : le nombre d’utilisations de chaque fonction, et les problèmes techniques. Rien de nouveau n’est envoyé tant que vous n’avez pas accepté.',
+  shareAgree: 'J’accepte la nouvelle liste',
   offTitle: 'Le suivi est arrêté',
   offNote: 'Choisissez ci-dessous ce que l’application peut enregistrer pour voir apparaître les graphiques. Les données restent dans le compte de l’enfant et ne sont visibles que par vous et les membres de l’équipe à qui vous l’autorisez.',
   offNoteMember: 'La famille n’a pas activé le suivi. Les observations restent possibles.',
@@ -264,7 +269,12 @@ const en: Dict = {
   confirm: 'Confirm',
   cancel: 'Cancel',
   shareTitle: 'Help improve the app',
-  shareNote: 'Share anonymous statistics (numbers only: age, durations, number of touches, sentence length, and the settings chosen, such as the language). Never the name, words or sentences. Off by default.',
+  shareNote:
+    'Share anonymous figures with the app’s team: which features are used and how often (never which words), technical problems met (which screen, which version), the settings chosen such as the language and, if the follow-up is on, age, durations, number of touches and sentence length. Never the name, words, sentences, photos or recordings. Off by default. You can stop at any time: what was counted for the child is then erased (technical problems are not linked to anyone).',
+  shareChanged: 'What is shared has changed',
+  shareChangedNote:
+    'Since you agreed, two things were added to the list: how many times each feature is used, and technical problems. Nothing new is sent until you agree.',
+  shareAgree: 'I agree to the new list',
   offTitle: 'The follow-up is off',
   offNote: 'Choose below what the app may record to see the charts. The data stays in the child’s account and is visible only to you and the team members you allow.',
   offNoteMember: 'The family has not turned the follow-up on. Observations are still possible.',
@@ -466,7 +476,11 @@ const ar: Dict = {
   confirm: 'تأكيد',
   cancel: 'إلغاء',
   shareTitle: 'المساعدة في تحسين التطبيق',
-  shareNote: 'مشاركة إحصاءات مجهولة الهوية (أرقام فقط: العمر، المدد، عدد اللمسات، طول الجمل، والإعدادات المختارة مثل اللغة). لا الاسم ولا الكلمات ولا الجمل أبداً. متوقّفة تلقائياً.',
+  shareNote:
+    'مشاركة أرقام مجهولة الهوية مع فريق التطبيق: أيّ الوظائف تُستعمل وكم مرة (لا أيّ الكلمات أبداً)، المشاكل التقنية التي حدثت (أيّ شاشة، أيّ نسخة)، الإعدادات المختارة مثل اللغة، وإذا كانت المتابعة مفعّلة: العمر، المدد، عدد اللمسات وطول الجمل. لا الاسم ولا الكلمات ولا الجمل ولا الصور ولا التسجيلات أبداً. متوقّفة تلقائياً. يمكنكم التوقف في أي وقت: يُمحى عندها ما تمّ عدّه للطفل (المشاكل التقنية غير مرتبطة بأحد).',
+  shareChanged: 'تغيّر ما تتمّ مشاركته',
+  shareChangedNote: 'منذ موافقتكم أُضيف شيئان إلى القائمة: عدد مرات استعمال كل وظيفة، والمشاكل التقنية. لا يُرسل شيء جديد قبل أن توافقوا.',
+  shareAgree: 'أوافق على القائمة الجديدة',
   offTitle: 'المتابعة متوقّفة',
   offNote: 'اختاروا أدناه ما يمكن للتطبيق تسجيله لتظهر الرسوم البيانية. تبقى البيانات في حساب الطفل ولا يراها إلا أنتم وأعضاء الفريق الذين تسمحون لهم.',
   offNoteMember: 'لم تشغّل العائلة المتابعة. الملاحظات تبقى ممكنة.',

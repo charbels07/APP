@@ -1,20 +1,25 @@
 /**
  * Back office: the app's own team (the accounts listed in the server's "admins" table).
- *  - Certificates: look at what a professional sent, accept (she can start working), ask for
- *    something more or refuse;
- *  - Overview and Use of the app: figures that help improve the app (counts only; what comes from
- *    the children only for the families who share anonymous statistics);
- *  - Messages written from the app, and the history of what the team did here.
+ * Seven pages, one per kind of work:
+ *  - Professionals: look at what a professional sent, accept, ask for something more or refuse;
+ *  - Administration: accounts, children's profiles, devices, teamwork (numbers only);
+ *  - Product: how the features are used, to decide the next updates;
+ *  - Requests: what people wrote ("Help us improve Empower") and the ideas they vote for;
+ *  - Bugs: technical problems, counted by the app or written by people;
+ *  - Content: what ships with the app (pictograms, words, languages, guide);
+ *  - Security: what the families agreed to share, and the history of what the team did here.
+ * What comes from the children is only ever a sum over families who agreed, from 5 children up.
  * The server refuses every request of this page to anybody else: hiding the page is not the lock.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import type { AdminLogEntry, AdminOverview, AdminVerification, Feedback, VerificationDoc } from '../../backend/types';
+import type { AdminBugs, AdminLogEntry, AdminOverview, AdminProduct, AdminRoadmapItem, AdminVerification, Feedback, VerificationDoc } from '../../backend/types';
 import { DIALECT_ORDER, dialectName } from '../../data/dialects';
 import { errorText } from '../../i18n/account';
 import { adminStrings, type AdminStrings } from '../../i18n/admin';
 import { dataStrings } from '../../i18n/data';
+import { productStrings } from '../../i18n/product';
 import { proStrings, type ProStrings } from '../../i18n/pro';
 import { settingsStrings } from '../../i18n/settings';
 import { UI_LANG_NAMES } from '../../i18n/ui';
@@ -28,10 +33,11 @@ import { Note, ss } from '../settings/SettingsScreen';
 import { Row, day, when } from '../settings/TeamTab';
 import { ErrorText, LangSwitch, Logo } from '../start/StartLayout';
 import { C, radius } from '../theme';
+import { BugsView, ContentView, PageIntro, ProductView, RequestsView, SecurityView } from './ProductTabs';
 
-type Tab = 'requests' | 'numbers' | 'usage' | 'messages' | 'log';
-const TABS: Tab[] = ['requests', 'numbers', 'usage', 'messages', 'log'];
-const TAB_ICON: Record<Tab, IconName> = { requests: 'shield', numbers: 'grid', usage: 'target', messages: 'mail', log: 'list' };
+type Tab = 'pros' | 'admin' | 'product' | 'feedback' | 'bugs' | 'content' | 'security';
+const TABS: Tab[] = ['pros', 'admin', 'product', 'feedback', 'bugs', 'content', 'security'];
+const TAB_ICON: Record<Tab, IconName> = { pros: 'users', admin: 'grid', product: 'target', feedback: 'mail', bugs: 'alert', content: 'image', security: 'shield' };
 
 type Counts = Record<string, number>;
 /** Counts → bars, the largest first, with a readable name for each key. */
@@ -50,8 +56,12 @@ export function BackOffice() {
   const a = adminStrings(uiLang);
   const p = proStrings(uiLang);
   const rtl = useNavRtl();
-  const [tab, setTab] = useState<Tab>('requests');
+  const x = productStrings(uiLang);
+  const [tab, setTab] = useState<Tab>('pros');
   const [overview, setOverview] = useState<AdminOverview | null>(null);
+  const [product, setProduct] = useState<AdminProduct | null>(null);
+  const [bugs, setBugs] = useState<AdminBugs | null>(null);
+  const [ideas, setIdeas] = useState<AdminRoadmapItem[]>([]);
   const [requests, setRequests] = useState<AdminVerification[] | null>(null);
   const [messages, setMessages] = useState<Feedback[]>([]);
   const [log, setLog] = useState<AdminLogEntry[]>([]);
@@ -62,11 +72,22 @@ export function BackOffice() {
     setBusy(true);
     setError(null);
     try {
-      const [r, o, m, l] = await Promise.all([api.adminVerifications(), api.adminOverview(), api.adminFeedback(), api.adminLog()]);
+      const [r, o, m, l, pr, b, i] = await Promise.all([
+        api.adminVerifications(),
+        api.adminOverview(),
+        api.adminFeedback(),
+        api.adminLog(),
+        api.adminProduct(),
+        api.adminBugs(),
+        api.adminRoadmap(),
+      ]);
       setRequests(r);
       setOverview(o);
       setMessages(m);
       setLog(l);
+      setProduct(pr);
+      setBugs(b);
+      setIdeas(i);
     } catch (e) {
       setError(errorText(s, e));
     } finally {
@@ -79,7 +100,7 @@ export function BackOffice() {
 
   const waiting = (requests ?? []).filter((r) => r.status === 'pending').length;
   const unread = messages.filter((m) => m.status === 'new').length;
-  const badge: Partial<Record<Tab, number>> = { requests: waiting, messages: unread };
+  const badge: Partial<Record<Tab, number>> = { pros: waiting, feedback: unread };
 
   return (
     <SafeAreaView style={st.root} edges={['top', 'bottom', 'left', 'right']}>
@@ -106,9 +127,9 @@ export function BackOffice() {
           {TABS.map((t) => {
             const on = tab === t;
             return (
-              <Pressable key={t} onPress={() => setTab(t)} style={[st.tab, rtl && st.rev, on && st.tabOn]} accessibilityRole="tab" {...selected(on)} accessibilityLabel={a.tabs[t]}>
+              <Pressable key={t} onPress={() => setTab(t)} style={[st.tab, rtl && st.rev, on && st.tabOn]} accessibilityRole="tab" {...selected(on)} accessibilityLabel={x.tabs[t]}>
                 <Icon name={TAB_ICON[t]} size={18} color={on ? '#fff' : C.text} />
-                <Text style={[st.tabText, on && { color: '#fff' }]}>{a.tabs[t]}</Text>
+                <Text style={[st.tabText, on && { color: '#fff' }]}>{x.tabs[t]}</Text>
                 {badge[t] ? (
                   <View style={st.badge}>
                     <Text style={st.badgeText}>{badge[t]}</Text>
@@ -120,7 +141,8 @@ export function BackOffice() {
         </ScrollView>
       </View>
       {/* Each page starts at its top. */}
-      <ScrollView key={tab} contentContainerStyle={st.main} keyboardShouldPersistTaps="handled">
+      {/* Focusable: a page with no button (Content) can still be scrolled with the keyboard. */}
+      <ScrollView key={tab} contentContainerStyle={st.main} keyboardShouldPersistTaps="handled" tabIndex={0} accessibilityLabel={x.tabs[tab]}>
         <View style={st.inner}>
           {overview?.example && (
             <View style={[st.demo, rtl && st.rev]}>
@@ -131,16 +153,38 @@ export function BackOffice() {
           <ErrorText text={error} />
           {!requests && !error ? (
             <ActivityIndicator color={C.accent} style={{ marginTop: 40 }} />
-          ) : tab === 'requests' ? (
-            <Requests a={a} p={p} list={requests ?? []} onChanged={load} />
-          ) : tab === 'numbers' ? (
-            overview && <Numbers a={a} p={p} o={overview} />
-          ) : tab === 'usage' ? (
-            overview && <Usage a={a} o={overview} />
-          ) : tab === 'messages' ? (
-            <Messages a={a} list={messages} onChanged={load} />
+          ) : tab === 'pros' ? (
+            <>
+              <PageIntro text={x.intro.pros} />
+              <Requests a={a} p={p} list={requests ?? []} onChanged={load} />
+            </>
+          ) : tab === 'admin' ? (
+            overview && (
+              <>
+                <PageIntro text={x.intro.admin} />
+                <Numbers a={a} p={p} o={overview} />
+              </>
+            )
+          ) : tab === 'product' ? (
+            overview &&
+            product && (
+              <>
+                <ProductView o={overview} product={product} />
+                <AiCard a={a} o={overview} />
+                <Text style={[st.h2, rtl && ss.rtl]} accessibilityRole="header">
+                  {x.boardUse}
+                </Text>
+                <Usage a={a} o={overview} />
+              </>
+            )
+          ) : tab === 'feedback' ? (
+            <RequestsView a={a} messages={messages} ideas={ideas} onChanged={load} />
+          ) : tab === 'bugs' ? (
+            overview && bugs && <BugsView a={a} o={overview} bugs={bugs} messages={messages} onChanged={load} />
+          ) : tab === 'content' ? (
+            <ContentView />
           ) : (
-            <History a={a} list={log} />
+            overview && product && <SecurityView a={a} o={overview} product={product} log={<History a={a} list={log} />} />
           )}
           {overview && <Note text={a.updated(when(Date.parse(overview.at), uiLang))} />}
         </View>
@@ -377,10 +421,6 @@ function Numbers({ a, p, o }: { a: AdminStrings; p: ProStrings; o: AdminOverview
         <BarList items={steps} max={Math.max(1, f.parents)} labelWidth="50%" />
       </ChartCard>
 
-      <ChartCard title={a.consent} note={a.sharingLine(f.sharing, f.children)}>
-        <BarList items={bars(f.collection, (k) => d.levels[k as keyof typeof d.levels] ?? k, ['off', 'usage', 'vocabulary', 'language'])} />
-      </ChartCard>
-
       <ChartCard title={a.devices} note={o.devices.waiting > 0 ? a.waitingSync(o.devices.waiting) : undefined}>
         <Text style={st.sub}>{a.system}</Text>
         <BarList items={bars(o.devices.platforms, (k) => ({ ios: 'iPad / iPhone', android: 'Android', web: 'Web' })[k] ?? unknown(k))} />
@@ -420,10 +460,18 @@ function Numbers({ a, p, o }: { a: AdminStrings; p: ProStrings; o: AdminOverview
         <BarList items={bars(o.teamwork.materials, (k) => p.kinds[k as keyof typeof p.kinds] ?? k)} />
       </ChartCard>
 
-      <ChartCard title={a.ai} note={a.aiNote(o.ai.calls30, o.ai.users30, o.ai.mostPerPersonDay)}>
-        {o.ai.days.length > 0 && <ColumnChart table={table} columns={o.ai.days.map((x2) => ({ key: x2.day, label: day(Date.parse(x2.day), uiLang), value: x2.calls }))} unit={a.aiUnit} height={110} />}
-      </ChartCard>
     </>
+  );
+}
+
+/** How much the AI helper is asked (calls, never what was asked). */
+function AiCard({ a, o }: { a: AdminStrings; o: AdminOverview }) {
+  const { uiLang } = useSession();
+  if (!o.ai.calls30) return null;
+  return (
+    <ChartCard title={a.ai} note={a.aiNote(o.ai.calls30, o.ai.users30, o.ai.mostPerPersonDay)}>
+      {o.ai.days.length > 0 && <ColumnChart columns={o.ai.days.map((x2) => ({ key: x2.day, label: day(Date.parse(x2.day), uiLang), value: x2.calls }))} unit={a.aiUnit} height={110} />}
+    </ChartCard>
   );
 }
 
@@ -550,47 +598,6 @@ function Usage({ a, o }: { a: AdminStrings; o: AdminOverview }) {
 
 // ───────────────────────── Messages and history ─────────────────────────
 
-function Messages({ a, list, onChanged }: { a: AdminStrings; list: Feedback[]; onChanged: () => Promise<void> }) {
-  const { api, uiLang } = useSession();
-  const rtl = useNavRtl();
-  return (
-    <>
-      <Note text={a.messagesIntro} />
-      {list.length === 0 && <Note text={a.noMessages} />}
-      {list.map((m) => (
-        <View key={m.id} style={[ss.card, m.status === 'done' && { opacity: 0.7 }]}>
-          <View style={[st.line, rtl && st.rev]}>
-            <View style={ss.chip}>
-              <Text style={ss.chipText}>{a.kinds[m.kind] ?? m.kind}</Text>
-            </View>
-            <Text style={[ss.sub, { flex: 1 }, rtl && ss.rtl]}>
-              {m.fromName} · {when(m.createdAt, uiLang)} · {[m.platform, m.appVersion].filter(Boolean).join(' ')}
-            </Text>
-          </View>
-          <Text style={[st.message, rtl && ss.rtl]} selectable>
-            {m.text}
-          </Text>
-          <View style={[st.line, rtl && st.rev]}>
-            {m.fromEmail ? (
-              <Text style={[ss.sub, { flex: 1 }, rtl && ss.rtl]} selectable>
-                {a.answerTo} {m.fromEmail}
-              </Text>
-            ) : (
-              <View style={{ flex: 1 }} />
-            )}
-            <Btn
-              small
-              icon={m.status === 'new' ? 'check' : 'undo'}
-              label={m.status === 'new' ? a.markDone : a.reopen}
-              onPress={() => void api.adminSetFeedback(m.id, m.status === 'new' ? 'done' : 'new').then(onChanged, () => {})}
-            />
-          </View>
-        </View>
-      ))}
-    </>
-  );
-}
-
 function History({ a, list }: { a: AdminStrings; list: AdminLogEntry[] }) {
   const { uiLang } = useSession();
   return (
@@ -629,6 +636,7 @@ const st = StyleSheet.create({
   filters: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   flash: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderRadius: 12, borderWidth: 1.5, borderColor: C.success, backgroundColor: C.surface },
   flashText: { flex: 1, fontSize: 15, fontWeight: '700', color: C.text },
+  h2: { fontSize: 18, fontWeight: '800', color: C.text, marginTop: 6 },
   line: { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
   name: { flex: 1, fontSize: 20, fontWeight: '800', color: C.text },
   key: { width: 130, fontSize: 14, color: C.textMuted, fontWeight: '600' },

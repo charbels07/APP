@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { availableLangs, isFolderName, isRtl, label, langName, symbolOf } from '../../lib/lexicon';
+import { countFeature } from '../../lib/product';
 import { search, type Location } from '../../lib/search';
 import { speakText } from '../../lib/speech';
 import { typedChips } from '../../lib/typedWords';
@@ -38,6 +39,21 @@ export function SearchBody() {
   const { profile, lang, t } = app;
   const [q, setQ] = useState('');
   const results = useMemo(() => search(profile, q), [profile, q]);
+  // For the app's team (families who agreed): the search was used; it found nothing (counted once
+  // the person stops typing); something was chosen. Never the word that was looked for.
+  const used = useRef(false);
+  const none = !!q.trim() && results.length === 0;
+  useEffect(() => {
+    if (q.trim() && !used.current) {
+      used.current = true;
+      countFeature('search');
+    }
+  }, [q]);
+  useEffect(() => {
+    if (!none) return;
+    const id = setTimeout(() => countFeature('searchNone'), 1500);
+    return () => clearTimeout(id);
+  }, [none, q]);
 
   return (
     <>
@@ -64,19 +80,33 @@ export function SearchBody() {
             {/* A folder is found to see where it is: its name is not a word to say or to add. */}
             {!isFolderName(profile, r.concept) && (
               <>
-                <Btn small icon="volume" accessibilityLabel={t.speak} onPress={() => app.speakConcept(r.concept)} />
+                <Btn
+                  small
+                  icon="volume"
+                  accessibilityLabel={t.speak}
+                  onPress={() => {
+                    countFeature('searchPick');
+                    app.speakConcept(r.concept);
+                  }}
+                />
                 <Btn
                   small
                   icon="plus"
                   accessibilityLabel={t.add}
                   onPress={() => {
+                    countFeature('searchPick');
                     app.touchConcept(r.concept);
                     app.setOverlay(null);
                   }}
                 />
               </>
             )}
-            <Btn small kind="primary" icon="target" label={t.showMe} disabled={!loc} onPress={() => loc && app.showMeWhere(loc)} />
+            <Btn small kind="primary" icon="target" label={t.showMe} disabled={!loc} onPress={() => {
+                if (!loc) return;
+                countFeature('searchPick');
+                app.showMeWhere(loc);
+              }}
+            />
           </View>
         );
       })}

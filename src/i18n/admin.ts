@@ -11,7 +11,6 @@ const fr = {
   testChild: 'Essai',
   refresh: 'Actualiser',
   updated: (t: string) => `Mis à jour : ${t}`,
-  tabs: { requests: 'Certificats', numbers: 'Vue d’ensemble', usage: 'Utilisation', messages: 'Messages', log: 'Historique' },
 
   // ── Certificates ──
   waiting: 'En attente',
@@ -174,9 +173,8 @@ const fr = {
   avgNames: { activityBoards: 'Tableaux d’activité', ownWords: 'Mots ajoutés', changedWords: 'Mots personnalisés', schedules: 'Plannings', demonstrations: 'Démonstrations enregistrées' } as Record<string, string>,
 
   // ── Messages ──
-  messagesIntro: 'Ce que les personnes ont écrit depuis l’application (« Écrire à l’équipe »).',
+  messagesIntro: 'Ce que les personnes ont écrit depuis l’application (« Aidez-nous à améliorer Empower »).',
   noMessages: 'Aucun message.',
-  kinds: { problem: 'Problème', idea: 'Idée', other: 'Autre' } as Record<string, string>,
   markDone: 'Traité',
   reopen: 'Rouvrir',
   answerTo: 'Pour répondre :',
@@ -187,10 +185,7 @@ const fr = {
   actions: { verified: 'a accepté', more_info: 'a demandé un complément à', rejected: 'a refusé', open_document: 'a ouvert un document de' } as Record<string, string>,
 
   // ── "Write to the team" (families and professionals) ──
-  writeTeam: 'Écrire à l’équipe',
-  writeIntro: 'Une idée, un problème ? Dites-le-nous. N’écrivez pas le nom d’un enfant ni d’informations privées.',
-  writePlaceholder: 'Votre message',
-  writeSent: 'Merci, votre message est bien parti.',
+  writeTeam: 'Aidez-nous à améliorer Empower',
 };
 
 type Dict = typeof fr;
@@ -205,7 +200,6 @@ const en: Dict = {
   testChild: 'Test',
   refresh: 'Refresh',
   updated: (t) => `Updated: ${t}`,
-  tabs: { requests: 'Certificates', numbers: 'Overview', usage: 'Use of the app', messages: 'Messages', log: 'History' },
 
   waiting: 'Waiting',
   all: 'All',
@@ -363,9 +357,8 @@ const en: Dict = {
   averages: 'On average per child',
   avgNames: { activityBoards: 'Activity boards', ownWords: 'Words added', changedWords: 'Words personalised', schedules: 'Schedules', demonstrations: 'Recorded demonstrations' },
 
-  messagesIntro: 'What people wrote from the app (“Write to the team”).',
+  messagesIntro: 'What people wrote from the app (“Help us improve Empower”).',
   noMessages: 'No message.',
-  kinds: { problem: 'Problem', idea: 'Idea', other: 'Other' },
   markDone: 'Dealt with',
   reopen: 'Reopen',
   answerTo: 'To answer:',
@@ -374,10 +367,7 @@ const en: Dict = {
   noLog: 'Nothing yet.',
   actions: { verified: 'accepted', more_info: 'asked for more information from', rejected: 'refused', open_document: 'opened a document of' },
 
-  writeTeam: 'Write to the team',
-  writeIntro: 'An idea, a problem? Tell us. Do not write a child’s name or private information.',
-  writePlaceholder: 'Your message',
-  writeSent: 'Thank you, your message was sent.',
+  writeTeam: 'Help us improve Empower',
 };
 
 const ar: Dict = {
@@ -390,7 +380,6 @@ const ar: Dict = {
   testChild: 'تجربة',
   refresh: 'تحديث',
   updated: (t) => `آخر تحديث: ${t}`,
-  tabs: { requests: 'الشهادات', numbers: 'نظرة عامة', usage: 'الاستعمال', messages: 'الرسائل', log: 'السجلّ' },
 
   waiting: 'قيد الانتظار',
   all: 'الكل',
@@ -548,9 +537,8 @@ const ar: Dict = {
   averages: 'في المتوسط لكل طفل',
   avgNames: { activityBoards: 'لوحات الأنشطة', ownWords: 'كلمات مضافة', changedWords: 'كلمات مخصّصة', schedules: 'جداول', demonstrations: 'عروض مسجّلة' },
 
-  messagesIntro: 'ما كتبه الأشخاص من التطبيق («الكتابة إلى الفريق»).',
+  messagesIntro: 'ما كتبه الأشخاص من التطبيق («ساعدنا على تحسين Empower»).',
   noMessages: 'لا توجد رسائل.',
-  kinds: { problem: 'مشكلة', idea: 'فكرة', other: 'غير ذلك' },
   markDone: 'تمّت المعالجة',
   reopen: 'إعادة فتح',
   answerTo: 'للردّ:',
@@ -559,10 +547,7 @@ const ar: Dict = {
   noLog: 'لا شيء حتى الآن.',
   actions: { verified: 'قبِل', more_info: 'طلب معلومات إضافية من', rejected: 'رفض', open_document: 'فتح وثيقة' },
 
-  writeTeam: 'الكتابة إلى الفريق',
-  writeIntro: 'فكرة أو مشكلة؟ أخبرنا. لا تكتب اسم طفل ولا معلومات خاصة.',
-  writePlaceholder: 'رسالتك',
-  writeSent: 'شكراً، تم إرسال رسالتك.',
+  writeTeam: 'ساعدنا على تحسين Empower',
 };
 
 const DICTS: Record<UiLang, Dict> = { fr, en, ar };

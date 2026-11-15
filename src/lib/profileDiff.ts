@@ -38,7 +38,7 @@ export interface Op {
 /** Settings that are personal (each person's menu language) or secret: never part of a change set. */
 const PRIVATE_SETTINGS = new Set(['pin', 'uiLang']);
 /** Settings only the family decides: what is recorded about the child, what is shared, the caregiver code. */
-const FAMILY_ONLY_SETTINGS = new Set(['dataCollection', 'shareStats', 'pin', 'uiLang']);
+const FAMILY_ONLY_SETTINGS = new Set(['dataCollection', 'shareStats', 'shareTerms', 'pin', 'uiLang']);
 
 /**
  * Someone else's changes (a proposal, a shared material, an imported file) before they are

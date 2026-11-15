@@ -103,9 +103,15 @@ nothing of the settings is shown before the code is right, and the board does no
 caregiver mode behind them.
 
 The accounts of the app's team also get a "Back office" button there (and in the professional
-workspace). On the board it goes through the same keypad, so a child holding a team member's
-tablet cannot open the certificates. The button is only shown to accounts the database lists as
-team; showing or hiding it changes nothing to who may read the back office (`is_admin()` decides).
+workspace). The button is only shown to accounts the database lists as team; showing or hiding it
+changes nothing to who may read the back office (`is_admin()` decides).
+
+**The team is never asked the caregiver code** (the owner's decision, November 2026): on a board
+opened with a team account, caregiver mode, the settings, the child lock and the back office open
+at once. The caregiver code only ever protected against a child's hands, not against a person with
+the account, so nothing new can be read by someone who is not in the team. But a tablet signed in
+with a team account must not be handed to a child: one tap opens the back office, where the
+professionals' certificates are. Use an ordinary family account on any tablet a child uses.
 
 ### Added later: e-mails to the app's team (November 2026)
 

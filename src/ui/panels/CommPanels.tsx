@@ -10,7 +10,6 @@ import { UI_LANG_NAMES } from '../../i18n/ui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { opensAlone, useApp } from '../../state/AppState';
 import { useBoard } from '../../state/BoardContext';
-import { useSession } from '../../state/Session';
 import { Btn, Panel, Section } from '../common';
 import { DrawPad } from '../DrawPad';
 import { usePictoLibrary } from '../PictoPicker';
@@ -385,7 +384,6 @@ export const pinTooEasy = (code: string) => code === '1234' || /^(\d)\1{3}$/.tes
  */
 export function PinPanel() {
   const app = useApp();
-  const session = useSession();
   const board = useBoard();
   const { t, profile } = app;
   const [code, setCode] = useState('');
@@ -417,11 +415,6 @@ export function PinPanel() {
   };
   const open = () => {
     const then = app.overlay?.kind === 'pin' ? app.overlay.then : undefined;
-    // The app's team going back to the back office: the board is left as the child uses it.
-    if (then?.kind === 'backOffice') {
-      app.setOverlay(null);
-      return session.go({ name: 'admin' });
-    }
     // The settings and the child lock open on their own: the board stays as the child uses it.
     if (then && opensAlone(then)) return app.setOverlay(then);
     app.setEditMode(true);

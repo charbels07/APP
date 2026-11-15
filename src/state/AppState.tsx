@@ -24,7 +24,7 @@ export type Overlay =
    * Caregiver code. `then`: what opens once the code is right. The new-board panel opens in
    * caregiver mode; the settings and the child lock open on their own (the board stays in use mode).
    */
-  | { kind: 'pin'; then?: { kind: 'newTla' } | { kind: 'settings' } | { kind: 'lock' } | { kind: 'backOffice' } }
+  | { kind: 'pin'; then?: { kind: 'newTla' } | { kind: 'settings' } | { kind: 'lock' } }
   | { kind: 'settings' }
   /** The child lock of this device (also in the settings). */
   | { kind: 'lock' }
@@ -192,8 +192,7 @@ let keySeq = 0;
 const newKey = () => `k${Date.now().toString(36)}${(keySeq++).toString(36)}`;
 
 /** After the caregiver code: do these panels open without switching the board to caregiver mode? */
-export const opensAlone = (then: { kind: string } | undefined): boolean =>
-  then?.kind === 'settings' || then?.kind === 'lock' || then?.kind === 'backOffice';
+export const opensAlone = (then: { kind: string } | undefined): boolean => then?.kind === 'settings' || then?.kind === 'lock';
 
 export interface AppProviderProps {
   initial: Profile;
@@ -273,12 +272,14 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
   const [editMode, setEditModeState] = useState(false);
   const freeEditRef = useRef(freeEdit);
   freeEditRef.current = freeEdit;
-  /** Opening a panel; where the caregiver code is not asked (freeEdit), "ask the code" opens the tools at once. */
+  /**
+   * Opening a panel; where the caregiver code is not asked (freeEdit: a professional's draft
+   * board, and any board opened by an account of the app's team), "ask the code" opens the tools at once.
+   */
   const setOverlay = useCallback((o: Overlay) => {
     if (o?.kind === 'pin' && freeEditRef.current) {
       if (!opensAlone(o.then)) setEditModeState(true);
-      // "backOffice" is a place to go, not a panel: the bar never offers it on such a board.
-      setOverlayState(o.then && o.then.kind !== 'backOffice' ? o.then : null);
+      setOverlayState(o.then ?? null);
     } else setOverlayState(o);
   }, []);
   const [stripState, setStripState] = useState<{ items: StripItem[]; history: StripItem[][] }>({

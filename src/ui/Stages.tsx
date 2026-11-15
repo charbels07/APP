@@ -230,6 +230,9 @@ function BoardStage({ profileId }: { profileId: string }) {
         subscribe={subscribe}
         locked={sess.childLock}
         onUsage={tracker?.record}
+        // The accounts of the app's own team are never asked the caregiver code (the owner's
+        // choice): caregiver mode, the settings and the lock open at once for them.
+        freeEdit={sess.isAdmin}
       >
         <Root />
         <OpenGuideOnStart />

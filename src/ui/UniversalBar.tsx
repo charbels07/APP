@@ -92,15 +92,15 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
     },
   ];
   // Only for the accounts of the app's own team (the database says who they are), on their own
-  // board: the way back to the back office. Like the settings, behind the caregiver code, so a
-  // child holding the tablet cannot open it. On a very narrow screen the row has no room for one
-  // more button of a touchable size: the way back is then Settings → Account.
+  // board: the way back to the back office. No caregiver code for them, here or elsewhere (the
+  // owner's choice). On a very narrow screen the row has no room for one more button of a
+  // touchable size: the way back is then Settings → Account.
   if (isAdmin && board && (vertical || width >= 340))
     tools.push({
       key: 'backOffice',
       icon: 'briefcase',
       label: adminStrings(profile.settings.uiLang).title,
-      onPress: () => (editMode ? go({ name: 'admin' }) : app.setOverlay({ kind: 'pin', then: { kind: 'backOffice' } })),
+      onPress: () => go({ name: 'admin' }),
       active: false,
     });
   const visible = (items: Item[]) => items.filter((m) => m.show !== false);

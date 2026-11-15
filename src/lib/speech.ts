@@ -8,11 +8,10 @@ import { Platform } from 'react-native';
 import type { Lang, Settings } from '../model/types';
 import type { Segment } from './grammar';
 import { speechTag } from './lexicon';
-import { chooseVoice, forVoice, kindFor, voiceGender, type VoiceChoice, type VoiceGender, type VoiceInfo } from './voices';
+import { chooseVoice, forVoice, voiceGender, type VoiceChoice, type VoiceGender, type VoiceInfo } from './voices';
 import { mediaUri } from './media';
 import { spanOfName, type Span } from './trimSilence';
 import { clipUri } from './voiceClips';
-import { childVoiceUri } from './childVoiceSound';
 
 let generation = 0;
 let player: AudioPlayer | null = null;
@@ -37,7 +36,7 @@ export type SpeechProgress = (segment: number, charIndex: number) => void;
 function speakOne(text: string, lang: Lang, settings: Settings, onWord?: (charIndex: number) => void): Promise<void> {
   // Until the device's voices are known, the pitch already follows the chosen kind and age.
   const choice =
-    plan[lang] ?? chooseVoice([], lang, speechTag(lang), kindFor(settings), settings.voiceAge ?? 'adult', settings.voices[lang]);
+    plan[lang] ?? chooseVoice([], lang, speechTag(lang), settings.voiceKind ?? 'device', settings.voiceAge ?? 'adult', settings.voices[lang]);
   return new Promise((resolve) => {
     let settled = false;
     const done = () => {
@@ -66,9 +65,8 @@ function speakOne(text: string, lang: Lang, settings: Settings, onWord?: (charIn
 /**
  * `rate`: above 1 for the child voice of a dialect clip (faster and higher, like the synthetic child voice).
  * `span`: only this piece is played (a recorded word without the silence around it).
- * `sameHeight`: a faster or slower sound keeps its height (the family's speech rate on the children's voice).
  */
-function playOne(uri: string, rate = 1, span?: Span, sameHeight = false): Promise<void> {
+function playOne(uri: string, rate = 1, span?: Span): Promise<void> {
   return new Promise((resolve) => {
     let settled = false;
     // With a piece to play, the position is followed closely enough to stop at its end.
@@ -76,7 +74,7 @@ function playOne(uri: string, rate = 1, span?: Span, sameHeight = false): Promis
     player = p;
     if (rate !== 1) {
       try {
-        p.shouldCorrectPitch = sameHeight;
+        p.shouldCorrectPitch = false;
         p.playbackRate = rate;
       } catch {
         /* this device cannot change the speed: the clip plays as it is */
@@ -126,13 +124,8 @@ export async function speakSegments(segments: Segment[], settings: Settings, onP
     if (mine !== generation) return;
     onProgress?.(i, 0);
     if (seg.kind === 'tts') {
-      if (!seg.text.trim()) continue;
-      // French and English with a child's voice: the real child's voice when its sound is on the
-      // device or arrives quickly; otherwise the tablet's voice, so the child is never left silent.
-      const uri = await childVoiceUri(forVoice(seg.text), seg.lang, settings).catch(() => undefined);
-      if (mine !== generation) return;
-      if (uri) await playOne(uri, Math.min(1.6, Math.max(0.5, settings.speechRate || 1)), undefined, true);
-      else await speakOne(seg.text, seg.lang, settings, onProgress && ((c) => mine === generation && onProgress(i, c)));
+      if (seg.text.trim())
+        await speakOne(seg.text, seg.lang, settings, onProgress && ((c) => mine === generation && onProgress(i, c)));
     } else if (seg.kind === 'clip') {
       // The dialect's own voice; if the clip cannot be read, the tablet's voice says the word.
       const uri = await clipUri(seg.pack, seg.text);
@@ -180,7 +173,7 @@ export async function prepareVoices(settings: Settings): Promise<Record<Lang, Vo
   const voices = await deviceVoices();
   const next = {} as Record<Lang, VoiceChoice>;
   for (const l of ['fr', 'en', 'ar'] as Lang[])
-    next[l] = chooseVoice(voices, l, speechTag(l), kindFor(settings), settings.voiceAge ?? 'adult', settings.voices[l]);
+    next[l] = chooseVoice(voices, l, speechTag(l), settings.voiceKind ?? 'device', settings.voiceAge ?? 'adult', settings.voices[l]);
   plan = next;
   return next;
 }

@@ -893,44 +893,6 @@ export class SupabaseBackend implements Backend {
     return out;
   }
 
-  private voiceAnswer: Promise<boolean> | null = null;
-  private voiceRetryAt = 0;
-  /**
-   * Is the server function "caa-voice" installed and given its key? It answers "wrong method"
-   * (405) to this question when it is ready; "not found", "not configured" or no answer mean no
-   * (asked again after five minutes).
-   */
-  childVoiceReady(): Promise<boolean> {
-    if (this.voiceAnswer && (!this.voiceRetryAt || Date.now() < this.voiceRetryAt)) return this.voiceAnswer;
-    const no = () => {
-      this.voiceRetryAt = Date.now() + 5 * 60 * 1000;
-      return false;
-    };
-    this.voiceRetryAt = 0;
-    this.voiceAnswer = this.sb.functions
-      .invoke('caa-voice', { method: 'GET' })
-      .then(({ error }) => (error && (error.context as { status?: number } | undefined)?.status === 405 ? true : no()))
-      .catch(no);
-    return this.voiceAnswer;
-  }
-
-  async sayAsChild(req: { text: string; lang: 'fr' | 'en'; kind: 'f' }): Promise<string> {
-    const { data: out, error } = await this.sb.functions.invoke('caa-voice', { body: req, timeout: 20000 });
-    if (error) {
-      // The function's own word ("limit", "busy"…) when it gave one: the app then waits longer.
-      let why = error.message;
-      try {
-        why = ((await (error.context as Response).clone().json()) as { error?: string }).error ?? why;
-      } catch {
-        /* no readable answer */
-      }
-      throw new BackendError('offline', why);
-    }
-    const audio = (out as { audio?: unknown } | null)?.audio;
-    if (typeof audio !== 'string' || !audio) throw new BackendError('offline', 'empty');
-    return audio;
-  }
-
   async deleteUsage(profileId: string): Promise<void> {
     await data(this.sb.from('usage_days').delete().eq('profile_id', profileId));
   }

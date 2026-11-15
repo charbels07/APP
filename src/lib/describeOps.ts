@@ -101,7 +101,6 @@ const SETTING_NAMES: Record<string, Record<UiLang, string>> = {
   langs: { fr: 'langues de l’enfant', en: 'child’s languages', ar: 'لغات الطفل' },
   arabic: { fr: 'arabe de l’application', en: 'Arabic used in the app', ar: 'العربية المستعملة في التطبيق' },
   dialectVoice: { fr: 'voix du dialecte', en: 'dialect voice', ar: 'صوت اللهجة' },
-  childVoiceOnline: { fr: 'vraie voix de fille (par internet)', en: 'real girl’s voice (from the internet)', ar: 'صوت بنت حقيقي (عبر الإنترنت)' },
   revealLevel: { fr: 'vocabulaire révélé', en: 'revealed vocabulary', ar: 'المفردات الظاهرة' },
   wordPlaces: { fr: 'place des mots affichés', en: 'place of the words shown', ar: 'مكان الكلمات الظاهرة' },
   speechRate: { fr: 'vitesse de la voix', en: 'speech rate', ar: 'سرعة الصوت' },

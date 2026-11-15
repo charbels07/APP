@@ -33,7 +33,6 @@ import {
 import { pickTextFile } from '../../lib/pickTextFile';
 import { exactPicto, searchPictos } from '../../lib/pictoSearch';
 import { loadPictoLibrary, pictoCredit, pictoToMedia } from '../../lib/pictoLibrary';
-import { childVoiceAvailable } from '../../lib/childVoiceSound';
 import { prepareVoices, speakText } from '../../lib/speech';
 import { forgetLegacyProfile, loadLegacyProfile, migrate } from '../../lib/storage';
 import type { Lang, Profile } from '../../model/types';
@@ -422,18 +421,9 @@ function LangStep({ o, a, set }: StepProps) {
 }
 
 function VoiceStep({ o, a, set }: StepProps) {
-  // Only when the server really offers the children's voice (nothing is said about it otherwise).
-  const [online, setOnline] = useState(false);
-  useEffect(() => {
-    let alive = true;
-    childVoiceAvailable().then((ok) => alive && setOnline(ok));
-    return () => {
-      alive = false;
-    };
-  }, []);
   const listen = async () => {
     const lang = a.langs[0] ?? 'fr';
-    const settings = { ...DEFAULT_SETTINGS, lang, voiceKind: a.voiceKind, voiceAge: a.voiceAge, gender: a.gender };
+    const settings = { ...DEFAULT_SETTINGS, lang, voiceKind: a.voiceKind, voiceAge: a.voiceAge };
     await prepareVoices(settings);
     await speakText(o.voiceSample[lang], lang, settings);
   };
@@ -459,8 +449,6 @@ function VoiceStep({ o, a, set }: StepProps) {
           { value: 'adult', label: o.voiceAdult },
         ]}
       />
-      {/* Said before the choice is made: with this voice the words to say travel to a speech service. */}
-      {online && a.voiceAge === 'child' && (a.voiceKind === 'f' || (a.voiceKind !== 'm' && a.gender === 'f')) && a.langs.some((l) => l !== 'ar') && <T style={{ color: C.textMuted, fontSize: 14 }}>{o.voiceOnlineNote}</T>}
       <Btn icon="volume" label={o.listen} onPress={listen} />
     </>
   );

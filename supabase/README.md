@@ -97,23 +97,6 @@ The app never holds the Anthropic key: a small server function asks Claude for i
 
 Only the topic, the photo or the drawing is sent — never the child's name, words or sentences.
 
-## 6b. The real girl's voice (French and English)
-
-When a family chooses a child's voice for a girl, a real girl's voice of Microsoft Azure AI Speech
-says the French and English words and sentences (the boy keeps the tablet's voice). The app never holds the Azure key: the server function
-`caa-voice` asks the service and gives the sound back; the tablet keeps it.
-
-1. Create a Speech resource in the Azure portal (with a budget alert); note its key and region.
-2. Run the migration `20261118000000_child_voice.sql` (counters: 1,500 new phrases a day per
-   account, 40,000 for the whole service; change `DAILY_LIMIT` in `functions/caa-voice/index.ts`
-   and the ceiling in the migration).
-3. `supabase secrets set AZURE_SPEECH_KEY=… AZURE_SPEECH_REGION=…` (typed in your own terminal),
-   then `supabase functions deploy caa-voice`.
-
-Only the text to say, its language and the kind of voice are sent — never the child's name or the
-account; nothing is stored on the server. The voices are chosen in the function (`VOICES`), not by
-the app. Until the function is deployed with its key, the app shows nothing about it.
-
 ## 7. Communication data (Suivi) for the app's team
 
 Run `…_usage_data.sql`. (The back office, section 8, now shows these figures as charts.) Families choose what is recorded (Settings → Suivi); professionals see it

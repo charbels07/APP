@@ -39,20 +39,16 @@
   listener). Arabic is read by the device's standard Arabic voice whatever the dialect; do not generate or
   ship voice packs, and do not make the Arabic voice follow the dialect, unless asked. The code stays, switched
   off by the empty index (`npm run build:voices`, `src/lib/dialectVoice.ts`, `src/data/voicePackIndex.ts`).
-- Children's voice (owner's decision, November 2026): with voice age "Child" and a girl's voice, French and
-  English are said by voices of Microsoft Azure AI Speech chosen by the owner by ear (Maisie EN, Eloise FR),
-  through the server function `caa-voice`. The boy is NOT sent there: he keeps the tablet's voice
-  (free), brought as near as possible to Azure's "Dustin" (`BOY_HZ`, `boyPitch`, `kindFor` in `voices.ts`).
-  The girl's voice lives in `src/lib/childVoice.ts`, `childVoiceSound.ts` (sounds kept by `saidCache`). Do not change these voices unless asked. The tablet's voice stays the safety net (offline, not
-  deployed, Arabic): never leave a child silent, and show the setting only when `childVoiceAvailable()`. The
-  family is told the text travels to Microsoft and can refuse (`settings.childVoiceOnline`); never send the
-  child's name. With a child's voice, "Create a new word" requires a recording before Save (`PickerPanel`).
+- No voice from a paid service (owner's decision, November 2026): Microsoft Azure children's voices were built
+  and removed the same day. Every voice is the device's own, or a family's recording. Do not add a speech
+  service, a server function for speech or a key for one unless asked. With a child's voice, "Create a new
+  word" requires a recording in the board's language before Save (`PickerPanel`, `t.recordRequired`).
+- The boy's voice stays a woman's voice raised (below). A man's voice raised (by 25 %, then 40 %) was tried on
+  the owner's iPad: it sounds like an adult. Do not try it again; change `CHILD` only with the owner's ear.
 - A man's / woman's voice is chosen by name in `src/lib/voices.ts`: machine-like and joke voices (`ROBOTIC`)
   come last. A family's own recording of a word (`overrides[id].audio[lang]`) always wins over any voice.
-  On the tablet (`CHILD`), the girl is a woman's voice raised; the boy is a man's voice raised by about 40 %
-  (measured: Dustin 160–190 Hz, men 100–140 Hz), a woman's voice a little lower only when the device has no
-  man's. "Device voice" + child for a boy is the boy's voice too (`kindFor`). Android voices are told apart by
-  their code (`ANDROID_MEN`). Not yet confirmed by ear on a tablet: change the numbers only with the owner.
+  Child voices are a woman's voice raised (`CHILD`): the girl clearly higher than the boy, and the boy on
+  another woman's voice of the same country when there is one. Keep both sounding like children.
 - App pictograms live in `src/data/concepts.ts` (`app: { url, triggers }`); new built-in folders are added
   to saved profiles by a one-time migration in `src/lib/storage.ts` (only into an empty slot).
 - Back office (`src/ui/admin/`, stage `admin`): only accounts in the database table `admins`; every

@@ -4,13 +4,11 @@
  * Devices don't say whether a voice is male or female, so voices are recognised by
  * name: Apple, Google and Microsoft voices have known names (Thomas, Amélie, Samantha,
  * Maged…), and Siri voices carry "male"/"female" in their identifier.
- * Tablets have no real child voices. The girl's voice is a woman's voice of the language, higher.
- * The boy's voice is brought as near as a device voice can be to the young voice the owner chose
- * by ear (Azure's "Dustin" raised 8 %). Measured on the same sentences: Dustin about 160–190 Hz,
- * ordinary men's voices 100–140 Hz, women's about 190–200 Hz. So the boy is a man's voice raised
- * by about 40 % (`BOY_HZ` / the voice's own height when it is known), and, on a device with no
- * man's voice for the language, a woman's voice a little LOWER (raised, as before, it came out
- * near 215 Hz and was judged odd): the other woman's voice of the same country when there are two.
+ * Tablets have no real child voices. A child's voice is nearest to a woman's voice, a little
+ * higher: a girl's and a boy's voice both start from a woman's voice of the language (a man's
+ * voice made higher still sounds like a man). To tell them apart, the girl's is clearly higher
+ * than the boy's, and when the device has two women's voices of the same country the boy gets
+ * the other one (another timbre, not only another height).
  * When a language has no voice of the chosen kind, the device voice is pitched towards it
  * ("approximate" — shown in Settings).
  */
@@ -32,13 +30,12 @@ const FEMALE = new Set([
   // French
   'amelie', 'audrey', 'aurelie', 'marie', 'virginie', 'julie', 'denise', 'hortense', 'josephine', 'eloise',
   'vivienne', 'celine', 'chantal', 'sylvie', 'lea', 'charlotte', 'ariane', 'brigitte', 'celeste', 'coralie', 'jacqueline',
-  'yvette', 'charline', 'aude', 'caroline', 'hortence',
+  'yvette', 'charline',
   // English
   'samantha', 'karen', 'moira', 'tessa', 'victoria', 'allison', 'ava', 'susan', 'zoe', 'fiona', 'veena', 'serena',
   'kate', 'nicky', 'martha', 'catherine', 'kathy', 'vicki', 'princess', 'zira', 'hazel', 'heather', 'linda', 'aria',
   'jenny', 'emma', 'libby', 'sonia', 'natasha', 'clara', 'joanna', 'salli', 'kimberly', 'ivy', 'kendra', 'amy',
   'michelle', 'jane', 'nancy', 'sara', 'ana', 'ashley', 'cora', 'elizabeth', 'amber', 'monica', 'agnes',
-  'stephanie', 'matilda', 'isha', 'sangeeta', 'tara', 'joelle', 'heera', 'neerja', 'hayley', 'emily', 'leah', 'molly', 'luna',
   // Arabic
   'laila', 'layla', 'mariam', 'hoda', 'salma', 'amina', 'zariyah', 'fatima', 'nour', 'reem', 'hala', 'zeina',
   'amany', 'rana', 'sana', 'aysha', 'iman', 'mouna', 'amal', 'noura', 'maryam', 'aisha',
@@ -51,7 +48,6 @@ const MALE = new Set([
   'alex', 'daniel', 'fred', 'rishi', 'tom', 'aaron', 'arthur', 'oliver', 'gordon', 'lee', 'ralph', 'albert', 'bruce',
   'junior', 'david', 'mark', 'george', 'guy', 'ryan', 'eric', 'christopher', 'william', 'matthew', 'joey', 'justin',
   'andrew', 'brian', 'roger', 'steffan', 'davis', 'tony', 'jason', 'jacob', 'evan', 'nathan', 'liam', 'james', 'elliot',
-  'jamie', 'aman', 'ravi', 'sean', 'richard', 'luke', 'connor', 'mitchell', 'prabhat',
   'maged', 'majed', 'tarik', 'hamed', 'naayf', 'shakir', 'bassel', 'omar', 'hamdan', 'zayd',
   'rami', 'laith', 'taim', 'fahed', 'moaz', 'abdullah', 'ismael', 'jamal', 'ali', 'hedi', 'saleh',
   'reed', 'grandpa', 'rocko', 'eddy', 'male', 'homme', 'man', 'boy',
@@ -73,15 +69,6 @@ export const isRobotic = (v: Pick<VoiceInfo, 'id' | 'name'>) => tokensOf(v).some
 /** True for the better voices: Apple "Enhanced / Premium" and Siri, Microsoft "Natural", "Neural" voices. */
 const isNatural = (v: VoiceInfo) => /enhanced|premium/i.test(v.quality ?? '') || /natural|neural|enhanced|premium|siri/i.test(`${v.name} ${v.id}`);
 
-/**
- * Android's own voices have no first name, only a code ("fr-fr-x-frd-local", "en-us-x-iom-network").
- * Woman / man for each code, from the public list of device voices kept by the Readium project
- * (github.com/readium/speech, json/fr.json and en.json, November 2026).
- */
-const ANDROID_MEN = new Set(['frb', 'frd', 'cab', 'cad', 'iol', 'iom', 'tpd', 'rjs', 'gbb', 'gbd', 'aub', 'aud', 'end', 'ene']);
-const ANDROID_WOMEN = new Set(['fra', 'frc', 'vlf', 'caa', 'cac', 'iob', 'iog', 'tpc', 'tpf', 'sfg', 'gba', 'gbc', 'gbg', 'aua', 'auc', 'ena', 'enc']);
-const androidCode = (v: Pick<VoiceInfo, 'id' | 'name'>) => /\b[a-z]{2}-[a-z]{2}-x-([a-z]{3})\b/.exec(`${v.id} ${v.name}`.toLowerCase())?.[1];
-
 /** Whole names that are a known gender without a first name (browser voices). */
 const FEMALE_NAMES = ['google francais', 'google us english', 'google espanol'];
 
@@ -89,9 +76,6 @@ const FEMALE_NAMES = ['google francais', 'google us english', 'google espanol'];
 export function voiceGender(v: Pick<VoiceInfo, 'id' | 'name'>): VoiceGender | undefined {
   const name = normalize(v.name);
   if (FEMALE_NAMES.some((n) => name.startsWith(n))) return 'f';
-  const code = androidCode(v);
-  if (code && ANDROID_MEN.has(code)) return 'm';
-  if (code && ANDROID_WOMEN.has(code)) return 'f';
   const tokens = tokensOf(v);
   // "female" is checked as a token, so it never counts as "male".
   if (tokens.some((x) => FEMALE.has(x))) return 'f';
@@ -114,51 +98,20 @@ export interface VoiceChoice {
  * "voice height" in Settings.
  */
 const CHILD = {
-  /** the girl, from a woman's voice */
+  /** from a woman's voice: the same voice for both must still sound like two children */
   girl: 1.4,
-  /** the boy without a man's voice: a woman's voice a little lower, the height of "Dustin" */
-  boy: 0.9,
-  boyOwnVoice: 0.9,
+  boy: 1.1,
+  /** the boy, when he has a woman's voice of his own (the timbre already differs) */
+  boyOwnVoice: 1.2,
   /** from the device's own voice (woman or man: unknown) */
   device: 1.3,
-  /** the boy, from a man's voice whose own height is not known (see boyPitch) */
-  boyFromMan: 1.4,
-  /** the girl from a man's voice, when the language has no woman's voice */
+  /** from a man's voice, when the language has no woman's voice */
   girlFromMan: 1.65,
+  boyFromMan: 1.4,
   /** no named voice at all for the language */
   girlUnknown: 1.45,
-  /** devices' default voices are women's: about the same height as the boy from a woman's voice */
-  boyUnknown: 0.95,
+  boyUnknown: 1.15,
 };
-
-/** The height aimed at for the boy: the young voice chosen by the owner ("Dustin" + 8 %). */
-const BOY_HZ = 170;
-/**
- * Own height (Hz) of the men's voices that Edge offers ("… Online (Natural)": the same voices as
- * Azure's, measured there on the same sentences as Dustin). Other men's voices (Apple, Google,
- * Windows) could not be measured: they get the average.
- */
-const MEN_HZ: Record<string, number> = {
-  henri: 122, remy: 97, gerard: 129, fabrice: 155, antoine: 110, jean: 139, thierry: 137,
-  guy: 160, eric: 117, steffan: 119, christopher: 121, roger: 139, andrew: 128, brian: 129, ryan: 129,
-  thomas: 122, william: 110, liam: 92, connor: 165,
-};
-/** How much a man's voice is raised to become the boy's. */
-function boyPitch(v: Pick<VoiceInfo, 'id' | 'name'>): number {
-  if (!/online \(natural\)/i.test(v.name)) return CHILD.boyFromMan;
-  const hz = tokensOf(v).map((t) => MEN_HZ[t]).find(Boolean);
-  return hz ? Math.min(1.6, Math.max(1, +(BOY_HZ / hz).toFixed(2))) : CHILD.boyFromMan;
-}
-
-/**
- * The kind of voice to look for. "Device voice" with a child's voice for a boy is the boy's voice
- * too (it is what the set-up proposes first): otherwise he would keep the device's default
- * voice, usually a woman's, made higher. The girl's and the adults' "device voice" are unchanged.
- */
-export function kindFor(settings: { voiceKind?: VoiceKind; voiceAge?: VoiceAge; gender?: string }): VoiceKind {
-  const kind = settings.voiceKind ?? 'device';
-  return kind === 'device' && settings.voiceAge === 'child' && settings.gender === 'm' ? 'm' : kind;
-}
 const clamp = (p: number) => Math.min(2, Math.max(0.5, +p.toFixed(2)));
 
 export function chooseVoice(
@@ -180,7 +133,7 @@ export function chooseVoice(
     // A precise voice chosen by the family: raised according to what that voice is.
     const v = voices.find((x) => x.id === explicitId);
     const g = v ? voiceGender(v) : undefined;
-    const up = !child ? 1 : g === 'm' ? (kind === 'f' ? CHILD.girlFromMan : boyPitch(v!)) : kind === 'm' ? CHILD.boy : kind === 'f' ? CHILD.girl : CHILD.device;
+    const up = !child ? 1 : g === 'm' ? (kind === 'f' ? CHILD.girlFromMan : CHILD.boyFromMan) : kind === 'm' ? CHILD.boy : kind === 'f' ? CHILD.girl : CHILD.device;
     return { id: explicitId, name: v?.name, pitch: clamp(up), exact: true };
   }
   // A natural voice first, then the right country; a machine-like voice only when there is nothing else.
@@ -194,21 +147,19 @@ export function chooseVoice(
   const ranked = (g: VoiceGender) => forLang.filter((v) => voiceGender(v) === g).sort((a, b) => score(b) - score(a) || a.name.localeCompare(b.name));
   const best = (g: VoiceGender): VoiceInfo | undefined => ranked(g)[0];
   if (child) {
-    // The girl: a woman's voice, higher. The boy: a man's voice a little higher (see CHILD).
+    // Girl or boy: a woman's voice, higher (see CHILD); a man's voice only without one.
     const women = ranked('f');
     const woman = women[0];
     if (woman && kind === 'f') return { id: woman.id, name: woman.name, pitch: clamp(CHILD.girl), exact: true };
-    const youngMan = kind === 'm' ? ranked('m').find((v) => !isRobotic(v)) : undefined;
-    if (youngMan) return { id: youngMan.id, name: youngMan.name, pitch: clamp(boyPitch(youngMan)), exact: true };
     if (woman) {
-      // The boy without a man's voice: another woman's voice of the same country when the device has
-      // one (never a machine-like one, never another accent); otherwise the girl's voice, clearly lower.
+      // The boy: another woman's voice of the same country when the device has one (never a
+      // machine-like one, never another accent); otherwise the girl's voice, clearly lower.
       const own = women.find((v) => v.id !== woman.id && locale(v) === locale(woman) && !isRobotic(v));
       const v = own ?? woman;
       return { id: v.id, name: v.name, pitch: clamp(own ? CHILD.boyOwnVoice : CHILD.boy), exact: true };
     }
     const man = best('m');
-    if (man) return { id: man.id, name: man.name, pitch: clamp(kind === 'm' ? boyPitch(man) : CHILD.girlFromMan), exact: kind === 'm' };
+    if (man) return { id: man.id, name: man.name, pitch: clamp(kind === 'm' ? CHILD.boyFromMan : CHILD.girlFromMan), exact: false };
     return { pitch: clamp(kind === 'm' ? CHILD.boyUnknown : CHILD.girlUnknown), exact: false };
   }
   const match = best(kind);

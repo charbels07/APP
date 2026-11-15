@@ -9,8 +9,6 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { Animated, Image, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { DIALECT_ORDER, dialectName } from '../../data/dialects';
 import { VOICE_INDEX, VOICE_PROVIDER } from '../../data/voicePackIndex';
-import { childVoiceKind } from '../../lib/childVoice';
-import { childVoiceAvailable } from '../../lib/childVoiceSound';
 import { dialectPack } from '../../lib/dialectVoice';
 import { CLASS_NAMES, CLASS_ORDER, CLASS_COLORS, C, radius } from '../theme';
 import { allConceptIds, availableLangs, display, getConcept, isRtl, label, langName, symbolOf, wordClass } from '../../lib/lexicon';
@@ -483,25 +481,11 @@ function ConceptEditorBody({ conceptId, only }: { conceptId: string; only?: 'ima
   );
 }
 
-/** Does the server offer the children's voice? (false until it answered: nothing shows meanwhile) */
-function useChildVoiceOnline(): boolean {
-  const [ok, setOk] = useState(false);
-  useEffect(() => {
-    let alive = true;
-    childVoiceAvailable().then((v) => alive && setOk(v));
-    return () => {
-      alive = false;
-    };
-  }, []);
-  return ok;
-}
-
 /** Which device voice each language uses now, with a button to hear it. */
 function VoicesUsed({ st }: { st: Profile['settings'] }) {
   const { t } = useApp();
   const [plan, setPlan] = useState<Record<Lang, VoiceChoice> | null>(null);
   const key = JSON.stringify([st.voiceKind, st.voiceAge, st.voices, st.arabic]);
-  const childOnline = useChildVoiceOnline();
   useEffect(() => {
     let alive = true;
     prepareVoices(st).then((p) => alive && setPlan(p));
@@ -520,14 +504,10 @@ function VoicesUsed({ st }: { st: Profile['settings'] }) {
             {/* Separate lines: an Arabic language name must not turn the French line right-to-left. */}
             <View style={{ flex: 1 }}>
               <Text style={s.classText}>{langName(st, l)}</Text>
-              {childOnline && childVoiceKind(st, l) ? (
-                <Text style={s.note}>{t.voiceChildReal}</Text>
-              ) : (
-                <Text style={s.note}>
-                  {c?.name ?? t.voiceDefaultUsed}
-                  {c && !c.exact ? ` — ${t.voiceApprox}` : ''}
-                </Text>
-              )}
+              <Text style={s.note}>
+                {c?.name ?? t.voiceDefaultUsed}
+                {c && !c.exact ? ` — ${t.voiceApprox}` : ''}
+              </Text>
             </View>
             <Btn small icon="volume" label={t.play} onPress={() => speakText(t.voiceSample[l], l, st)} />
           </View>
@@ -1071,15 +1051,12 @@ function NothingFound({ text }: { text: string }) {
 }
 
 export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
-  const childOnline = useChildVoiceOnline();
   const app = useApp();
   const { profile, t } = app;
   const sess = useSession();
   const board = useBoard();
   const o = onboardingStrings(profile.settings.uiLang);
   const { st, set, pin, setPin } = draft;
-  // The real child's voice from the internet is a girl's: the boy keeps the tablet's own voice.
-  const girlVoice = st.voiceKind === 'f' || (st.voiceKind !== 'm' && st.gender === 'f');
   const searching = !!useContext(SettingsSearch).q;
   const langs = availableLangs(st);
   const [voiceChoice, setVoiceLang] = useState<Lang>(st.lang);
@@ -1338,16 +1315,7 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
             { value: 'child', label: t.voiceChild },
           ]}
         />
-        {st.voiceAge === 'child' && !(childOnline && girlVoice) && <Text style={s.note}>{t.voiceChildNote}</Text>}
-        {/* Only when the server offers the children's voice: the family is told what travels, and can refuse. */}
-        {st.voiceAge === 'child' && childOnline && girlVoice && (
-          <Toggle
-            label={t.sChildVoiceOnline}
-            value={st.childVoiceOnline !== false}
-            onChange={(v) => set((x) => void (x.childVoiceOnline = v))}
-            note={`${t.sChildVoiceOnlineNote}${st.childVoiceOnline === false ? ` ${t.voiceChildNote}` : ''}`}
-          />
-        )}
+        {st.voiceAge === 'child' && <Text style={s.note}>{t.voiceChildNote}</Text>}
         {/* Only when the app has a voice for the family's dialect. */}
         {dialectPack({ ...st, dialectVoice: true }) && (
           <Toggle label={t.sDialectVoice} value={st.dialectVoice !== false} onChange={(v) => set((x) => void (x.dialectVoice = v))} note={t.sDialectVoiceNote} />

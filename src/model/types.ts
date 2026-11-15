@@ -166,12 +166,8 @@ export interface Settings {
   autoOpenApps: boolean;
   /** Synthetic voice: the device's default, a woman's or a man's (picked per language, see lib/voices). */
   voiceKind: 'device' | 'f' | 'm';
-  /** Child voice: in French and English a real child's voice from the internet (lib/childVoice);
-   *  otherwise the chosen voice of the tablet, higher pitched (tablets have no real child voices). */
+  /** Child voice = the chosen voice, higher pitched (tablets have no real child voices). */
   voiceAge: 'adult' | 'child';
-  /** Let a real child's voice from the internet say French and English (default: yes). The text
-   *  to say is then sent to the speech service; off = the tablet's voice only. */
-  childVoiceOnline?: boolean;
   /** Voice height chosen by ear, on top of the voice's own (1 = unchanged; 0.7 lower … 1.4 higher). */
   voicePitch?: number;
   /** Seconds before the same pictogram can be pressed again (0 = no limit). */

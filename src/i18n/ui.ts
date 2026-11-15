@@ -188,10 +188,6 @@ const fr = {
   sArabic: 'Arabe de l’application',
   sDialectVoice: 'Voix du dialecte pour les mots arabes du tableau',
   sDialectVoiceNote: 'Voix de synthèse du pays choisi. Les mots nouveaux et le texte écrit au clavier gardent la voix de la tablette ; un mot enregistré par vous passe toujours avant.',
-  sChildVoiceOnline: 'Vraie voix de fille en français et en anglais',
-  sChildVoiceOnlineNote:
-    'Une vraie voix de petite fille dit les mots et les phrases en français et en anglais. Pour cela, le texte à dire est envoyé par internet à un service de voix (Microsoft), sans le nom de l’enfant ni le compte. Une phrase déjà dite reste sur l’appareil et fonctionne ensuite sans internet ; sinon, sans connexion, c’est la voix de l’appareil qui parle. L’arabe garde la voix de l’appareil. Un mot enregistré par vous passe toujours avant.',
-  voiceChildReal: 'vraie voix d’enfant (par internet)',
   recordRequired: 'Enregistrez ce mot',
   recordRequiredNote: 'Avec la voix d’enfant, un mot nouveau est dit avec votre voix : enregistrez-le avant de l’ajouter. L’enregistrement reste sur cet appareil.',
   aboutVoices: 'Voix arabes par dialecte : voix de synthèse générées avec',
@@ -231,7 +227,7 @@ const fr = {
   voiceAdult: 'Adulte',
   voiceChild: 'Enfant',
   voiceChildNote:
-    'Voix d’enfant : les tablettes n’ont pas de vraies voix d’enfant. Pour une fille, l’application part d’une voix de femme et la rend plus aiguë ; pour un garçon, d’une voix d’homme rendue plus aiguë, comme une voix jeune (sans voix d’homme sur l’appareil : une voix de femme un peu plus grave) ; réglez-la à l’oreille avec « Hauteur de la voix ». Pour une vraie voix d’enfant, enregistrez un frère, une sœur ou un cousin sur les mots (Voix enregistrée).',
+    'Voix d’enfant : les tablettes n’ont pas de vraies voix d’enfant. L’application part d’une voix de femme et la rend plus aiguë : nettement plus pour une fille que pour un garçon, et, si l’appareil a deux voix de femme, le garçon reçoit l’autre ; réglez-la à l’oreille avec « Hauteur de la voix ». Pour une vraie voix d’enfant, enregistrez un frère, une sœur ou un cousin sur les mots (Voix enregistrée).',
   voiceUsed: 'Voix utilisée',
   voiceDefaultUsed: 'voix de l’appareil',
   voiceApprox: 'voix approchée : pas de voix de ce type pour cette langue sur cet appareil',
@@ -589,10 +585,6 @@ const en: Dict = {
   sArabic: 'Arabic used in the app',
   sDialectVoice: 'Dialect voice for the Arabic words of the board',
   sDialectVoiceNote: 'A synthetic voice of the chosen country. New words and typed text keep the tablet’s voice; a word you recorded yourself always comes first.',
-  sChildVoiceOnline: 'Real girl’s voice in French and English',
-  sChildVoiceOnlineNote:
-    'A real little girl’s voice says the words and sentences in French and English. For that, the text to say is sent over the internet to a speech service (Microsoft), without the child’s name or the account. A phrase already said stays on the device and then works without internet; otherwise, with no connection, the device’s voice speaks. Arabic keeps the device’s voice. A word you recorded yourself always comes first.',
-  voiceChildReal: 'real child’s voice (from the internet)',
   recordRequired: 'Record this word',
   recordRequiredNote: 'With the child’s voice, a new word is said with your own voice: record it before adding it. The recording stays on this device.',
   aboutVoices: 'Arabic dialect voices: synthetic voices generated with',
@@ -632,7 +624,7 @@ const en: Dict = {
   voiceAdult: 'Adult',
   voiceChild: 'Child',
   voiceChildNote:
-    'Child voice: tablets have no real child voices. For a girl, the app starts from a woman’s voice and makes it higher; for a boy, from a man’s voice made higher, like a young voice (with no man’s voice on the device: a woman’s voice a little lower); tune it by ear with “Voice height”. For a real child’s voice, record a brother, sister or cousin on the words (Recorded voice).',
+    'Child voice: tablets have no real child voices. The app starts from a woman’s voice and makes it higher: clearly more for a girl than for a boy, and when the device has two women’s voices the boy gets the other one; tune it by ear with “Voice height”. For a real child’s voice, record a brother, sister or cousin on the words (Recorded voice).',
   voiceUsed: 'Voice used',
   voiceDefaultUsed: 'device voice',
   voiceApprox: 'approximate voice: no voice of this type for this language on this device',
@@ -1021,7 +1013,7 @@ const ar: Dict = {
   voiceAdult: 'بالغ',
   voiceChild: 'طفل',
   voiceChildNote:
-    'صوت الطفل: لا تحتوي الأجهزة اللوحية على أصوات أطفال حقيقية. للبنت ينطلق التطبيق من صوت امرأة ويجعله أحدّ؛ وللصبي من صوت رجل أحدّ، كصوت فتى (وإذا لم يكن في الجهاز صوت رجل: صوت امرأة أغلظ قليلاً)؛ اضبطه بالسمع من «طبقة الصوت». لصوت طفل حقيقي، سجّل صوت أخ أو أخت أو قريب على الكلمات («صوت مسجّل»).',
+    'صوت الطفل: لا تحتوي الأجهزة اللوحية على أصوات أطفال حقيقية. ينطلق التطبيق من صوت امرأة ويجعله أحدّ: أكثر بوضوح للبنت منه للصبي، وإذا كان في الجهاز صوتان نسائيان يأخذ الصبي الصوت الآخر؛ اضبطه بالسمع من «طبقة الصوت». لصوت طفل حقيقي، سجّل صوت أخ أو أخت أو قريب على الكلمات («صوت مسجّل»).',
   voiceUsed: 'الصوت المستخدم',
   voiceDefaultUsed: 'صوت الجهاز',
   voiceApprox: 'صوت تقريبي: لا يوجد صوت من هذا النوع لهذه اللغة على هذا الجهاز',
@@ -1199,10 +1191,6 @@ const ar: Dict = {
   sArabic: 'العربية المستعملة في التطبيق',
   sDialectVoice: 'صوت اللهجة لكلمات اللوحة العربية',
   sDialectVoiceNote: 'صوت اصطناعي من البلد المختار. الكلمات الجديدة والنص المكتوب بلوحة المفاتيح تبقى بصوت الجهاز؛ والكلمة التي سجّلتها بنفسك لها الأولوية دائماً.',
-  sChildVoiceOnline: 'صوت بنت حقيقي بالفرنسية والإنجليزية',
-  sChildVoiceOnlineNote:
-    'صوت طفلة حقيقي ينطق الكلمات والجمل بالفرنسية والإنجليزية. لذلك يُرسَل النص المطلوب نطقه عبر الإنترنت إلى خدمة صوت (مايكروسوفت)، من دون اسم الطفل ولا الحساب. الجملة التي قيلت مرة تبقى على الجهاز وتعمل بعدها من دون إنترنت؛ وإلا، من دون اتصال، يتكلم صوت الجهاز. العربية تبقى بصوت الجهاز. والكلمة التي سجّلتها بنفسك لها الأولوية دائماً.',
-  voiceChildReal: 'صوت طفل حقيقي (عبر الإنترنت)',
   recordRequired: 'سجّل هذه الكلمة',
   recordRequiredNote: 'مع صوت الطفل، تُنطق الكلمة الجديدة بصوتك: سجّلها قبل إضافتها. يبقى التسجيل على هذا الجهاز.',
   aboutVoices: 'أصوات اللهجات العربية: أصوات اصطناعية مولَّدة بواسطة',

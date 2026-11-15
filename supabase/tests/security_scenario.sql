@@ -108,13 +108,10 @@ select test.expect_error(format('select redeem_pairing_code(%L, ''d'', ''x'', ''
 select test.ok(true, 'after five wrong codes even the right one is refused for a while');
 select test.expect_error('select count_ai_call()', 'forbidden');
 select test.ok(true, 'a sign-in that looks after no child cannot use the AI helper');
-select test.expect_error('select count_voice_call()', 'forbidden');
-select test.ok(true, 'nor the children''s voice (each call costs money)');
 select set_config('request.jwt.claim.sub', :'tablet', false);
 select test.ok((select redeem_pairing_code(lower(left(v, 4)) || '-' || right(v, 4), 'school-1', 'Tablette école', 'ios') = :'adam' from test.ids where k = 'pair'),
   'the real tablet links, however the code was typed');
 select test.ok((select count_ai_call() = 1), 'a linked tablet can');
-select test.ok((select count_voice_call() = 1), 'and it can speak with the children''s voice');
 
 -- 8. A use-only tablet writes neither the history nor someone else's figures.
 select test.expect_error(format('select add_history(%L, ''x'', ''[]'', ''[]'', null)', :'adam'), 'forbidden');

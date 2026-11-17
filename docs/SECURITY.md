@@ -113,6 +113,29 @@ the account, so nothing new can be read by someone who is not in the team. But a
 with a team account must not be handed to a child: one tap opens the back office, where the
 professionals' certificates are. Use an ordinary family account on any tablet a child uses.
 
+### Added later: a forgotten caregiver code (November 2026)
+
+The keypad offers "Forgot the code?" so that a family who forgot its code is not locked out of
+Settings on every device. What keeps it safe:
+
+- it is offered only on a family's board, to an account the database lets change the family's
+  code (the owner, or a co-parent managing the profile): never on a tablet linked with a code
+  (refused by both servers too), on a professional's board (she types her own code, and the
+  family's is never hers), in the preview or on the set-up's try-board;
+- before the new code, the person shows again that the signed-in account is theirs: its password,
+  or a sign-in code sent to the account's **own** address or number (never one typed on the
+  screen; `shouldCreateUser: false`, so no account can be created this way). Supabase Auth limits
+  the tries and the e-mails;
+- the new code is saved like any change of the profile: `save_profile` still refuses a new code
+  from anyone but the family (`consent_protected`, tested in `security_scenario.sql` and
+  `pro_profiles_scenario.sql`); no new database function was needed.
+
+The check of the password or of the e-mailed code happens on the device: the database cannot
+tell who holds the tablet. That is enough, because the caregiver code only ever protected the
+adults' tools against a child's hands; a person with the account's password could already read
+the code, which is part of the child's profile that account downloads. After the proof, the
+pauses after wrong codes start again from zero.
+
 ### Added later: e-mails to the app's team (November 2026)
 
 The database writes the messages (a professional applied; the figures of the week) and a server

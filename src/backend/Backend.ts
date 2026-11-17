@@ -94,6 +94,14 @@ export interface Backend {
   requestPasswordReset(target: { email?: string; phone?: string }): Promise<CodeSent>;
   resetPassword(target: { email?: string; phone?: string }, code: string, password: string): Promise<void>;
   changePassword(current: string, next: string): Promise<void>;
+  /**
+   * The person in front of the device shows again that the signed-in account is theirs (before
+   * choosing a new caregiver code when the old one is forgotten): with the account's password, or
+   * with a sign-in code sent to the account's own e-mail (SMS for an account with a phone only).
+   * Same account, same rights afterwards. A tablet linked with a code has neither: refused.
+   */
+  sendIdentityCode(): Promise<CodeSent>;
+  confirmIdentity(proof: { password: string } | { code: string }): Promise<void>;
   updateAccount(patch: { displayName?: string; email?: string; phone?: string; prefs?: Partial<AccountPrefs> }): Promise<Account>;
   deleteAccount(): Promise<void>;
 

@@ -96,6 +96,11 @@ export function useSession(): SessionCtx {
   return v;
 }
 
+/** For the few shared pieces that can be drawn outside the session (the keypad, in tests): null there. */
+export function useSessionMaybe(): SessionCtx | null {
+  return useContext(Ctx);
+}
+
 /** Navigation language for components that may sit outside the session (tests, preview). */
 export const NavLangContext = createContext<UiLang>('fr');
 

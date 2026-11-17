@@ -8,8 +8,10 @@ import { typedChips } from '../../lib/typedWords';
 import type { Lang, UiLang } from '../../model/types';
 import { UI_LANG_NAMES } from '../../i18n/ui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { forgotCodeWays } from '../../lib/forgotCode';
 import { opensAlone, useApp } from '../../state/AppState';
 import { useBoard } from '../../state/BoardContext';
+import { useSessionMaybe } from '../../state/Session';
 import { Btn, Panel, Section, useNavRtl } from '../common';
 import { usePictoLibrary } from '../PictoPicker';
 import { chipPicture } from '../SentenceStrip';
@@ -19,6 +21,8 @@ import { C, radius } from '../theme';
 import { SearchBox } from '../SearchBox';
 import { VoiceButton } from '../VoiceButton';
 import { pressed } from '../a11y';
+import { ProveItsYou } from './ForgotCode';
+import { LinkBtn } from '../start/StartLayout';
 
 export function pathText(loc: Location, app: ReturnType<typeof useApp>): string {
   const { profile, lang, t } = app;
@@ -285,10 +289,13 @@ export const pinTooEasy = (code: string) => code === '1234' || /^(\d)\1{3}$/.tes
  * Caregiver mode is protected so the user can't modify the board by accident (NAV-04).
  * The first time, the person simply chooses a code (typed twice) and then uses it each time;
  * there is no code to know beforehand. Wrong codes are counted on this device.
+ * "Forgot the code?": the family shows the account is theirs (password or a code by e-mail),
+ * then chooses a new code the usual way (src/ui/panels/ForgotCode.tsx).
  */
 export function PinPanel() {
   const app = useApp();
   const board = useBoard();
+  const account = useSessionMaybe()?.account;
   const { t, profile } = app;
   const [code, setCode] = useState('');
   const [msg, setMsg] = useState<string | null>(null);
@@ -299,8 +306,19 @@ export function PinPanel() {
   const unset = own ? !/^\d{4}$/.test(pin) : pin === '1234';
   // In a child's profile the family chooses the code (the preview has no account: anyone trying it does).
   const canChoose = !!own || !board || board.manager;
-  const [step, setStep] = useState<'enter' | 'choose' | 'repeat'>(unset && canChoose ? 'choose' : 'enter');
+  const [step, setStep] = useState<'enter' | 'forgot' | 'choose' | 'repeat'>(unset && canChoose ? 'choose' : 'enter');
   const [chosen, setChosen] = useState('');
+  // Code forgotten: only the family (never a linked tablet, nor a professional on her own code).
+  const forgot = useMemo(
+    () => (app.preview ? null : forgotCodeWays({ account, manager: !!board?.manager, ownCode: !!own })),
+    [app.preview, account, board?.manager, own],
+  );
+  // The account was confirmed: the new code is chosen without the old one.
+  const [proved, setProved] = useState(false);
+  // The way around the code went away meanwhile (rights changed, signed out): back to the keypad.
+  useEffect(() => {
+    if (step === 'forgot' && !forgot) setStep('enter');
+  }, [step, forgot]);
   const [lock, setLock] = useState({ fails: 0, until: 0 });
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
@@ -354,40 +372,53 @@ export function PinPanel() {
       setChosen(next);
       setStep('repeat');
       setCode('');
-    } else if (next === chosen) {
+    } else if (step === 'repeat') {
+      if (next !== chosen) {
+        setStep('choose');
+        return again(t.pinMismatch);
+      }
       if (own) own.save(next);
       else
         app.update((p) => {
           p.settings.pin = next;
         });
       open();
-    } else {
-      setStep('choose');
-      again(t.pinMismatch);
     }
   };
-  const hint = msg ?? (waiting ? t.pinLocked.replace('{n}', String(wait)) : step === 'choose' ? t.pinChoose : step === 'repeat' ? t.pinRepeat : unset ? t.pinNotChosen : t.pinHint);
+  const hint =
+    msg ??
+    (waiting
+      ? t.pinLocked.replace('{n}', String(wait))
+      : step === 'choose'
+        ? proved
+          ? t.pinForgotOk
+          : t.pinChoose
+        : step === 'repeat'
+          ? t.pinRepeat
+          : unset
+            ? t.pinNotChosen
+            : t.pinHint);
   const error = !!msg;
-  return (
-    <Panel
-      title={step === 'enter' ? t.pinTitle : t.pinChooseTitle}
-      // Closed without choosing, on the first opening: the guide still opens (the code is asked later).
-      onClose={() => app.setOverlay(beforeGuide ? { kind: 'guide' } : null)}
-      maxWidth={step === 'enter' ? 380 : 440}
-      tone="edit"
-    >
-      {step !== 'enter' && (
-        // Choosing a code: what it is and what it protects, before the digits.
-        <View style={styles.pinWhy}>
-          {(own ? t.pinWhyPro : t.pinWhy).map((line, i) => (
-            <Text key={i} style={[styles.pinWhyText, rtl && { textAlign: 'right', writingDirection: 'rtl' }]}>
-              {line}
-            </Text>
-          ))}
-          {beforeGuide && <Text style={[styles.pinWhyText, { fontWeight: '700' }, rtl && { textAlign: 'right', writingDirection: 'rtl' }]}>{t.pinThenGuide}</Text>}
-        </View>
-      )}
-      <Text style={[styles.muted, { textAlign: 'center' }, (error || waiting) && { color: C.help, fontWeight: '700' }]} accessibilityLiveRegion="polite">
+  const confirmed = () => {
+    // The person proved who they are: the count of wrong codes starts again.
+    saveLock({ fails: 0, until: 0 });
+    setProved(true);
+    setMsg(null);
+    setCode('');
+    setStep('choose');
+  };
+  const rtlText = rtl ? ({ textAlign: 'right', writingDirection: 'rtl' } as const) : null;
+  const keypad = (
+    <>
+      <Text
+        style={[
+          styles.muted,
+          { textAlign: 'center' },
+          (error || waiting) && { color: C.help, fontWeight: '700' },
+          proved && step === 'choose' && !error && { color: C.success, fontWeight: '700' },
+        ]}
+        accessibilityLiveRegion="polite"
+      >
         {hint}
       </Text>
       <View style={styles.dots}>
@@ -412,6 +443,47 @@ export function PinPanel() {
           ),
         )}
       </View>
+    </>
+  );
+  return (
+    <Panel
+      title={step === 'enter' ? t.pinTitle : step === 'forgot' ? t.pinForgotTitle : t.pinChooseTitle}
+      // Closed without choosing, on the first opening: the guide still opens (the code is asked later).
+      onClose={() => app.setOverlay(beforeGuide ? { kind: 'guide' } : null)}
+      // From "Forgot the code?": Back (and Escape) return to the keypad.
+      onBack={step === 'forgot' ? () => setStep('enter') : undefined}
+      maxWidth={step === 'enter' ? 380 : 440}
+      tone="edit"
+    >
+      {step === 'forgot' && forgot ? (
+        <ProveItsYou ways={forgot} onConfirmed={confirmed} />
+      ) : (
+        <>
+          {step !== 'enter' && (
+            // Choosing a code: what it is and what it protects, before the digits.
+            <View style={styles.pinWhy}>
+              {(own ? t.pinWhyPro : t.pinWhy).map((line, i) => (
+                <Text key={i} style={[styles.pinWhyText, rtlText]}>
+                  {line}
+                </Text>
+              ))}
+              {beforeGuide && <Text style={[styles.pinWhyText, { fontWeight: '700' }, rtlText]}>{t.pinThenGuide}</Text>}
+            </View>
+          )}
+          {keypad}
+          {/* Also while waiting after too many wrong codes: that is when it is needed. */}
+          {step === 'enter' && !unset && forgot ? (
+            <LinkBtn
+              label={t.pinForgot}
+              onPress={() => {
+                setMsg(null);
+                setCode('');
+                setStep('forgot');
+              }}
+            />
+          ) : null}
+        </>
+      )}
     </Panel>
   );
 }

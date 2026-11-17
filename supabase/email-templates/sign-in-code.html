@@ -1,0 +1,8 @@
+<div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;padding:24px;color:#1B2430">
+  <h2 style="margin:0 0 16px">Empower Hub</h2>
+  <p>Entrez ce code dans l’application pour montrer que ce compte est le vôtre (par exemple pour choisir un nouveau code accompagnant).</p>
+  <p>Enter this code in the app to show that this account is yours (for example to choose a new caregiver code).</p>
+  <p dir="rtl">أدخل هذا الرمز في التطبيق لتثبت أن هذا الحساب حسابك (مثلاً لاختيار رمز مرافق جديد).</p>
+  <p style="font-size:32px;font-weight:bold;letter-spacing:8px;text-align:center;background:#EEF1F5;padding:16px;border-radius:12px">{{ if gt (len .Token) 4 }}{{ slice .Token 0 4 }}&zwnj;{{ slice .Token 4 }}{{ else }}{{ .Token }}{{ end }}</p>
+  <p style="color:#5B6675;font-size:13px">Si vous n’avez rien demandé, ignorez cet e-mail : personne ne peut rien faire sans ce code. · If you didn’t ask for this, ignore this email: nobody can do anything without this code.</p>
+</div>

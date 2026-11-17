@@ -71,6 +71,8 @@ describe('in-app guide', () => {
         dataStrings(lang).shareTitle,
         // a word recorded by the family, per language; which voice the device uses
         t.voice, e.recordVoice, t.voiceUsed,
+        // a forgotten caregiver code
+        t.pinForgot,
       ];
       for (const label of quoted) expect(text(lang)).toContain(label);
       // Removed things are no longer described.

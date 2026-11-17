@@ -290,16 +290,14 @@ const BASE: BaseChapter[] = [
     title: { fr: 'Le mode accompagnant', en: 'Caregiver mode' },
     steps: {
       fr: [
-        'Accompagnant (cadenas). Vous choisissez votre code (4 chiffres, tapés deux fois) à la première ouverture du tableau, avant ce guide ; ensuite vous le tapez à chaque fois. Après 5 codes faux, il faut attendre un peu. Vous pouvez le changer dans Réglages → Code et données.',
-        'Code oublié ? Sur le clavier du code, touchez Code oublié ?, puis montrez que le compte est le vôtre : son mot de passe, ou un code reçu par e-mail (par SMS pour un compte avec un numéro). Vous choisissez ensuite le nouveau code, tapé deux fois. Seuls les parents qui gèrent le profil le peuvent : pas une tablette reliée avec un code, ni un professionnel (il a son propre code).',
+        'Accompagnant (cadenas). Vous choisissez votre code (4 chiffres, tapés deux fois) à la première ouverture du tableau, avant ce guide ; ensuite vous le tapez à chaque fois. Après 5 codes faux, il faut attendre un peu. Vous pouvez le changer dans Réglages → Code et données. Code oublié ? (sous le clavier) : un parent connecté tape le mot de passe de son compte, ou reçoit un code par e-mail ou SMS et le tape, puis choisit un nouveau code ; sur une tablette reliée, faites-le depuis le téléphone ou l’ordinateur d’un parent.',
         'Le bandeau jaune indique qu’on peut modifier : toucher une case ouvre ses réglages ; pour un dossier, appui long.',
         'Réglages et Imprimer / PDF sont dans le bandeau. Terminer revient au mode enfant.',
         'Tout est gardé sur l’appareil, même après l’avoir éteint ; avec un compte, c’est aussi sauvegardé en ligne et les autres appareils de la famille se mettent à jour.',
         'Dans la barre, deux boutons pour les parents, chacun protégé par le code accompagnant : Réglages (ouvre les réglages sans passer en mode accompagnant) et Verrou. Verrou ouvre le Mode verrouillé (enfant) : l’enfant ne peut plus ouvrir d’autres applis ni revenir en arrière ; pour l’empêcher de quitter l’application, activez aussi l’Accès guidé (iPad) ou l’épinglage d’écran (Android). Dans un navigateur, la page ne se recharge plus quand on la tire vers le bas, et le plein écran revient au toucher suivant. Pour le retirer : Verrou → code.',
       ],
       en: [
-        'Caregiver (padlock). You choose your code (4 digits, typed twice) the first time the board opens, before this guide; after that you type it each time. After 5 wrong codes you have to wait a little. You can change it in Settings → Code and data.',
-        'Forgot the code? On the code keypad, touch Forgot the code?, then show that the account is yours: its password, or a code received by e-mail (by text message for an account with a phone number). You then choose the new code, typed twice. Only the parents who manage the profile can do this: not a tablet linked with a code, nor a professional (professionals have their own code).',
+        'Caregiver (padlock). You choose your code (4 digits, typed twice) the first time the board opens, before this guide; after that you type it each time. After 5 wrong codes you have to wait a little. You can change it in Settings → Code and data. Forgot the code? (under the keypad): a signed-in parent types their account’s password, or receives a code by e-mail or text message and types it, then chooses a new code; on a linked tablet, do it from a parent’s phone or computer.',
         'The yellow banner means you can edit: touching a card opens its settings; for a folder, long press.',
         'Settings and Print / PDF are in the banner. Done goes back to child mode.',
         'Everything is kept on the device, even after switching it off; with an account it is also saved online and the family’s other devices update themselves.',
@@ -809,8 +807,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   caregiver: {
     title: 'وضع المرافق',
     steps: [
-      '«المرافق» (القفل). تختار رمزك (4 أرقام، تُكتب مرتين) عند أول فتح للوحة، قبل هذا الدليل؛ بعدها تكتبه في كل مرة. بعد 5 رموز خاطئة يجب الانتظار قليلاً. يمكنك تغييره في الإعدادات ← الرمز والبيانات.',
-      'نسيت الرمز؟ على لوحة أرقام الرمز، المس «نسيت الرمز؟»، ثم أثبت أن الحساب حسابك: كلمة مروره، أو رمز يصلك بالبريد الإلكتروني (برسالة نصية لحساب برقم هاتف). بعدها تختار الرمز الجديد وتكتبه مرتين. يستطيع ذلك فقط الأهل الذين يديرون الملف: لا جهاز لوحي مربوط برمز، ولا مختص (للمختصين رمزهم الخاص).',
+      '«المرافق» (القفل). تختار رمزك (4 أرقام، تُكتب مرتين) عند أول فتح للوحة، قبل هذا الدليل؛ بعدها تكتبه في كل مرة. بعد 5 رموز خاطئة يجب الانتظار قليلاً. يمكنك تغييره في الإعدادات ← الرمز والبيانات. «نسيت الرمز؟» (تحت لوحة الأرقام): يكتب أحد الوالدين المسجَّل دخوله كلمة مرور حسابه، أو يتلقى رمزاً بالبريد الإلكتروني أو برسالة نصية ويكتبه، ثم يختار رمزاً جديداً؛ على جهاز لوحي مرتبط، افعل ذلك من هاتف أو حاسوب أحد الوالدين.',
       'الشريط الأصفر يعني أنك تستطيع التعديل: لمس بطاقة يفتح إعداداتها؛ وللمجلد، ضغطة طويلة.',
       '«الإعدادات» و«طباعة / PDF» في الشريط الأصفر. «إنهاء» يعيد إلى وضع الطفل.',
       'يُحفظ كل شيء على الجهاز، حتى بعد إطفائه؛ ومع حساب يُحفظ أيضاً على الإنترنت وتتحدّث أجهزة العائلة الأخرى تلقائياً.',

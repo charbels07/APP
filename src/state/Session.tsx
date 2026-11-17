@@ -95,11 +95,8 @@ export function useSession(): SessionCtx {
   if (!v) throw new Error('useSession outside SessionProvider');
   return v;
 }
-
-/** For the few shared pieces that can be drawn outside the session (the keypad, in tests): null there. */
-export function useSessionMaybe(): SessionCtx | null {
-  return useContext(Ctx);
-}
+/** The session, or null for a component that may sit outside it (tests, previews). */
+export const useSessionMaybe = (): SessionCtx | null => useContext(Ctx);
 
 /** Navigation language for components that may sit outside the session (tests, preview). */
 export const NavLangContext = createContext<UiLang>('fr');

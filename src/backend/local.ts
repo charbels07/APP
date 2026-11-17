@@ -64,7 +64,7 @@ interface StoredAccount extends Account {
 interface PendingCode {
   target: string;
   code: string;
-  purpose: 'verify' | 'reset' | 'identity';
+  purpose: 'verify' | 'reset';
   expiresAt: number;
 }
 interface StoredProfile extends ChildRecord {
@@ -389,6 +389,19 @@ export class LocalBackend implements Backend {
     });
   }
 
+  async checkResetCode(target: { email?: string; phone?: string }, code: string): Promise<void> {
+    const t = normEmail(target.email) ?? normPhone(target.phone);
+    if (!t) throw new BackendError('missing_contact');
+    await this.tx((db) => LocalBackend.takeCode(db, t, code, 'reset'));
+  }
+
+  async checkPassword(password: string): Promise<void> {
+    const me = LocalBackend.need(await this.tx((_db, m) => m));
+    if (me.provider === 'device') throw new BackendError('forbidden');
+    // Google / Apple accounts have no password here: only the e-mailed code proves them.
+    if (!me.hash || (await sha256(me.salt + password)) !== me.hash) throw new BackendError('wrong_credentials');
+  }
+
   async changePassword(current: string, next: string): Promise<void> {
     if (next.length < 8) throw new BackendError('weak_password');
     const me = LocalBackend.need(await this.tx((_db, m) => m));
@@ -396,29 +409,6 @@ export class LocalBackend implements Backend {
     const salt = uid();
     const hash = await sha256(salt + next);
     await this.tx((db) => Object.assign(db.accounts[me.id], { salt, hash }));
-  }
-
-  /** The signed-in account's own address or number (a linked tablet has none: refused). */
-  private static identityTarget(me: StoredAccount): string {
-    if (me.provider === 'device') throw new BackendError('forbidden');
-    const t = normEmail(me.email) ?? normPhone(me.phone);
-    if (!t) throw new BackendError('missing_contact');
-    return t;
-  }
-
-  async sendIdentityCode(): Promise<CodeSent> {
-    return this.tx((db, m) => {
-      const t = LocalBackend.identityTarget(LocalBackend.need(m));
-      return { sentTo: t, demoCode: LocalBackend.newCode(db, t, 'identity') };
-    });
-  }
-
-  async confirmIdentity(proof: { password: string } | { code: string }): Promise<void> {
-    const me = LocalBackend.need(await this.tx((_db, m) => m));
-    const t = LocalBackend.identityTarget(me);
-    if ('code' in proof) return void (await this.tx((db) => LocalBackend.takeCode(db, t, proof.code, 'identity')));
-    // Google / Apple accounts have no password here: only the code proves them.
-    if (!me.hash || (await sha256(me.salt + proof.password)) !== me.hash) throw new BackendError('wrong_credentials');
   }
 
   async updateAccount(patch: { displayName?: string; email?: string; phone?: string; prefs?: Partial<AccountPrefs> }): Promise<Account> {
@@ -505,6 +495,13 @@ export class LocalBackend implements Backend {
       LocalBackend.requireAccess(db, id, LocalBackend.need(m));
       const { connectionCode: _c, ...rec } = db.profiles[id];
       return clone(rec);
+    });
+  }
+
+  async profileVersion(id: string): Promise<number> {
+    return this.tx((db, m) => {
+      LocalBackend.requireAccess(db, id, LocalBackend.need(m));
+      return db.profiles[id].version;
     });
   }
 

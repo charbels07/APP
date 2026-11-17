@@ -71,7 +71,7 @@ This file grows as each feature is built. Each line says **what** was made, **ho
 | Access method | Select when the finger lifts, as soon as it touches, or by holding it (0.5–2 s) — handled by the touch events of each card. |
 | Try the board | The full app with the chosen settings; *Finish* creates the child's profile on the server. |
 | Tailored guide | `src/data/guideTailored.ts` writes a "Your board" chapter from the child's real settings and opens it on the new board. |
-| Sync | `src/state/profileSync.ts`: the board works from the copy on the tablet; changes are sent a moment later; if someone else saved in between, both changes are merged (tested with Jest). |
+| Sync | `src/state/profileSync.ts`: the board works from the copy on the tablet; changes are sent a moment later; if someone else saved in between, both changes are merged (tested with Jest). An open board looks for someone else's changes every 30 s by reading only the profile's version number (`profileVersion`); the whole profile is downloaded only when the server has a newer one. |
 
 ## Phase 4 — Settings in three pages: Board, Team, Account
 
@@ -628,12 +628,33 @@ week and month schedules, the bar). The guide and the set-up help name the new g
 | Agreement: boy / girl | Settings → Sentence: only shown when French or Arabic is one of the child's languages (English words have no feminine form). |
 | Vibration removed (owner's decision) | No vibration anywhere: the "Small vibration on touch" switch, the timer's "Vibration" button, the buzz when a card or a list item is held, and the `expo-haptics` package are gone (Round 25 is history). |
 
+## Round 36 — Lighter checks for others' changes; "Forgot the code?"
+
+| What | How it was done |
+|---|---|
+| Looking for someone else's change | An open board looked every 30 seconds by downloading the child's **whole profile** from the server, even when nothing had changed. That was most of the server's traffic and the main cost that grows with families. Now it asks only the profile's **version number** (`profileVersion` in `src/backend/Backend.ts`, one small answer) and downloads the profile only when that number is newer than the copy on the device (`pull` in `src/state/profileSync.ts`). Same delay (30 s, and when the app comes back to the front), same merges; a change made on the board while the newer profile downloads is kept and merged; about 99% less data. No database change. |
+| "Forgot the code?" | Before, the caregiver code was changed in Settings, which is itself behind the code: a family that forgot it had no way back. The keypad now has **Forgot the code?** under the digits (`PinPanel` in `src/ui/panels/CommPanels.tsx`). On a parent's signed-in device (the family, or a team manager) the app sends a code to the account's e-mail or phone (the same code as a password reset, `requestPasswordReset`), the parent types it, the app checks it **without changing the password** (`checkResetCode`), and the parent chooses a new code (typed twice, with the usual explanation). A professional does the same for her own code. A linked tablet has no mailbox: the keypad says to do it from a parent's phone or computer. Back and Escape return to the digits. |
+| The e-mail | `supabase/email-templates/reset-password.html` now says the code is for "a new password or a new caregiver code" (three languages). **It must be pasted again** in Supabase → Emails → Templates → Reset password. Until then the e-mail still speaks only of a password; the code works all the same. |
+| Guide | `src/data/guide.ts`, three languages: the caregiver step now names "Forgot the code?" (`guide.test.ts` checks it). |
+| Tests | `profileSync.test.ts`: nothing new → only the version is read; after someone saves, one download; unsent changes go first; a change made during the download is kept; the version follows the same reading rule as the profile. `localBackend.test.ts`: the e-mailed code is checked once, a wrong one is refused, the password stays the same. A browser run (computer, phone, Arabic menus): sign up, set up, choose a code, forget it, receive the code, wrong code refused, new code chosen, old code refused, new code opens Settings; accessibility scan of each new screen: no violation. |
+
+## Round 37 — "Forgot the code?": the account's password too
+
+| What | How it was done |
+|---|---|
+| The password | On the "Forgot the code?" page, an account created with a password (e-mail or phone) can type it instead of waiting for an e-mail: `checkPassword` (`src/backend/Backend.ts`) signs in again as the same account, with its own address, and changes nothing. A wrong one says "Wrong password." The e-mailed code (Round 36) stays below, and the password field goes away once a code was asked for. Google / Apple accounts have no password in the app: only the code. |
+| Who | One rule, tested, in `forgotCodeWays` (`src/lib/forgotCode.ts`): the family (owner, or a co-parent managing the profile), or a professional for her own code; never a linked tablet (told to do it from a parent's device). Both servers also refuse a password check from a tablet. |
+| After the proof | The keypad says "It is you. Choose the new code." above the digits, with the usual explanation (`t.pinWhy`); the pauses after wrong codes start again from zero. The "type it again" step is now only reached from the first typing (it was the fallback of any other step). |
+| Words | "You can change it later in Settings → Security" (keypad explanation, guide) now names the group shown on screen: **Code and data**. Three languages. |
+| Phone screens | The password field (shared with the sign-in screen) no longer pushes its eye button out of the box in a narrow panel. |
+| Tests | `forgotCode.test.ts`: who is offered it; the password checked without change; a Google account and a tablet refused; the new family code saved by the family and refused from an editor. `forgotCodeServer.test.ts` (real-server requests, faked): the password goes with the account's own address; the e-mailed code is checked as a reset code without choosing a new password; a tablet is refused before anything is sent. `npm run test:a11y` now goes through the family's set-up and scans "Forgot the code?" and the new-code keypad. |
+
 ## How everything is checked
 
 | Check | What it does |
 |---|---|
 | `npm run typecheck` | TypeScript reads the whole code and refuses mistakes such as a missing field or a wrong type. |
-| `npm test` | 280 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office, colour contrast. |
+| `npm test` | 300 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office, colour contrast. |
 | `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger, a tablet and a member of our team; then every attack found by the security review, which must fail; then a professional who prepares a profile and hands it to the parents; then the e-mails to the team; then the figures for the team, the problems and the votes; 176 checks. |
 | `npm run test:live` | The same story on a second, empty Supabase project (never the one families use), through the app's own code: 13 steps, including devices, history undo, invitation codes, revisions and materials (needs "Confirm email" off while it runs). Last full run: before the back office (all 13 passed); **to run again once the back-office migration is on the real project**. |
 | `npm run test:a11y` | Accessibility: 204 scans of 57 screens against WCAG 2.2 AA (four sizes, Arabic), then a keyboard-only run. Last run: 0 rule break. |

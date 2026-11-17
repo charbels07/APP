@@ -19,6 +19,8 @@
   and the set-up preview). Display only: never change the stored cells for it. The family can keep
   "Final places" instead (`settings.wordPlaces`); caregiver mode always shows the real places.
 - Platform-specific code uses `.web.ts(x)` siblings (media store, printing, preview).
+- Sync: an open board looks for others' changes every 30 s with `profileVersion` (one number) and downloads the
+  profile only when it is newer (`pull` in `src/state/profileSync.ts`). Never download whole profiles on a timer.
 - Pictograms: only libraries verified as free for commercial use (`docs/PICTOGRAM-LICENSES.md`,
   `pictograms/libraries.json`). Never add ARASAAC or any NC / unclear-licence set. A pictogram is
   identified by its stable key `library/file` (`SymbolRef` kind `picto`), not by a number.
@@ -95,7 +97,9 @@
   The family chooses it the first time a new board opens, before the guide (`OpenGuideOnStart` in
   `src/ui/Stages.tsx` opens `{ kind: 'pin', then: { kind: 'guide' } }` once the person's rights are
   known), and whenever a code is being chosen the keypad explains what it is (`t.pinWhy`). Never let
-  the "choose a code" keypad appear without that explanation. Board settings are edited through `useSettingsDraft` (saved on
+  the "choose a code" keypad appear without that explanation. "Forgot the code?" under the keypad: the account's password
+  (`checkPassword`) or a code sent to the account's e-mail or phone (`requestPasswordReset`, checked by
+  `checkResetCode`, password unchanged) lets the family (or a professional, for her own code) choose a new one; a linked tablet is sent to a parent's device (who: `forgotCodeWays`). Board settings are edited through `useSettingsDraft` (saved on
   "Save", not at each change): new settings controls use the draft's `st` / `set`, not `app.update`.
 - Words for the user: the Schedule screen holds "sequences" (step lists: New sequence / Edit sequence) and
   the week and month "schedules" (never "plan": it reads as a subscription plan). Lists the user orders

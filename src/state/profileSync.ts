@@ -186,16 +186,22 @@ export class ProfileSync {
     if (attempt < 3) return this.doPush(attempt + 1);
   }
 
-  /** Looks for a newer version on the server (someone else's change). */
+  /**
+   * Looks for a newer version on the server (someone else's change). Asked every 30 s while a
+   * board is open: only the version number is read, the whole profile only when it is newer.
+   */
   async pull(): Promise<void> {
     if (this.copy.dirty) return this.push().catch(() => {});
     try {
-      const r = await this.api.getProfile(this.id);
-      if (r.version > this.copy.version) {
-        const data = migrate(r.data);
-        this.copy = { ...this.copy, data, base: clone(data), version: r.version, name: r.name };
-        await this.writeNow();
-        this.onRemote?.(data);
+      if ((await this.api.profileVersion(this.id)) > this.copy.version) {
+        const r = await this.api.getProfile(this.id);
+        // Changed here while it downloaded: the next save puts ours on top of theirs instead.
+        if (r.version > this.copy.version && !this.copy.dirty) {
+          const data = migrate(r.data);
+          this.copy = { ...this.copy, data, base: clone(data), version: r.version, name: r.name };
+          await this.writeNow();
+          this.onRemote?.(data);
+        }
       }
       this.lastSyncedAt = Date.now();
       if (this.state === 'offline') this.setState('saved');

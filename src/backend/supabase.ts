@@ -446,6 +446,30 @@ export class SupabaseBackend implements Backend {
     if (e2) fail(e2);
   }
 
+  async checkResetCode(target: { email?: string; phone?: string }, code: string): Promise<void> {
+    // The same check as a password reset, without choosing a new password: the session simply
+    // starts again for the same account.
+    const email = normEmail(target.email);
+    const { error } = email
+      ? await this.sb.auth.verifyOtp({ email, token: code.trim(), type: 'recovery' })
+      : await this.sb.auth.verifyOtp({ phone: normPhone(target.phone)!, token: code.trim(), type: 'sms' });
+    if (error) fail(error);
+  }
+
+  async checkPassword(password: string): Promise<void> {
+    // Signing in again as the same account, with its own address: the session starts again,
+    // nothing else changes.
+    const me = await this.me();
+    if (me.provider === 'device') throw new BackendError('forbidden');
+    const email = normEmail(me.email);
+    const phone = normPhone(me.phone);
+    if (!email && !phone) throw new BackendError('missing_contact');
+    const { error } = email
+      ? await this.sb.auth.signInWithPassword({ email, password })
+      : await this.sb.auth.signInWithPassword({ phone: phone!, password });
+    if (error) fail(error);
+  }
+
   async changePassword(current: string, next: string): Promise<void> {
     const me = await this.me();
     const check = me.email
@@ -453,40 +477,6 @@ export class SupabaseBackend implements Backend {
       : await this.sb.auth.signInWithPassword({ phone: me.phone!, password: current });
     if (check.error) fail(check.error);
     const { error } = await this.sb.auth.updateUser({ password: next });
-    if (error) fail(error);
-  }
-
-  /** The account's own address or number, never one typed on the screen. */
-  private async identityTarget(): Promise<{ email?: string; phone?: string }> {
-    const me = await this.me();
-    if (me.provider === 'device') throw new BackendError('forbidden');
-    const email = normEmail(me.email);
-    const phone = email ? undefined : normPhone(me.phone);
-    if (!email && !phone) throw new BackendError('missing_contact');
-    return { email, phone };
-  }
-
-  async sendIdentityCode(): Promise<CodeSent> {
-    const { email, phone } = await this.identityTarget();
-    // A sign-in code for this existing account ("Magic Link" e-mail, see supabase/README.md).
-    const { error } = email
-      ? await this.sb.auth.signInWithOtp({ email, options: { shouldCreateUser: false } })
-      : await this.sb.auth.signInWithOtp({ phone: phone!, options: { shouldCreateUser: false } });
-    if (error) fail(error);
-    return { sentTo: (email ?? phone)! };
-  }
-
-  async confirmIdentity(proof: { password: string } | { code: string }): Promise<void> {
-    const { email, phone } = await this.identityTarget();
-    // Signing in again as the same account: the session is renewed, nothing else changes.
-    const { error } =
-      'password' in proof
-        ? email
-          ? await this.sb.auth.signInWithPassword({ email, password: proof.password })
-          : await this.sb.auth.signInWithPassword({ phone: phone!, password: proof.password })
-        : email
-          ? await this.sb.auth.verifyOtp({ email, token: proof.code.trim(), type: 'email' })
-          : await this.sb.auth.verifyOtp({ phone: phone!, token: proof.code.trim(), type: 'sms' });
     if (error) fail(error);
   }
 
@@ -533,6 +523,13 @@ export class SupabaseBackend implements Backend {
     const r = await data<Row | null>(this.sb.from('profiles').select('*').eq('id', id).maybeSingle());
     if (!r) throw new BackendError('forbidden');
     return toProfileRec(r);
+  }
+
+  async profileVersion(id: string): Promise<number> {
+    // One column, same reading rule as the whole row: no content leaves the database.
+    const r = await data<Row | null>(this.sb.from('profiles').select('version').eq('id', id).maybeSingle());
+    if (!r) throw new BackendError('forbidden');
+    return r.version;
   }
 
   async saveProfile(id: string, profile: Profile, baseVersion: number): Promise<SaveResult> {

@@ -8,10 +8,8 @@ import { typedChips } from '../../lib/typedWords';
 import type { Lang, UiLang } from '../../model/types';
 import { UI_LANG_NAMES } from '../../i18n/ui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { forgotCodeWays } from '../../lib/forgotCode';
 import { opensAlone, useApp } from '../../state/AppState';
 import { useBoard } from '../../state/BoardContext';
-import { useSessionMaybe } from '../../state/Session';
 import { Btn, Panel, Section, useNavRtl } from '../common';
 import { usePictoLibrary } from '../PictoPicker';
 import { chipPicture } from '../SentenceStrip';
@@ -21,8 +19,10 @@ import { C, radius } from '../theme';
 import { SearchBox } from '../SearchBox';
 import { VoiceButton } from '../VoiceButton';
 import { pressed } from '../a11y';
-import { ProveItsYou } from './ForgotCode';
-import { LinkBtn } from '../start/StartLayout';
+import { useSessionMaybe } from '../../state/Session';
+import { codeFrom } from '../../lib/codeInput';
+import { forgotCodeWays } from '../../lib/forgotCode';
+import { PasswordField } from '../start/AuthScreen';
 
 export function pathText(loc: Location, app: ReturnType<typeof useApp>): string {
   const { profile, lang, t } = app;
@@ -289,13 +289,13 @@ export const pinTooEasy = (code: string) => code === '1234' || /^(\d)\1{3}$/.tes
  * Caregiver mode is protected so the user can't modify the board by accident (NAV-04).
  * The first time, the person simply chooses a code (typed twice) and then uses it each time;
  * there is no code to know beforehand. Wrong codes are counted on this device.
- * "Forgot the code?": the family shows the account is theirs (password or a code by e-mail),
- * then chooses a new code the usual way (src/ui/panels/ForgotCode.tsx).
+ * "Forgot the code?": the account's password, or a code sent to the account's e-mail (or phone),
+ * proves it is the family (or, for her own code, the professional); then a new code is chosen.
+ * A linked tablet has neither: it is done from a parent's device (src/lib/forgotCode.ts).
  */
 export function PinPanel() {
   const app = useApp();
   const board = useBoard();
-  const account = useSessionMaybe()?.account;
   const { t, profile } = app;
   const [code, setCode] = useState('');
   const [msg, setMsg] = useState<string | null>(null);
@@ -306,19 +306,24 @@ export function PinPanel() {
   const unset = own ? !/^\d{4}$/.test(pin) : pin === '1234';
   // In a child's profile the family chooses the code (the preview has no account: anyone trying it does).
   const canChoose = !!own || !board || board.manager;
-  const [step, setStep] = useState<'enter' | 'forgot' | 'choose' | 'repeat'>(unset && canChoose ? 'choose' : 'enter');
-  const [chosen, setChosen] = useState('');
-  // Code forgotten: only the family (never a linked tablet, nor a professional on her own code).
-  const forgot = useMemo(
-    () => (app.preview ? null : forgotCodeWays({ account, manager: !!board?.manager, ownCode: !!own })),
-    [app.preview, account, board?.manager, own],
-  );
+  const [step, setStep] = useState<'enter' | 'choose' | 'repeat' | 'forgot'>(unset && canChoose ? 'choose' : 'enter');
+  // Forgotten code: who may choose a new one, and where the check code is sent.
+  const sess = useSessionMaybe();
+  const acc = sess?.account;
+  const ways = forgotCodeWays({ account: acc, manager: !!board?.manager, ownCode: !!own });
+  const contact = ways?.contact;
+  const to = ways?.to ?? '';
+  const mayReset = !!sess && !!ways;
+  const [forgot, setForgot] = useState<{ sent: boolean; code: string; pw: string; busy: boolean; err: string | null; demo?: string }>({
+    sent: false,
+    code: '',
+    pw: '',
+    busy: false,
+    err: null,
+  });
   // The account was confirmed: the new code is chosen without the old one.
   const [proved, setProved] = useState(false);
-  // The way around the code went away meanwhile (rights changed, signed out): back to the keypad.
-  useEffect(() => {
-    if (step === 'forgot' && !forgot) setStep('enter');
-  }, [step, forgot]);
+  const [chosen, setChosen] = useState('');
   const [lock, setLock] = useState({ fails: 0, until: 0 });
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
@@ -385,6 +390,54 @@ export function PinPanel() {
       open();
     }
   };
+  const startForgot = () => {
+    setCode('');
+    setMsg(null);
+    // The preview has no account: forgetting there simply means choosing again.
+    if (!own && !board) return setStep('choose');
+    setForgot({ sent: false, code: '', pw: '', busy: false, err: null });
+    setStep('forgot');
+  };
+  // It is the account's owner: the count of wrong codes starts again, and a new code is chosen.
+  const confirmed = () => {
+    saveLock({ fails: 0, until: 0 });
+    setProved(true);
+    setForgot((f) => ({ ...f, pw: '', busy: false }));
+    setStep('choose');
+  };
+  const checkPw = async () => {
+    if (!sess || !ways?.password || !forgot.pw || forgot.busy) return;
+    setForgot((f) => ({ ...f, busy: true, err: null }));
+    try {
+      await sess.api.checkPassword(forgot.pw);
+      confirmed();
+    } catch (e) {
+      const wrong = (e as { code?: string })?.code === 'wrong_credentials';
+      setForgot((f) => ({ ...f, busy: false, err: wrong ? t.pinForgotWrongPassword : t.pinForgotError }));
+    }
+  };
+  const sendCode = async () => {
+    if (!sess || !contact) return;
+    setForgot((f) => ({ ...f, busy: true, err: null }));
+    try {
+      const sent = await sess.api.requestPasswordReset(contact);
+      setForgot((f) => ({ ...f, sent: true, busy: false, demo: sent.demoCode }));
+    } catch {
+      setForgot((f) => ({ ...f, busy: false, err: t.pinForgotError }));
+    }
+  };
+  const checkCode = async () => {
+    const typed = codeFrom(forgot.code);
+    if (!sess || !contact || !typed) return;
+    setForgot((f) => ({ ...f, busy: true, err: null }));
+    try {
+      await sess.api.checkResetCode(contact, typed);
+      confirmed();
+    } catch {
+      setForgot((f) => ({ ...f, busy: false, err: t.pinForgotWrong }));
+    }
+  };
+  const rtlText = rtl ? ({ textAlign: 'right', writingDirection: 'rtl' } as const) : null;
   const hint =
     msg ??
     (waiting
@@ -399,89 +452,121 @@ export function PinPanel() {
             ? t.pinNotChosen
             : t.pinHint);
   const error = !!msg;
-  const confirmed = () => {
-    // The person proved who they are: the count of wrong codes starts again.
-    saveLock({ fails: 0, until: 0 });
-    setProved(true);
-    setMsg(null);
-    setCode('');
-    setStep('choose');
-  };
-  const rtlText = rtl ? ({ textAlign: 'right', writingDirection: 'rtl' } as const) : null;
-  const keypad = (
-    <>
-      <Text
-        style={[
-          styles.muted,
-          { textAlign: 'center' },
-          (error || waiting) && { color: C.help, fontWeight: '700' },
-          proved && step === 'choose' && !error && { color: C.success, fontWeight: '700' },
-        ]}
-        accessibilityLiveRegion="polite"
-      >
-        {hint}
-      </Text>
-      <View style={styles.dots}>
-        {[0, 1, 2, 3].map((i) => (
-          <View key={i} style={[styles.dot, i < code.length && styles.dotOn, error && { borderColor: C.help }]} />
-        ))}
-      </View>
-      <View style={styles.pad}>
-        {['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'].map((k, i) =>
-          k === '' ? (
-            <View key={i} style={styles.key} />
-          ) : (
-            <Pressable
-              key={i}
-              onPress={() => (k === '⌫' ? setCode((c) => c.slice(0, -1)) : press(k))}
-              style={({ pressed }) => [styles.key, styles.keyBtn, pressed && { backgroundColor: C.accentSoft }]}
-              accessibilityRole="button"
-              accessibilityLabel={k}
-            >
-              <Text style={styles.keyText}>{k}</Text>
-            </Pressable>
-          ),
-        )}
-      </View>
-    </>
-  );
   return (
     <Panel
-      title={step === 'enter' ? t.pinTitle : step === 'forgot' ? t.pinForgotTitle : t.pinChooseTitle}
+      title={step === 'forgot' ? t.pinForgotTitle : step === 'enter' ? t.pinTitle : t.pinChooseTitle}
       // Closed without choosing, on the first opening: the guide still opens (the code is asked later).
       onClose={() => app.setOverlay(beforeGuide ? { kind: 'guide' } : null)}
-      // From "Forgot the code?": Back (and Escape) return to the keypad.
       onBack={step === 'forgot' ? () => setStep('enter') : undefined}
       maxWidth={step === 'enter' ? 380 : 440}
       tone="edit"
     >
-      {step === 'forgot' && forgot ? (
-        <ProveItsYou ways={forgot} onConfirmed={confirmed} />
-      ) : (
-        <>
-          {step !== 'enter' && (
-            // Choosing a code: what it is and what it protects, before the digits.
-            <View style={styles.pinWhy}>
-              {(own ? t.pinWhyPro : t.pinWhy).map((line, i) => (
-                <Text key={i} style={[styles.pinWhyText, rtlText]}>
-                  {line}
-                </Text>
-              ))}
-              {beforeGuide && <Text style={[styles.pinWhyText, { fontWeight: '700' }, rtlText]}>{t.pinThenGuide}</Text>}
+      {step === 'forgot' &&
+        (mayReset ? (
+          <View style={{ gap: 12 }}>
+            <Text style={[styles.pinWhyText, rtlText]}>{(ways?.password && !forgot.sent ? t.pinForgotIntroPw : t.pinForgotIntro).replace('{to}', to)}</Text>
+            {/* The account's password, for accounts made with one; hidden once a code was asked for. */}
+            {ways?.password && !forgot.sent && (
+              <>
+                <PasswordField
+                  label={t.pinForgotPassword}
+                  value={forgot.pw}
+                  onChange={(v) => setForgot((f) => ({ ...f, pw: v, err: null }))}
+                  onSubmit={() => void checkPw()}
+                />
+                <Btn kind="primary" icon="check" label={t.pinForgotConfirm} onPress={() => void checkPw()} disabled={forgot.busy || !forgot.pw} />
+              </>
+            )}
+            {forgot.sent && (
+              <Text style={[styles.muted, rtlText]} accessibilityLiveRegion="polite">
+                {t.pinForgotSent.replace('{to}', to)}
+                {forgot.demo ? ` ${t.pinForgotDemo} ${forgot.demo}` : ''}
+              </Text>
+            )}
+            {forgot.sent && (
+              <TextInput
+                value={forgot.code}
+                onChangeText={(v) => setForgot((f) => ({ ...f, code: v, err: null }))}
+                onSubmitEditing={() => void checkCode()}
+                keyboardType="number-pad"
+                autoComplete="one-time-code"
+                textContentType="oneTimeCode"
+                maxLength={60}
+                placeholder={t.pinForgotCode}
+                placeholderTextColor={C.placeholder}
+                accessibilityLabel={t.pinForgotCode}
+                style={styles.codeInput}
+              />
+            )}
+            {forgot.err && (
+              <Text style={[styles.muted, { color: C.help, fontWeight: '700' }, rtlText]} accessibilityLiveRegion="polite">
+                {forgot.err}
+              </Text>
+            )}
+            <View style={[styles.forgotRow, rtl && { flexDirection: 'row-reverse' }]}>
+              {forgot.sent && <Btn kind="primary" label={t.pinForgotCheck} onPress={() => void checkCode()} disabled={forgot.busy || !codeFrom(forgot.code)} />}
+              <Btn
+                kind={forgot.sent || ways?.password ? 'secondary' : 'primary'}
+                label={forgot.sent ? t.pinForgotResend : t.pinForgotSend}
+                onPress={() => void sendCode()}
+                disabled={forgot.busy}
+              />
             </View>
+          </View>
+        ) : (
+          <Text style={[styles.pinWhyText, rtlText]}>{t.pinForgotFamily}</Text>
+        ))}
+      {(step === 'choose' || step === 'repeat') && (
+        // Choosing a code: what it is and what it protects, before the digits.
+        <View style={styles.pinWhy}>
+          {(own ? t.pinWhyPro : t.pinWhy).map((line, i) => (
+            <Text key={i} style={[styles.pinWhyText, rtl && { textAlign: 'right', writingDirection: 'rtl' }]}>
+              {line}
+            </Text>
+          ))}
+          {beforeGuide && <Text style={[styles.pinWhyText, { fontWeight: '700' }, rtl && { textAlign: 'right', writingDirection: 'rtl' }]}>{t.pinThenGuide}</Text>}
+        </View>
+      )}
+      {step !== 'forgot' && (
+        <>
+          <Text
+            style={[
+              styles.muted,
+              { textAlign: 'center' },
+              (error || waiting) && { color: C.help, fontWeight: '700' },
+              proved && step === 'choose' && !error && { color: C.success, fontWeight: '700' },
+            ]}
+            accessibilityLiveRegion="polite"
+          >
+            {hint}
+          </Text>
+          <View style={styles.dots}>
+            {[0, 1, 2, 3].map((i) => (
+              <View key={i} style={[styles.dot, i < code.length && styles.dotOn, error && { borderColor: C.help }]} />
+            ))}
+          </View>
+          <View style={styles.pad}>
+            {['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'].map((k, i) =>
+              k === '' ? (
+                <View key={i} style={styles.key} />
+              ) : (
+                <Pressable
+                  key={i}
+                  onPress={() => (k === '⌫' ? setCode((c) => c.slice(0, -1)) : press(k))}
+                  style={({ pressed }) => [styles.key, styles.keyBtn, pressed && { backgroundColor: C.accentSoft }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={k}
+                >
+                  <Text style={styles.keyText}>{k}</Text>
+                </Pressable>
+              ),
+            )}
+          </View>
+          {step === 'enter' && !unset && (
+            <Pressable onPress={startForgot} accessibilityRole="button" accessibilityLabel={t.pinForgot} style={styles.forgotLink}>
+              <Text style={styles.forgotText}>{t.pinForgot}</Text>
+            </Pressable>
           )}
-          {keypad}
-          {/* Also while waiting after too many wrong codes: that is when it is needed. */}
-          {step === 'enter' && !unset && forgot ? (
-            <LinkBtn
-              label={t.pinForgot}
-              onPress={() => {
-                setMsg(null);
-                setCode('');
-                setStep('forgot');
-              }}
-            />
-          ) : null}
         </>
       )}
     </Panel>
@@ -492,6 +577,21 @@ const styles = StyleSheet.create({
   warn: { fontSize: 14, backgroundColor: C.editSoft, color: C.edit, padding: 10, borderRadius: radius.md },
   pinWhy: { gap: 6, backgroundColor: C.surfaceAlt, borderRadius: radius.md, padding: 12 },
   pinWhyText: { fontSize: 15, lineHeight: 21, color: C.text },
+  forgotLink: { alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: 12 },
+  forgotText: { color: C.accent, fontSize: 15, fontWeight: '600', textDecorationLine: 'underline' },
+  forgotRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  codeInput: {
+    minHeight: 52,
+    fontSize: 22,
+    letterSpacing: 4,
+    textAlign: 'center',
+    borderWidth: 2,
+    borderColor: C.border,
+    borderRadius: radius.md,
+    color: C.text,
+    backgroundColor: C.surface,
+    paddingHorizontal: 12,
+  },
   muted: { color: C.textMuted, fontSize: 14 },
   result: {
     flexDirection: 'row',

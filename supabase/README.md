@@ -25,10 +25,8 @@ everything works on one device. Follow these steps to switch to the real server.
   (`{{ .Token }}` is where Supabase writes the code). **Paste both again after 14 November 2026**:
   the code is now written so that mail apps no longer turn it into a phone link (copying it
   used to copy a link instead of the digits).
-  Also paste `email-templates/sign-in-code.html` into *Magic Link* (added 17 November 2026): it is
-  the code a parent receives after touching "Forgot the code?" on the caregiver keypad. Without it,
-  Supabase's default *Magic Link* e-mail holds only a link, and the app asks for the code; the
-  account's password still works meanwhile.
+  **And paste *Reset password* again after 17 November 2026**: the same code now also lets a
+  parent choose a new caregiver code ("Forgot the code?" on the keypad), and the e-mail says so.
 - **Phone:** on, with an SMS provider (Twilio or MessageBird account; SMS are paid).
 - **Google:** create an OAuth client in Google Cloud Console and paste its ID and secret.
 - **Apple:** needs the Apple Developer account (Sign in with Apple service ID and key).

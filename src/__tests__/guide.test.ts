@@ -29,7 +29,7 @@ describe('in-app guide', () => {
     const text = (lang: 'fr' | 'en' | 'ar') => GUIDE.flatMap((c) => c.steps[lang]).join(' ');
     for (const lang of ['fr', 'en', 'ar'] as const) {
       const t = strings(lang);
-      for (const label of [t.speak, t.showMe, t.sayWord, t.drawWord, t.newTla, t.markDone, t.firstThen, t.recordDemo, t.saveDemo, t.moveCell, t.createWord, t.srcPictos, t.srcPhoto, t.pickPicture, t.sExport, t.suggest])
+      for (const label of [t.speak, t.showMe, t.sayWord, t.drawWord, t.newTla, t.markDone, t.firstThen, t.recordDemo, t.saveDemo, t.moveCell, t.createWord, t.srcPictos, t.srcPhoto, t.pickPicture, t.sExport, t.suggest, t.pinForgot])
         expect(text(lang)).toContain(label);
     }
   });
@@ -71,8 +71,6 @@ describe('in-app guide', () => {
         dataStrings(lang).shareTitle,
         // a word recorded by the family, per language; which voice the device uses
         t.voice, e.recordVoice, t.voiceUsed,
-        // a forgotten caregiver code
-        t.pinForgot,
       ];
       for (const label of quoted) expect(text(lang)).toContain(label);
       // Removed things are no longer described.

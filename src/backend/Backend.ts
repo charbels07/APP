@@ -93,15 +93,17 @@ export interface Backend {
   signOut(): Promise<void>;
   requestPasswordReset(target: { email?: string; phone?: string }): Promise<CodeSent>;
   resetPassword(target: { email?: string; phone?: string }, code: string, password: string): Promise<void>;
-  changePassword(current: string, next: string): Promise<void>;
   /**
-   * The person in front of the device shows again that the signed-in account is theirs (before
-   * choosing a new caregiver code when the old one is forgotten): with the account's password, or
-   * with a sign-in code sent to the account's own e-mail (SMS for an account with a phone only).
-   * Same account, same rights afterwards. A tablet linked with a code has neither: refused.
+   * Checks a code sent by `requestPasswordReset` without changing the password: proves that the
+   * person holds the account's mailbox or phone (e.g. to choose a new caregiver code they forgot).
    */
-  sendIdentityCode(): Promise<CodeSent>;
-  confirmIdentity(proof: { password: string } | { code: string }): Promise<void>;
+  checkResetCode(target: { email?: string; phone?: string }, code: string): Promise<void>;
+  /**
+   * Checks the signed-in account's own password without changing anything: the other way to prove
+   * it is the account's owner (forgotten caregiver code). A tablet linked with a code has none.
+   */
+  checkPassword(password: string): Promise<void>;
+  changePassword(current: string, next: string): Promise<void>;
   updateAccount(patch: { displayName?: string; email?: string; phone?: string; prefs?: Partial<AccountPrefs> }): Promise<Account>;
   deleteAccount(): Promise<void>;
 
@@ -109,6 +111,8 @@ export interface Backend {
   listProfiles(): Promise<ProfileSummary[]>;
   createProfile(input: { name: string; age?: number; intake?: Intake; data: Profile }): Promise<ChildRecord>;
   getProfile(id: string): Promise<ChildRecord>;
+  /** Only the server's version number of a profile (a few bytes): an open board asks it often, the whole profile only when newer. */
+  profileVersion(id: string): Promise<number>;
   /** Saves only if nobody saved a newer version meanwhile (otherwise returns that version). */
   saveProfile(id: string, data: Profile, baseVersion: number): Promise<SaveResult>;
   deleteProfile(id: string): Promise<void>;

@@ -1,9 +1,9 @@
 /**
  * @jest-environment node
  *
- * "Forgot the code?" against the real server: the proof goes to the signed-in account's own
- * address (never one typed on the screen), the e-mail is a sign-in code for an existing account
- * (no account is ever created), and a linked tablet is refused before anything is sent.
+ * "Forgot the code?" against the real server: the password is checked for the signed-in account's
+ * own address (never one typed on the screen), the e-mailed reset code is checked without choosing
+ * a new password, and a linked tablet is refused before anything is sent.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SupabaseBackend } from '../backend/supabase';
@@ -51,40 +51,34 @@ beforeEach(async () => {
 });
 
 describe('real server: showing the account is yours again', () => {
-  it('sends a sign-in code to the account’s own e-mail, without creating any account', async () => {
+  it('checks the password of the signed-in account, with its own address', async () => {
     const { api, calls } = await signedIn(rita);
-    expect(await api.sendIdentityCode()).toEqual({ sentTo: 'rita@example.com' });
-    const otp = calls.find((c) => c.path.startsWith('/auth/v1/otp'))!;
-    expect(otp.body).toMatchObject({ email: 'rita@example.com', create_user: false });
-  });
-
-  it('checks the code as an e-mail sign-in code of that same address', async () => {
-    const { api, calls } = await signedIn(rita);
-    await expect(api.confirmIdentity({ code: '000000' })).rejects.toMatchObject({ code: 'code_expired' });
-    await expect(api.confirmIdentity({ code: ' 123456 ' })).resolves.toBeUndefined();
-    const verify = calls.filter((c) => c.path.startsWith('/auth/v1/verify')).pop()!;
-    expect(verify.body).toMatchObject({ email: 'rita@example.com', token: '123456', type: 'email' });
-  });
-
-  it('checks the password of that same account', async () => {
-    const { api, calls } = await signedIn(rita);
-    await expect(api.confirmIdentity({ password: 'nope' })).rejects.toMatchObject({ code: 'wrong_credentials' });
-    await expect(api.confirmIdentity({ password: 'secret123' })).resolves.toBeUndefined();
+    await expect(api.checkPassword('nope')).rejects.toMatchObject({ code: 'wrong_credentials' });
+    await expect(api.checkPassword('secret123')).resolves.toBeUndefined();
     const token = calls.filter((c) => c.path.startsWith('/auth/v1/token')).pop()!;
     expect(token.path).toContain('grant_type=password');
     expect(token.body).toMatchObject({ email: 'rita@example.com', password: 'secret123' });
+    // Nothing is changed on the account.
+    expect(calls.some((c) => c.path.startsWith('/auth/v1/user') && Object.keys(c.body).length > 0)).toBe(false);
   });
 
-  it('an account with a phone only gets a text message', async () => {
+  it('an account with a phone only is checked with its number', async () => {
     const { api, calls } = await signedIn({ ...rita, email: '', phone: '96170123456', phone_confirmed_at: '2026-11-01T00:00:00Z', app_metadata: { provider: 'phone' } });
-    expect(await api.sendIdentityCode()).toEqual({ sentTo: '96170123456' });
-    expect(calls.find((c) => c.path.startsWith('/auth/v1/otp'))!.body).toMatchObject({ phone: '96170123456', create_user: false });
+    await api.checkPassword('secret123');
+    expect(calls.find((c) => c.path.startsWith('/auth/v1/token'))!.body).toMatchObject({ phone: '96170123456', password: 'secret123' });
+  });
+
+  it('the e-mailed code is checked as a reset code, without choosing a new password', async () => {
+    const { api, calls } = await signedIn(rita);
+    await expect(api.checkResetCode({ email: 'rita@example.com' }, '000000')).rejects.toMatchObject({ code: 'code_expired' });
+    await expect(api.checkResetCode({ email: 'rita@example.com' }, ' 123456 ')).resolves.toBeUndefined();
+    expect(calls.filter((c) => c.path.startsWith('/auth/v1/verify')).pop()!.body).toMatchObject({ email: 'rita@example.com', token: '123456', type: 'recovery' });
+    expect(calls.some((c) => c.path.startsWith('/auth/v1/user') && Object.keys(c.body).length > 0)).toBe(false);
   });
 
   it('a tablet linked with a code is refused before anything is sent', async () => {
     const { api, calls } = await signedIn({ ...rita, email: undefined, email_confirmed_at: undefined, is_anonymous: true, app_metadata: { provider: 'anonymous' } });
-    await expect(api.sendIdentityCode()).rejects.toMatchObject({ code: 'forbidden' });
-    await expect(api.confirmIdentity({ password: 'secret123' })).rejects.toMatchObject({ code: 'forbidden' });
+    await expect(api.checkPassword('secret123')).rejects.toMatchObject({ code: 'forbidden' });
     expect(calls.some((c) => /\/auth\/v1\/(otp|verify|token)/.test(c.path))).toBe(false);
   });
 });

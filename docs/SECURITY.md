@@ -88,6 +88,17 @@ family's caregiver code is no longer asked to prepare changes. That code keeps t
 the tools on the child's tablet; a signed-in professional's changes are still checked one by one
 by the database (proposal, direct edit or refusal, according to the rights the family gave).
 
+### Added later: a forgotten caregiver code (November 2026)
+
+"Forgot the code?" on the keypad lets the family choose a new code only after proving it is the
+account's owner: with the account's password (checked by signing in again as that same account,
+with its own address: `checkPassword`), or by holding the account's mailbox or phone: a code is
+sent there (the password-reset code) and checked by Supabase without changing the password. The rule for who may change the code does not move: only the family
+or a team manager, as before (`save_profile` refuses anyone else); a linked tablet has no mailbox and
+is told to do it from a parent's device. A child cannot use it: it needs the parent's password or e-mail. The proof is checked on the device
+(the database cannot tell who holds the tablet); that is enough, because the code only ever kept
+the adults' tools from a child's hands, and the account itself downloads the profile the code is in.
+
 ### Added later: "Keep me logged in" (November 2026)
 
 On the log-in and sign-up forms. Ticked (the default, right for the family's own tablet or
@@ -112,29 +123,6 @@ at once. The caregiver code only ever protected against a child's hands, not aga
 the account, so nothing new can be read by someone who is not in the team. But a tablet signed in
 with a team account must not be handed to a child: one tap opens the back office, where the
 professionals' certificates are. Use an ordinary family account on any tablet a child uses.
-
-### Added later: a forgotten caregiver code (November 2026)
-
-The keypad offers "Forgot the code?" so that a family who forgot its code is not locked out of
-Settings on every device. What keeps it safe:
-
-- it is offered only on a family's board, to an account the database lets change the family's
-  code (the owner, or a co-parent managing the profile): never on a tablet linked with a code
-  (refused by both servers too), on a professional's board (she types her own code, and the
-  family's is never hers), in the preview or on the set-up's try-board;
-- before the new code, the person shows again that the signed-in account is theirs: its password,
-  or a sign-in code sent to the account's **own** address or number (never one typed on the
-  screen; `shouldCreateUser: false`, so no account can be created this way). Supabase Auth limits
-  the tries and the e-mails;
-- the new code is saved like any change of the profile: `save_profile` still refuses a new code
-  from anyone but the family (`consent_protected`, tested in `security_scenario.sql` and
-  `pro_profiles_scenario.sql`); no new database function was needed.
-
-The check of the password or of the e-mailed code happens on the device: the database cannot
-tell who holds the tablet. That is enough, because the caregiver code only ever protected the
-adults' tools against a child's hands; a person with the account's password could already read
-the code, which is part of the child's profile that account downloads. After the proof, the
-pauses after wrong codes start again from zero.
 
 ### Added later: e-mails to the app's team (November 2026)
 
@@ -261,7 +249,7 @@ Names move a little between versions of the dashboard; look for the nearest word
 | Command | What it proves |
 |---|---|
 | `npm run test:db` | 176 checks on a throw-away database: the normal story, then **every attack of this review, which must fail**, then the hand-over of a profile created by a professional, then the e-mails to the team, then the figures for the team, the technical problems and the votes. |
-| `npm test` | 280 tests; `security.test.ts` covers links, other people's changes, what stays on the device, the print page, the website protections. |
+| `npm test` | 300 tests; `security.test.ts` covers links, other people's changes, what stays on the device, the print page, the website protections. |
 | `npm audit` | Known flaws in libraries. Today: none in what ships to families (4 medium ones in build tools only). |
 | `npm run test:a11y` | The screens still pass the accessibility scan after these changes. |
 

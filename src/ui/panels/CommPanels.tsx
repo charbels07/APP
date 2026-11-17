@@ -19,6 +19,8 @@ import { C, radius } from '../theme';
 import { SearchBox } from '../SearchBox';
 import { VoiceButton } from '../VoiceButton';
 import { pressed } from '../a11y';
+import { useSessionMaybe } from '../../state/Session';
+import { codeFrom } from '../../lib/codeInput';
 
 export function pathText(loc: Location, app: ReturnType<typeof useApp>): string {
   const { profile, lang, t } = app;
@@ -285,6 +287,9 @@ export const pinTooEasy = (code: string) => code === '1234' || /^(\d)\1{3}$/.tes
  * Caregiver mode is protected so the user can't modify the board by accident (NAV-04).
  * The first time, the person simply chooses a code (typed twice) and then uses it each time;
  * there is no code to know beforehand. Wrong codes are counted on this device.
+ * "Forgot the code?": a code sent to the account's e-mail (or phone) proves it is the family (or,
+ * for her own code, the professional); then a new code is chosen. A linked tablet has no mailbox:
+ * it is done from a parent's device.
  */
 export function PinPanel() {
   const app = useApp();
@@ -299,7 +304,19 @@ export function PinPanel() {
   const unset = own ? !/^\d{4}$/.test(pin) : pin === '1234';
   // In a child's profile the family chooses the code (the preview has no account: anyone trying it does).
   const canChoose = !!own || !board || board.manager;
-  const [step, setStep] = useState<'enter' | 'choose' | 'repeat'>(unset && canChoose ? 'choose' : 'enter');
+  const [step, setStep] = useState<'enter' | 'choose' | 'repeat' | 'forgot'>(unset && canChoose ? 'choose' : 'enter');
+  // Forgotten code: who may choose a new one, and where the check code is sent.
+  const sess = useSessionMaybe();
+  const acc = sess?.account;
+  const contact = acc && acc.provider !== 'device' ? (acc.email ? { email: acc.email } : acc.phone ? { phone: acc.phone } : null) : null;
+  const to = contact?.email ?? contact?.phone ?? '';
+  const mayReset = !!sess && !!contact && (!!own || !!board?.manager);
+  const [forgot, setForgot] = useState<{ sent: boolean; code: string; busy: boolean; err: string | null; demo?: string }>({
+    sent: false,
+    code: '',
+    busy: false,
+    err: null,
+  });
   const [chosen, setChosen] = useState('');
   const [lock, setLock] = useState({ fails: 0, until: 0 });
   const [now, setNow] = useState(Date.now());
@@ -366,17 +383,92 @@ export function PinPanel() {
       again(t.pinMismatch);
     }
   };
+  const startForgot = () => {
+    setCode('');
+    setMsg(null);
+    // The preview has no account: forgetting there simply means choosing again.
+    if (!own && !board) return setStep('choose');
+    setForgot({ sent: false, code: '', busy: false, err: null });
+    setStep('forgot');
+  };
+  const sendCode = async () => {
+    if (!sess || !contact) return;
+    setForgot((f) => ({ ...f, busy: true, err: null }));
+    try {
+      const sent = await sess.api.requestPasswordReset(contact);
+      setForgot((f) => ({ ...f, sent: true, busy: false, demo: sent.demoCode }));
+    } catch {
+      setForgot((f) => ({ ...f, busy: false, err: t.pinForgotError }));
+    }
+  };
+  const checkCode = async () => {
+    const typed = codeFrom(forgot.code);
+    if (!sess || !contact || !typed) return;
+    setForgot((f) => ({ ...f, busy: true, err: null }));
+    try {
+      await sess.api.checkResetCode(contact, typed);
+      saveLock({ fails: 0, until: 0 });
+      setStep('choose');
+    } catch {
+      setForgot((f) => ({ ...f, busy: false, err: t.pinForgotWrong }));
+    }
+  };
+  const rtlText = rtl ? ({ textAlign: 'right', writingDirection: 'rtl' } as const) : null;
   const hint = msg ?? (waiting ? t.pinLocked.replace('{n}', String(wait)) : step === 'choose' ? t.pinChoose : step === 'repeat' ? t.pinRepeat : unset ? t.pinNotChosen : t.pinHint);
   const error = !!msg;
   return (
     <Panel
-      title={step === 'enter' ? t.pinTitle : t.pinChooseTitle}
+      title={step === 'forgot' ? t.pinForgotTitle : step === 'enter' ? t.pinTitle : t.pinChooseTitle}
       // Closed without choosing, on the first opening: the guide still opens (the code is asked later).
       onClose={() => app.setOverlay(beforeGuide ? { kind: 'guide' } : null)}
+      onBack={step === 'forgot' ? () => setStep('enter') : undefined}
       maxWidth={step === 'enter' ? 380 : 440}
       tone="edit"
     >
-      {step !== 'enter' && (
+      {step === 'forgot' &&
+        (mayReset ? (
+          <View style={{ gap: 12 }}>
+            <Text style={[styles.pinWhyText, rtlText]}>{t.pinForgotIntro.replace('{to}', to)}</Text>
+            {forgot.sent && (
+              <Text style={[styles.muted, rtlText]} accessibilityLiveRegion="polite">
+                {t.pinForgotSent.replace('{to}', to)}
+                {forgot.demo ? ` ${t.pinForgotDemo} ${forgot.demo}` : ''}
+              </Text>
+            )}
+            {forgot.sent && (
+              <TextInput
+                value={forgot.code}
+                onChangeText={(v) => setForgot((f) => ({ ...f, code: v, err: null }))}
+                onSubmitEditing={() => void checkCode()}
+                keyboardType="number-pad"
+                autoComplete="one-time-code"
+                textContentType="oneTimeCode"
+                maxLength={60}
+                placeholder={t.pinForgotCode}
+                placeholderTextColor={C.placeholder}
+                accessibilityLabel={t.pinForgotCode}
+                style={styles.codeInput}
+              />
+            )}
+            {forgot.err && (
+              <Text style={[styles.muted, { color: C.help, fontWeight: '700' }, rtlText]} accessibilityLiveRegion="polite">
+                {forgot.err}
+              </Text>
+            )}
+            <View style={[styles.forgotRow, rtl && { flexDirection: 'row-reverse' }]}>
+              {forgot.sent && <Btn kind="primary" label={t.pinForgotCheck} onPress={() => void checkCode()} disabled={forgot.busy || !codeFrom(forgot.code)} />}
+              <Btn
+                kind={forgot.sent ? 'secondary' : 'primary'}
+                label={forgot.sent ? t.pinForgotResend : t.pinForgotSend}
+                onPress={() => void sendCode()}
+                disabled={forgot.busy}
+              />
+            </View>
+          </View>
+        ) : (
+          <Text style={[styles.pinWhyText, rtlText]}>{t.pinForgotFamily}</Text>
+        ))}
+      {(step === 'choose' || step === 'repeat') && (
         // Choosing a code: what it is and what it protects, before the digits.
         <View style={styles.pinWhy}>
           {(own ? t.pinWhyPro : t.pinWhy).map((line, i) => (
@@ -387,31 +479,40 @@ export function PinPanel() {
           {beforeGuide && <Text style={[styles.pinWhyText, { fontWeight: '700' }, rtl && { textAlign: 'right', writingDirection: 'rtl' }]}>{t.pinThenGuide}</Text>}
         </View>
       )}
-      <Text style={[styles.muted, { textAlign: 'center' }, (error || waiting) && { color: C.help, fontWeight: '700' }]} accessibilityLiveRegion="polite">
-        {hint}
-      </Text>
-      <View style={styles.dots}>
-        {[0, 1, 2, 3].map((i) => (
-          <View key={i} style={[styles.dot, i < code.length && styles.dotOn, error && { borderColor: C.help }]} />
-        ))}
-      </View>
-      <View style={styles.pad}>
-        {['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'].map((k, i) =>
-          k === '' ? (
-            <View key={i} style={styles.key} />
-          ) : (
-            <Pressable
-              key={i}
-              onPress={() => (k === '⌫' ? setCode((c) => c.slice(0, -1)) : press(k))}
-              style={({ pressed }) => [styles.key, styles.keyBtn, pressed && { backgroundColor: C.accentSoft }]}
-              accessibilityRole="button"
-              accessibilityLabel={k}
-            >
-              <Text style={styles.keyText}>{k}</Text>
+      {step !== 'forgot' && (
+        <>
+          <Text style={[styles.muted, { textAlign: 'center' }, (error || waiting) && { color: C.help, fontWeight: '700' }]} accessibilityLiveRegion="polite">
+            {hint}
+          </Text>
+          <View style={styles.dots}>
+            {[0, 1, 2, 3].map((i) => (
+              <View key={i} style={[styles.dot, i < code.length && styles.dotOn, error && { borderColor: C.help }]} />
+            ))}
+          </View>
+          <View style={styles.pad}>
+            {['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'].map((k, i) =>
+              k === '' ? (
+                <View key={i} style={styles.key} />
+              ) : (
+                <Pressable
+                  key={i}
+                  onPress={() => (k === '⌫' ? setCode((c) => c.slice(0, -1)) : press(k))}
+                  style={({ pressed }) => [styles.key, styles.keyBtn, pressed && { backgroundColor: C.accentSoft }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={k}
+                >
+                  <Text style={styles.keyText}>{k}</Text>
+                </Pressable>
+              ),
+            )}
+          </View>
+          {step === 'enter' && !unset && (
+            <Pressable onPress={startForgot} accessibilityRole="button" accessibilityLabel={t.pinForgot} style={styles.forgotLink}>
+              <Text style={styles.forgotText}>{t.pinForgot}</Text>
             </Pressable>
-          ),
-        )}
-      </View>
+          )}
+        </>
+      )}
     </Panel>
   );
 }
@@ -420,6 +521,21 @@ const styles = StyleSheet.create({
   warn: { fontSize: 14, backgroundColor: C.editSoft, color: C.edit, padding: 10, borderRadius: radius.md },
   pinWhy: { gap: 6, backgroundColor: C.surfaceAlt, borderRadius: radius.md, padding: 12 },
   pinWhyText: { fontSize: 15, lineHeight: 21, color: C.text },
+  forgotLink: { alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: 12 },
+  forgotText: { color: C.accent, fontSize: 15, fontWeight: '600', textDecorationLine: 'underline' },
+  forgotRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  codeInput: {
+    minHeight: 52,
+    fontSize: 22,
+    letterSpacing: 4,
+    textAlign: 'center',
+    borderWidth: 2,
+    borderColor: C.border,
+    borderRadius: radius.md,
+    color: C.text,
+    backgroundColor: C.surface,
+    paddingHorizontal: 12,
+  },
   muted: { color: C.textMuted, fontSize: 14 },
   result: {
     flexDirection: 'row',

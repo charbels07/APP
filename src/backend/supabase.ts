@@ -446,6 +446,16 @@ export class SupabaseBackend implements Backend {
     if (e2) fail(e2);
   }
 
+  async checkResetCode(target: { email?: string; phone?: string }, code: string): Promise<void> {
+    // The same check as a password reset, without choosing a new password: the session simply
+    // starts again for the same account.
+    const email = normEmail(target.email);
+    const { error } = email
+      ? await this.sb.auth.verifyOtp({ email, token: code.trim(), type: 'recovery' })
+      : await this.sb.auth.verifyOtp({ phone: normPhone(target.phone)!, token: code.trim(), type: 'sms' });
+    if (error) fail(error);
+  }
+
   async changePassword(current: string, next: string): Promise<void> {
     const me = await this.me();
     const check = me.email

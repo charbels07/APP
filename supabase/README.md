@@ -25,6 +25,8 @@ everything works on one device. Follow these steps to switch to the real server.
   (`{{ .Token }}` is where Supabase writes the code). **Paste both again after 14 November 2026**:
   the code is now written so that mail apps no longer turn it into a phone link (copying it
   used to copy a link instead of the digits).
+  **And paste *Reset password* again after 17 November 2026**: the same code now also lets a
+  parent choose a new caregiver code ("Forgot the code?" on the keypad), and the e-mail says so.
 - **Phone:** on, with an SMS provider (Twilio or MessageBird account; SMS are paid).
 - **Google:** create an OAuth client in Google Cloud Console and paste its ID and secret.
 - **Apple:** needs the Apple Developer account (Sign in with Apple service ID and key).

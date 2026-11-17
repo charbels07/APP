@@ -95,6 +95,8 @@ export function useSession(): SessionCtx {
   if (!v) throw new Error('useSession outside SessionProvider');
   return v;
 }
+/** The session, or null for a component that may sit outside it (tests, previews). */
+export const useSessionMaybe = (): SessionCtx | null => useContext(Ctx);
 
 /** Navigation language for components that may sit outside the session (tests, preview). */
 export const NavLangContext = createContext<UiLang>('fr');

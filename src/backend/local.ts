@@ -389,6 +389,12 @@ export class LocalBackend implements Backend {
     });
   }
 
+  async checkResetCode(target: { email?: string; phone?: string }, code: string): Promise<void> {
+    const t = normEmail(target.email) ?? normPhone(target.phone);
+    if (!t) throw new BackendError('missing_contact');
+    await this.tx((db) => LocalBackend.takeCode(db, t, code, 'reset'));
+  }
+
   async changePassword(current: string, next: string): Promise<void> {
     if (next.length < 8) throw new BackendError('weak_password');
     const me = LocalBackend.need(await this.tx((_db, m) => m));

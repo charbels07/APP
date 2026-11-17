@@ -204,7 +204,8 @@ function BoardStage({ profileId }: { profileId: string }) {
     [sync, tracker],
   );
 
-  // Someone else's changes: looked for every 30 s and when the app comes back to the front.
+  // Someone else's changes: looked for every 30 s and when the app comes back to the front. Only the
+  // version number travels each time (`pull`); the whole profile only when someone saved a newer one.
   useEffect(() => {
     if (!sync) return;
     const id = setInterval(() => void sync.pull(), 30000);

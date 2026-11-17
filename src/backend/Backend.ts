@@ -93,6 +93,11 @@ export interface Backend {
   signOut(): Promise<void>;
   requestPasswordReset(target: { email?: string; phone?: string }): Promise<CodeSent>;
   resetPassword(target: { email?: string; phone?: string }, code: string, password: string): Promise<void>;
+  /**
+   * Checks a code sent by `requestPasswordReset` without changing the password: proves that the
+   * person holds the account's mailbox or phone (e.g. to choose a new caregiver code they forgot).
+   */
+  checkResetCode(target: { email?: string; phone?: string }, code: string): Promise<void>;
   changePassword(current: string, next: string): Promise<void>;
   updateAccount(patch: { displayName?: string; email?: string; phone?: string; prefs?: Partial<AccountPrefs> }): Promise<Account>;
   deleteAccount(): Promise<void>;

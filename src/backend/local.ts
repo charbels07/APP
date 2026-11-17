@@ -485,6 +485,13 @@ export class LocalBackend implements Backend {
     });
   }
 
+  async profileVersion(id: string): Promise<number> {
+    return this.tx((db, m) => {
+      LocalBackend.requireAccess(db, id, LocalBackend.need(m));
+      return db.profiles[id].version;
+    });
+  }
+
   async saveProfile(id: string, data: Profile, baseVersion: number): Promise<SaveResult> {
     return this.tx((db, m) => {
       const me = LocalBackend.need(m);

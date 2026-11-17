@@ -101,6 +101,7 @@ d('real server (Supabase): a family, a therapist, a teacher, a stranger and a ta
     await signUp(eve, 'eve', 'parent', 'Eve');
     expect(await eve.listProfiles()).toEqual([]);
     await expect(eve.getProfile(profileId)).rejects.toBeInstanceOf(BackendError);
+    await expect(eve.profileVersion(profileId)).rejects.toBeInstanceOf(BackendError);
     expect(await eve.myAccess(profileId)).toBeNull();
   });
 
@@ -132,6 +133,8 @@ d('real server (Supabase): a family, a therapist, a teacher, a stranger and a ta
     const next = structuredClone(base.data);
     next.boards.food.cells[0] = { concept: 'pizza' };
     expect(await rita.saveProfile(profileId, next, base.version)).toEqual({ ok: true, version: base.version + 1 });
+    // What an open board asks every 30 s: the version alone, readable by the team member too.
+    expect(await sarah.profileVersion(profileId)).toBe(base.version + 1);
     await rita.setProposalStatus(p.id, 'approved');
     const stale = await rita.saveProfile(profileId, base.data, base.version);
     expect(stale.ok).toBe(false);

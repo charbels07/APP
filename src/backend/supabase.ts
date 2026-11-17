@@ -501,6 +501,13 @@ export class SupabaseBackend implements Backend {
     return toProfileRec(r);
   }
 
+  async profileVersion(id: string): Promise<number> {
+    // One column, same reading rule as the whole row: no content leaves the database.
+    const r = await data<Row | null>(this.sb.from('profiles').select('version').eq('id', id).maybeSingle());
+    if (!r) throw new BackendError('forbidden');
+    return r.version;
+  }
+
   async saveProfile(id: string, profile: Profile, baseVersion: number): Promise<SaveResult> {
     const r = await data<Row>(this.sb.rpc('save_profile', { p_id: id, p_data: profile, p_base: baseVersion }));
     return r.ok ? { ok: true, version: r.version } : { ok: false, conflict: toProfileRec(r.conflict) };

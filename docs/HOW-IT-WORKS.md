@@ -71,7 +71,7 @@ This file grows as each feature is built. Each line says **what** was made, **ho
 | Access method | Select when the finger lifts, as soon as it touches, or by holding it (0.5–2 s) — handled by the touch events of each card. |
 | Try the board | The full app with the chosen settings; *Finish* creates the child's profile on the server. |
 | Tailored guide | `src/data/guideTailored.ts` writes a "Your board" chapter from the child's real settings and opens it on the new board. |
-| Sync | `src/state/profileSync.ts`: the board works from the copy on the tablet; changes are sent a moment later; if someone else saved in between, both changes are merged (tested with Jest). |
+| Sync | `src/state/profileSync.ts`: the board works from the copy on the tablet; changes are sent a moment later; if someone else saved in between, both changes are merged (tested with Jest). An open board looks for someone else's changes every 30 s by reading only the profile's version number (`profileVersion`); the whole profile is downloaded only when the server has a newer one. |
 
 ## Phase 4 — Settings in three pages: Board, Team, Account
 

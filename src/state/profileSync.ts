@@ -186,12 +186,16 @@ export class ProfileSync {
     if (attempt < 3) return this.doPush(attempt + 1);
   }
 
-  /** Looks for a newer version on the server (someone else's change). */
+  /**
+   * Looks for a newer version on the server (someone else's change). Only the version number
+   * travels each time; the whole profile is downloaded only when it is newer than this copy.
+   */
   async pull(): Promise<void> {
     if (this.copy.dirty) return this.push().catch(() => {});
     try {
-      const r = await this.api.getProfile(this.id);
-      if (r.version > this.copy.version) {
+      const version = await this.api.profileVersion(this.id);
+      const r = version > this.copy.version ? await this.api.getProfile(this.id) : null;
+      if (r && r.version > this.copy.version) {
         const data = migrate(r.data);
         this.copy = { ...this.copy, data, base: clone(data), version: r.version, name: r.name };
         await this.writeNow();

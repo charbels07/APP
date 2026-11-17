@@ -290,14 +290,14 @@ const BASE: BaseChapter[] = [
     title: { fr: 'Le mode accompagnant', en: 'Caregiver mode' },
     steps: {
       fr: [
-        'Accompagnant (cadenas). Vous choisissez votre code (4 chiffres, tapés deux fois) à la première ouverture du tableau, avant ce guide ; ensuite vous le tapez à chaque fois. Après 5 codes faux, il faut attendre un peu. Vous pouvez le changer dans Réglages → Sécurité.',
+        'Accompagnant (cadenas). Vous choisissez votre code (4 chiffres, tapés deux fois) à la première ouverture du tableau, avant ce guide ; ensuite vous le tapez à chaque fois. Après 5 codes faux, il faut attendre un peu. Vous pouvez le changer dans Réglages → Sécurité. Code oublié ? (sous le clavier) : un parent connecté reçoit un code par e-mail ou SMS, le tape, puis choisit un nouveau code ; sur une tablette reliée, faites-le depuis le téléphone ou l’ordinateur d’un parent.',
         'Le bandeau jaune indique qu’on peut modifier : toucher une case ouvre ses réglages ; pour un dossier, appui long.',
         'Réglages et Imprimer / PDF sont dans le bandeau. Terminer revient au mode enfant.',
         'Tout est gardé sur l’appareil, même après l’avoir éteint ; avec un compte, c’est aussi sauvegardé en ligne et les autres appareils de la famille se mettent à jour.',
         'Dans la barre, deux boutons pour les parents, chacun protégé par le code accompagnant : Réglages (ouvre les réglages sans passer en mode accompagnant) et Verrou. Verrou ouvre le Mode verrouillé (enfant) : l’enfant ne peut plus ouvrir d’autres applis ni revenir en arrière ; pour l’empêcher de quitter l’application, activez aussi l’Accès guidé (iPad) ou l’épinglage d’écran (Android). Dans un navigateur, la page ne se recharge plus quand on la tire vers le bas, et le plein écran revient au toucher suivant. Pour le retirer : Verrou → code.',
       ],
       en: [
-        'Caregiver (padlock). You choose your code (4 digits, typed twice) the first time the board opens, before this guide; after that you type it each time. After 5 wrong codes you have to wait a little. You can change it in Settings → Security.',
+        'Caregiver (padlock). You choose your code (4 digits, typed twice) the first time the board opens, before this guide; after that you type it each time. After 5 wrong codes you have to wait a little. You can change it in Settings → Security. Forgot the code? (under the keypad): a signed-in parent receives a code by e-mail or text message, types it, then chooses a new code; on a linked tablet, do it from a parent’s phone or computer.',
         'The yellow banner means you can edit: touching a card opens its settings; for a folder, long press.',
         'Settings and Print / PDF are in the banner. Done goes back to child mode.',
         'Everything is kept on the device, even after switching it off; with an account it is also saved online and the family’s other devices update themselves.',
@@ -807,7 +807,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   caregiver: {
     title: 'وضع المرافق',
     steps: [
-      '«المرافق» (القفل). تختار رمزك (4 أرقام، تُكتب مرتين) عند أول فتح للوحة، قبل هذا الدليل؛ بعدها تكتبه في كل مرة. بعد 5 رموز خاطئة يجب الانتظار قليلاً. يمكنك تغييره في الإعدادات ← الأمان.',
+      '«المرافق» (القفل). تختار رمزك (4 أرقام، تُكتب مرتين) عند أول فتح للوحة، قبل هذا الدليل؛ بعدها تكتبه في كل مرة. بعد 5 رموز خاطئة يجب الانتظار قليلاً. يمكنك تغييره في الإعدادات ← الأمان. «نسيت الرمز؟» (تحت لوحة الأرقام): يتلقى أحد الوالدين المسجَّل دخوله رمزاً بالبريد الإلكتروني أو برسالة نصية، يكتبه ثم يختار رمزاً جديداً؛ على جهاز لوحي مرتبط، افعل ذلك من هاتف أو حاسوب أحد الوالدين.',
       'الشريط الأصفر يعني أنك تستطيع التعديل: لمس بطاقة يفتح إعداداتها؛ وللمجلد، ضغطة طويلة.',
       '«الإعدادات» و«طباعة / PDF» في الشريط الأصفر. «إنهاء» يعيد إلى وضع الطفل.',
       'يُحفظ كل شيء على الجهاز، حتى بعد إطفائه؛ ومع حساب يُحفظ أيضاً على الإنترنت وتتحدّث أجهزة العائلة الأخرى تلقائياً.',

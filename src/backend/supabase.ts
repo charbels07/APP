@@ -446,6 +446,16 @@ export class SupabaseBackend implements Backend {
     if (e2) fail(e2);
   }
 
+  async checkResetCode(target: { email?: string; phone?: string }, code: string): Promise<void> {
+    // The same check as a password reset, without choosing a new password: the session simply
+    // starts again for the same account.
+    const email = normEmail(target.email);
+    const { error } = email
+      ? await this.sb.auth.verifyOtp({ email, token: code.trim(), type: 'recovery' })
+      : await this.sb.auth.verifyOtp({ phone: normPhone(target.phone)!, token: code.trim(), type: 'sms' });
+    if (error) fail(error);
+  }
+
   async changePassword(current: string, next: string): Promise<void> {
     const me = await this.me();
     const check = me.email
@@ -499,6 +509,13 @@ export class SupabaseBackend implements Backend {
     const r = await data<Row | null>(this.sb.from('profiles').select('*').eq('id', id).maybeSingle());
     if (!r) throw new BackendError('forbidden');
     return toProfileRec(r);
+  }
+
+  async profileVersion(id: string): Promise<number> {
+    // One small number instead of the whole profile: this is asked every 30 s by each open board.
+    const r = await data<Row | null>(this.sb.from('profiles').select('version').eq('id', id).maybeSingle());
+    if (!r) throw new BackendError('forbidden');
+    return r.version;
   }
 
   async saveProfile(id: string, profile: Profile, baseVersion: number): Promise<SaveResult> {

@@ -93,6 +93,11 @@ export interface Backend {
   signOut(): Promise<void>;
   requestPasswordReset(target: { email?: string; phone?: string }): Promise<CodeSent>;
   resetPassword(target: { email?: string; phone?: string }, code: string, password: string): Promise<void>;
+  /**
+   * Checks a code sent by `requestPasswordReset` without changing the password: proves that the
+   * person holds the account's mailbox or phone (e.g. to choose a new caregiver code they forgot).
+   */
+  checkResetCode(target: { email?: string; phone?: string }, code: string): Promise<void>;
   changePassword(current: string, next: string): Promise<void>;
   updateAccount(patch: { displayName?: string; email?: string; phone?: string; prefs?: Partial<AccountPrefs> }): Promise<Account>;
   deleteAccount(): Promise<void>;
@@ -101,6 +106,11 @@ export interface Backend {
   listProfiles(): Promise<ProfileSummary[]>;
   createProfile(input: { name: string; age?: number; intake?: Intake; data: Profile }): Promise<ChildRecord>;
   getProfile(id: string): Promise<ChildRecord>;
+  /**
+   * Only the profile's version number: a tiny answer that tells whether someone else saved.
+   * A board asks it every 30 s and downloads the whole profile only when it is newer.
+   */
+  profileVersion(id: string): Promise<number>;
   /** Saves only if nobody saved a newer version meanwhile (otherwise returns that version). */
   saveProfile(id: string, data: Profile, baseVersion: number): Promise<SaveResult>;
   deleteProfile(id: string): Promise<void>;

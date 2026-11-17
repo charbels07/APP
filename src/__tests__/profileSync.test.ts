@@ -66,6 +66,32 @@ describe('profile sync: device copy + server', () => {
     expect((await api.getProfile(id)).data.settings.speechRate).toBe(1.2);
   });
 
+  it('looking for changes asks only the version, and downloads the profile only when it is newer', async () => {
+    const sync = await ProfileSync.open(api, id, { pushDelay: 0 });
+    const full = jest.spyOn(api, 'getProfile');
+    const small = jest.spyOn(api, 'profileVersion');
+    let remote: unknown = null;
+    sync.onRemote = (p) => (remote = p);
+    // Nobody saved: only the small question is asked, nothing is downloaded or redrawn.
+    await sync.pull();
+    await sync.pull();
+    expect(small).toHaveBeenCalledTimes(2);
+    expect(full).not.toHaveBeenCalled();
+    expect(remote).toBeNull();
+    // Someone saved on another device: the next look downloads that version once.
+    const other = (await api.getProfile(id)) as Awaited<ReturnType<typeof api.getProfile>>;
+    const theirs = structuredClone(other.data);
+    theirs.settings.speechRate = 0.9;
+    await api.saveProfile(id, theirs, other.version);
+    full.mockClear();
+    await sync.pull();
+    expect(full).toHaveBeenCalledTimes(1);
+    expect(sync.copy.data.settings.speechRate).toBe(0.9);
+    expect(remote).not.toBeNull();
+    full.mockRestore();
+    small.mockRestore();
+  });
+
   it('a use-only tablet keeps its changes on the device', async () => {
     const { code } = await api.createPairingCode(id, 'use');
     await api.signOut();

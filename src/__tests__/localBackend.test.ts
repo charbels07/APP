@@ -209,6 +209,18 @@ describe('demo server: a parent and a therapist working together', () => {
     expect(o.usage.hours).toHaveLength(24);
   });
 
+  it('a forgotten caregiver code: the e-mailed code is checked once, and the password does not change', async () => {
+    await api.signIn({ email: 'rita@example.com', password: 'secret123' });
+    const c = await code(api.requestPasswordReset({ email: 'rita@example.com' }));
+    await expectCode(api.checkResetCode({ email: 'rita@example.com' }, '000000'), 'code_invalid');
+    await api.checkResetCode({ email: 'rita@example.com' }, c);
+    // Used once only.
+    await expectCode(api.checkResetCode({ email: 'rita@example.com' }, c), 'code_expired');
+    // The password is the same as before.
+    await api.signOut();
+    await expect(api.signIn({ email: 'rita@example.com', password: 'secret123' })).resolves.toMatchObject({ email: 'rita@example.com' });
+  });
+
   it('password reset never reveals whether an account exists, and deleting an account cleans up', async () => {
     expect((await api.requestPasswordReset({ email: 'nobody@nowhere.com' })).demoCode).toMatch(/^\d{6}$/);
     await api.signIn({ email: 'rita@example.com', password: 'secret123' });

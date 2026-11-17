@@ -21,6 +21,8 @@ import { VoiceButton } from '../VoiceButton';
 import { pressed } from '../a11y';
 import { useSessionMaybe } from '../../state/Session';
 import { codeFrom } from '../../lib/codeInput';
+import { forgotCodeWays } from '../../lib/forgotCode';
+import { PasswordField } from '../start/AuthScreen';
 
 export function pathText(loc: Location, app: ReturnType<typeof useApp>): string {
   const { profile, lang, t } = app;
@@ -287,9 +289,9 @@ export const pinTooEasy = (code: string) => code === '1234' || /^(\d)\1{3}$/.tes
  * Caregiver mode is protected so the user can't modify the board by accident (NAV-04).
  * The first time, the person simply chooses a code (typed twice) and then uses it each time;
  * there is no code to know beforehand. Wrong codes are counted on this device.
- * "Forgot the code?": a code sent to the account's e-mail (or phone) proves it is the family (or,
- * for her own code, the professional); then a new code is chosen. A linked tablet has no mailbox:
- * it is done from a parent's device.
+ * "Forgot the code?": the account's password, or a code sent to the account's e-mail (or phone),
+ * proves it is the family (or, for her own code, the professional); then a new code is chosen.
+ * A linked tablet has neither: it is done from a parent's device (src/lib/forgotCode.ts).
  */
 export function PinPanel() {
   const app = useApp();
@@ -308,15 +310,19 @@ export function PinPanel() {
   // Forgotten code: who may choose a new one, and where the check code is sent.
   const sess = useSessionMaybe();
   const acc = sess?.account;
-  const contact = acc && acc.provider !== 'device' ? (acc.email ? { email: acc.email } : acc.phone ? { phone: acc.phone } : null) : null;
-  const to = contact?.email ?? contact?.phone ?? '';
-  const mayReset = !!sess && !!contact && (!!own || !!board?.manager);
-  const [forgot, setForgot] = useState<{ sent: boolean; code: string; busy: boolean; err: string | null; demo?: string }>({
+  const ways = forgotCodeWays({ account: acc, manager: !!board?.manager, ownCode: !!own });
+  const contact = ways?.contact;
+  const to = ways?.to ?? '';
+  const mayReset = !!sess && !!ways;
+  const [forgot, setForgot] = useState<{ sent: boolean; code: string; pw: string; busy: boolean; err: string | null; demo?: string }>({
     sent: false,
     code: '',
+    pw: '',
     busy: false,
     err: null,
   });
+  // The account was confirmed: the new code is chosen without the old one.
+  const [proved, setProved] = useState(false);
   const [chosen, setChosen] = useState('');
   const [lock, setLock] = useState({ fails: 0, until: 0 });
   const [now, setNow] = useState(Date.now());
@@ -371,16 +377,17 @@ export function PinPanel() {
       setChosen(next);
       setStep('repeat');
       setCode('');
-    } else if (next === chosen) {
+    } else if (step === 'repeat') {
+      if (next !== chosen) {
+        setStep('choose');
+        return again(t.pinMismatch);
+      }
       if (own) own.save(next);
       else
         app.update((p) => {
           p.settings.pin = next;
         });
       open();
-    } else {
-      setStep('choose');
-      again(t.pinMismatch);
     }
   };
   const startForgot = () => {
@@ -388,8 +395,26 @@ export function PinPanel() {
     setMsg(null);
     // The preview has no account: forgetting there simply means choosing again.
     if (!own && !board) return setStep('choose');
-    setForgot({ sent: false, code: '', busy: false, err: null });
+    setForgot({ sent: false, code: '', pw: '', busy: false, err: null });
     setStep('forgot');
+  };
+  // It is the account's owner: the count of wrong codes starts again, and a new code is chosen.
+  const confirmed = () => {
+    saveLock({ fails: 0, until: 0 });
+    setProved(true);
+    setForgot((f) => ({ ...f, pw: '', busy: false }));
+    setStep('choose');
+  };
+  const checkPw = async () => {
+    if (!sess || !ways?.password || !forgot.pw || forgot.busy) return;
+    setForgot((f) => ({ ...f, busy: true, err: null }));
+    try {
+      await sess.api.checkPassword(forgot.pw);
+      confirmed();
+    } catch (e) {
+      const wrong = (e as { code?: string })?.code === 'wrong_credentials';
+      setForgot((f) => ({ ...f, busy: false, err: wrong ? t.pinForgotWrongPassword : t.pinForgotError }));
+    }
   };
   const sendCode = async () => {
     if (!sess || !contact) return;
@@ -407,14 +432,25 @@ export function PinPanel() {
     setForgot((f) => ({ ...f, busy: true, err: null }));
     try {
       await sess.api.checkResetCode(contact, typed);
-      saveLock({ fails: 0, until: 0 });
-      setStep('choose');
+      confirmed();
     } catch {
       setForgot((f) => ({ ...f, busy: false, err: t.pinForgotWrong }));
     }
   };
   const rtlText = rtl ? ({ textAlign: 'right', writingDirection: 'rtl' } as const) : null;
-  const hint = msg ?? (waiting ? t.pinLocked.replace('{n}', String(wait)) : step === 'choose' ? t.pinChoose : step === 'repeat' ? t.pinRepeat : unset ? t.pinNotChosen : t.pinHint);
+  const hint =
+    msg ??
+    (waiting
+      ? t.pinLocked.replace('{n}', String(wait))
+      : step === 'choose'
+        ? proved
+          ? t.pinForgotOk
+          : t.pinChoose
+        : step === 'repeat'
+          ? t.pinRepeat
+          : unset
+            ? t.pinNotChosen
+            : t.pinHint);
   const error = !!msg;
   return (
     <Panel
@@ -428,7 +464,19 @@ export function PinPanel() {
       {step === 'forgot' &&
         (mayReset ? (
           <View style={{ gap: 12 }}>
-            <Text style={[styles.pinWhyText, rtlText]}>{t.pinForgotIntro.replace('{to}', to)}</Text>
+            <Text style={[styles.pinWhyText, rtlText]}>{(ways?.password && !forgot.sent ? t.pinForgotIntroPw : t.pinForgotIntro).replace('{to}', to)}</Text>
+            {/* The account's password, for accounts made with one; hidden once a code was asked for. */}
+            {ways?.password && !forgot.sent && (
+              <>
+                <PasswordField
+                  label={t.pinForgotPassword}
+                  value={forgot.pw}
+                  onChange={(v) => setForgot((f) => ({ ...f, pw: v, err: null }))}
+                  onSubmit={() => void checkPw()}
+                />
+                <Btn kind="primary" icon="check" label={t.pinForgotConfirm} onPress={() => void checkPw()} disabled={forgot.busy || !forgot.pw} />
+              </>
+            )}
             {forgot.sent && (
               <Text style={[styles.muted, rtlText]} accessibilityLiveRegion="polite">
                 {t.pinForgotSent.replace('{to}', to)}
@@ -458,7 +506,7 @@ export function PinPanel() {
             <View style={[styles.forgotRow, rtl && { flexDirection: 'row-reverse' }]}>
               {forgot.sent && <Btn kind="primary" label={t.pinForgotCheck} onPress={() => void checkCode()} disabled={forgot.busy || !codeFrom(forgot.code)} />}
               <Btn
-                kind={forgot.sent ? 'secondary' : 'primary'}
+                kind={forgot.sent || ways?.password ? 'secondary' : 'primary'}
                 label={forgot.sent ? t.pinForgotResend : t.pinForgotSend}
                 onPress={() => void sendCode()}
                 disabled={forgot.busy}
@@ -481,7 +529,15 @@ export function PinPanel() {
       )}
       {step !== 'forgot' && (
         <>
-          <Text style={[styles.muted, { textAlign: 'center' }, (error || waiting) && { color: C.help, fontWeight: '700' }]} accessibilityLiveRegion="polite">
+          <Text
+            style={[
+              styles.muted,
+              { textAlign: 'center' },
+              (error || waiting) && { color: C.help, fontWeight: '700' },
+              proved && step === 'choose' && !error && { color: C.success, fontWeight: '700' },
+            ]}
+            accessibilityLiveRegion="polite"
+          >
             {hint}
           </Text>
           <View style={styles.dots}>

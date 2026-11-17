@@ -456,6 +456,20 @@ export class SupabaseBackend implements Backend {
     if (error) fail(error);
   }
 
+  async checkPassword(password: string): Promise<void> {
+    // Signing in again as the same account, with its own address: the session starts again,
+    // nothing else changes.
+    const me = await this.me();
+    if (me.provider === 'device') throw new BackendError('forbidden');
+    const email = normEmail(me.email);
+    const phone = normPhone(me.phone);
+    if (!email && !phone) throw new BackendError('missing_contact');
+    const { error } = email
+      ? await this.sb.auth.signInWithPassword({ email, password })
+      : await this.sb.auth.signInWithPassword({ phone: phone!, password });
+    if (error) fail(error);
+  }
+
   async changePassword(current: string, next: string): Promise<void> {
     const me = await this.me();
     const check = me.email

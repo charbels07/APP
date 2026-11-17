@@ -395,6 +395,13 @@ export class LocalBackend implements Backend {
     await this.tx((db) => LocalBackend.takeCode(db, t, code, 'reset'));
   }
 
+  async checkPassword(password: string): Promise<void> {
+    const me = LocalBackend.need(await this.tx((_db, m) => m));
+    if (me.provider === 'device') throw new BackendError('forbidden');
+    // Google / Apple accounts have no password here: only the e-mailed code proves them.
+    if (!me.hash || (await sha256(me.salt + password)) !== me.hash) throw new BackendError('wrong_credentials');
+  }
+
   async changePassword(current: string, next: string): Promise<void> {
     if (next.length < 8) throw new BackendError('weak_password');
     const me = LocalBackend.need(await this.tx((_db, m) => m));

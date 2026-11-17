@@ -290,14 +290,14 @@ const BASE: BaseChapter[] = [
     title: { fr: 'Le mode accompagnant', en: 'Caregiver mode' },
     steps: {
       fr: [
-        'Accompagnant (cadenas). Vous choisissez votre code (4 chiffres, tapés deux fois) à la première ouverture du tableau, avant ce guide ; ensuite vous le tapez à chaque fois. Après 5 codes faux, il faut attendre un peu. Vous pouvez le changer dans Réglages → Sécurité. Code oublié ? (sous le clavier) : un parent connecté reçoit un code par e-mail ou SMS, le tape, puis choisit un nouveau code ; sur une tablette reliée, faites-le depuis le téléphone ou l’ordinateur d’un parent.',
+        'Accompagnant (cadenas). Vous choisissez votre code (4 chiffres, tapés deux fois) à la première ouverture du tableau, avant ce guide ; ensuite vous le tapez à chaque fois. Après 5 codes faux, il faut attendre un peu. Vous pouvez le changer dans Réglages → Code et données. Code oublié ? (sous le clavier) : un parent connecté tape le mot de passe de son compte, ou reçoit un code par e-mail ou SMS et le tape, puis choisit un nouveau code ; sur une tablette reliée, faites-le depuis le téléphone ou l’ordinateur d’un parent.',
         'Le bandeau jaune indique qu’on peut modifier : toucher une case ouvre ses réglages ; pour un dossier, appui long.',
         'Réglages et Imprimer / PDF sont dans le bandeau. Terminer revient au mode enfant.',
         'Tout est gardé sur l’appareil, même après l’avoir éteint ; avec un compte, c’est aussi sauvegardé en ligne et les autres appareils de la famille se mettent à jour.',
         'Dans la barre, deux boutons pour les parents, chacun protégé par le code accompagnant : Réglages (ouvre les réglages sans passer en mode accompagnant) et Verrou. Verrou ouvre le Mode verrouillé (enfant) : l’enfant ne peut plus ouvrir d’autres applis ni revenir en arrière ; pour l’empêcher de quitter l’application, activez aussi l’Accès guidé (iPad) ou l’épinglage d’écran (Android). Dans un navigateur, la page ne se recharge plus quand on la tire vers le bas, et le plein écran revient au toucher suivant. Pour le retirer : Verrou → code.',
       ],
       en: [
-        'Caregiver (padlock). You choose your code (4 digits, typed twice) the first time the board opens, before this guide; after that you type it each time. After 5 wrong codes you have to wait a little. You can change it in Settings → Security. Forgot the code? (under the keypad): a signed-in parent receives a code by e-mail or text message, types it, then chooses a new code; on a linked tablet, do it from a parent’s phone or computer.',
+        'Caregiver (padlock). You choose your code (4 digits, typed twice) the first time the board opens, before this guide; after that you type it each time. After 5 wrong codes you have to wait a little. You can change it in Settings → Code and data. Forgot the code? (under the keypad): a signed-in parent types their account’s password, or receives a code by e-mail or text message and types it, then chooses a new code; on a linked tablet, do it from a parent’s phone or computer.',
         'The yellow banner means you can edit: touching a card opens its settings; for a folder, long press.',
         'Settings and Print / PDF are in the banner. Done goes back to child mode.',
         'Everything is kept on the device, even after switching it off; with an account it is also saved online and the family’s other devices update themselves.',
@@ -585,14 +585,14 @@ const BASE: BaseChapter[] = [
         'Contribuer : vos changements vont dans un brouillon. Dès le premier changement, un bandeau indique combien sont prêts ; rien ne change pour l’enfant avant l’accord de la famille.',
         'Envoyer pour approbation : donnez un titre à la proposition et, si vous voulez, la raison. La famille voit l’avant / après et approuve, demande une modification ou refuse.',
         'Modifier directement : vos changements s’appliquent tout de suite et apparaissent dans l’historique. Utiliser : vous pouvez utiliser le tableau et modéliser, sans rien changer.',
-        'Sur votre propre appareil, vous choisissez votre propre code accompagnant la première fois ; il est demandé ensuite pour le mode accompagnant et les réglages de chaque tableau que vous ouvrez (un enfant est souvent devant votre appareil). Le code de la famille ne vous est jamais demandé : vous le changez, le vôtre, dans Réglages → Sécurité. Ma bibliothèque garde vos supports (TLA, plannings, D’abord / Ensuite, cartes) pour les proposer ensuite à une famille. Guide (dans votre espace) : un tableau de démonstration pour s’exercer, où rien n’est enregistré, et des tutoriels.',
+        'Sur votre propre appareil, vous choisissez votre propre code accompagnant la première fois ; il est demandé ensuite pour le mode accompagnant et les réglages de chaque tableau que vous ouvrez (un enfant est souvent devant votre appareil). Le code de la famille ne vous est jamais demandé : vous le changez, le vôtre, dans Réglages → Code et données. Ma bibliothèque garde vos supports (TLA, plannings, D’abord / Ensuite, cartes) pour les proposer ensuite à une famille. Guide (dans votre espace) : un tableau de démonstration pour s’exercer, où rien n’est enregistré, et des tutoriels.',
       ],
       en: [
         'From your workspace, My AAC users opens a child’s board. Your rights are chosen by the family: Use, Contribute or Edit directly. The Settings button beside a child opens that child’s settings directly: Board, Team, Progress (if the family allows you) and your Account.',
         'Contribute: your changes go into a draft. From the first change, a banner says how many are ready; nothing changes for the child before the family agrees.',
         'Send for approval: give the proposal a title and, if you like, the reason. The family sees before / after and approves, asks for a change or declines.',
         'Edit directly: your changes apply at once and appear in the history. Use: you can use the board and model, without changing anything.',
-        'On your own device, you choose your own caregiver code the first time; it is then asked for caregiver mode and the settings of every board you open (a child is often in front of your device). The family’s code is never asked from you: you change yours in Settings → Security. My library keeps your materials (activity boards, schedules, First / Then, cards) so you can propose them to a family later. Guide (in your workspace): a demonstration board to practise, where nothing is saved, and tutorials.',
+        'On your own device, you choose your own caregiver code the first time; it is then asked for caregiver mode and the settings of every board you open (a child is often in front of your device). The family’s code is never asked from you: you change yours in Settings → Code and data. My library keeps your materials (activity boards, schedules, First / Then, cards) so you can propose them to a family later. Guide (in your workspace): a demonstration board to practise, where nothing is saved, and tutorials.',
       ],
     },
   },
@@ -807,7 +807,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   caregiver: {
     title: 'وضع المرافق',
     steps: [
-      '«المرافق» (القفل). تختار رمزك (4 أرقام، تُكتب مرتين) عند أول فتح للوحة، قبل هذا الدليل؛ بعدها تكتبه في كل مرة. بعد 5 رموز خاطئة يجب الانتظار قليلاً. يمكنك تغييره في الإعدادات ← الأمان. «نسيت الرمز؟» (تحت لوحة الأرقام): يتلقى أحد الوالدين المسجَّل دخوله رمزاً بالبريد الإلكتروني أو برسالة نصية، يكتبه ثم يختار رمزاً جديداً؛ على جهاز لوحي مرتبط، افعل ذلك من هاتف أو حاسوب أحد الوالدين.',
+      '«المرافق» (القفل). تختار رمزك (4 أرقام، تُكتب مرتين) عند أول فتح للوحة، قبل هذا الدليل؛ بعدها تكتبه في كل مرة. بعد 5 رموز خاطئة يجب الانتظار قليلاً. يمكنك تغييره في الإعدادات ← الرمز والبيانات. «نسيت الرمز؟» (تحت لوحة الأرقام): يكتب أحد الوالدين المسجَّل دخوله كلمة مرور حسابه، أو يتلقى رمزاً بالبريد الإلكتروني أو برسالة نصية ويكتبه، ثم يختار رمزاً جديداً؛ على جهاز لوحي مرتبط، افعل ذلك من هاتف أو حاسوب أحد الوالدين.',
       'الشريط الأصفر يعني أنك تستطيع التعديل: لمس بطاقة يفتح إعداداتها؛ وللمجلد، ضغطة طويلة.',
       '«الإعدادات» و«طباعة / PDF» في الشريط الأصفر. «إنهاء» يعيد إلى وضع الطفل.',
       'يُحفظ كل شيء على الجهاز، حتى بعد إطفائه؛ ومع حساب يُحفظ أيضاً على الإنترنت وتتحدّث أجهزة العائلة الأخرى تلقائياً.',
@@ -937,7 +937,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
       '«مساهمة»: تذهب تغييراتك إلى مسودة. منذ أول تغيير، يظهر شريط يبيّن عدد التغييرات الجاهزة؛ لا يتغيّر شيء للطفل قبل موافقة العائلة.',
       '«إرسال للموافقة»: أعطِ الاقتراح عنواناً، واذكر السبب إن شئت. ترى العائلة ما قبل وما بعد، فتوافق أو تطلب تعديلاً أو ترفض.',
       '«تعديل مباشر»: تُطبَّق تغييراتك فوراً وتظهر في السجلّ. «استعمال»: يمكنك استعمال اللوحة والنمذجة دون تغيير أي شيء.',
-      'على جهازك أنت، تختار رمز المرافق الخاص بك في المرة الأولى؛ ثم يُطلب لوضع المرافق ولإعدادات كل لوحة تفتحها (غالباً يكون طفل أمام جهازك). رمز العائلة لا يُطلب منك أبداً: تغيّر رمزك أنت من الإعدادات ← الأمان. «مكتبتي» تحفظ موادك (لوحات نشاط، جداول، «أولاً / ثم»، بطاقات) لتقترحها لاحقاً على عائلة. «الدليل» (في مساحتك): لوحة تجريبية للتدرّب، لا يُحفظ فيها شيء، ودروس.',
+      'على جهازك أنت، تختار رمز المرافق الخاص بك في المرة الأولى؛ ثم يُطلب لوضع المرافق ولإعدادات كل لوحة تفتحها (غالباً يكون طفل أمام جهازك). رمز العائلة لا يُطلب منك أبداً: تغيّر رمزك أنت من الإعدادات ← الرمز والبيانات. «مكتبتي» تحفظ موادك (لوحات نشاط، جداول، «أولاً / ثم»، بطاقات) لتقترحها لاحقاً على عائلة. «الدليل» (في مساحتك): لوحة تجريبية للتدرّب، لا يُحفظ فيها شيء، ودروس.',
     ],
   },
   linkApp: {

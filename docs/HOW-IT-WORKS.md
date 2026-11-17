@@ -638,12 +638,23 @@ week and month schedules, the bar). The guide and the set-up help name the new g
 | Guide | `src/data/guide.ts`, three languages: the caregiver step now names "Forgot the code?" (`guide.test.ts` checks it). |
 | Tests | `profileSync.test.ts`: nothing new → only the version is read; after someone saves, one download; unsent changes go first; a change made during the download is kept; the version follows the same reading rule as the profile. `localBackend.test.ts`: the e-mailed code is checked once, a wrong one is refused, the password stays the same. A browser run (computer, phone, Arabic menus): sign up, set up, choose a code, forget it, receive the code, wrong code refused, new code chosen, old code refused, new code opens Settings; accessibility scan of each new screen: no violation. |
 
+## Round 37 — "Forgot the code?": the account's password too
+
+| What | How it was done |
+|---|---|
+| The password | On the "Forgot the code?" page, an account created with a password (e-mail or phone) can type it instead of waiting for an e-mail: `checkPassword` (`src/backend/Backend.ts`) signs in again as the same account, with its own address, and changes nothing. A wrong one says "Wrong password." The e-mailed code (Round 36) stays below, and the password field goes away once a code was asked for. Google / Apple accounts have no password in the app: only the code. |
+| Who | One rule, tested, in `forgotCodeWays` (`src/lib/forgotCode.ts`): the family (owner, or a co-parent managing the profile), or a professional for her own code; never a linked tablet (told to do it from a parent's device). Both servers also refuse a password check from a tablet. |
+| After the proof | The keypad says "It is you. Choose the new code." above the digits, with the usual explanation (`t.pinWhy`); the pauses after wrong codes start again from zero. The "type it again" step is now only reached from the first typing (it was the fallback of any other step). |
+| Words | "You can change it later in Settings → Security" (keypad explanation, guide) now names the group shown on screen: **Code and data**. Three languages. |
+| Phone screens | The password field (shared with the sign-in screen) no longer pushes its eye button out of the box in a narrow panel. |
+| Tests | `forgotCode.test.ts`: who is offered it; the password checked without change; a Google account and a tablet refused; the new family code saved by the family and refused from an editor. `forgotCodeServer.test.ts` (real-server requests, faked): the password goes with the account's own address; the e-mailed code is checked as a reset code without choosing a new password; a tablet is refused before anything is sent. `npm run test:a11y` now goes through the family's set-up and scans "Forgot the code?" and the new-code keypad. |
+
 ## How everything is checked
 
 | Check | What it does |
 |---|---|
 | `npm run typecheck` | TypeScript reads the whole code and refuses mistakes such as a missing field or a wrong type. |
-| `npm test` | 288 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office, colour contrast. |
+| `npm test` | 300 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office, colour contrast. |
 | `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger, a tablet and a member of our team; then every attack found by the security review, which must fail; then a professional who prepares a profile and hands it to the parents; then the e-mails to the team; then the figures for the team, the problems and the votes; 176 checks. |
 | `npm run test:live` | The same story on a second, empty Supabase project (never the one families use), through the app's own code: 13 steps, including devices, history undo, invitation codes, revisions and materials (needs "Confirm email" off while it runs). Last full run: before the back office (all 13 passed); **to run again once the back-office migration is on the real project**. |
 | `npm run test:a11y` | Accessibility: 204 scans of 57 screens against WCAG 2.2 AA (four sizes, Arabic), then a keyboard-only run. Last run: 0 rule break. |

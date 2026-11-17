@@ -97,9 +97,9 @@
   The family chooses it the first time a new board opens, before the guide (`OpenGuideOnStart` in
   `src/ui/Stages.tsx` opens `{ kind: 'pin', then: { kind: 'guide' } }` once the person's rights are
   known), and whenever a code is being chosen the keypad explains what it is (`t.pinWhy`). Never let
-  the "choose a code" keypad appear without that explanation. "Forgot the code?" under the keypad: a code sent
-  to the account's e-mail or phone (`requestPasswordReset`, checked by `checkResetCode`, password unchanged)
-  lets the family (or a professional, for her own code) choose a new one; a linked tablet is sent to a parent's device. Board settings are edited through `useSettingsDraft` (saved on
+  the "choose a code" keypad appear without that explanation. "Forgot the code?" under the keypad: the account's password
+  (`checkPassword`) or a code sent to the account's e-mail or phone (`requestPasswordReset`, checked by
+  `checkResetCode`, password unchanged) lets the family (or a professional, for her own code) choose a new one; a linked tablet is sent to a parent's device (who: `forgotCodeWays`). Board settings are edited through `useSettingsDraft` (saved on
   "Save", not at each change): new settings controls use the draft's `st` / `set`, not `app.update`.
 - Words for the user: the Schedule screen holds "sequences" (step lists: New sequence / Edit sequence) and
   the week and month "schedules" (never "plan": it reads as a subscription plan). Lists the user orders

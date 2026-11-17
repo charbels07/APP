@@ -293,7 +293,8 @@ export function AuthScreen({ mode: initialMode, role: initialRole }: { mode: Mod
   );
 }
 
-function PasswordField({
+/** Also used by the caregiver keypad's "Forgot the code?" (src/ui/panels/ForgotCode.tsx). */
+export function PasswordField({
   label,
   value,
   onChange,
@@ -441,7 +442,8 @@ const styles = StyleSheet.create({
   hint: { fontSize: 13, color: C.textMuted, lineHeight: 18 },
   label: { fontSize: 13, color: C.textMuted, fontWeight: '600' },
   pwRow: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: C.border, borderRadius: radius.md, backgroundColor: C.surface },
-  pwInput: { flex: 1, minHeight: 46, paddingHorizontal: 12, fontSize: 17, color: C.text, writingDirection: 'ltr', textAlign: 'left' },
+  // minWidth 0: a browser's field would not shrink below its default width (the eye left the box on a phone).
+  pwInput: { flex: 1, minWidth: 0, minHeight: 46, paddingHorizontal: 12, fontSize: 17, color: C.text, writingDirection: 'ltr', textAlign: 'left' },
   eye: { width: 48, height: 46, alignItems: 'center', justifyContent: 'center' },
   demo: { flexDirection: 'row', gap: 8, alignItems: 'center', backgroundColor: C.editSoft, borderRadius: radius.md, padding: 12 },
   switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 4 },

@@ -90,11 +90,14 @@ by the database (proposal, direct edit or refusal, according to the rights the f
 
 ### Added later: a forgotten caregiver code (November 2026)
 
-"Forgot the code?" on the keypad lets the family choose a new code only after proving it holds the
-account's mailbox or phone: a code is sent there (the password-reset code) and checked by Supabase
-without changing the password. The rule for who may change the code does not move: only the family
+"Forgot the code?" on the keypad lets the family choose a new code only after proving it is the
+account's owner: with the account's password (checked by signing in again as that same account,
+with its own address: `checkPassword`), or by holding the account's mailbox or phone: a code is
+sent there (the password-reset code) and checked by Supabase without changing the password. The rule for who may change the code does not move: only the family
 or a team manager, as before (`save_profile` refuses anyone else); a linked tablet has no mailbox and
-is told to do it from a parent's device. A child cannot use it: it needs the parent's e-mail.
+is told to do it from a parent's device. A child cannot use it: it needs the parent's password or e-mail. The proof is checked on the device
+(the database cannot tell who holds the tablet); that is enough, because the code only ever kept
+the adults' tools from a child's hands, and the account itself downloads the profile the code is in.
 
 ### Added later: "Keep me logged in" (November 2026)
 
@@ -246,7 +249,7 @@ Names move a little between versions of the dashboard; look for the nearest word
 | Command | What it proves |
 |---|---|
 | `npm run test:db` | 176 checks on a throw-away database: the normal story, then **every attack of this review, which must fail**, then the hand-over of a profile created by a professional, then the e-mails to the team, then the figures for the team, the technical problems and the votes. |
-| `npm test` | 288 tests; `security.test.ts` covers links, other people's changes, what stays on the device, the print page, the website protections. |
+| `npm test` | 300 tests; `security.test.ts` covers links, other people's changes, what stays on the device, the print page, the website protections. |
 | `npm audit` | Known flaws in libraries. Today: none in what ships to families (4 medium ones in build tools only). |
 | `npm run test:a11y` | The screens still pass the accessibility scan after these changes. |
 

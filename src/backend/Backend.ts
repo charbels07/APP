@@ -98,6 +98,11 @@ export interface Backend {
    * person holds the account's mailbox or phone (e.g. to choose a new caregiver code they forgot).
    */
   checkResetCode(target: { email?: string; phone?: string }, code: string): Promise<void>;
+  /**
+   * Checks the signed-in account's own password without changing anything: the other way to prove
+   * it is the account's owner (forgotten caregiver code). A tablet linked with a code has none.
+   */
+  checkPassword(password: string): Promise<void>;
   changePassword(current: string, next: string): Promise<void>;
   updateAccount(patch: { displayName?: string; email?: string; phone?: string; prefs?: Partial<AccountPrefs> }): Promise<Account>;
   deleteAccount(): Promise<void>;

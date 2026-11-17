@@ -68,6 +68,19 @@ const results = [];
       await p.getByRole('button', { name: /^Explain: / }).click(); await p.getByRole('dialog').waitFor(); await scan('05d-setup-help'); await p.keyboard.press('Escape'); await p.waitForTimeout(300);
       await p.getByRole('checkbox', { name: /Arabic/ }).click(); await btn('Continue').click(); await p.getByText('Which Arabic?').first().waitFor(); await scan('05c-setup-arabic');
     });
+    // The family's own board: the code is chosen at the first opening; "Forgot the code?" on the
+    // keypad (account password, or a code by e-mail), then the new code with its explanation.
+    await step('16b-pin-forgot', async () => {
+      const digits = async (c) => { for (const d of c) { await p.getByRole('button', { name: d, exact: true }).last().click(); await p.waitForTimeout(100); } };
+      await p.getByRole('radio', { name: /Lebanese/ }).first().click();
+      for (let i = 0; i < 25 && !(await p.getByRole('button', { name: 'Finish', exact: true }).count()); i++) { await btn('Continue').click(); await p.waitForTimeout(300); }
+      await btn('Finish').click(); await p.getByText('The caregiver code protects', { exact: false }).first().waitFor();
+      await digits('2580'); await p.waitForTimeout(200); await digits('2580'); await p.waitForTimeout(1000); await p.keyboard.press('Escape'); await p.waitForTimeout(400);
+      await btn(L.caregiver).click(); await btn('Forgot the code?').click(); await p.getByLabel('Account password').waitFor(); await scan('16b-pin-forgot');
+      await btn('Send the code').click(); await p.getByLabel('Code received').waitFor(); await scan('16c-pin-forgot-code');
+      await btn('Back').click(); await btn('Forgot the code?').click();
+      await p.getByLabel('Account password').fill('secret123'); await btn('Confirm').click(); await p.getByText('It is you.', { exact: false }).first().waitFor(); await scan('16d-pin-new-code');
+    });
     await p.evaluate(() => localStorage.removeItem('caa.session.v1')); await p.reload(); await p.getByRole('button').first().waitFor();
   }
   // The board, through the demo team account (a ready-made profile, no questions).

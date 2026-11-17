@@ -106,10 +106,7 @@ export interface Backend {
   listProfiles(): Promise<ProfileSummary[]>;
   createProfile(input: { name: string; age?: number; intake?: Intake; data: Profile }): Promise<ChildRecord>;
   getProfile(id: string): Promise<ChildRecord>;
-  /**
-   * Only the profile's version number: a tiny answer that tells whether someone else saved.
-   * A board asks it every 30 s and downloads the whole profile only when it is newer.
-   */
+  /** Only the server's version number of a profile (a few bytes): an open board asks it often, the whole profile only when newer. */
   profileVersion(id: string): Promise<number>;
   /** Saves only if nobody saved a newer version meanwhile (otherwise returns that version). */
   saveProfile(id: string, data: Profile, baseVersion: number): Promise<SaveResult>;

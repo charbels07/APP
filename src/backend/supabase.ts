@@ -512,7 +512,7 @@ export class SupabaseBackend implements Backend {
   }
 
   async profileVersion(id: string): Promise<number> {
-    // One small number instead of the whole profile: this is asked every 30 s by each open board.
+    // One column, same reading rule as the whole row: no content leaves the database.
     const r = await data<Row | null>(this.sb.from('profiles').select('version').eq('id', id).maybeSingle());
     if (!r) throw new BackendError('forbidden');
     return r.version;

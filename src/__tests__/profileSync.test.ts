@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BackendError } from '../backend/Backend';
 import { LocalBackend } from '../backend/local';
 import { createDefaultProfile } from '../data/defaults';
 import { preset } from '../lib/permissions';
@@ -66,30 +67,98 @@ describe('profile sync: device copy + server', () => {
     expect((await api.getProfile(id)).data.settings.speechRate).toBe(1.2);
   });
 
-  it('looking for changes asks only the version, and downloads the profile only when it is newer', async () => {
+  it('while nothing changed, looking for news only reads the version, not the whole profile', async () => {
     const sync = await ProfileSync.open(api, id, { pushDelay: 0 });
     const full = jest.spyOn(api, 'getProfile');
-    const small = jest.spyOn(api, 'profileVersion');
-    let remote: unknown = null;
-    sync.onRemote = (p) => (remote = p);
-    // Nobody saved: only the small question is asked, nothing is downloaded or redrawn.
-    await sync.pull();
-    await sync.pull();
-    expect(small).toHaveBeenCalledTimes(2);
-    expect(full).not.toHaveBeenCalled();
-    expect(remote).toBeNull();
-    // Someone saved on another device: the next look downloads that version once.
-    const other = (await api.getProfile(id)) as Awaited<ReturnType<typeof api.getProfile>>;
+    const version = jest.spyOn(api, 'profileVersion');
+    try {
+      let remote = 0;
+      sync.onRemote = () => remote++;
+      await sync.pull();
+      await sync.pull();
+      expect(version).toHaveBeenCalledTimes(2);
+      expect(full).not.toHaveBeenCalled();
+      expect(remote).toBe(0);
+      expect(sync.lastSyncedAt).toBeDefined();
+
+      // Someone else saves: the next look downloads the profile once, then quiet again.
+      const other = await api.getProfile(id);
+      const theirs = structuredClone(other.data);
+      theirs.settings.speechRate = 0.9;
+      await api.saveProfile(id, theirs, other.version);
+      full.mockClear();
+      await sync.pull();
+      expect(full).toHaveBeenCalledTimes(1);
+      expect(remote).toBe(1);
+      expect(sync.copy.version).toBe(other.version + 1);
+      expect(sync.copy.data.settings.speechRate).toBe(0.9);
+      expect((await readLocal(id))?.version).toBe(other.version + 1);
+      await sync.pull();
+      expect(full).toHaveBeenCalledTimes(1);
+    } finally {
+      full.mockRestore();
+      version.mockRestore();
+    }
+  });
+
+  it('looking for news: unsent changes are sent first, and no connection only shows "offline"', async () => {
+    const sync = await ProfileSync.open(api, id, { pushDelay: 60000 });
+    const version = jest.spyOn(api, 'profileVersion');
+    try {
+      const p = structuredClone(sync.copy.data);
+      p.settings.speechRate = 1.1;
+      sync.change(p);
+      await sync.pull();
+      expect(version).not.toHaveBeenCalled();
+      expect(sync.copy.dirty).toBe(false);
+      expect((await api.getProfile(id)).data.settings.speechRate).toBe(1.1);
+
+      const full = jest.spyOn(api, 'getProfile');
+      version.mockRejectedValueOnce(new BackendError('offline'));
+      await sync.pull();
+      expect(sync.state).toBe('offline');
+      expect(full).not.toHaveBeenCalled();
+      full.mockRestore();
+      await sync.pull();
+      expect(sync.state).toBe('saved');
+    } finally {
+      version.mockRestore();
+    }
+  });
+
+  it('a change made while the newer profile downloads is merged, not lost', async () => {
+    const sync = await ProfileSync.open(api, id, { pushDelay: 0 });
+    const other = await api.getProfile(id);
     const theirs = structuredClone(other.data);
-    theirs.settings.speechRate = 0.9;
+    theirs.settings.showLabels = true;
     await api.saveProfile(id, theirs, other.version);
-    full.mockClear();
-    await sync.pull();
-    expect(full).toHaveBeenCalledTimes(1);
-    expect(sync.copy.data.settings.speechRate).toBe(0.9);
-    expect(remote).not.toBeNull();
-    full.mockRestore();
-    small.mockRestore();
+    const real = api.getProfile.bind(api);
+    const full = jest.spyOn(api, 'getProfile').mockImplementationOnce(async (pid) => {
+      const r = await real(pid);
+      // The child touches the board in the meantime.
+      const p = structuredClone(sync.copy.data);
+      p.settings.speechRate = 0.7;
+      sync.change(p);
+      return r;
+    });
+    try {
+      await sync.pull();
+      expect(sync.copy.data.settings.speechRate).toBe(0.7);
+      await sync.flush();
+      const now = (await api.getProfile(id)).data.settings;
+      expect(now.showLabels).toBe(true);
+      expect(now.speechRate).toBe(0.7);
+    } finally {
+      full.mockRestore();
+    }
+  });
+
+  it('the version alone follows the same reading rule as the profile', async () => {
+    expect(await api.profileVersion(id)).toBe((await api.getProfile(id)).version);
+    await api.signOut();
+    await signUp('stranger@example.com', 'parent');
+    await expect(api.profileVersion(id)).rejects.toMatchObject({ code: 'forbidden' });
+    await api.signIn({ email: 'mum@example.com', password: 'secret123' });
   });
 
   it('a use-only tablet keeps its changes on the device', async () => {

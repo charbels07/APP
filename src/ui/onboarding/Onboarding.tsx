@@ -46,6 +46,8 @@ import { Icon } from '../Icon';
 import { Root } from '../Root';
 import { ErrorText, LinkBtn, StartLayout, T, st, useRtl } from '../start/StartLayout';
 import { ProfileBin } from '../settings/Backups';
+import { ConsentBox } from '../ConsentBox';
+import { CHILD_DATA_CONSENT, consentText } from '../../lib/consent';
 import { SymbolView } from '../SymbolView';
 import { C, CLASS_COLORS, radius } from '../theme';
 import { checked } from '../a11y';
@@ -124,6 +126,8 @@ export function Onboarding() {
     if (stepId === 'child' && !a.name.trim()) return setError(o.needName);
     if (stepId === 'langs' && !a.langs.length) return setError(o.needLang);
     if (stepId === 'arabic' && (!a.arabic || a.arabic === 'none')) return setError(o.needArabic);
+    // The parent's consent before the child's profile is kept (a professional's draft waits for the parents').
+    if (stepId === 'data' && !pro && !a.consent) return setError(consentText[uiLang].needed);
     goto(draft.step + 1);
   };
   // Leaving at the first step: back to the workspace (professional), to the child already open, or out.
@@ -139,7 +143,9 @@ export function Onboarding() {
         pro={pro}
         onBack={back}
         onDone={async (data) => {
-          const rec = await api.createProfile({ name: a.name.trim(), age: a.age, intake: intakeOf(a), data });
+          // A draft resumed from before the consent existed: back to the step that asks it.
+          if (!pro && !a.consent) return goto(steps.indexOf('data'));
+          const rec = await api.createProfile({ name: a.name.trim(), age: a.age, intake: intakeOf(a), data, consent: pro ? undefined : CHILD_DATA_CONSENT });
           await AsyncStorage.removeItem(draftKey).catch(() => {});
           if (a.vocab === 'legacy') await forgetLegacyProfile();
           // A professional goes back to the workspace, on this child's page (the parents' code is there).
@@ -222,6 +228,7 @@ export function Onboarding() {
       {stepId === 'access' && <AccessStep o={o} a={a} set={set} />}
       {stepId === 'plans' && <PlansStep o={o} a={a} set={set} />}
       {stepId === 'data' && <DataStep o={o} a={a} set={set} />}
+      {stepId === 'data' && !pro && <ConsentBox value={!!a.consent} onChange={(v) => set({ consent: v })} lang={uiLang} />}
       <ErrorText text={error} />
       <View style={[s.footer, useRtlRow()]}>
         <Btn label={o.back} onPress={back} style={{ flex: 1 }} />

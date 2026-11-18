@@ -8,6 +8,16 @@ import type { UiLang } from '../model/types';
 export type ProofReason = 'deleteAccount' | 'deleteProfile' | 'linkFull' | 'exportAll' | 'restore';
 
 const fr = {
+  retTitle: 'Conservation et protections',
+  retNote: 'Supprimé chaque nuit : suivi après 24 mois (phrases après 12), historique 24 mois, notifications 12 mois, messages 3 ans, journal de l’équipe 5 ans. Les comptes inactifs ne sont que comptés : à décider avec le juriste.',
+  retInactive: 'Comptes sans connexion depuis 24 mois',
+  retBin: 'Profils dans la corbeille',
+  retFiles: 'Fichiers en attente de suppression',
+  retTeam: 'Équipe avec connexion en deux étapes',
+  retConsents: 'Accords des parents (30 jours)',
+  downloadAll: 'Télécharger toutes mes données',
+  downloadNote: 'Un seul fichier avec tout ce que le serveur garde sur vous et sur les enfants dont vous êtes propriétaire (compte, profils, équipes, historique, suivi, messages, accords). Les photos et enregistrements restent dans l’application.',
+  downloaded: 'Fichier prêt.',
   twoStep: 'Connexion en deux étapes',
   twoStepOff:
     'Désactivée. Activée, la connexion demande aussi un code à 6 chiffres donné par une application d’authentification sur votre téléphone (Google Authenticator, Microsoft Authenticator, 1Password…).',
@@ -62,6 +72,16 @@ const fr = {
 type Dict = typeof fr;
 
 const en: Dict = {
+  retTitle: 'Retention and protections',
+  retNote: 'Removed every night: follow-up after 24 months (sentences after 12), history 24 months, notices 12 months, messages 3 years, the team’s log 5 years. Inactive accounts are only counted: to decide with the lawyer.',
+  retInactive: 'Accounts without a sign-in for 24 months',
+  retBin: 'Profiles in the bin',
+  retFiles: 'Files waiting to be deleted',
+  retTeam: 'Team with two-step sign-in',
+  retConsents: 'Parents’ agreements (30 days)',
+  downloadAll: 'Download all my data',
+  downloadNote: 'One file with everything the server keeps about you and the children whose profile you own (account, profiles, teams, history, follow-up, messages, agreements). Photos and recordings stay in the app.',
+  downloaded: 'File ready.',
   twoStep: 'Two-step sign-in',
   twoStepOff:
     'Off. When it is on, signing in also asks for a 6-digit code from an authenticator app on your phone (Google Authenticator, Microsoft Authenticator, 1Password…).',
@@ -111,6 +131,16 @@ const en: Dict = {
 };
 
 const ar: Dict = {
+  retTitle: 'الحفظ والحماية',
+  retNote: 'يُحذف كل ليلة: المتابعة بعد 24 شهرًا (الجمل بعد 12)، السجل 24 شهرًا، الإشعارات 12 شهرًا، الرسائل 3 سنوات، سجل الفريق 5 سنوات. الحسابات غير النشطة تُعدّ فقط: يُقرَّر بشأنها مع المحامي.',
+  retInactive: 'حسابات بلا تسجيل دخول منذ 24 شهرًا',
+  retBin: 'ملفات في سلة المحذوفات',
+  retFiles: 'ملفات تنتظر الحذف',
+  retTeam: 'الفريق مع تسجيل الدخول بخطوتين',
+  retConsents: 'موافقات الأهل (30 يومًا)',
+  downloadAll: 'تنزيل كل بياناتي',
+  downloadNote: 'ملف واحد فيه كل ما يحفظه الخادم عنك وعن الأطفال الذين تملك ملفاتهم (الحساب، الملفات، الفرق، السجل، المتابعة، الرسائل، الموافقات). تبقى الصور والتسجيلات في التطبيق.',
+  downloaded: 'الملف جاهز.',
   twoStep: 'تسجيل الدخول بخطوتين',
   twoStepOff:
     'غير مفعّل. عند تفعيله، يطلب تسجيل الدخول أيضًا رمزًا من 6 أرقام يعطيه تطبيق مصادقة على هاتفك (Google Authenticator أو Microsoft Authenticator أو 1Password…).',

@@ -35,6 +35,7 @@ import { ErrorText, LangSwitch, Logo } from '../start/StartLayout';
 import { C, radius } from '../theme';
 import { BugsView, ContentView, PageIntro, ProductView, RequestsView, SecurityView } from './ProductTabs';
 import { BackOfficeGate } from '../TwoStep';
+import { RetentionCard } from './RetentionCard';
 
 type Tab = 'pros' | 'admin' | 'product' | 'feedback' | 'bugs' | 'content' | 'security';
 const TABS: Tab[] = ['pros', 'admin', 'product', 'feedback', 'bugs', 'content', 'security'];
@@ -202,7 +203,12 @@ function BackOfficePages() {
           ) : tab === 'content' ? (
             <ContentView />
           ) : (
-            overview && <SecurityView a={a} o={overview} agreed={product?.agreed ?? 0} log={<History a={a} list={log} />} />
+            overview && (
+              <>
+                <SecurityView a={a} o={overview} agreed={product?.agreed ?? 0} log={<History a={a} list={log} />} />
+                <RetentionCard />
+              </>
+            )
           )}
           {overview && <Note text={a.updated(when(Date.parse(overview.at), uiLang))} />}
         </View>

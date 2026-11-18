@@ -26,6 +26,7 @@ import { eraseMediaOf } from '../../lib/deviceData';
 import { useProof } from '../ProveItsYou';
 import { TwoStepCard } from '../TwoStep';
 import { BoardVersions, ProfileBin } from './Backups';
+import { DownloadMyData } from './DownloadMyData';
 import { backupStrings } from '../../i18n/backup';
 
 export function AccountTab({ board, openTeam }: { board: BoardCtx; openTeam: () => void }) {
@@ -300,6 +301,7 @@ function Privacy({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
         <Note key={p} text={`• ${p}`} />
       ))}
       <Btn small icon="download" label={x.exportProfile} onPress={() => exportJson(`profil-${board.childName || 'caa'}.json`, app.profile)} />
+      <DownloadMyData />
       {owner && <Btn small kind="danger" icon="trash" label={`${x.deleteProfile} ${board.childName}`} onPress={() => setTyping('profile')} />}
       <Btn small kind="danger" icon="trash" label={x.deleteAccount} onPress={() => setTyping('account')} />
       {typing && (

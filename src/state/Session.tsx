@@ -24,6 +24,7 @@ import type { UiLang } from '../model/types';
 import { forgetLocal } from './profileSync';
 import { forgetEverything } from '../lib/deviceData';
 import { keepSignedIn, setKeepSignedIn } from '../lib/keepSignedIn';
+import { CHILD_DATA_CONSENT } from '../lib/consent';
 import { markVisit, sameVisit } from '../lib/visit';
 
 export type Stage =
@@ -174,7 +175,8 @@ export function SessionProvider({ children, api = backend() }: { children: React
           data.settings.uiLang = lang;
           data.settings.lang = lang;
           data.settings.langs = [lang, ...(['fr', 'en', 'ar'] as const).filter((l) => l !== lang)];
-          const rec = await api.createProfile({ name: adminStrings(lang).testChild, data });
+          // The team member's own test profile: their consent, as for any family.
+          const rec = await api.createProfile({ name: adminStrings(lang).testChild, data, consent: CHILD_DATA_CONSENT });
           return setStage({ name: 'board', profileId: rec.id });
         }
         // Invited before having a child of their own (grandparent, nanny…): the invitations first.

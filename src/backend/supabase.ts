@@ -18,7 +18,7 @@ import type { Profile, UiLang } from '../model/types';
 import type { ProblemItem } from '../lib/product';
 import type { Op } from '../lib/profileDiff';
 import type { AccessLevel, CollaboratorRole, PermissionSet } from '../lib/permissions';
-import { BackendError, type Backend, type BinEntry, type CodeSent, type SecurityState, type SignInMethods, type SignUpInput, type Snapshot, type TwoStepSetup } from './Backend';
+import { BackendError, type AdminRetention, type Backend, type BinEntry, type CodeSent, type SecurityState, type SignInMethods, type SignUpInput, type Snapshot, type TwoStepSetup } from './Backend';
 import { normEmail, normPhone } from './local';
 import {
   DEFAULT_PREFS,
@@ -596,12 +596,26 @@ export class SupabaseBackend implements Backend {
     return rows.map((r) => ({ id: r.id, name: r.name, age: r.age ?? undefined, ownerId: r.owner_id, access: r.access, level: r.level, updatedAt: ms(r.updated_at) ?? 0 }));
   }
 
-  async createProfile(input: { name: string; age?: number; intake?: Intake; data: Profile }): Promise<ChildRecord> {
+  async createProfile(input: { name: string; age?: number; intake?: Intake; data: Profile; consent?: number }): Promise<ChildRecord> {
     const uid = await this.uid();
+    // The parent's consent is kept by the database first; the profile is refused without it.
+    if (input.consent) await this.giveConsent(input.consent);
     const r = await data<Row>(
       this.sb.from('profiles').insert({ owner_id: uid, name: input.name.trim(), age: input.age ?? null, intake: input.intake ?? null, data: input.data }).select(PROFILE_COLS).single(),
     );
     return toProfileRec(r);
+  }
+
+  async giveConsent(version: number): Promise<void> {
+    try {
+      await data(this.sb.rpc('give_consent', { p_kind: 'child_data', p_version: version }));
+    } catch (e) {
+      if (!missingFunction(e)) throw e;
+    }
+  }
+
+  async exportMyData(): Promise<unknown> {
+    return data<unknown>(this.sb.rpc('export_my_data'));
   }
 
   async getProfile(id: string): Promise<ChildRecord> {
@@ -918,6 +932,12 @@ export class SupabaseBackend implements Backend {
 
   async adminBugs(): Promise<AdminBugs> {
     return data<AdminBugs>(this.sb.rpc('admin_bugs'));
+  }
+
+  async adminRetention(): Promise<AdminRetention> {
+    const r = await data<Row>(this.sb.rpc('admin_retention'));
+    const n = (k: string) => Number(r?.[k] ?? 0) || 0;
+    return { inactiveAccounts: n('inactiveAccounts'), inBin: n('inBin'), filesWaiting: n('filesWaiting'), twoStepTeam: n('twoStepTeam'), team: n('team'), consents: n('consents') };
   }
 
   async adminRoadmap(): Promise<AdminRoadmapItem[]> {

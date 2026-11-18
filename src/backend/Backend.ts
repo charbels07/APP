@@ -73,6 +73,16 @@ export interface CodeSent {
   signedIn?: boolean;
 }
 
+/** Security page of the back office: counts only. */
+export interface AdminRetention {
+  inactiveAccounts: number;
+  inBin: number;
+  filesWaiting: number;
+  twoStepTeam: number;
+  team: number;
+  consents: number;
+}
+
 /** Where the signed-in account stands for two-step sign-in (src/ui/TwoStep.tsx). */
 export interface SecurityState {
   /** On the app's team: the back office is shown, and opens once the code was typed. */
@@ -162,7 +172,12 @@ export interface Backend {
 
   // ── Children's AAC profiles ──
   listProfiles(): Promise<ProfileSummary[]>;
-  createProfile(input: { name: string; age?: number; intake?: Intake; data: Profile }): Promise<ChildRecord>;
+  /** `consent`: the version of the parent's consent the person ticked (src/lib/consent.ts); a family needs it. */
+  createProfile(input: { name: string; age?: number; intake?: Intake; data: Profile; consent?: number }): Promise<ChildRecord>;
+  /** The parent's consent, kept with its date and text version (before taking over a profile a professional prepared). */
+  giveConsent(version: number): Promise<void>;
+  /** Everything the server holds about this account and the children whose profile it owns (one JSON document). Needs a fresh proof. */
+  exportMyData(): Promise<unknown>;
   getProfile(id: string): Promise<ChildRecord>;
   /** Only the server's version number of a profile (a few bytes): an open board asks it often, the whole profile only when newer. */
   profileVersion(id: string): Promise<number>;
@@ -285,6 +300,8 @@ export interface Backend {
   /** Technical problems of the last 30 days. */
   adminBugs(): Promise<AdminBugs>;
   adminRoadmap(): Promise<AdminRoadmapItem[]>;
+  /** Counts for the Security page: accounts without a sign-in for 24 months, profiles in the bin, files waiting to be deleted… */
+  adminRetention(): Promise<AdminRetention>;
   /** Adds an idea to vote for (no `id`) or changes its title or status. */
   adminRoadmapSave(input: { id?: string; title: Record<UiLang, string>; status: RoadmapStatus }): Promise<void>;
   /** Demonstration only (local backend): signs in as the app's team, with example requests and figures. */

@@ -16,7 +16,7 @@ import { exampleBugs, exampleDocument, exampleOverview, exampleProduct, exampleR
 import { COUNTERS, PROBLEM_KINDS, SCREENS, sharesProduct, type ProblemItem } from '../lib/product';
 import { demoObservations, demoUsage } from '../lib/demoUsage';
 import { limitToConsent } from '../lib/usageConsent';
-import { BackendError, type Backend, type BinEntry, type CodeSent, type SecurityState, type SignUpInput, type Snapshot, type TwoStepSetup } from './Backend';
+import { BackendError, type AdminRetention, type Backend, type BinEntry, type CodeSent, type SecurityState, type SignUpInput, type Snapshot, type TwoStepSetup } from './Backend';
 import { newTotpSecret, totp, totpMatches, totpUri } from '../lib/totp';
 import {
   DEFAULT_PREFS,
@@ -112,6 +112,8 @@ interface DB {
   roadmapVotes?: { itemId: string; userId: string; role: string }[];
   /** The example requests of the back-office demonstration were added. */
   backOfficeSeeded?: boolean;
+  /** The parents' consents (who, when, which text version, for which child). */
+  consents?: { userId: string; version: number; profileId?: string; at: number }[];
   /** Copies of the boards (weekly, before a big change, by hand, before putting one back): 10 per child. */
   snapshots?: (Snapshot & { profileId: string; data: Profile })[];
 }
@@ -565,10 +567,12 @@ export class LocalBackend implements Backend {
     });
   }
 
-  async createProfile(input: { name: string; age?: number; intake?: Intake; data: Profile }): Promise<ChildRecord> {
+  async createProfile(input: { name: string; age?: number; intake?: Intake; data: Profile; consent?: number }): Promise<ChildRecord> {
     return this.tx((db, m) => {
       const me = LocalBackend.need(m);
       const data = clone(input.data);
+      // The demonstration keeps the consent as the real server does (which also refuses a family's profile without it).
+      const consent = input.consent && me.role !== 'pro' ? { userId: me.id, version: input.consent, at: Date.now() } : null;
       if (me.role === 'pro') {
         // A professional prepares a child's profile before the family has an account: only once
         // accepted, and nothing is recorded or shared until the family decides (same as the real server).
@@ -590,7 +594,46 @@ export class LocalBackend implements Backend {
         updatedBy: me.id,
       };
       db.profiles[rec.id] = rec;
+      if (consent) (db.consents ??= []).push({ ...consent, profileId: rec.id });
       return clone(rec);
+    });
+  }
+
+  async giveConsent(version: number): Promise<void> {
+    await this.tx((db, m) => {
+      const me = LocalBackend.need(m);
+      if (me.provider === 'device') throw new BackendError('forbidden');
+      (db.consents ??= []).push({ userId: me.id, version, at: Date.now() });
+    });
+  }
+
+  async exportMyData(): Promise<unknown> {
+    await this.requireProof();
+    return this.tx((db, m) => {
+      const me = LocalBackend.need(m);
+      if (me.provider === 'device') throw new BackendError('forbidden');
+      const mine = new Set(Object.values(db.profiles).filter((p) => p.ownerId === me.id).map((p) => p.id));
+      const of = <T extends { profileId?: string }>(list: T[] | undefined) => (list ?? []).filter((x) => x.profileId && mine.has(x.profileId));
+      return clone({
+        exportedAt: new Date().toISOString(),
+        format: 'empower-communication/export-1',
+        account: LocalBackend.public(me),
+        consents: (db.consents ?? []).filter((c) => c.userId === me.id),
+        children: Object.values(db.profiles).filter((p) => mine.has(p.id)),
+        teams: db.members.filter((x) => mine.has(x.profileId) || x.userId === me.id),
+        invitations: db.invitations.filter((i) => mine.has(i.profileId) || i.fromUserId === me.id || i.toUserId === me.id),
+        proposals: db.proposals.filter((x) => mine.has(x.profileId) || x.authorId === me.id),
+        history: of(db.history),
+        devices: db.devices.filter((d) => mine.has(d.profileId) || d.userId === me.id),
+        followUpDays: (db.usage ?? []).filter((u) => mine.has(u.profileId)).map((u) => u.data),
+        observations: (db.observations ?? []).filter((o) => mine.has(o.profileId) || o.createdBy === me.id),
+        boardCopies: of(db.snapshots),
+        notices: db.notices.filter((n) => n.userId === me.id),
+        verification: db.verifications[me.id] ?? null,
+        materials: db.resources.filter((r) => r.ownerId === me.id),
+        messagesToTheTeam: (db.feedback ?? []).filter((f) => f.userId === me.id),
+        notIncluded: 'Photos and recordings: they are files, kept in the app.',
+      });
     });
   }
 
@@ -1513,6 +1556,21 @@ export class LocalBackend implements Backend {
         o.top.unshift(clone(p));
       }
       return o;
+    });
+  }
+
+  async adminRetention(): Promise<AdminRetention> {
+    return this.tx((db, m) => {
+      LocalBackend.requireAdmin(db, m);
+      const team = db.admins ?? [];
+      return {
+        inactiveAccounts: 0,
+        inBin: Object.values(db.profiles).filter((p) => p.deletedAt).length,
+        filesWaiting: 0,
+        twoStepTeam: team.filter((id) => db.accounts[id]?.twoStep?.on).length,
+        team: team.length,
+        consents: (db.consents ?? []).filter((c) => Date.now() - c.at < 30 * 86_400_000).length,
+      };
     });
   }
 

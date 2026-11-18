@@ -30,6 +30,7 @@ import { Icon, type IconName } from '../Icon';
 import { DeleteAccount, MyAccount, Preferences } from '../settings/AccountTab';
 import { useProof } from '../ProveItsYou';
 import { ProfileBin } from '../settings/Backups';
+import { DownloadMyData } from '../settings/DownloadMyData';
 import { backupStrings } from '../../i18n/backup';
 import { Note, ss } from '../settings/SettingsScreen';
 import { PermissionEditor, Row, when } from '../settings/TeamTab';
@@ -818,6 +819,7 @@ function ProAccount({ p, verification, users, onVerify }: { p: ProStrings; verif
         <Note text={x.subscriptionLater} />
       </Section>
       <WriteTeam />
+      <DownloadMyData />
       <DeleteAccount x={x} />
       <PictoCredit lang={uiLang} />
     </>

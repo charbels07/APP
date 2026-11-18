@@ -79,7 +79,7 @@ interface SessionCtx {
   /** Two-step sign-in of this account (null: not known, e.g. without internet or a linked tablet). */
   security: SecurityState | null;
   refreshSecurity: () => Promise<void>;
-  /** `eraseMedia`: also erase the photos and recordings kept on this device (they are not saved online). */
+  /** `eraseMedia`: also erase the photos and recordings made on this device (those received from the account always leave). */
   signOut: (opts?: { eraseMedia?: boolean }) => Promise<void>;
   /** Reads the account again (after changing the name, for example). */
   refreshAccount: () => Promise<void>;

@@ -12,6 +12,7 @@ import { invertOps } from '../lib/profileDiff';
 import type { Profile } from '../model/types';
 import { AppProvider, useApp } from '../state/AppState';
 import { BoardContext, useBoard, type MyAccess } from '../state/BoardContext';
+import { MediaSync } from '../state/mediaSync';
 import { ProfileSync } from '../state/profileSync';
 import { ProductCounter } from '../state/productCounters';
 import { UsageTracker } from '../state/usageTracker';
@@ -118,6 +119,9 @@ function BoardStage({ profileId }: { profileId: string }) {
   const [note, setNote] = useState<string | null>(null);
   const [access, setAccess] = useState<MyAccess | null>(null);
   const [tracker, setTracker] = useState<UsageTracker | null>(null);
+  const [media, setMedia] = useState<MediaSync | null>(null);
+  const accessRef = useRef<MyAccess | null>(null);
+  accessRef.current = access;
   // Feature counters for the app's team: the family's own devices and the child's tablets only
   // (not a professional's account, not the team's test accounts), and only if the family agreed.
   const product = useRef<ProductCounter | null>(null);
@@ -130,10 +134,12 @@ function BoardStage({ profileId }: { profileId: string }) {
     let usage: UsageTracker | null = null;
     // What is counted while the board opens (its bar, the opening time) waits for its counter.
     holdProduct();
+    let files: MediaSync | null = null;
     const sendNow = async () => {
       await opened?.flush();
       await usage?.flush();
       await product.current?.flush();
+      await files?.flush();
     };
     ProfileSync.open(api, profileId).then(
       (sy) => {
@@ -169,6 +175,23 @@ function BoardStage({ profileId }: { profileId: string }) {
           product.current = c;
           setProductSink(c);
         });
+        // Photos and recordings: copied through the account in the background (src/state/mediaSync.ts).
+        void MediaSync.open(api, profileId, {
+          // Sent by those who may change the board (unknown yet: the server decides); a use-only tablet keeps its own.
+          canSend: () => {
+            const a = accessRef.current;
+            return !sy.copy.localOnly && (!a || a.owner || !!a.perms.manager || a.level >= 3);
+          },
+          canRemove: () => {
+            const a = accessRef.current;
+            return !!a && (a.owner || !!a.perms.manager);
+          },
+        }).then((m) => {
+          if (!alive) return m.close();
+          files = m;
+          m.see(sy.copy.data);
+          setMedia(m);
+        });
         void api.myAccess(profileId).then((a) => alive && setAccess(a)).catch(() => {});
         // This device appears in "Devices and sync"; a removed device is signed out.
         void api
@@ -193,6 +216,7 @@ function BoardStage({ profileId }: { profileId: string }) {
         product.current.close();
         product.current = null;
       }
+      files?.close();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [api, profileId]);
@@ -209,9 +233,11 @@ function BoardStage({ profileId }: { profileId: string }) {
       }
       // The family stopped sharing with the app's team: what this device counted is erased (the server erases its side).
       if (sharesProduct(before.settings) && !sharesProduct(p.settings)) void product.current?.forget();
+      // A new photo or recording is sent; one that was replaced or removed leaves the account.
+      media?.changed(before, p);
       sync.change(p);
     },
-    [sync, tracker],
+    [sync, tracker, media],
   );
 
   // Someone else's changes: looked for every 30 s and when the app comes back to the front. Only the
@@ -220,8 +246,10 @@ function BoardStage({ profileId }: { profileId: string }) {
     if (!sync) return;
     const id = setInterval(() => void sync.pull(), 30000);
     const sub = RNAppState.addEventListener('change', (st) => {
-      if (st === 'active') void sync.pull();
-      else {
+      if (st === 'active') {
+        void sync.pull();
+        media?.soon();
+      } else {
         void sync.flush();
         void tracker?.flush();
         void product.current?.flush();
@@ -231,7 +259,7 @@ function BoardStage({ profileId }: { profileId: string }) {
       clearInterval(id);
       sub.remove();
     };
-  }, [sync, tracker]);
+  }, [sync, tracker, media]);
 
   // The board is on screen: for the app's team (families who agreed), how long the app took to open.
   useEffect(() => {
@@ -247,12 +275,16 @@ function BoardStage({ profileId }: { profileId: string }) {
   const subscribe = useCallback(
     (apply: (p: Profile) => void) => {
       if (!sync) return () => {};
-      sync.onRemote = apply;
+      sync.onRemote = (p) => {
+        apply(p);
+        // Someone else's change: the photos and recordings it brings are fetched.
+        media?.see(p);
+      };
       return () => {
         sync.onRemote = undefined;
       };
     },
-    [sync],
+    [sync, media],
   );
 
   if (error) {
@@ -267,7 +299,7 @@ function BoardStage({ profileId }: { profileId: string }) {
   if (!sync) return <Splash />;
   const manager = !!access && (access.owner || !!access.perms.manager);
   return (
-    <BoardContext.Provider value={{ profileId, childName: sync.copy.name, sync, access, manager, tracker }}>
+    <BoardContext.Provider value={{ profileId, childName: sync.copy.name, sync, access, manager, tracker, media }}>
       <AppProvider
         initial={sync.copy.data}
         onChange={onChange}

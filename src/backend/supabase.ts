@@ -15,6 +15,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
 import { sessionStore } from '../lib/keepSignedIn';
 import type { Profile, UiLang } from '../model/types';
+import { isSyncable } from '../lib/mediaPlan';
 import type { ProblemItem } from '../lib/product';
 import type { Op } from '../lib/profileDiff';
 import type { AccessLevel, CollaboratorRole, PermissionSet } from '../lib/permissions';
@@ -101,6 +102,33 @@ function fail(error: { message?: string } | null | undefined): never {
   if (/network|fetch/i.test(m)) throw new BackendError('offline', m);
   throw new BackendError(m.split(/\s/)[0], m);
 }
+/**
+ * File storage error → the app's short codes (a child's photos and recordings). The storage
+ * server answers with a status and a message; the database's own refusals (`media_quota`,
+ * `media_type`, `too_large`, `too_many`: migration 20261118000300) arrive inside the message.
+ */
+export function mediaFail(error: unknown): never {
+  const e = (error ?? {}) as { message?: string; status?: number; statusCode?: string; code?: string; name?: string };
+  const m = e.message ?? 'unknown';
+  const status = Number(e.status ?? e.statusCode ?? NaN);
+  if (/media_quota/.test(m)) throw new BackendError('media_quota', m);
+  if (/too_many/.test(m)) throw new BackendError('too_many', m);
+  if (/already exists|duplicate/i.test(m) || status === 409 || e.code === 'ResourceAlreadyExists') throw new BackendError('exists', m);
+  if (/too_large|maximum allowed size|too large/i.test(m) || status === 413 || e.code === 'EntityTooLarge') throw new BackendError('too_large', m);
+  if (/media_type|mime type|not supported/i.test(m) || status === 415 || e.code === 'InvalidMimeType') throw new BackendError('media_type', m);
+  if (/not.?found/i.test(m) || status === 404 || e.code === 'NoSuchKey') throw new BackendError('not_found', m);
+  if (/row-level security|unauthori[sz]ed|access denied|permission|forbidden/i.test(m) || status === 403 || status === 401) throw new BackendError('forbidden', m);
+  if (/network|fetch|timed? ?out|abort/i.test(m) || status === 0 || e.name === 'StorageUnknownError') throw new BackendError('offline', m);
+  throw new BackendError('media_error', m);
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** The place of a child's file in the account; a name the app does not make never becomes a path. */
+function mediaPath(profileId: string, name: string): string {
+  if (!UUID.test(profileId) || !isSyncable(name)) throw new BackendError('invalid');
+  return `${profileId}/${name}`;
+}
+
 async function data<T>(q: PromiseLike<{ data: T | null; error: { message?: string } | null }>): Promise<T> {
   const { data: d, error } = await q;
   if (error) fail(error);
@@ -901,6 +929,44 @@ export class SupabaseBackend implements Backend {
 
   async submitVerification(): Promise<Verification> {
     return toVerification(await data<Row>(this.sb.rpc('submit_verification')));
+  }
+
+  // ── A child's photos and recordings ──
+
+  async uploadMedia(profileId: string, name: string, body: ArrayBuffer | Blob, contentType: string): Promise<void> {
+    const path = mediaPath(profileId, name);
+    // A name is never used twice for different files: a file that is already there is not replaced.
+    const { error } = await this.sb.storage.from('profile-media').upload(path, body, { contentType, upsert: false, cacheControl: '31536000' });
+    if (error) mediaFail(error);
+  }
+
+  async mediaUrl(profileId: string, name: string): Promise<string> {
+    const { data: d, error } = await this.sb.storage.from('profile-media').createSignedUrl(mediaPath(profileId, name), 300);
+    if (error || !d) mediaFail(error);
+    return d.signedUrl;
+  }
+
+  async listMedia(profileId: string): Promise<{ name: string; size: number; createdAt: number }[]> {
+    if (!UUID.test(profileId)) throw new BackendError('invalid');
+    const out: { name: string; size: number; createdAt: number }[] = [];
+    for (let offset = 0; offset < 5000; offset += 1000) {
+      const { data: page, error } = await this.sb.storage.from('profile-media').list(profileId, { limit: 1000, offset, sortBy: { column: 'name', order: 'asc' } });
+      if (error) mediaFail(error);
+      for (const f of page ?? []) {
+        if (!f.id || !isSyncable(f.name)) continue;
+        out.push({ name: f.name, size: Number(f.metadata?.size ?? 0), createdAt: ms(f.created_at) ?? 0 });
+      }
+      if ((page ?? []).length < 1000) break;
+    }
+    return out;
+  }
+
+  async removeMedia(profileId: string, names: string[]): Promise<void> {
+    const paths = names.map((n) => mediaPath(profileId, n));
+    for (let i = 0; i < paths.length; i += 100) {
+      const { error } = await this.sb.storage.from('profile-media').remove(paths.slice(i, i + 100));
+      if (error) mediaFail(error);
+    }
   }
 
   // ── Messages to the app's team ──

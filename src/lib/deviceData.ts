@@ -3,12 +3,14 @@
  * sent yet, the answers being typed during set-up) and how it leaves the device with the
  * account: on "Sign out", on "Delete", and when the session ended elsewhere.
  *
- * Photos and voice recordings are different: they live only on the device where they were
- * made (they are not saved online), so signing out keeps them unless the person asks to erase
- * them (a shared computer); deleting the account always erases them.
+ * Photos and voice recordings: the ones made on this device stay when the person signs out,
+ * unless she asks to erase them (a shared computer); deleting the account always erases them.
+ * The ones received from the account (made on another device, `src/state/mediaSync.ts`) belong
+ * to the device copy of the child's profile: they leave with it (`caa.media.<profile id>` lists them).
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { clearMedia, deleteMedia } from './media';
+import { mediaNamesIn as namesIn, readBook } from './mediaPlan';
 import { clearExports } from './platform';
 
 /** Children erased during this run of the app: nothing may write their copy back. */
@@ -28,13 +30,27 @@ async function sendPending(maxMs = 4000): Promise<void> {
   await Promise.race([all, new Promise((r) => setTimeout(r, maxMs))]);
 }
 
+/** The photos and recordings this device received for these children: erased with their copies. */
+async function eraseReceived(mediaKeys: string[]): Promise<void> {
+  for (const k of mediaKeys) {
+    let received: string[] = [];
+    try {
+      received = readBook(JSON.parse((await AsyncStorage.getItem(k)) ?? '{}')).received;
+    } catch {
+      /* unreadable: nothing to erase */
+    }
+    for (const name of received) await deleteMedia(name).catch(() => {});
+  }
+}
+
 /** One child leaves this device (access removed, profile deleted). */
 export async function forgetChild(profileId: string): Promise<void> {
   gone.add(profileId);
-  await AsyncStorage.multiRemove([`caa.child.${profileId}`, `caa.usage.${profileId}`, `caa.product.${profileId}`]).catch(() => {});
+  await eraseReceived([`caa.media.${profileId}`]);
+  await AsyncStorage.multiRemove([`caa.child.${profileId}`, `caa.usage.${profileId}`, `caa.product.${profileId}`, `caa.media.${profileId}`]).catch(() => {});
 }
 
-const CHILD_DATA = /^caa\.(child|usage|product|onboarding)\./;
+const CHILD_DATA = /^caa\.(child|usage|product|media|onboarding)\./;
 const OTHER_KEYS = ['caa.pendingRole', 'caa.pinlock'];
 
 /** True when a previous account left children's data here (session ended without a clean sign-out). */
@@ -62,12 +78,13 @@ export async function forgetEverything(opts: { media?: boolean; beforeSignOut?: 
         /* unreadable: erased */
       }
     }
-    mine = mine.filter((k) => !unsent.has(k.replace(/^caa\.(child|usage|product)\./, '')));
+    mine = mine.filter((k) => !unsent.has(k.replace(/^caa\.(child|usage|product|media)\./, '')));
   }
   for (const k of mine) {
-    const m = /^caa\.(?:child|usage|product)\.(.+)$/.exec(k);
+    const m = /^caa\.(?:child|usage|product|media)\.(.+)$/.exec(k);
     if (m) gone.add(m[1]);
   }
+  if (!opts.media) await eraseReceived(mine.filter((k) => k.startsWith('caa.media.')));
   await AsyncStorage.multiRemove(mine).catch(() => {});
   await clearExports().catch(() => {});
   if (opts.media) await clearMedia().catch(() => {});
@@ -77,9 +94,7 @@ export async function forgetEverything(opts: { media?: boolean; beforeSignOut?: 
  * The photos and recordings a profile uses (their file names follow one fixed pattern; a
  * recording can carry its start and stop moments: `1762000000001_zz99zz.t120-980.m4a`).
  */
-export function mediaNamesIn(profile: unknown): string[] {
-  return [...new Set(JSON.stringify(profile ?? null).match(/\b\d{13}_[a-z0-9]{6}(?:\.t\d+-\d+)?\.[a-z0-9]{2,4}\b/g) ?? [])];
-}
+export const mediaNamesIn = (profile: unknown): string[] => namesIn(profile);
 
 /** A deleted child's photos and recordings leave this device too. */
 export async function eraseMediaOf(profile: unknown): Promise<void> {

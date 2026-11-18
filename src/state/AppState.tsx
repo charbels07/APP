@@ -1,7 +1,8 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 import { strings, type UiStrings } from '../i18n/ui';
 import { createRepeatGuard } from '../lib/repeatGuard';
-import { APPS_NEED_TAP, appLinkOf, findAppInSentence, isIncomplete, openAppUrl } from '../lib/appLinks';
+import { APPS_NEED_TAP, appLinkOf, findAppInSentence, isIncomplete, linkNeedsCode, openAppUrl } from '../lib/appLinks';
 import { clipFor } from '../lib/dialectVoice';
 import { joinTokens, renderStrip, tokenSegment, toSpeechPlan } from '../lib/grammar';
 import { audioOf, isFolderName, label } from '../lib/lexicon';
@@ -24,7 +25,7 @@ export type Overlay =
    * Caregiver code. `then`: what opens once the code is right. The new-board panel opens in
    * caregiver mode; the settings and the child lock open on their own (the board stays in use mode).
    */
-  | { kind: 'pin'; then?: { kind: 'newTla' } | { kind: 'settings' } | { kind: 'lock' } | { kind: 'guide' } }
+  | { kind: 'pin'; then?: { kind: 'newTla' } | { kind: 'settings' } | { kind: 'lock' } | { kind: 'guide' } | OpenLinkAfterCode }
   | { kind: 'settings' }
   /** The child lock of this device (also in the settings). */
   | { kind: 'lock' }
@@ -51,6 +52,16 @@ export type Overlay =
   | { kind: 'guide'; back?: Overlay }
   /** Words and activity boards deleted in the last 30 days (src/lib/wordBin.ts). */
   | { kind: 'wordBin'; back?: Overlay };
+
+/**
+ * After the caregiver code: open another app or a web page (`name`: what the sentence of the keypad
+ * names, "YouTube"). See `linkNeedsCode` in src/lib/appLinks.ts.
+ */
+export interface OpenLinkAfterCode {
+  kind: 'openLink';
+  url: string;
+  name: string;
+}
 
 /** Where a touched word sits, so a demonstration can replay the exact gesture. */
 export interface TapOrigin {
@@ -158,6 +169,11 @@ interface AppCtx {
   pulse: (concept: string, key?: string) => void;
   appLaunch: AppLaunch | null;
   launchApp: (conceptId: string) => void;
+  /**
+   * Opens another app or a web page from the board (a link in the guide): on the tablet apps,
+   * after the caregiver code (`linkNeedsCode`).
+   */
+  openLink: (url: string, name: string) => void;
   openAppNow: () => void;
   cancelAppLaunch: () => void;
 
@@ -233,7 +249,7 @@ const newKey = () => `k${Date.now().toString(36)}${(keySeq++).toString(36)}`;
 
 /** After the caregiver code: do these panels open without switching the board to caregiver mode? */
 export const opensAlone = (then: { kind: string } | undefined): boolean =>
-  then?.kind === 'settings' || then?.kind === 'lock' || then?.kind === 'guide';
+  then?.kind === 'settings' || then?.kind === 'lock' || then?.kind === 'guide' || then?.kind === 'openLink';
 
 export interface AppProviderProps {
   initial: Profile;
@@ -332,6 +348,11 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
   const setOverlay = useCallback((o: Overlay) => {
     if (o?.kind === 'guide') countFeature('guide');
     if (o?.kind === 'pin' && freeEditRef.current) {
+      if (o.then?.kind === 'openLink') {
+        void openAppUrl(o.then.url);
+        setOverlayState(null);
+        return;
+      }
       if (!opensAlone(o.then)) setEditModeState(true);
       setOverlayState(o.then ?? null);
     } else setOverlayState(o);
@@ -389,6 +410,14 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
       setAppLaunch({ concept: conceptId, url: '' });
       return;
     }
+    // Tablet apps: the caregiver code first (a parental gate before leaving the app), which also
+    // lets a mistaken touch be cancelled. Caregiver mode and the app's team: the countdown below.
+    if (linkNeedsCode({ os: Platform.OS, freeEdit: freeEditRef.current, caregiver: editModeRef.current })) {
+      const p = profileRef.current;
+      setAppLaunch(null);
+      setOverlay({ kind: 'pin', then: { kind: 'openLink', url: link.url, name: label(p, conceptId, p.settings.lang) } });
+      return;
+    }
     // A browser would block a window opened by a timer: there the banner waits for a tap on "Open".
     if (APPS_NEED_TAP) {
       setAppLaunch({ concept: conceptId, url: link.url });
@@ -402,6 +431,14 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
     }, delay);
   }, []);
   useEffect(() => () => clearTimeout(launchTimer.current), []);
+  const openLink = useCallback(
+    (url: string, name: string) => {
+      if (linkNeedsCode({ os: Platform.OS, freeEdit: freeEditRef.current, caregiver: editModeRef.current }))
+        setOverlay({ kind: 'pin', then: { kind: 'openLink', url, name } });
+      else void openAppUrl(url);
+    },
+    [setOverlay],
+  );
 
   const speakConcept = useCallback((conceptId: string) => {
     const p = profileRef.current;
@@ -898,6 +935,7 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
       pulse,
       appLaunch,
       launchApp,
+      openLink,
       openAppNow,
       cancelAppLaunch,
       moveSource,
@@ -922,7 +960,7 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
       profile, update, replaceProfile, setUiLang, preview, t, lang, view, path, tlaId, overlay, editMode, setEditMode, strip,
       stripState.history.length, touchConcept, addText, speakStrip, speakConcept, deleteLast, clearStrip, undo, goHome,
       openFolder, goBack, openTla, openSchedule, pressHelp, recording, startRecording, finishRecording,
-      playing, playSteps, stopPlaying, pointer, demoCaption, wiggle, pulse, appLaunch, launchApp, openAppNow, cancelAppLaunch,
+      playing, playSteps, stopPlaying, pointer, demoCaption, wiggle, pulse, appLaunch, launchApp, openLink, openAppNow, cancelAppLaunch,
       moveSource, selection, clipboard, highlight, showMeWhere, clearHighlight, timer,
       startTimer, setTimerConcept, pauseTimer, resumeTimer, resetTimer, setTimerOpen,
     ],

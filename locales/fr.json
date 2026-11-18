@@ -1,0 +1,8 @@
+{
+  "ios": {
+    "NSMicrophoneUsageDescription": "Le micro sert à enregistrer la prononciation d’un mot (un prénom, un mot en dialecte) et à dicter une phrase pour la montrer sur le tableau. Les enregistrements sont gardés dans l’espace privé de l’enfant, dans le compte de la famille : ils sont aussi lus sur les autres appareils de l’enfant.",
+    "NSSpeechRecognitionUsageDescription": "La reconnaissance vocale transforme ce que dit l’adulte en mots : pour trouver un mot en le disant, ou pour montrer une phrase dictée sur le tableau.",
+    "NSCameraUsageDescription": "L’appareil photo sert à photographier une personne, un objet ou un lieu pour l’ajouter aux mots de l’enfant. Les photos sont gardées dans l’espace privé de l’enfant, dans le compte de la famille : elles apparaissent aussi sur ses autres appareils. Une photo prise pour proposer un tableau d’activité est seulement envoyée une fois à l’IA, sans être gardée.",
+    "NSPhotoLibraryUsageDescription": "Les photos de la photothèque illustrent les mots de l’enfant. Elles sont gardées dans l’espace privé de l’enfant, dans le compte de la famille : elles apparaissent aussi sur ses autres appareils. Une photo choisie pour proposer un tableau d’activité est seulement envoyée une fois à l’IA, sans être gardée."
+  }
+}

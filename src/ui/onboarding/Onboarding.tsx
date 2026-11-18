@@ -49,6 +49,7 @@ import { ProfileBin } from '../settings/Backups';
 import { ConsentBox } from '../ConsentBox';
 import { CHILD_DATA_CONSENT, consentText } from '../../lib/consent';
 import { SymbolView } from '../SymbolView';
+import { NoVoiceWarning } from '../VoiceCheck';
 import { C, CLASS_COLORS, radius } from '../theme';
 import { checked } from '../a11y';
 
@@ -432,6 +433,7 @@ function LangStep({ o, a, set }: StepProps) {
 }
 
 function VoiceStep({ o, a, set }: StepProps) {
+  const { uiLang } = useSession();
   const listen = async () => {
     const lang = a.langs[0] ?? 'fr';
     const settings = { ...DEFAULT_SETTINGS, lang, ...optionParts(voiceOption(a)) };
@@ -453,6 +455,8 @@ function VoiceStep({ o, a, set }: StepProps) {
         ]}
       />
       <Btn icon="volume" label={o.listen} onPress={listen} />
+      {/* A language the device cannot say (no voice installed): where to add one. */}
+      <NoVoiceWarning langs={a.langs} uiLang={uiLang} />
     </>
   );
 }

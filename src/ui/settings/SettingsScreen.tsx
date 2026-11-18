@@ -68,7 +68,7 @@ export function SettingsScreen() {
   const pageWords: Record<Exclude<Tab, 'board'>, string[]> = {
     team: [x.tabTeam, x.invite, x.people, x.proposals, x.requests, x.connectionCode, x.history, x.roles.therapist, x.roles.teacher, x.roles.family],
     data: [d.tab, d.title, ...Object.values(d.levels), ...Object.values(d.sections)],
-    account: [x.tabAccount, x.myAccount, x.addChild, x.devices, x.syncNow, x.linkDevice, x.privacy, x.exportProfile, x.deleteAccount, x.deleteProfile, x.prefs, x.interfaceLang, s.signOut, s.password, s.email],
+    account: [x.tabAccount, x.myAccount, x.addChild, x.devices, x.syncNow, x.linkDevice, x.privacy, x.exportProfile, x.exportObz, x.deleteAccount, x.deleteProfile, x.prefs, x.interfaceLang, s.signOut, s.password, s.email],
   };
   const otherPages = q ? tabs.filter((p): p is Exclude<Tab, 'board'> => p !== 'board' && matchesSearch(q, pageWords[p])) : [];
 

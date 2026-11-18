@@ -15,6 +15,8 @@ import { clipUri } from './voiceClips';
 
 let generation = 0;
 let player: AudioPlayer | null = null;
+/** The `generation` of the words or sentence being said now (-1: nothing is being said). */
+let talking = -1;
 
 export function stopSpeech(): void {
   generation++;
@@ -120,6 +122,15 @@ function playOne(uri: string, rate = 1, span?: Span): Promise<void> {
 export async function speakSegments(segments: Segment[], settings: Settings, onProgress?: SpeechProgress): Promise<void> {
   stopSpeech();
   const mine = generation;
+  talking = mine;
+  try {
+    await saySegments(segments, settings, mine, onProgress);
+  } finally {
+    if (talking === mine) talking = -1;
+  }
+}
+
+async function saySegments(segments: Segment[], settings: Settings, mine: number, onProgress?: SpeechProgress): Promise<void> {
   for (const [i, seg] of segments.entries()) {
     if (mine !== generation) return;
     onProgress?.(i, 0);
@@ -137,6 +148,23 @@ export async function speakSegments(segments: Segment[], settings: Settings, onP
       if (uri && mine === generation) await playOne(uri, 1, spanOfName(seg.media));
     }
   }
+}
+
+/**
+ * Auditory scanning: the lit word said quietly and a little faster, with the device's voice.
+ * Never over a word or a sentence being said (the chosen word, Speak): it is skipped then.
+ */
+export function speakPreview(text: string, lang: Lang, settings: Settings): void {
+  if (talking === generation || !text.trim()) return;
+  Speech.stop().catch(() => {});
+  const choice = plan[lang] ?? chooseVoice([], lang, speechTag(lang), plainKind(settings), settings.voiceAge ?? 'adult');
+  Speech.speak(forVoice(text), {
+    language: speechTag(lang),
+    rate: Math.min(2, (settings.speechRate || 1) * 1.3),
+    voice: choice.id,
+    pitch: choice.pitch,
+    volume: 0.6,
+  });
 }
 
 export function speakText(text: string, lang: Lang, settings: Settings): Promise<void> {

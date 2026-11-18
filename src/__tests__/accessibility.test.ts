@@ -1,6 +1,6 @@
 import { checked, expanded, pressed, selected, spoken } from '../ui/a11y';
 import { SERIES } from '../ui/data/Charts';
-import { C } from '../ui/theme';
+import { C, CLASS_COLORS } from '../ui/theme';
 
 /** Contrast between two colours, as WCAG defines it (1 = identical, 21 = black on white). */
 function contrast(a: string, b: string): number {
@@ -42,6 +42,16 @@ describe('colours can be read (WCAG 1.4.3 and 1.4.11)', () => {
   it('the edge of a field and the track of a switch stand out by at least 3:1', () => {
     expect(contrast(C.inputBorder, C.surface)).toBeGreaterThanOrEqual(3);
     expect(contrast(C.inputBorder, C.bg)).toBeGreaterThanOrEqual(3);
+  });
+  it('the scanning highlight stands out by at least 3:1 on the page and on every card (WCAG 1.4.11, 2.4.7)', () => {
+    // The violet ring on the page, on white and on each kind of word's colour…
+    for (const bg of [C.bg, C.surface, C.surfaceAlt, ...Object.values(CLASS_COLORS).map((c) => c.bg)])
+      expect([bg, contrast(C.scan, bg) >= 3]).toEqual([bg, true]);
+    // …and its white ring inside on the dark cards of "High contrast" and on the violet ring itself.
+    expect(contrast(C.scanInner, '#101418')).toBeGreaterThanOrEqual(3);
+    expect(contrast(C.scanInner, C.scan)).toBeGreaterThanOrEqual(3);
+    // The words of the "whole screen is the switch" halves and of the scanning notices.
+    expect(contrast('#FFFFFF', C.rail)).toBeGreaterThanOrEqual(4.5);
   });
 });
 

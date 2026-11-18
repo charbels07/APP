@@ -6,6 +6,8 @@ import { speakSegments } from '../lib/speech';
 import { spoken } from './a11y';
 import type { Profile, SymbolRef } from '../model/types';
 import { useApp } from '../state/AppState';
+import { useDwellTarget, useRestMs, useScanned } from '../state/access';
+import { DwellFill, ScanRing } from './AccessMarks';
 import { Icon } from './Icon';
 import { SymbolView } from './SymbolView';
 import { C, radius } from './theme';
@@ -24,6 +26,10 @@ export function SentenceStrip({ compact }: { compact: boolean }) {
     else scroller.current?.scrollTo({ x: 0, animated: false });
   }, [tokens.length]);
   const chipSymbol = compact ? 30 : 40;
+  // Settings → Touch: Speak can be lit by the scan, and chosen by resting the pointer on it.
+  const restMs = useRestMs();
+  const speakLit = useScanned('a:speak');
+  const speakRest = useDwellTarget('a:speak', restMs, () => void speakStrip());
 
   return (
     <View style={[styles.wrap, compact && { minHeight: 70 }]}>
@@ -74,17 +80,21 @@ export function SentenceStrip({ compact }: { compact: boolean }) {
         )}
       </Pressable>
       <View style={styles.actions}>
-        <StripButton icon="undo" label={t.undo} caption={t.undo} onPress={undo} disabled={!canUndo} compact={compact} />
-        <StripButton icon="backspace" label={t.deleteLast} caption={t.deleteShort} onPress={deleteLast} disabled={!strip.length} compact={compact} />
-        <StripButton icon="trash" label={t.clear} caption={t.clear} onPress={clearStrip} disabled={!strip.length} compact={compact} danger />
+        <StripButton id="a:undo" restMs={restMs} icon="undo" label={t.undo} caption={t.undo} onPress={undo} disabled={!canUndo} compact={compact} />
+        <StripButton id="a:delete" restMs={restMs} icon="backspace" label={t.deleteLast} caption={t.deleteShort} onPress={deleteLast} disabled={!strip.length} compact={compact} />
+        <StripButton id="a:clear" restMs={restMs} icon="trash" label={t.clear} caption={t.clear} onPress={clearStrip} disabled={!strip.length} compact={compact} danger />
         <Pressable
           onPress={speakStrip}
+          onHoverIn={speakRest.onHoverIn}
+          onHoverOut={speakRest.onHoverOut}
           accessibilityRole="button"
           accessibilityLabel={t.speak}
           style={({ pressed }) => [styles.speak, compact && { width: 64 }, pressed && { opacity: 0.75 }]}
         >
           <Icon name="volume" size={compact ? 26 : 30} color="#fff" />
           {!compact && <Text style={styles.speakText}>{t.speak}</Text>}
+          {speakRest.active && <DwellFill ms={speakRest.ms} radius={radius.md} />}
+          {speakLit && <ScanRing radius={radius.md} />}
         </Pressable>
       </View>
     </View>
@@ -108,6 +118,8 @@ function ChipSymbol({ symbol, size, wiggleN }: { symbol: SymbolRef; size: number
 }
 
 function StripButton({
+  id,
+  restMs,
   icon,
   label,
   caption,
@@ -116,6 +128,9 @@ function StripButton({
   compact,
   danger,
 }: {
+  /** Its name for the scan and for resting the pointer (Settings → Touch). */
+  id: string;
+  restMs: number;
   icon: 'undo' | 'backspace' | 'trash';
   label: string;
   caption: string;
@@ -124,9 +139,13 @@ function StripButton({
   compact: boolean;
   danger?: boolean;
 }) {
+  const lit = useScanned(id);
+  const rest = useDwellTarget(id, disabled ? 0 : restMs, onPress);
   return (
     <Pressable
       onPress={onPress}
+      onHoverIn={rest.onHoverIn}
+      onHoverOut={rest.onHoverOut}
       disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={label}
@@ -143,6 +162,8 @@ function StripButton({
           {caption}
         </Text>
       )}
+      {rest.active && <DwellFill ms={rest.ms} radius={radius.md} />}
+      {lit && <ScanRing radius={radius.md} />}
     </Pressable>
   );
 }

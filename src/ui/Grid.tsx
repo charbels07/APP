@@ -3,9 +3,14 @@ import { Animated, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Te
 import { editStrings } from '../i18n/edit';
 import { appLinkOf } from '../lib/appLinks';
 import { compactPlaces, coveredSlots, moveCell } from '../lib/boardOps';
-import { display, isRtl, label, symbolOf, wordClass } from '../lib/lexicon';
+import { display, isFolderName, isRtl, label, symbolOf, wordClass } from '../lib/lexicon';
+import { dwellMs } from '../lib/dwell';
+import { boardRows, cardIndex, type PlacedCard } from '../lib/scanning';
+import { createLandingChoice, landingTouch } from '../lib/touchChoice';
 import type { Board, CellDisplay, SymbolRef, WordClass } from '../model/types';
+import { useAccess, useDwellTarget, useScanLit } from '../state/access';
 import { useApp } from '../state/AppState';
+import { DwellFill, ScanRing } from './AccessMarks';
 import { Icon } from './Icon';
 import { SymbolView } from './SymbolView';
 import { C, CLASS_COLORS, isDarkColor, tint } from './theme';
@@ -20,6 +25,9 @@ const DOUBLE_TAP_MS = 320;
 const EDGE = 40;
 const EDGE_STEP = 14;
 const nativeDriver = Platform.OS !== 'web';
+/** "Where the finger first lands": the touch stays on its card wherever the finger slips. */
+const FAR = { top: 4000, left: 4000, right: 4000, bottom: 4000 };
+const NOOP = () => {};
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
 export function Grid({ board }: { board: Board }) {
@@ -105,6 +113,21 @@ export function Grid({ board }: { board: Board }) {
     },
     [board.id, board.kind],
   );
+  const onCellPressRef = useRef(onCellPress);
+  onCellPressRef.current = onCellPress;
+
+  // ── Settings → Touch: a hand that shakes, a bigger touch area, resting the pointer ──
+  const st = profile.settings;
+  // "Where the finger first lands": the card the finger landed on, chosen when it lifts (or after the hold time).
+  const land = landingTouch(st, editMode);
+  const holdRef = useRef(0);
+  holdRef.current = st.access === 'hold' ? Math.round((st.holdTime || 1) * 1000) : 0;
+  const landing = useMemo(() => createLandingChoice({ choose: (i) => onCellPressRef.current(i), hold: () => holdRef.current }), []);
+  useEffect(() => () => landing.stop(), [landing, board.id, editMode, land]);
+  const onLandIn = useCallback((i: number) => landing.pressIn(i), [landing]);
+  const onLandOut = useCallback((i: number) => landing.pressOut(i), [landing]);
+  const bigTouch = !editMode && !!st.bigTouch;
+  const restMs = editMode ? 0 : dwellMs(st);
 
   // ── Caregiver mode: long press a card, then slide it to its new place ──
   // (released without sliding, the long press keeps its usual action: edit the card).
@@ -203,6 +226,7 @@ export function Grid({ board }: { board: Board }) {
     const id = setTimeout(() => setMoved(null), 7000);
     return () => clearTimeout(id);
   }, [moved]);
+  const landStill = useRef(false);
   // Browser: while a card is dragged the page must not scroll, and a long press must not open
   // the browser's own menu or select text.
   useEffect(() => {
@@ -210,7 +234,8 @@ export function Grid({ board }: { board: Board }) {
     const node = containerRef.current as unknown as HTMLElement | null;
     if (!node?.addEventListener) return;
     const keepStill = (e: Event) => {
-      if (dragRef.current) e.preventDefault();
+      // Also while "where the finger first lands" is on: the page must not take a slipping finger away.
+      if (dragRef.current || landStill.current) e.preventDefault();
     };
     const noMenu = (e: Event) => e.preventDefault();
     node.addEventListener('touchmove', keepStill, { passive: false });
@@ -281,6 +306,92 @@ export function Grid({ board }: { board: Board }) {
   const totalW = cellW * cols + GAP * (cols - 1);
   geo.current = { cellW, cellH, cols, rows, viewW: size.w, totalW, scrolls: scrollX };
   coveredRef.current = covered;
+  landStill.current = land && !scrollX;
+  /** Where a card is drawn: its place on screen (without holes outside caregiver mode) and its size. */
+  const slotFrame = (index: number) => {
+    const slot = places?.get(index) ?? index;
+    const [sw, sh] = board.cells[index]?.span ?? [1, 1];
+    return {
+      position: 'absolute' as const,
+      left: (slot % cols) * (cellW + GAP),
+      top: Math.floor(slot / cols) * (cellH + GAP),
+      width: sw * cellW + (sw - 1) * GAP,
+      height: sh * cellH + (sh - 1) * GAP,
+    };
+  };
+
+  // ── Switch scanning: the board tells the scanner (src/ui/Scanner.tsx) what it holds, row by row ──
+  const access = useAccess();
+  const scanCards = useMemo((): PlacedCard[] | null => {
+    if (editMode) return null;
+    const out: PlacedCard[] = [];
+    for (const index of order) {
+      const cell = board.cells[index];
+      if (!cell || covered.has(index) || (board.kind === 'core' && (cell.level ?? 1) > revealed)) continue;
+      out.push({ index, slot: places?.get(index) ?? index });
+    }
+    return out;
+  }, [editMode, order, board, covered, revealed, places]);
+  const scanRowsKey = scanCards ? `${board.id}|${boardRows(scanCards, cols).map((r) => r.join(',')).join('/')}` : '';
+  useEffect(() => {
+    if (!scanCards) return;
+    const store = access.scan;
+    store.setGrid({
+      key: scanRowsKey,
+      rows: boardRows(scanCards, cols),
+      choose: (id) => {
+        const i = cardIndex(id);
+        if (i !== null) onCellPressRef.current(i);
+      },
+      // A folder's name is not a word: never said, here neither.
+      word: (id) => {
+        const a = appRef.current;
+        const i = cardIndex(id);
+        const cell = i === null ? null : a.profile.boards[board.id]?.cells[i];
+        if (!cell || cell.folder || isFolderName(a.profile, cell.concept)) return null;
+        return label(a.profile, cell.concept, a.lang);
+      },
+    });
+    return () => {
+      if (store.grid()?.key === scanRowsKey) store.setGrid(null);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scanRowsKey, access]);
+  const lit = useScanLit();
+  const litCards = editMode ? [] : lit.ids.map(cardIndex).filter((i): i is number => i !== null && !!board.cells[i]);
+  // A wide board (it scrolls sideways): the lit card is brought into view.
+  const litOne = lit.level === 'items' && litCards.length === 1 ? litCards[0] : null;
+  useEffect(() => {
+    if (litOne === null || !scrollX || !size.w) return;
+    const f = slotFrame(litOne);
+    const at = scrollOffset.current;
+    const next = f.left < at ? Math.max(0, f.left - GAP) : f.left + f.width > at + size.w ? f.left + f.width - size.w + GAP : at;
+    if (next === at) return;
+    scrollOffset.current = next;
+    scrollRef.current?.scrollTo({ x: next, animated: !st.reduceMotion });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [litOne, scrollX, size.w]);
+  let scanMark: React.ReactNode = null;
+  if (litCards.length && size.w > 0) {
+    const frames = litCards.map(slotFrame);
+    if (lit.level === 'rows') {
+      // A row: one band around all its cards.
+      const left = Math.min(...frames.map((f) => f.left));
+      const top = Math.min(...frames.map((f) => f.top));
+      const right = Math.max(...frames.map((f) => f.left + f.width));
+      const bottom = Math.max(...frames.map((f) => f.top + f.height));
+      scanMark = (
+        <View pointerEvents="none" style={[styles.scanBox, { left, top, width: right - left, height: bottom - top }]}>
+          <ScanRing row outset={4} />
+        </View>
+      );
+    } else
+      scanMark = frames.map((f, k) => (
+        <View key={k} pointerEvents="none" style={[f, styles.scanBox]}>
+          <ScanRing outset={4} radius={10} />
+        </View>
+      ));
+  }
   const frameOf = (index: number) => {
     const [sw, sh] = board.cells[index]?.span ?? [1, 1];
     return {
@@ -299,16 +410,7 @@ export function Grid({ board }: { board: Board }) {
           const cell = board.cells[index];
           if (covered.has(index)) return null;
           const slot = places?.get(index) ?? index;
-          const r = Math.floor(slot / cols);
-          const c = slot % cols;
-          const [sw, sh] = cell?.span ?? [1, 1];
-          const frame = {
-            position: 'absolute' as const,
-            left: c * (cellW + GAP),
-            top: r * (cellH + GAP),
-            width: sw * cellW + (sw - 1) * GAP,
-            height: sh * cellH + (sh - 1) * GAP,
-          };
+          const frame = slotFrame(index);
           const hidden = !!cell && board.kind === 'core' && (cell.level ?? 1) > level;
           if (!cell || (hidden && !editMode)) {
             return (
@@ -327,15 +429,29 @@ export function Grid({ board }: { board: Board }) {
           }
           const k = cell.size ?? 1;
           const dragging = drag?.from === index;
+          // Bigger touch area: the touch reaches the middle of the gap around the card (and the whole
+          // slot of a smaller card); the card itself is drawn exactly where and as big as before.
+          const touch = bigTouch
+            ? { position: 'absolute' as const, left: frame.left - GAP / 2, top: frame.top - GAP / 2, width: frame.width + GAP, height: frame.height + GAP }
+            : frame;
+          const padX = bigTouch ? (touch.width - frame.width * k) / 2 : 0;
+          const padY = bigTouch ? (touch.height - frame.height * k) / 2 : 0;
           return (
             <Animated.View
               key={index}
-              style={[frame, styles.slot, dragging && styles.dragging, dragging && { transform: [...dragXY.getTranslateTransform(), { scale: 1.08 }] }]}
+              style={[touch, styles.slot, dragging && styles.dragging, dragging && { transform: [...dragXY.getTranslateTransform(), { scale: 1.08 }] }]}
             >
               <CellView
                 index={index}
                 width={frame.width * k}
                 height={frame.height * k}
+                padX={padX}
+                padY={padY}
+                land={land}
+                onLandIn={onLandIn}
+                onLandOut={onLandOut}
+                restId={`slot:${slot}`}
+                restMs={restMs}
                 text={label(profile, cell.concept, lang)}
                 lang={lang}
                 rtl={isRtl(lang)}
@@ -366,6 +482,7 @@ export function Grid({ board }: { board: Board }) {
           );
         })}
         {drag && drag.over !== drag.from && <View pointerEvents="none" style={[frameOf(drag.over), styles.dropTarget]} />}
+        {scanMark}
       </View>
     ) : null;
 
@@ -485,6 +602,16 @@ interface CellProps {
   /** Select when the finger lifts, as soon as it touches, or after holding `holdMs`. */
   access?: 'release' | 'press' | 'hold';
   holdMs?: number;
+  /** Bigger touch area: the touch reaches this far around the card on each side (0 = the card only). */
+  padX?: number;
+  padY?: number;
+  /** "Where the finger first lands" (see lib/touchChoice): the grid decides on landing and lifting. */
+  land?: boolean;
+  onLandIn?: (index: number) => void;
+  onLandOut?: (index: number) => void;
+  /** Choosing by resting the pointer: the card's place on screen, and the time (0 = off). */
+  restId?: string;
+  restMs?: number;
   onPress: (index: number) => void;
   onLongPress?: (index: number) => void;
   onPressOut?: (index: number) => void;
@@ -553,70 +680,89 @@ export const CellView = React.memo(function CellView(p: CellProps) {
   const wiggleTransform = useWiggle(p.still ? 0 : p.wiggleN);
   const handShift = press.interpolate({ inputRange: [0, 0.5, 1], outputRange: [30, 0, 4] });
   const lit = p.highlighted || p.pointing;
+  const rest = useDwellTarget(p.restId ?? '', p.restMs ?? 0, () => p.onPress(p.index));
+  const land = !!p.land;
+  const pad = p.padX || p.padY ? { x: p.padX ?? 0, y: p.padY ?? 0 } : undefined;
+
+  const cardStyle = (down: boolean) => [
+    styles.cell,
+    {
+      backgroundColor: bg,
+      borderColor: lit ? C.highlight : p.moving || p.selected ? C.accent : colors.border,
+      borderWidth: lit || p.moving || p.selected || contrast ? 4 : p.isFolder ? 2.5 : 2,
+      borderStyle: p.moving ? ('dashed' as const) : ('solid' as const),
+      opacity: p.dimmed ? 0.35 : 1,
+    },
+    p.isFolder && styles.folder,
+    (down || p.tapping) && styles.pressed,
+  ];
+
+  const inside = (
+    <>
+      {p.isFolder && <View style={[styles.folderTab, { borderColor: colors.border }]} />}
+      {p.selected && (
+        <View style={styles.selectedBadge} accessibilityElementsHidden>
+          <Icon name="check" size={16} color="#fff" strokeWidth={3} />
+        </View>
+      )}
+      {showImage && (
+        <Animated.View style={{ transform: wiggleTransform }}>
+          <SymbolView symbol={p.symbol} size={symbolSize} />
+        </Animated.View>
+      )}
+      {p.isApp && (
+        <View style={styles.appBadge} accessibilityElementsHidden>
+          <Icon name="external" size={14} color="#fff" strokeWidth={2.6} />
+        </View>
+      )}
+      {showText && (
+        <Text
+          numberOfLines={2}
+          adjustsFontSizeToFit
+          style={[
+            styles.label,
+            {
+              color: textColor,
+              fontSize: p.display === 'text' ? fontSize * 1.4 : fontSize,
+              writingDirection: p.rtl ? 'rtl' : 'ltr',
+            },
+            (p.isFolder || p.look === 'large' || contrast) && { fontWeight: '800' },
+          ]}
+        >
+          {p.text}
+        </Text>
+      )}
+      {p.levelBadge !== undefined && (
+        <View style={[styles.badge, p.levelBadge > 1 && { backgroundColor: C.edit }]}>
+          <Text style={styles.badgeText}>N{p.levelBadge}</Text>
+        </View>
+      )}
+      {rest.active && <DwellFill ms={rest.ms} />}
+    </>
+  );
 
   return (
-    <Animated.View style={{ width: p.width, height: p.height, transform: [{ scale }], zIndex: lit ? 5 : 0 }}>
+    <Animated.View
+      style={{ width: p.width + 2 * (pad?.x ?? 0), height: p.height + 2 * (pad?.y ?? 0), transform: [{ scale }], zIndex: lit ? 5 : 0 }}
+    >
       <Pressable
-        onPress={!p.access || p.access === 'release' ? () => p.onPress(p.index) : undefined}
-        onPressIn={p.access === 'press' ? () => p.onPress(p.index) : undefined}
-        onLongPress={p.access === 'hold' ? () => p.onPress(p.index) : p.onLongPress ? () => p.onLongPress!(p.index) : undefined}
+        // "Where it first lands": chosen on lifting (onPressOut); a do-nothing onPress keeps a quick
+        // tap counted in a browser (without one, a tap shorter than its press delay is not reported).
+        onPress={land ? NOOP : !p.access || p.access === 'release' ? () => p.onPress(p.index) : undefined}
+        onPressIn={land ? () => p.onLandIn?.(p.index) : p.access === 'press' ? () => p.onPress(p.index) : undefined}
+        onLongPress={land ? undefined : p.access === 'hold' ? () => p.onPress(p.index) : p.onLongPress ? () => p.onLongPress!(p.index) : undefined}
         delayLongPress={p.access === 'hold' ? p.holdMs ?? 1000 : 600}
-        onPressOut={p.onPressOut ? () => p.onPressOut!(p.index) : undefined}
+        onPressOut={land ? () => p.onLandOut?.(p.index) : p.onPressOut ? () => p.onPressOut!(p.index) : undefined}
+        pressRetentionOffset={land ? FAR : undefined}
+        onHoverIn={rest.onHoverIn}
+        onHoverOut={rest.onHoverOut}
         accessibilityRole="button"
         accessibilityLabel={p.text}
         {...(p.lang ? spoken(p.lang) : null)}
         {...(p.selected !== undefined ? pressed(p.selected) : null)}
-        style={({ pressed }) => [
-          styles.cell,
-          {
-            backgroundColor: bg,
-            borderColor: lit ? C.highlight : p.moving || p.selected ? C.accent : colors.border,
-            borderWidth: lit || p.moving || p.selected || contrast ? 4 : p.isFolder ? 2.5 : 2,
-            borderStyle: p.moving ? 'dashed' : 'solid',
-            opacity: p.dimmed ? 0.35 : 1,
-          },
-          p.isFolder && styles.folder,
-          (pressed || p.tapping) && styles.pressed,
-        ]}
+        style={pad ? [styles.touchArea, { paddingHorizontal: pad.x, paddingVertical: pad.y }] : ({ pressed }) => cardStyle(pressed)}
       >
-        {p.isFolder && <View style={[styles.folderTab, { borderColor: colors.border }]} />}
-        {p.selected && (
-          <View style={styles.selectedBadge} accessibilityElementsHidden>
-            <Icon name="check" size={16} color="#fff" strokeWidth={3} />
-          </View>
-        )}
-        {showImage && (
-          <Animated.View style={{ transform: wiggleTransform }}>
-            <SymbolView symbol={p.symbol} size={symbolSize} />
-          </Animated.View>
-        )}
-        {p.isApp && (
-          <View style={styles.appBadge} accessibilityElementsHidden>
-            <Icon name="external" size={14} color="#fff" strokeWidth={2.6} />
-          </View>
-        )}
-        {showText && (
-          <Text
-            numberOfLines={2}
-            adjustsFontSizeToFit
-            style={[
-              styles.label,
-              {
-                color: textColor,
-                fontSize: p.display === 'text' ? fontSize * 1.4 : fontSize,
-                writingDirection: p.rtl ? 'rtl' : 'ltr',
-              },
-              (p.isFolder || p.look === 'large' || contrast) && { fontWeight: '800' },
-            ]}
-          >
-            {p.text}
-          </Text>
-        )}
-        {p.levelBadge !== undefined && (
-          <View style={[styles.badge, p.levelBadge > 1 && { backgroundColor: C.edit }]}>
-            <Text style={styles.badgeText}>N{p.levelBadge}</Text>
-          </View>
-        )}
+        {pad ? ({ pressed }) => <View style={cardStyle(pressed)}>{inside}</View> : inside}
       </Pressable>
       {p.pointing && (
         <Animated.View
@@ -708,6 +854,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
   },
   pressed: { opacity: 0.6, transform: [{ scale: 0.97 }] },
+  /** Bigger touch area: the invisible part of the touch around the card. */
+  touchArea: { flex: 1 },
+  scanBox: { position: 'absolute', zIndex: 26 },
   label: { color: C.text, fontWeight: '600', textAlign: 'center' },
   empty: {
     borderRadius: 10,

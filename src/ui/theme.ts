@@ -23,6 +23,14 @@ export const C = {
   success: '#0E6E4F',
   successSoft: '#D1FADF',
   highlight: '#F79009',
+  /** Switch scanning: the ring around what is lit (at least 3:1 on the page and on every card colour)… */
+  scan: '#5B21B6',
+  /** …with a white ring inside it, which stands out on the dark cards of "High contrast". */
+  scanInner: '#FFFFFF',
+  /** A lit row is also lightly tinted. */
+  scanSoft: 'rgba(91, 33, 182, 0.10)',
+  /** A card filling up while the pointer rests on it. */
+  scanFill: 'rgba(91, 33, 182, 0.32)',
   overlay: 'rgba(16, 24, 40, 0.35)',
 };
 

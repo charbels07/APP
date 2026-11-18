@@ -84,6 +84,9 @@ export function migrate(p: Partial<Profile>): Profile {
       bar: { ...DEFAULT_SETTINGS.bar, ...(p.settings?.bar ?? {}) },
       timer: { ...DEFAULT_SETTINGS.timer, ...(p.settings?.timer ?? {}) },
       plans: { ...DEFAULT_SETTINGS.plans, ...(p.settings?.plans ?? {}) },
+      // Switch scanning (Settings → Touch): a profile saved before it gets the defaults (off);
+      // the values are kept within bounds where they are read (scanOf in src/lib/scanning.ts).
+      scan: { ...DEFAULT_SETTINGS.scan!, ...plain(p.settings?.scan as Record<string, unknown> | undefined) },
     },
     boards,
     tlaOrder: (p.tlaOrder ?? base.tlaOrder).filter((id) => boards[id]),

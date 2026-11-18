@@ -134,6 +134,22 @@ export interface Schedule {
 
 export type TimerDisplay = 'circle' | 'bar' | 'digits';
 
+/** Switch scanning (Settings → Touch). */
+export interface ScanSettings {
+  /** 'auto': the highlight moves by itself and one switch chooses; 'step': one switch moves it, a second chooses. */
+  mode: 'off' | 'auto' | 'step';
+  /** 'rows': a row is lit, then the cards of the chosen row (big boards); 'cards': card by card (small boards). */
+  pattern: 'rows' | 'cards';
+  /** Seconds the automatic highlight stays on each step (0.5–5). */
+  speed: number;
+  /** Turns over the board before the automatic scan stops and waits for the switch (1–5). */
+  loops: number;
+  /** Auditory scanning: the lit word is said quietly before it is chosen. */
+  speak: boolean;
+  /** A touch anywhere on the board and the sentence is the switch (step scanning: left half moves, right half chooses). */
+  screen: boolean;
+}
+
 export interface Settings {
   lang: Lang;
   uiLang: UiLang;
@@ -195,6 +211,20 @@ export interface Settings {
    */
   access: 'release' | 'press' | 'hold';
   holdTime: number;
+  /** Switch scanning, for a child who cannot point (off by default): see src/lib/scanning.ts. */
+  scan?: ScanSettings;
+  /**
+   * Choose by resting the pointer (a mouse, a head pointer, an eye-gaze pointer that moves the
+   * cursor) on a card for this many seconds; 0 = off. See src/lib/dwell.ts.
+   */
+  dwell?: number;
+  /**
+   * Which touch counts (a hand that shakes): 'lift' (also when undefined) = the standard touch;
+   * 'land' = the card where the finger first landed, even if it slips before lifting.
+   */
+  touchPoint?: 'lift' | 'land';
+  /** Each card's touch area reaches into the gap around it (the cards keep their place and size). */
+  bigTouch?: boolean;
   /** Optional plans shown in Planning, next to the day plan (chosen at set-up or in Settings). */
   plans: { week: boolean; month: boolean };
   /**

@@ -27,6 +27,8 @@ import { C, radius } from './theme';
 import { TimerCard } from './TimerCard';
 import { UniversalBar } from './UniversalBar';
 import { linkTarget } from '../lib/safety';
+import { AccessProvider } from '../state/access';
+import { Scanner } from './Scanner';
 
 /** `banner`: shown above the sentence strip (e.g. the preview's "nothing is saved"). */
 export function Root({ banner }: { banner?: React.ReactNode } = {}) {
@@ -119,23 +121,27 @@ export function Root({ banner }: { banner?: React.ReactNode } = {}) {
       {/* Docked above the board: the board shrinks a little, nothing is covered. */}
       <TimerCard />
       {content}
+      {/* Switch scanning (Settings → Touch): over the sentence and the board, never over the bar. */}
+      <Scanner />
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.root} edges={['top', 'bottom', 'left', 'right']}>
-      {landscape ? (
-        <View style={{ flex: 1, flexDirection: 'row' }}>
-          <UniversalBar vertical />
-          {main}
-        </View>
-      ) : (
-        <View style={{ flex: 1 }}>
-          {main}
-          <UniversalBar vertical={false} />
-        </View>
-      )}
-    </SafeAreaView>
+    <AccessProvider>
+      <SafeAreaView style={styles.root} edges={['top', 'bottom', 'left', 'right']}>
+        {landscape ? (
+          <View style={{ flex: 1, flexDirection: 'row' }}>
+            <UniversalBar vertical />
+            {main}
+          </View>
+        ) : (
+          <View style={{ flex: 1 }}>
+            {main}
+            <UniversalBar vertical={false} />
+          </View>
+        )}
+      </SafeAreaView>
+    </AccessProvider>
   );
 }
 

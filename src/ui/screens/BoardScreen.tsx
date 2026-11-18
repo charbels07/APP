@@ -2,6 +2,8 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { isRtl, label, symbolOf } from '../../lib/lexicon';
 import { useApp } from '../../state/AppState';
+import { useDwellTarget, useRestMs, useScanned } from '../../state/access';
+import { DwellFill, ScanRing } from '../AccessMarks';
 import { Btn } from '../common';
 import { Grid } from '../Grid';
 import { Icon } from '../Icon';
@@ -15,6 +17,9 @@ export function BoardScreen() {
   const boardId = path[path.length - 1];
   const board = profile.boards[boardId] ?? profile.boards.core;
   const inFolder = path.length > 1;
+  // Settings → Touch: Back can be lit by the scan, and chosen by resting the pointer on it.
+  const backLit = useScanned('a:back');
+  const backRest = useDwellTarget('a:back', useRestMs(), goBack);
 
   return (
     <View style={{ flex: 1, gap: 6 }}>
@@ -22,12 +27,16 @@ export function BoardScreen() {
         <View style={styles.header}>
           <Pressable
             onPress={goBack}
+            onHoverIn={backRest.onHoverIn}
+            onHoverOut={backRest.onHoverOut}
             style={({ pressed }) => [styles.back, pressed && { opacity: 0.6 }]}
             accessibilityRole="button"
             accessibilityLabel={t.back}
           >
             <Icon name="chevronLeft" size={26} />
             <Text style={styles.backText}>{t.back}</Text>
+            {backRest.active && <DwellFill ms={backRest.ms} radius={radius.md} />}
+            {backLit && <ScanRing radius={radius.md} />}
           </Pressable>
           <Pressable onPress={goHome} accessibilityRole="button" style={{ minHeight: 44, minWidth: 44, justifyContent: 'center' }}>
             <Text style={styles.crumb}>{t.home}</Text>

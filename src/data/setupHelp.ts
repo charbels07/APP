@@ -256,17 +256,17 @@ export const SETUP_HELP: Record<SetupHelpId, SetupHelp> = {
       fr: [
         'C’est la façon dont une touche compte. Toucher puis lever le doigt : le mot est dit quand le doigt se lève, l’enfant peut donc glisser jusqu’à la bonne case. Dès que le doigt touche : pour un enfant qui tape vite. Garder le doigt appuyé : le doigt doit rester un instant, ce qui évite les touches par accident.',
         'Durée d’appui : le temps pendant lequel le doigt doit rester. Délai avant de répéter : empêche le même mot d’être dit plusieurs fois de suite (« pas pas pas »).',
-        'Cela se change dans Réglages → Toucher.',
+        'Cela se change dans Réglages → Toucher. On y trouve aussi, pour l’enfant qui ne peut pas viser : le balayage par contacteur (une case s’éclaire après l’autre, un contacteur ou tout l’écran choisit), le choix en gardant le pointeur dessus (souris, pointeur de tête ou de regard) et, pour une main qui tremble, le toucher qui compte et la zone de toucher agrandie.',
       ],
       en: [
         'This is how a touch counts. Touch, then lift the finger: the word is said when the finger lifts, so the child can slide to the right card. As soon as the finger touches: for a child who taps fast. Keep the finger pressed: the finger must stay a moment, which avoids touches by accident.',
         'Hold time: how long the finger must stay. Delay before repeating: stops the same word being said several times in a row (“not not not”).',
-        'It can be changed in Settings → Touch.',
+        'It can be changed in Settings → Touch. There too, for a child who cannot aim: switch scanning (the cards light up one after another, a switch or the whole screen chooses), choosing by resting the pointer (a mouse, a head or eye-gaze pointer) and, for a hand that shakes, the touch that counts and a bigger touch area.',
       ],
       ar: [
         'هذه طريقة احتساب اللمسة. اللمس ثم رفع الإصبع: تُنطق الكلمة عند رفع الإصبع، فيستطيع الطفل أن ينزلق إلى البطاقة الصحيحة. فور لمس الإصبع: لطفل ينقر بسرعة. إبقاء الإصبع مضغوطاً: يجب أن يبقى الإصبع لحظة، وهذا يمنع اللمس بالخطأ.',
         'مدة الضغط: الوقت الذي يجب أن يبقى فيه الإصبع. المهلة قبل التكرار: تمنع نطق الكلمة نفسها مرات متتالية («لا لا لا»).',
-        'يمكن تغييره في الإعدادات ← اللمس.',
+        'يمكن تغييره في الإعدادات ← اللمس. وهناك أيضاً، للطفل الذي لا يستطيع التصويب: المسح بالمفتاح (تضيء البطاقات واحدة بعد أخرى، ويختار مفتاحٌ أو الشاشة كلها)، والاختيار بإبقاء المؤشر فوق الصورة (فأرة أو مؤشر بالرأس أو بالنظر)، ولليد المرتجفة: اللمسة التي تُحتسب ومنطقة لمس أكبر.',
       ],
     },
     guide: [{ chapter: 'settings', steps: [3] }],

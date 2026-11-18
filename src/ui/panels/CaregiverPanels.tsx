@@ -5,6 +5,9 @@ import { useSession } from '../../state/Session';
 import { PictoCredit } from '../PictoCredits';
 import { onboardingStrings } from '../../i18n/onboarding';
 import { editStrings } from '../../i18n/edit';
+import { accessStrings } from '../../i18n/access';
+import { DWELL_TIMES } from '../../lib/dwell';
+import { SCAN_LOOPS, SCAN_SPEEDS, scanOf } from '../../lib/scanning';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Image, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { DIALECT_ORDER, dialectName } from '../../data/dialects';
@@ -1088,7 +1091,15 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
   const sess = useSession();
   const board = useBoard();
   const o = onboardingStrings(profile.settings.uiLang);
+  const ax = accessStrings(profile.settings.uiLang);
   const { st, set, pin, setPin } = draft;
+  const scan = scanOf(st);
+  const setScan = (fn: (x: NonNullable<Profile['settings']['scan']>) => void) =>
+    set((x) => {
+      const next = scanOf(x);
+      fn(next);
+      x.scan = next;
+    });
   const searching = !!useContext(SettingsSearch).q;
   const langs = availableLangs(st);
   const childLangs = st.langs?.length ? st.langs : [st.lang];
@@ -1273,6 +1284,66 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
             ...[1, 2, 3, 5].map((n) => ({ value: String(n), label: `${n} s` })),
           ]}
         />
+        {/* For a hand that shakes or slips: which touch counts, and a touch area reaching into the gaps. */}
+        {(st.access ?? 'release') !== 'press' && (
+          <>
+            <Text style={s.label}>{ax.touchPoint}</Text>
+            <Segmented
+              value={st.touchPoint ?? 'lift'}
+              onChange={(v: 'lift' | 'land') => set((x) => void (x.touchPoint = v))}
+              options={(['lift', 'land'] as const).map((v) => ({ value: v, label: ax.touchPoints[v] }))}
+            />
+          </>
+        )}
+        <Toggle label={ax.bigTouch} value={!!st.bigTouch} onChange={(v) => set((x) => void (x.bigTouch = v))} />
+        {/* A mouse, a head pointer or an eye-gaze pointer: resting on a card chooses it. */}
+        <Text style={s.label}>{ax.dwell}</Text>
+        <Segmented
+          value={String(st.dwell ?? 0)}
+          onChange={(v) => set((x) => void (x.dwell = Number(v)))}
+          options={[{ value: '0', label: ax.off }, ...DWELL_TIMES.map((n) => ({ value: String(n), label: `${n} s` }))]}
+        />
+        {/* Switch scanning: a highlight goes over the board, a switch chooses. */}
+        <Text style={s.label}>{ax.scan}</Text>
+        <Segmented
+          value={scan.mode}
+          onChange={(v: 'off' | 'auto' | 'step') => setScan((x) => void (x.mode = v))}
+          options={(['off', 'auto', 'step'] as const).map((v) => ({ value: v, label: ax.scanModes[v] }))}
+        />
+        {scan.mode !== 'off' && (
+          <View style={s.under}>
+            <Text style={s.note}>{scan.mode === 'auto' ? ax.scanKeysAuto : ax.scanKeysStep}</Text>
+            <Text style={s.label}>{ax.scanPattern}</Text>
+            <Segmented
+              value={scan.pattern}
+              onChange={(v: 'rows' | 'cards') => setScan((x) => void (x.pattern = v))}
+              options={(['rows', 'cards'] as const).map((v) => ({ value: v, label: ax.scanPatterns[v] }))}
+            />
+            {scan.mode === 'auto' && (
+              <>
+                <Text style={s.label}>{ax.scanSpeed}</Text>
+                <Segmented
+                  value={String(scan.speed)}
+                  onChange={(v) => setScan((x) => void (x.speed = Number(v)))}
+                  options={SCAN_SPEEDS.map((n) => ({ value: String(n), label: `${n} s` }))}
+                />
+                <Text style={s.label}>{ax.scanLoops}</Text>
+                <Segmented
+                  value={String(scan.loops)}
+                  onChange={(v) => setScan((x) => void (x.loops = Number(v)))}
+                  options={SCAN_LOOPS.map((n) => ({ value: String(n), label: String(n) }))}
+                />
+              </>
+            )}
+            <Toggle label={ax.scanSpeak} value={scan.speak} onChange={(v) => setScan((x) => void (x.speak = v))} />
+            <Toggle
+              label={ax.scanScreen}
+              note={scan.mode === 'step' ? ax.scanScreenStep : undefined}
+              value={scan.screen}
+              onChange={(v) => setScan((x) => void (x.screen = v))}
+            />
+          </View>
+        )}
       </Group>
 
       <Group title={t.gSentence} icon="pencil">

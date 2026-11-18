@@ -4,6 +4,8 @@ import { useApp } from '../state/AppState';
 import { useBoard } from '../state/BoardContext';
 import { adminStrings } from '../i18n/admin';
 import { useSession } from '../state/Session';
+import { useDwellTarget, useRestMs } from '../state/access';
+import { DwellFill } from './AccessMarks';
 import { Icon, type IconName } from './Icon';
 import { useSeen } from './Seen';
 import { C } from './theme';
@@ -116,15 +118,15 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
       <View style={[styles.bar, styles.vertical]} role="navigation">
         <View style={styles.colGroup}>
           {visible(main).map(({ key, ...m }) => (
-            <BarButton key={key} {...m} size="main" />
+            <BarButton key={key} id={key} {...m} size="main" />
           ))}
           {visible(priority).map(({ key, ...m }) => (
-            <BarButton key={key} {...m} size="priority" />
+            <BarButton key={key} id={key} {...m} size="priority" />
           ))}
         </View>
         <View style={toolColumn ? styles.colGroup : styles.toolGrid}>
           {visible(tools).map(({ key, ...m }) => (
-            <BarButton key={key} {...m} size={toolColumn ? 'toolWide' : 'tool'} iconsOnly={!toolColumn} />
+            <BarButton key={key} id={key} {...m} size={toolColumn ? 'toolWide' : 'tool'} iconsOnly={!toolColumn} />
           ))}
         </View>
       </View>
@@ -133,13 +135,14 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
   return (
     <View style={[styles.bar, styles.horizontal]} role="navigation">
       {[...visible(main), ...visible(priority), ...visible(tools)].map(({ key, ...m }) => (
-        <BarButton key={key} {...m} size={m.tone ? 'priorityRow' : 'row'} iconsOnly={iconsOnly} />
+        <BarButton key={key} id={key} {...m} size={m.tone ? 'priorityRow' : 'row'} iconsOnly={iconsOnly} />
       ))}
     </View>
   );
 }
 
 function BarButton({
+  id,
   icon,
   label,
   onPress,
@@ -149,14 +152,19 @@ function BarButton({
   size,
   iconsOnly,
 }: Omit<Item, 'key' | 'show'> & {
+  /** The button's key, to choose it by resting the pointer on it (Settings → Touch). */
+  id: string;
   size: 'main' | 'priority' | 'tool' | 'toolWide' | 'row' | 'priorityRow';
   iconsOnly?: boolean;
 }) {
+  const rest = useDwellTarget(`bar:${id}`, useRestMs(), onPress);
   const toneBg = tone === 'help' ? C.help : undefined;
   const iconSize = size === 'priority' ? 38 : size === 'priorityRow' ? 30 : size === 'main' ? 28 : 22;
   return (
     <Pressable
       onPress={onPress}
+      onHoverIn={rest.onHoverIn}
+      onHoverOut={rest.onHoverOut}
       accessibilityRole="button"
       accessibilityLabel={label}
       style={({ pressed }) => [
@@ -188,6 +196,7 @@ function BarButton({
           {label}
         </Text>
       )}
+      {rest.active && <DwellFill ms={rest.ms} radius={12} />}
     </Pressable>
   );
 }

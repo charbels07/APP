@@ -15,6 +15,7 @@ import type { Schedule } from '../../model/types';
 import { useApp } from '../../state/AppState';
 import { Btn, Field, Panel, Section } from '../common';
 import { usePictoLibrary } from '../PictoPicker';
+import { useSeen } from '../Seen';
 import { C, radius } from '../theme';
 import { conceptMaker, StepsEditor } from './NewTlaPanel';
 
@@ -33,6 +34,8 @@ export function NewSequencePanel() {
   const [holding, setHolding] = useState(false);
   const aiCtl = useRef<AbortController | null>(null);
   const aiEnabled = aiOk && profile.settings.aiSuggestions !== false;
+  // For the app's team (families who agreed): the AI's button was on screen.
+  useSeen(aiEnabled && 'ai');
 
   useEffect(() => {
     aiAvailable().then(setAiOk);

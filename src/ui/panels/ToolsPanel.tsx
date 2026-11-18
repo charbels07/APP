@@ -12,6 +12,7 @@ import { useApp } from '../../state/AppState';
 import { selected } from '../a11y';
 import { Panel, useNavRtl } from '../common';
 import { Icon, type IconName } from '../Icon';
+import { useSeen } from '../Seen';
 import { C, radius } from '../theme';
 import { KeyboardBody, SearchBody } from './CommPanels';
 import { ModelBody } from './ModelPanel';
@@ -32,6 +33,8 @@ export function ToolsPanel({ tool }: { tool: Tool }) {
   const narrow = useWindowDimensions().width < 700;
   // Named by what each one is for: find a word of the board, write a word that is not on it, write a sentence to model.
   const names: Record<Tool, string> = { search: t.toolFind, keyboard: t.toolNewWord, model: t.toolModel };
+  // For the app's team (families who agreed): the three tabs were on screen.
+  useSeen('search', 'keyboard', 'model');
   return (
     <Panel title={t.search} onClose={() => app.setOverlay(null)}>
       <View style={[styles.tabs, rtl && { flexDirection: 'row-reverse' }]} accessibilityRole="tablist">

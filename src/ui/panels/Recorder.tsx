@@ -14,6 +14,7 @@ import type { Level } from '../../lib/trimSilence';
 import { playMedia } from '../../lib/speech';
 import { useApp } from '../../state/AppState';
 import { Btn } from '../common';
+import { useSeen } from '../Seen';
 import { C } from '../theme';
 
 /**
@@ -30,6 +31,8 @@ export function Recorder({ media, onChange }: { media?: string; onChange: (name:
   const state = useAudioRecorderState(recorder, 60);
   const [error, setError] = useState<string | null>(null);
   const levels = useRef<Level[]>([]);
+  // For the app's team (families who agreed): the way to record a word was on screen.
+  useSeen('recording');
   useEffect(() => {
     if (state.isRecording && typeof state.metering === 'number') levels.current.push({ ms: state.durationMillis ?? 0, db: state.metering });
   }, [state.isRecording, state.metering, state.durationMillis]);

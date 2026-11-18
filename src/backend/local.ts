@@ -13,7 +13,7 @@ import type { Op } from '../lib/profileDiff';
 import { type AccessLevel, type CollaboratorRole, type PermissionSet, preset } from '../lib/permissions';
 import { deleteMedia, mediaUri, saveMedia } from '../lib/media';
 import { exampleBugs, exampleDocument, exampleOverview, exampleProduct, exampleRequests, exampleRoadmap } from '../lib/demoBackOffice';
-import { COUNTERS, PROBLEM_KINDS, SCREENS, sharesProduct, type ProblemItem } from '../lib/product';
+import { cleanVersion, COUNTERS, PROBLEM_KINDS, SCREENS, sharesProduct, type ProblemItem } from '../lib/product';
 import { demoObservations, demoUsage } from '../lib/demoUsage';
 import { limitToConsent } from '../lib/usageConsent';
 import { BackendError, type AdminRetention, type Backend, type BinEntry, type CodeSent, type SecurityState, type SignUpInput, type Snapshot, type TwoStepSetup } from './Backend';
@@ -1386,10 +1386,14 @@ export class LocalBackend implements Backend {
       const counts: FeatureDay['counts'] = {};
       for (const k of COUNTERS) {
         const v = (day.counts as Record<string, unknown>)[k];
-        if (typeof v === 'number' && Number.isFinite(v)) counts[k] = Math.floor(Math.max(0, Math.min(v, k.endsWith('Ms') ? 86400000 : 100000)));
+        const cap = k.startsWith('seen:') ? 1 : k.endsWith('Ms') ? 86400000 : 100000;
+        if (typeof v === 'number' && Number.isFinite(v)) counts[k] = Math.floor(Math.max(0, Math.min(v, cap)));
       }
       db.featureDays = (db.featureDays ?? []).filter((f) => !(f.profileId === profileId && f.data.deviceId === day.deviceId && f.data.day === day.day));
-      db.featureDays.push({ profileId, data: { day: day.day, deviceId: day.deviceId, counts, platform: day.platform, form: day.form, appVersion: day.appVersion } });
+      db.featureDays.push({
+        profileId,
+        data: { day: day.day, deviceId: day.deviceId, counts, platform: day.platform, form: day.form, appVersion: cleanVersion(day.appVersion) },
+      });
     });
   }
 
@@ -1407,7 +1411,7 @@ export class LocalBackend implements Backend {
           name: /^[A-Za-z]{1,30}$/.test(it.name) ? it.name : 'Error',
           at: /^\d{1,7}:\d{1,7}$/.test(it.at) ? it.at : '',
           screen: SCREENS.includes(it.screen) ? it.screen : 'other',
-          version: /^[0-9A-Za-z.+-]{1,20}$/.test(it.version) ? it.version : '',
+          version: cleanVersion(it.version),
           platform: ['ios', 'android', 'web'].includes(it.platform) ? it.platform : '?',
         };
         const key = Object.values(row).join('|');

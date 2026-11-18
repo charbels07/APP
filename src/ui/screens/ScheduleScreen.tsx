@@ -14,6 +14,7 @@ import type { Schedule, ScheduleStep } from "../../model/types";
 import { useApp } from "../../state/AppState";
 import { Btn, Segmented } from "../common";
 import { Icon } from "../Icon";
+import { useSeen } from "../Seen";
 import { SymbolView } from "../SymbolView";
 import { C, radius } from "../theme";
 import { MonthView, WeekView } from "./PlansViews";
@@ -46,10 +47,11 @@ export function ScheduleScreen() {
       ? "sequence"
       : mode;
   const dayPlan = shown === "sequence" || shown === "firstThen";
-  // For the app's team (families who agreed): "First / Then" was shown.
+  // For the app's team (families who agreed): "First / Then" was shown; its choice was on screen.
   useEffect(() => {
     if (shown === "firstThen") countFeature("firstThen");
   }, [shown]);
+  useSeen("firstThen");
   const schedule =
     profile.schedules.find((s) => s.id === profile.activeSchedule) ??
     profile.schedules[0];

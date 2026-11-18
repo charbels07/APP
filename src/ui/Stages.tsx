@@ -15,7 +15,7 @@ import { BoardContext, useBoard, type MyAccess } from '../state/BoardContext';
 import { ProfileSync } from '../state/profileSync';
 import { ProductCounter } from '../state/productCounters';
 import { UsageTracker } from '../state/usageTracker';
-import { deviceForm, setProductSink, sharesProduct } from '../lib/product';
+import { deviceForm, firstBoardShown, holdProduct, setProductSink, sharesProduct, startupWaited } from '../lib/product';
 import { useSession } from '../state/Session';
 import { Btn } from './common';
 import { Icon } from './Icon';
@@ -37,6 +37,11 @@ export function Stages() {
   const { stage } = useSession();
   // The board has a dark side bar; the other screens are light.
   const dark = stage.name === 'board' || stage.name === 'preview';
+  // The opening time is only measured when the app goes straight to a board: a screen that
+  // waits for a person (welcome, sign-in, set-up…) would count the person's own time.
+  useEffect(() => {
+    if (stage.name !== 'loading' && stage.name !== 'board') startupWaited();
+  }, [stage.name]);
   return (
     <>
       <StatusBar style={dark ? 'light' : 'dark'} />
@@ -123,6 +128,8 @@ function BoardStage({ profileId }: { profileId: string }) {
     let alive = true;
     let opened: ProfileSync | null = null;
     let usage: UsageTracker | null = null;
+    // What is counted while the board opens (its bar, the opening time) waits for its counter.
+    holdProduct();
     const sendNow = async () => {
       await opened?.flush();
       await usage?.flush();
@@ -225,6 +232,11 @@ function BoardStage({ profileId }: { profileId: string }) {
       sub.remove();
     };
   }, [sync, tracker]);
+
+  // The board is on screen: for the app's team (families who agreed), how long the app took to open.
+  useEffect(() => {
+    if (sync) firstBoardShown();
+  }, [sync]);
 
   useEffect(() => {
     if (!note) return;

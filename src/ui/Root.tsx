@@ -21,6 +21,7 @@ import { BoardScreen } from './screens/BoardScreen';
 import { ScheduleScreen } from './screens/ScheduleScreen';
 import { TlaScreen } from './screens/TlaScreen';
 import { SentenceStrip } from './SentenceStrip';
+import { Seen } from './Seen';
 import { SymbolView } from './SymbolView';
 import { C, radius } from './theme';
 import { TimerCard } from './TimerCard';
@@ -107,6 +108,7 @@ export function Root({ banner }: { banner?: React.ReactNode } = {}) {
           )}
           <Btn small icon="settings" label={compact ? undefined : t.settings} accessibilityLabel={t.settings} onPress={() => app.setOverlay({ kind: 'settings' })} />
           <Btn small icon="printer" label={compact ? undefined : t.print} accessibilityLabel={t.print} onPress={() => app.setOverlay({ kind: 'print' })} />
+          <Seen feature="print" />
           <Btn small kind="primary" icon="check" label={t.exit} onPress={() => app.setEditMode(false)} />
         </View>
       )}

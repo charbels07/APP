@@ -1,0 +1,681 @@
+{
+ "version": 1,
+ "settings": {
+  "lang": "fr",
+  "uiLang": "fr",
+  "gender": "f",
+  "revealLevel": 2,
+  "symbolSet": "pictos",
+  "showLabels": true,
+  "speakOnTap": true,
+  "addToStrip": true,
+  "grammar": true,
+  "quickZone": false,
+  "bar": {
+   "tla": true,
+   "schedule": true,
+   "timer": true
+  },
+  "speechRate": 1,
+  "voices": {},
+  "pin": "4826",
+  "timer": {
+   "display": [
+    "circle"
+   ],
+   "sound": true
+  },
+  "modelPace": 1,
+  "aiSuggestions": true
+ },
+ "boards": {
+  "core": {
+   "id": "core",
+   "kind": "core",
+   "concept": "b_core",
+   "rows": 7,
+   "cols": 12,
+   "cells": [
+    {
+     "concept": "you",
+     "level": 1
+    },
+    {
+     "concept": "want",
+     "level": 1
+    },
+    {
+     "concept": "help",
+     "level": 1
+    },
+    {
+     "concept": "eat",
+     "level": 1
+    },
+    {
+     "concept": "more",
+     "level": 1
+    },
+    {
+     "concept": "here",
+     "level": 2
+    },
+    {
+     "concept": "big",
+     "level": 1
+    },
+    {
+     "concept": "fast",
+     "level": 3
+    },
+    {
+     "concept": "who",
+     "level": 2
+    },
+    {
+     "concept": "yes",
+     "level": 1
+    },
+    {
+     "concept": "f_people",
+     "folder": "people",
+     "level": 1
+    },
+    {
+     "concept": "f_chat",
+     "folder": "chat",
+     "level": 2
+    },
+    {
+     "concept": "i",
+     "level": 1
+    },
+    {
+     "concept": "go",
+     "level": 1
+    },
+    {
+     "concept": "give",
+     "level": 2
+    },
+    {
+     "concept": "drink",
+     "level": 1
+    },
+    {
+     "concept": "not",
+     "level": 1
+    },
+    {
+     "concept": "there",
+     "level": 2
+    },
+    {
+     "concept": "small",
+     "level": 1
+    },
+    {
+     "concept": "slow",
+     "level": 3
+    },
+    {
+     "concept": "what",
+     "level": 1
+    },
+    {
+     "concept": "no",
+     "level": 1
+    },
+    {
+     "concept": "f_food",
+     "folder": "food",
+     "level": 1
+    },
+    {
+     "concept": "f_time",
+     "folder": "time",
+     "level": 2
+    },
+    {
+     "concept": "he",
+     "level": 2
+    },
+    {
+     "concept": "do",
+     "level": 2
+    },
+    {
+     "concept": "look",
+     "level": 2
+    },
+    {
+     "concept": "play",
+     "level": 1
+    },
+    {
+     "concept": "with",
+     "level": 2
+    },
+    {
+     "concept": "before",
+     "level": 3
+    },
+    {
+     "concept": "good",
+     "level": 2
+    },
+    {
+     "concept": "same",
+     "level": 3
+    },
+    {
+     "concept": "where",
+     "level": 1
+    },
+    {
+     "concept": "stop",
+     "level": 1
+    },
+    {
+     "concept": "f_drinks",
+     "folder": "drinks",
+     "level": 1
+    },
+    {
+     "concept": "f_mine",
+     "folder": "mine",
+     "level": 1
+    },
+    {
+     "concept": "she",
+     "level": 2
+    },
+    {
+     "concept": "have",
+     "level": 2
+    },
+    {
+     "concept": "come",
+     "level": 2
+    },
+    {
+     "concept": "put",
+     "level": 2
+    },
+    {
+     "concept": "in",
+     "level": 2
+    },
+    {
+     "concept": "after",
+     "level": 2
+    },
+    {
+     "concept": "bad",
+     "level": 2
+    },
+    {
+     "concept": "different",
+     "level": 3
+    },
+    {
+     "concept": "when",
+     "level": 2
+    },
+    {
+     "concept": "wait_s",
+     "level": 2
+    },
+    {
+     "concept": "f_places",
+     "folder": "places",
+     "level": 2
+    },
+    null,
+    {
+     "concept": "we",
+     "level": 3
+    },
+    {
+     "concept": "be",
+     "level": 2
+    },
+    {
+     "concept": "say",
+     "level": 3
+    },
+    {
+     "concept": "open",
+     "level": 2
+    },
+    {
+     "concept": "on",
+     "level": 2
+    },
+    {
+     "concept": "but",
+     "level": 3
+    },
+    {
+     "concept": "hot",
+     "level": 2
+    },
+    {
+     "concept": "a_little",
+     "level": 3
+    },
+    {
+     "concept": "why",
+     "level": 2
+    },
+    {
+     "concept": "done",
+     "level": 1
+    },
+    {
+     "concept": "f_feelings",
+     "folder": "feelings",
+     "level": 1
+    },
+    null,
+    {
+     "concept": "you_pl",
+     "level": 3
+    },
+    {
+     "concept": "like",
+     "level": 1
+    },
+    {
+     "concept": "know",
+     "level": 3
+    },
+    {
+     "concept": "stop_v",
+     "level": 2
+    },
+    {
+     "concept": "for",
+     "level": 3
+    },
+    {
+     "concept": "because",
+     "level": 3
+    },
+    {
+     "concept": "cold",
+     "level": 2
+    },
+    {
+     "concept": "loud",
+     "level": 3
+    },
+    {
+     "concept": "how",
+     "level": 3
+    },
+    {
+     "concept": "thanks",
+     "level": 2
+    },
+    {
+     "concept": "f_body",
+     "folder": "body",
+     "level": 2
+    },
+    {
+     "concept": "c_teta",
+     "level": 1
+    },
+    {
+     "concept": "they",
+     "level": 3
+    },
+    {
+     "concept": "can",
+     "level": 2
+    },
+    {
+     "concept": "take",
+     "level": 3
+    },
+    {
+     "concept": "finish",
+     "level": 2
+    },
+    {
+     "concept": "and",
+     "level": 3
+    },
+    {
+     "concept": "now",
+     "level": 3
+    },
+    {
+     "concept": "a_lot",
+     "level": 3
+    },
+    null,
+    {
+     "concept": "how_much",
+     "level": 3
+    },
+    {
+     "concept": "please",
+     "level": 2
+    },
+    {
+     "concept": "f_activities",
+     "folder": "activities",
+     "level": 1
+    },
+    {
+     "concept": "f_c_garden",
+     "folder": "c_garden",
+     "level": 1
+    }
+   ]
+  },
+  "food": {
+   "id": "food",
+   "kind": "folder",
+   "concept": "f_food",
+   "rows": 4,
+   "cols": 7,
+   "cells": [
+    {
+     "concept": "bread"
+    },
+    {
+     "concept": "manakish"
+    },
+    {
+     "concept": "labneh"
+    },
+    {
+     "concept": "hummus"
+    },
+    {
+     "concept": "falafel"
+    },
+    {
+     "concept": "cheese"
+    },
+    {
+     "concept": "egg"
+    },
+    {
+     "concept": "rice"
+    },
+    {
+     "concept": "pasta"
+    },
+    {
+     "concept": "chicken"
+    },
+    {
+     "concept": "meat"
+    },
+    {
+     "concept": "soup"
+    },
+    {
+     "concept": "salad"
+    },
+    {
+     "concept": "sandwich"
+    },
+    {
+     "concept": "apple"
+    },
+    {
+     "concept": "banana"
+    },
+    {
+     "concept": "strawberry"
+    },
+    {
+     "concept": "grapes"
+    },
+    {
+     "concept": "yogurt"
+    },
+    {
+     "concept": "pizza"
+    },
+    {
+     "concept": "fries"
+    },
+    {
+     "concept": "chips"
+    },
+    {
+     "concept": "cake"
+    },
+    {
+     "concept": "chocolate"
+    },
+    {
+     "concept": "biscuit"
+    },
+    {
+     "concept": "ice_cream"
+    },
+    null,
+    {
+     "concept": "water"
+    }
+   ]
+  },
+  "people": {
+   "id": "people",
+   "kind": "folder",
+   "concept": "f_people",
+   "rows": 3,
+   "cols": 6,
+   "cells": [
+    {
+     "concept": "mom"
+    },
+    {
+     "concept": "dad"
+    },
+    {
+     "concept": "brother"
+    },
+    {
+     "concept": "sister"
+    },
+    {
+     "concept": "baby"
+    },
+    {
+     "concept": "grandma"
+    },
+    {
+     "concept": "grandpa"
+    },
+    {
+     "concept": "friend"
+    },
+    {
+     "concept": "teacher"
+    },
+    {
+     "concept": "doctor"
+    },
+    {
+     "concept": "dentist"
+    },
+    {
+     "concept": "therapist"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  "c_garden": {
+   "id": "c_garden",
+   "kind": "folder",
+   "concept": "f_c_garden",
+   "rows": 2,
+   "cols": 3,
+   "cells": [
+    {
+     "concept": "c_flowers"
+    },
+    null,
+    {
+     "concept": "swing"
+    },
+    null,
+    {
+     "concept": "ball"
+    },
+    null
+   ]
+  },
+  "tla_meal": {
+   "id": "tla_meal",
+   "kind": "tla",
+   "concept": "t_meal",
+   "rows": 4,
+   "cols": 5,
+   "cells": [
+    {
+     "concept": "eat"
+    },
+    {
+     "concept": "drink"
+    },
+    {
+     "concept": "water"
+    },
+    {
+     "concept": "bread"
+    },
+    {
+     "concept": "juice"
+    },
+    {
+     "concept": "plate"
+    },
+    {
+     "concept": "spoon"
+    },
+    {
+     "concept": "fork"
+    },
+    {
+     "concept": "cup"
+    },
+    {
+     "concept": "napkin"
+    },
+    {
+     "concept": "hot"
+    },
+    {
+     "concept": "cold"
+    },
+    {
+     "concept": "yummy"
+    },
+    {
+     "concept": "dont_like"
+    },
+    {
+     "concept": "a_little"
+    },
+    {
+     "concept": "a_lot"
+    },
+    {
+     "concept": "hungry"
+    },
+    {
+     "concept": "thirsty"
+    },
+    {
+     "concept": "toilet"
+    },
+    {
+     "concept": "wait_s"
+    }
+   ]
+  }
+ },
+ "tlaOrder": [
+  "tla_meal"
+ ],
+ "schedules": [],
+ "overrides": {
+  "eat": {
+   "symbol": {
+    "kind": "arasaac",
+    "id": 2349
+   }
+  },
+  "mom": {
+   "labels": {
+    "fr": "Maman"
+   },
+   "symbol": {
+    "kind": "media",
+    "name": "1699999999999_abc123.jpg"
+   }
+  }
+ },
+ "customConcepts": {
+  "c_teta": {
+   "id": "c_teta",
+   "cls": "people",
+   "labels": {
+    "fr": "Téta",
+    "en": "Teta",
+    "ar": "تيتا"
+   },
+   "emoji": "👵",
+   "custom": true
+  },
+  "f_c_garden": {
+   "id": "f_c_garden",
+   "cls": "folder",
+   "labels": {
+    "fr": "jardin",
+    "en": "garden",
+    "ar": "جنينة"
+   },
+   "emoji": "🌳",
+   "custom": true
+  },
+  "c_flowers": {
+   "id": "c_flowers",
+   "cls": "noun",
+   "labels": {
+    "fr": "fleurs",
+    "en": "flowers",
+    "ar": "ورد"
+   },
+   "emoji": "💐",
+   "custom": true
+  }
+ },
+ "help": {
+  "message": {
+   "fr": "Aide-moi !",
+   "en": "Help me!",
+   "ar": "ساعدني!"
+  },
+  "options": [
+   "it_hurts"
+  ],
+  "howICommunicate": "",
+  "emergencyContact": ""
+ },
+ "demos": []
+}

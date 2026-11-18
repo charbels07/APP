@@ -303,6 +303,12 @@ the older rules (it falls back), but these protections are not active on the ser
 | `20261118000400_product_more.sql` | "seen" counters, app version and speed figures for the team (families are asked to agree again) |
 | `20261118000500_privacy.sql` | the parent's consent kept as a record, the nightly retention, "Download all my data" |
 
+The media file also sets the `profile-media` bucket to 3 MB and to pictures and sounds only, and adds a
+rule on `storage.objects`; if it answers "must be owner", run that file as the storage owner. The
+project's global upload size limit (Storage → Settings) must be at least 3 MB (the default is 50 MB).
+The privacy file creates the key of the sealed sentences in Supabase Vault (`caa_field_key`): never
+delete that secret, or the sealed sentences and notes can no longer be read.
+
 Each file plans its own nightly job with `pg_cron` (already on for the team's e-mails). To check:
 `select public.storage_purge_plan(); select public.bin_plan(); select public.retention_plan();`
 

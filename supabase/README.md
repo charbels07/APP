@@ -287,6 +287,42 @@ week at most). To stop everything: `delete from public.team_mail_config;` (messa
 `npm run test:db` plays the whole story on a throw-away database: who can touch these messages
 (nobody from the app), what they say, and what they never say.
 
+## 11. Security and data, second round (18 November 2026)
+
+Six database files and one more server function. Until they are run, the app keeps working with
+the older rules (it falls back), but these protections are not active on the server.
+
+**1. The database files**, in this order, in the SQL Editor (each answers "Success"):
+
+| File | What it adds |
+|---|---|
+| `20261118000000_security_2.sql` | two-step sign-in (required for the back office), the fresh proof before what cannot be undone, team members no longer read each other's e-mail or the family code |
+| `20261118000100_storage_purge.sql` | the queue of files to delete when an account, a profile or a document is erased |
+| `20261118000200_bin_snapshots.sql` | the 30-day bin for children's profiles, copies of the boards |
+| `20261118000300_media_sync.sql` | photos and recordings copied between the child's devices (who may upload, sizes, quota) |
+| `20261118000400_product_more.sql` | "seen" counters, app version and speed figures for the team (families are asked to agree again) |
+| `20261118000500_privacy.sql` | the parent's consent kept as a record, the nightly retention, "Download all my data" |
+
+Each file plans its own nightly job with `pg_cron` (already on for the team's e-mails). To check:
+`select public.storage_purge_plan(); select public.bin_plan(); select public.retention_plan();`
+
+**2. The function `caa-purge`**, exactly like `caa-mail` in section 10 (paste
+`supabase/functions/caa-purge/index.ts` into a new function called `caa-purge`, deploy, and turn
+**off** *Verify JWT*):
+
+```bash
+npx supabase functions deploy caa-purge --no-verify-jwt
+```
+
+It uses the connection already made with `team_mail_connect`: nothing else to set. To see it work:
+`select * from public.storage_purge order by created_at desc limit 10;` (`done_at` filled = deleted).
+
+**3. Two-step sign-in for the team.** Authentication → Multi-Factor: *TOTP* stays enabled (the
+default). Each team member signs in to the app: the back office first shows "Turn on"; scan the
+code with an authenticator app, type the first code. From then on the code is asked at each
+sign-in. Someone who lost their phone: Authentication → Users → the person → remove the factor
+(after checking it is them by another way).
+
 ## What is where
 
 | Table | Contents |
@@ -310,6 +346,10 @@ week at most). To stop everything: `delete from public.team_mail_config;` (messa
 | `research_usage` (view) | anonymous daily numbers for the app's team, consenting families only |
 | `ai_calls` | how many AI requests each account made today (daily limit) |
 | `team_mail`, `team_mail_config` | the e-mails written for the app's team and where the sending function is; not reachable from the app |
+| `storage_purge` | files to delete because what they belonged to was erased (done by `caa-purge`); not reachable from the app |
+| `profile_snapshots` | copies of each child's board (10 at most), read and put back through functions only |
+| `consents` | the parents' consents: who, when, which text version, for which child |
+| `profiles.deleted_at` | a profile in the family's bin (erased 30 days later) |
 
 Storage buckets: `verification-docs` (diplomas, private to their owner and the app's team) and `profile-media`
 (a child's photos and recordings, private to the child's team).

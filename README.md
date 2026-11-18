@@ -7,15 +7,18 @@ vocabulary and boards are **placeholders** that the speech-language therapist
 must replace and validate.
 
 **Live demo (browser):** https://claude.ai/artifact/6KiN8TkiZfScTfEq8HAqzS
-(private until shared from the page's *Share* menu). Caregiver code: `1234`.
+(private until shared from the page's *Share* menu). The caregiver code is chosen the first time
+the board opens (there is no default code).
 
 ## Stack
 
 - **Expo SDK 58 / React Native 0.88 / TypeScript.** One codebase for iPad,
   Android tablets and the web demo. iOS builds run in the cloud with EAS
   (`npx eas-cli build -p ios`), so no Mac is required to build.
-- No backend yet: everything is stored on the device (offline-first, spec §32).
-  Profiles are versioned (`src/lib/storage.ts`) so cloud sync can be added later.
+- Offline-first: the child's board runs from a copy on the device (`src/lib/storage.ts`). With an
+  account it is synced through Supabase (EU region): accounts, teams, proposals, follow-up, the
+  back office; security rules in the database (`supabase/`, `docs/SECURITY.md`). How it fits
+  together: `docs/ARCHITECTURE.md`; what to run before a release: `docs/runbooks/`.
 - Pictograms: ten open libraries that are free for commercial use (Mulberry, OpenMoji, Fluent Emoji,
   Noto Emoji, Twemoji, Health Icons, Material Symbols, Phosphor, Lucide, Tabler: about 24,400
   pictograms, no ARASAAC). Licence check: `docs/PICTOGRAM-LICENSES.md`; libraries and versions:
@@ -51,7 +54,6 @@ restricted environments.
 | `src/lib/tlaPlanner.ts`, `aiPlanner(.web).ts` | TLA proposal: situation library → AI proposal → pictogram topics. |
 | `src/lib/pictoSearch.ts`, `pictoLibrary.ts` | Offline pictogram search and topic suggestions. |
 | `src/lib/appLinks.ts` | App pictograms (YouTube, WhatsApp, Spotify, Anghami…): links, trigger words, "which app does this sentence ask for". |
-| `src/lib/webPictures.ts`, `clipboardImage(.web).ts` | Pictures from the internet: Global Symbols pictogram sets and Openverse photos/drawings (with licence), paste an image, image link. |
 | `src/ui/DrawPad.tsx`, `VoiceButton.tsx`, `wiggle.ts` | Finger drawing pad (search by drawing), microphone button (dictation, search by voice), pictogram wiggle animation. |
 | `src/data/guide.ts`, `src/ui/panels/GuidePanel.tsx` | In-app guide content (FR/EN, quotes the real button names — a test checks them) and its panel / welcome card. |
 | `src/lib/parseSentence.ts` | Dictated sentence → board words (for animated modelling). |

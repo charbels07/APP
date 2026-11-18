@@ -49,3 +49,6 @@ coverage/
 
 # dialect voice samples to listen to (npm run build:voices -- --sample 20)
 voice-samples/
+
+# Parallel work copies (git worktrees)
+.claude/worktrees/

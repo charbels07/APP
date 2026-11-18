@@ -420,9 +420,11 @@ export class SupabaseBackend implements Backend {
     // without Wi-Fi must not stay signed in), and the person's other devices stay signed in.
     const { error } = await this.sb.auth.signOut({ scope: 'local' });
     if (error) {
-      // Last resort: remove the stored session ourselves.
+      // Last resort: remove the stored session ourselves (secure storage and ordinary storage).
       const keys = await AsyncStorage.getAllKeys().catch(() => [] as readonly string[]);
       await AsyncStorage.multiRemove(keys.filter((k) => /^sb-.*-auth-token/.test(k) || k === this.opts.storageKey)).catch(() => {});
+      const key = this.opts.storageKey ?? `sb-${new URL(this.url).hostname.split('.')[0]}-auth-token`;
+      for (const k of [key, `${key}-code-verifier`, `${key}-user`]) await sessionStore.removeItem(k).catch(() => {});
     }
     await AsyncStorage.removeItem(PENDING_ROLE).catch(() => {});
   }

@@ -280,7 +280,7 @@ select public.retention_plan();
 -- Everything about the person, and about the children whose profile they own. A fresh proof is
 -- asked first (a borrowed, unlocked phone must not hand it all out).
 create function public.export_my_data() returns jsonb
-language plpgsql stable security definer set search_path = public, auth as $$
+language plpgsql volatile security definer set search_path = public, auth as $$
 declare
   me uuid := auth.uid();
   mine uuid[];

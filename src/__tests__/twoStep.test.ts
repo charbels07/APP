@@ -158,3 +158,14 @@ describe('demo server: what team members read about each other', () => {
     expect((await api.listMembers(profileId)).map((m) => m.email).sort()).toEqual(['lea@example.com', 'sami@example.com']);
   });
 });
+
+describe('dictation on the device', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { installedFor } = require('../lib/dictation') as typeof import('../lib/dictation');
+  it('uses the device when the language is installed, in any of its regional forms', () => {
+    expect(installedFor(['fr-FR', 'en-US'], 'fr-FR')).toBe(true);
+    expect(installedFor(['ar_SA'], 'ar-LB')).toBe(true);
+    expect(installedFor(['en-US'], 'ar-LB')).toBe(false);
+    expect(installedFor([], 'fr-FR')).toBe(false);
+  });
+});

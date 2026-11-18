@@ -317,6 +317,7 @@ const fr = {
   dictateUnavailable:
     'Le micro intégré est bloqué dans la démo en ligne. Astuce iPhone / iPad : touchez le champ ci-dessous puis la touche micro du clavier pour dicter. Dans l’application installée, le bouton bleu fonctionnera directement.',
   orType: 'Ou écrivez (ou dictez avec le clavier) la phrase',
+  dictateOnline: 'Cette langue n’est pas installée pour la dictée sur l’appareil : le service d’Apple ou de Google entend la phrase pour la comprendre. Rien n’est gardé par l’application.',
   showOnBoard: 'Montrer sur la grille',
   demos: 'Démonstrations enregistrées',
   recordDemo: 'Enregistrer une démonstration',
@@ -739,6 +740,7 @@ const en: Dict = {
   dictateUnavailable:
     'The built-in mic is blocked in the online demo. Tip on iPhone / iPad: tap the field below, then the keyboard’s mic key to dictate. In the installed app, the blue button works directly.',
   orType: 'Or type (or dictate with the keyboard) the sentence',
+  dictateOnline: 'This language is not installed for dictation on the device: Apple’s or Google’s service hears the sentence to understand it. The app keeps nothing.',
   showOnBoard: 'Show on the board',
   demos: 'Recorded demonstrations',
   recordDemo: 'Record a demonstration',
@@ -1152,6 +1154,7 @@ const ar: Dict = {
   dictateUnavailable:
     'الميكروفون المدمج محظور في العرض التجريبي على الإنترنت. على آيفون / آيباد: المس الحقل أدناه ثم مفتاح الميكروفون في لوحة المفاتيح للإملاء. في التطبيق المثبّت يعمل الزر الأزرق مباشرة.',
   orType: 'أو اكتب الجملة (أو أملِها بلوحة المفاتيح)',
+  dictateOnline: 'هذه اللغة غير مثبّتة للإملاء على الجهاز: تسمع خدمة Apple أو Google الجملة لفهمها. لا يحتفظ التطبيق بشيء.',
   showOnBoard: 'أظهر على اللوحة',
   demos: 'العروض المسجّلة',
   recordDemo: 'تسجيل عرض',

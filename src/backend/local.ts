@@ -16,7 +16,8 @@ import { exampleBugs, exampleDocument, exampleOverview, exampleProduct, exampleR
 import { COUNTERS, PROBLEM_KINDS, SCREENS, sharesProduct, type ProblemItem } from '../lib/product';
 import { demoObservations, demoUsage } from '../lib/demoUsage';
 import { limitToConsent } from '../lib/usageConsent';
-import { BackendError, type Backend, type CodeSent, type SignUpInput } from './Backend';
+import { BackendError, type Backend, type CodeSent, type SecurityState, type SignUpInput, type TwoStepSetup } from './Backend';
+import { newTotpSecret, totp, totpMatches, totpUri } from '../lib/totp';
 import {
   DEFAULT_PREFS,
   type Observation,
@@ -55,11 +56,20 @@ import {
 
 const DB_KEY = 'caa.server.v1';
 const SESSION_KEY = 'caa.session.v1';
+/** This session's two-step level and when the person last proved who they are (sign-in, password, code). */
+const SESSION_META_KEY = 'caa.session.meta.v1';
+const PROOF_TTL = 10 * 60 * 1000;
+interface SessionMeta {
+  aal: 'aal1' | 'aal2';
+  proofAt: number;
+}
 const CODE_TTL = 10 * 60 * 1000;
 
 interface StoredAccount extends Account {
   salt: string;
   hash?: string;
+  /** Two-step sign-in: the authenticator key; `on` once its first code was typed. */
+  twoStep?: { secret: string; on: boolean };
 }
 interface PendingCode {
   target: string;
@@ -114,6 +124,8 @@ const emptyDb = (): DB => ({
 });
 
 let seq = 0;
+/** Set for each call: the signed-in account turned two-step on and has not typed its code yet. */
+let codeOwed = false;
 /**
  * Device storage, with a memory fallback: if the browser refuses storage (private window,
  * sandboxed page), the demo keeps working for the session instead of failing.
@@ -180,6 +192,9 @@ export class LocalBackend implements Backend {
       const db: DB = raw ? { ...emptyDb(), ...JSON.parse(raw) } : emptyDb();
       const sid = (await store.get(SESSION_KEY)) ?? '';
       const me = db.accounts[sid] ?? null;
+      const level = (await this.meta()).aal;
+      codeOwed = !!me?.twoStep?.on && level !== 'aal2';
+      LocalBackend.adminLevel = level === 'aal2';
       const out = await fn(db, me);
       await store.set(DB_KEY, JSON.stringify(db));
       return out;
@@ -191,7 +206,31 @@ export class LocalBackend implements Backend {
 
   private static need(me: StoredAccount | null): StoredAccount {
     if (!me) throw new BackendError('not_signed_in');
+    // Same rule as the real database: nothing about the children before the two-step code.
+    if (codeOwed) throw new BackendError('two_step_needed');
     return me;
+  }
+
+  private async meta(): Promise<SessionMeta> {
+    try {
+      const raw = await store.get(SESSION_META_KEY);
+      if (raw) return JSON.parse(raw) as SessionMeta;
+    } catch {
+      /* none */
+    }
+    return { aal: 'aal1', proofAt: 0 };
+  }
+  private async setMeta(patch: Partial<SessionMeta>): Promise<void> {
+    await store.set(SESSION_META_KEY, JSON.stringify({ ...(await this.meta()), ...patch }));
+  }
+  /** A new sign-in: a fresh proof, and the two-step code still to type (if it is on). */
+  private async startSession(accountId: string, aal: SessionMeta['aal'] = 'aal1'): Promise<void> {
+    await store.set(SESSION_KEY, accountId);
+    await store.set(SESSION_META_KEY, JSON.stringify({ aal, proofAt: Date.now() }));
+  }
+  /** Signed in or proved again in the last 10 minutes (as the real database's fresh_proof). */
+  private async requireProof(): Promise<void> {
+    if (Date.now() - (await this.meta()).proofAt > PROOF_TTL) throw new BackendError('proof_needed');
   }
 
   private static notify(db: DB, userId: string | undefined, kind: NoticeKind, text: string, extra: { profileId?: string; refId?: string } = {}) {
@@ -220,9 +259,11 @@ export class LocalBackend implements Backend {
   }
   private static requireAdmin(db: DB, me: StoredAccount | null): StoredAccount {
     const a = LocalBackend.need(me);
-    if (!(db.admins ?? []).includes(a.id)) throw new BackendError('forbidden');
+    if (!(db.admins ?? []).includes(a.id) || !LocalBackend.adminLevel) throw new BackendError('forbidden');
     return a;
   }
+  /** Set for each call: this session typed its two-step code (the back office needs it, as on the real server). */
+  private static adminLevel = false;
   private static adminNote(db: DB, me: StoredAccount, action: string, targetName?: string, detail?: string) {
     (db.adminLog ??= []).unshift({ id: uid('l'), adminName: memberName(me), action, targetName, detail, createdAt: Date.now() });
   }
@@ -318,7 +359,7 @@ export class LocalBackend implements Backend {
       LocalBackend.attachInvitations(db, a);
       return a;
     });
-    await store.set(SESSION_KEY, acc.id);
+    await this.startSession(acc.id);
     return LocalBackend.public(acc);
   }
 
@@ -332,7 +373,7 @@ export class LocalBackend implements Backend {
     const acc = await this.tx((db) => LocalBackend.findAccount(db, input) ?? null);
     if (!acc?.hash || (await sha256(acc.salt + input.password)) !== acc.hash) throw new BackendError('wrong_credentials');
     if (!acc.verified) throw new BackendError('not_verified');
-    await store.set(SESSION_KEY, acc.id);
+    await this.startSession(acc.id);
     return LocalBackend.public(acc);
   }
 
@@ -357,12 +398,13 @@ export class LocalBackend implements Backend {
       }
       return a;
     });
-    await store.set(SESSION_KEY, acc.id);
+    await this.startSession(acc.id);
     return LocalBackend.public(acc);
   }
 
   async signOut(): Promise<void> {
     await store.remove(SESSION_KEY);
+    await store.remove(SESSION_META_KEY);
   }
 
   async requestPasswordReset(target: { email?: string; phone?: string }): Promise<CodeSent> {
@@ -393,6 +435,7 @@ export class LocalBackend implements Backend {
     const t = normEmail(target.email) ?? normPhone(target.phone);
     if (!t) throw new BackendError('missing_contact');
     await this.tx((db) => LocalBackend.takeCode(db, t, code, 'reset'));
+    await this.setMeta({ proofAt: Date.now() });
   }
 
   async checkPassword(password: string): Promise<void> {
@@ -400,6 +443,7 @@ export class LocalBackend implements Backend {
     if (me.provider === 'device') throw new BackendError('forbidden');
     // Google / Apple accounts have no password here: only the e-mailed code proves them.
     if (!me.hash || (await sha256(me.salt + password)) !== me.hash) throw new BackendError('wrong_credentials');
+    await this.setMeta({ proofAt: Date.now() });
   }
 
   async changePassword(current: string, next: string): Promise<void> {
@@ -424,6 +468,7 @@ export class LocalBackend implements Backend {
   }
 
   async deleteAccount(): Promise<void> {
+    await this.requireProof();
     await this.tx((db, m) => {
       const me = LocalBackend.need(m);
       const owned = new Set(Object.values(db.profiles).filter((p) => p.ownerId === me.id).map((p) => p.id));
@@ -444,6 +489,57 @@ export class LocalBackend implements Backend {
       delete db.accounts[me.id];
     });
     await store.remove(SESSION_KEY);
+  }
+
+  // ── Two-step sign-in and fresh proofs ──
+
+  async security(): Promise<SecurityState> {
+    const meta = await this.meta();
+    return this.tx((db, me) => ({
+      team: !!me && me.provider !== 'device' && (db.admins ?? []).includes(me.id),
+      twoStep: !!me?.twoStep?.on,
+      level: meta.aal,
+    }));
+  }
+
+  async twoStepStart(): Promise<TwoStepSetup> {
+    return this.tx((db, m) => {
+      if (!m) throw new BackendError('not_signed_in');
+      if (m.provider === 'device') throw new BackendError('forbidden');
+      if (m.twoStep?.on) throw new BackendError('two_step_on');
+      const secret = newTotpSecret();
+      db.accounts[m.id].twoStep = { secret, on: false };
+      return { factorId: `totp-${m.id}`, secret, uri: totpUri(secret, m.email || m.phone || m.displayName) };
+    });
+  }
+
+  async twoStepConfirm(_factorId: string, code: string): Promise<void> {
+    await this.tx((db, m) => {
+      const t = m && db.accounts[m.id].twoStep;
+      if (!t) throw new BackendError('not_signed_in');
+      if (!totpMatches(t.secret, code)) throw new BackendError('code_invalid');
+      t.on = true;
+    });
+    await this.setMeta({ aal: 'aal2', proofAt: Date.now() });
+  }
+
+  async twoStepCode(code: string): Promise<void> {
+    await this.tx((_db, m) => {
+      if (!m?.twoStep?.on) throw new BackendError('two_step_off');
+      if (!totpMatches(m.twoStep.secret, code)) throw new BackendError('code_invalid');
+    });
+    await this.setMeta({ aal: 'aal2', proofAt: Date.now() });
+  }
+
+  async twoStepOff(code: string): Promise<void> {
+    await this.twoStepCode(code);
+    await this.tx((db, m) => {
+      if (m) delete db.accounts[m.id].twoStep;
+    });
+  }
+
+  async demoTwoStepCode(): Promise<string | undefined> {
+    return this.tx((_db, m) => (m?.twoStep ? totp(m.twoStep.secret) : undefined));
   }
 
   // ── Profiles ──
@@ -563,8 +659,11 @@ export class LocalBackend implements Backend {
 
   async listMembers(profileId: string): Promise<Membership[]> {
     return this.tx((db, m) => {
-      LocalBackend.requireAccess(db, profileId, LocalBackend.need(m));
-      return clone(db.members.filter((x) => x.profileId === profileId));
+      const me = LocalBackend.need(m);
+      LocalBackend.requireAccess(db, profileId, me);
+      // The addresses only for the family, the team's managers and each person their own (as list_members).
+      const manager = LocalBackend.managers(db, profileId).includes(me.id);
+      return clone(db.members.filter((x) => x.profileId === profileId)).map((x) => (manager || x.userId === me.id ? x : { ...x, email: undefined }));
     });
   }
 
@@ -981,6 +1080,7 @@ export class LocalBackend implements Backend {
   }
 
   async createPairingCode(profileId: string, access: 'full' | 'use'): Promise<{ code: string; expiresAt: number }> {
+    if (access === 'full') await this.requireProof();
     return this.tx((db, m) => {
       LocalBackend.requireManager(db, profileId, LocalBackend.need(m));
       const code = friendlyCode();
@@ -1023,7 +1123,9 @@ export class LocalBackend implements Backend {
       db.devices.push({ ...device, profileId: pairing.profileId, userId: acc.id, kind: full ? 'primary' : 'secondary', pendingChanges: 0, revoked: false, createdAt: Date.now() });
       return { id: acc.id, profileId: pairing.profileId };
     });
+    // A tablet signs in without a password: it can never give a fresh proof (as on the real server).
     await store.set(SESSION_KEY, deviceAccount.id);
+    await store.set(SESSION_META_KEY, JSON.stringify({ aal: 'aal1', proofAt: 0 }));
     return deviceAccount.profileId;
   }
 
@@ -1363,7 +1465,8 @@ export class LocalBackend implements Backend {
       }
       return a;
     });
-    await store.set(SESSION_KEY, acc.id);
+    // The demonstration's shortcut stands for a team member who signed in with the two-step code.
+    await this.startSession(acc.id, 'aal2');
     return LocalBackend.public(acc);
   }
 

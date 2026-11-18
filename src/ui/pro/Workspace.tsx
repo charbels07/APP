@@ -28,6 +28,7 @@ import { PictoCredit } from '../PictoCredits';
 import { DataDashboard } from '../data/DataDashboard';
 import { Icon, type IconName } from '../Icon';
 import { DeleteAccount, MyAccount, Preferences } from '../settings/AccountTab';
+import { useProof } from '../ProveItsYou';
 import { Note, ss } from '../settings/SettingsScreen';
 import { PermissionEditor, Row, when } from '../settings/TeamTab';
 import { LangSwitch, Logo } from '../start/StartLayout';
@@ -624,6 +625,7 @@ function DeleteChild({ user, onDeleted }: { user: ProfileSummary; onDeleted: () 
   const [typing, setTyping] = useState(false);
   const [word, setWord] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const proof = useProof('deleteProfile');
   const label = `${x.deleteProfile} ${user.name}`;
   if (!typing) return <Btn small kind="danger" icon="trash" label={label} onPress={() => setTyping(true)} style={{ alignSelf: 'flex-start' }} />;
   return (
@@ -649,15 +651,18 @@ function DeleteChild({ user, onDeleted }: { user: ProfileSummary; onDeleted: () 
           onPress={async () => {
             setError(null);
             try {
-              await api.deleteProfile(user.id);
-              await forgetLocal(user.id);
-              onDeleted();
+              await proof.run(async () => {
+                await api.deleteProfile(user.id);
+                await forgetLocal(user.id);
+                onDeleted();
+              });
             } catch (e) {
               setError(errorText(s, e));
             }
           }}
         />
       </View>
+      {proof.gate}
     </View>
   );
 }

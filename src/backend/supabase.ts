@@ -18,7 +18,7 @@ import type { Profile, UiLang } from '../model/types';
 import type { ProblemItem } from '../lib/product';
 import type { Op } from '../lib/profileDiff';
 import type { AccessLevel, CollaboratorRole, PermissionSet } from '../lib/permissions';
-import { BackendError, type Backend, type CodeSent, type SignInMethods, type SignUpInput } from './Backend';
+import { BackendError, type Backend, type CodeSent, type SecurityState, type SignInMethods, type SignUpInput, type TwoStepSetup } from './Backend';
 import { normEmail, normPhone } from './local';
 import {
   DEFAULT_PREFS,
@@ -98,6 +98,32 @@ async function data<T>(q: PromiseLike<{ data: T | null; error: { message?: strin
   const { data: d, error } = await q;
   if (error) fail(error);
   return d as T;
+}
+
+/** The database has not received the newest update yet (the app may be published before it). */
+const missingFunction = (e: unknown) => /could not find the function|does not exist|PGRST202/i.test(String((e as { message?: string })?.message ?? e));
+
+/** What the app reads of a child's profile (the family's connection code is read through its function). */
+const PROFILE_COLS = 'id, owner_id, name, age, intake, data, version, updated_at, updated_by';
+
+/** The QR code Supabase gives is an SVG "data:" address: its text. */
+export function svgOfDataUrl(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  if (url.trim().startsWith('<svg')) return url;
+  const m = /^data:image\/svg\+xml(;[^,]*)?,(.*)$/s.exec(url);
+  if (!m) return undefined;
+  if (/;base64/.test(m[1] ?? '')) {
+    try {
+      return typeof atob === 'function' ? atob(m[2]) : Buffer.from(m[2], 'base64').toString('utf8');
+    } catch {
+      return undefined;
+    }
+  }
+  try {
+    return decodeURIComponent(m[2]);
+  } catch {
+    return m[2];
+  }
 }
 
 const toProfileRec = (r: Row): ChildRecord => ({
@@ -506,6 +532,63 @@ export class SupabaseBackend implements Backend {
     await this.signOut();
   }
 
+  // ── Two-step sign-in and fresh proofs ──
+
+  async security(): Promise<SecurityState> {
+    try {
+      const r = await data<Row>(this.sb.rpc('my_security'));
+      return { team: !!r.team, twoStep: !!r.twoStep, level: r.level === 'aal2' ? 'aal2' : 'aal1' };
+    } catch (e) {
+      if (!missingFunction(e)) throw e;
+      // Database not updated yet: the same answers from the sign-in service.
+      const { data: f } = await this.sb.auth.mfa.listFactors();
+      const { data: l } = await this.sb.auth.mfa.getAuthenticatorAssuranceLevel();
+      const team = !!(await data<boolean>(this.sb.rpc('is_admin')).catch(() => false));
+      return { team, twoStep: !!f?.totp?.length, level: l?.currentLevel === 'aal2' ? 'aal2' : 'aal1' };
+    }
+  }
+
+  async twoStepStart(): Promise<TwoStepSetup> {
+    // A setting-up left half-way has no use: it is removed first (its name must be unique).
+    const { data: f } = await this.sb.auth.mfa.listFactors();
+    for (const old of f?.all ?? []) {
+      if (old.status !== 'verified') await this.sb.auth.mfa.unenroll({ factorId: old.id }).catch(() => {});
+    }
+    const { data: d, error } = await this.sb.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Empower Communication', issuer: 'Empower Communication' });
+    if (error || !d) fail(error);
+    return { factorId: d.id, secret: d.totp.secret, uri: d.totp.uri, qrSvg: svgOfDataUrl(d.totp.qr_code) };
+  }
+
+  async twoStepConfirm(factorId: string, code: string): Promise<void> {
+    const { error } = await this.sb.auth.mfa.challengeAndVerify({ factorId, code: code.replace(/\D/g, '') });
+    if (error) throw new BackendError('code_invalid', error.message);
+  }
+
+  private async verifiedFactor(): Promise<string> {
+    const { data: f, error } = await this.sb.auth.mfa.listFactors();
+    if (error) fail(error);
+    const id = f?.totp?.[0]?.id;
+    if (!id) throw new BackendError('two_step_off');
+    return id;
+  }
+
+  async twoStepCode(code: string): Promise<void> {
+    const factorId = await this.verifiedFactor();
+    const { error } = await this.sb.auth.mfa.challengeAndVerify({ factorId, code: code.replace(/\D/g, '') });
+    if (error) throw new BackendError('code_invalid', error.message);
+  }
+
+  async twoStepOff(code: string): Promise<void> {
+    await this.twoStepCode(code);
+    const { data: f } = await this.sb.auth.mfa.listFactors();
+    for (const factor of f?.all ?? []) {
+      const { error } = await this.sb.auth.mfa.unenroll({ factorId: factor.id });
+      if (error) fail(error);
+    }
+    // A new session without the second step: the token says so at once.
+    await this.sb.auth.refreshSession().catch(() => {});
+  }
+
   // ── Profiles ──
 
   async listProfiles(): Promise<ProfileSummary[]> {
@@ -516,13 +599,13 @@ export class SupabaseBackend implements Backend {
   async createProfile(input: { name: string; age?: number; intake?: Intake; data: Profile }): Promise<ChildRecord> {
     const uid = await this.uid();
     const r = await data<Row>(
-      this.sb.from('profiles').insert({ owner_id: uid, name: input.name.trim(), age: input.age ?? null, intake: input.intake ?? null, data: input.data }).select().single(),
+      this.sb.from('profiles').insert({ owner_id: uid, name: input.name.trim(), age: input.age ?? null, intake: input.intake ?? null, data: input.data }).select(PROFILE_COLS).single(),
     );
     return toProfileRec(r);
   }
 
   async getProfile(id: string): Promise<ChildRecord> {
-    const r = await data<Row | null>(this.sb.from('profiles').select('*').eq('id', id).maybeSingle());
+    const r = await data<Row | null>(this.sb.from('profiles').select(PROFILE_COLS).eq('id', id).maybeSingle());
     if (!r) throw new BackendError('forbidden');
     return toProfileRec(r);
   }
@@ -552,7 +635,13 @@ export class SupabaseBackend implements Backend {
   // ── Team ──
 
   async listMembers(profileId: string): Promise<Membership[]> {
-    return (await data<Row[]>(this.sb.from('members').select('*').eq('profile_id', profileId))).map(toMember);
+    // Through the database's function: the addresses only for the family and the team's managers.
+    try {
+      return (await data<Row[]>(this.sb.rpc('list_members', { p_id: profileId }))).map(toMember);
+    } catch (e) {
+      if (!missingFunction(e)) throw e;
+      return (await data<Row[]>(this.sb.from('members').select('*').eq('profile_id', profileId))).map(toMember);
+    }
   }
 
   async updateMember(profileId: string, userId: string, patch: { level?: AccessLevel; perms?: PermissionSet; role?: CollaboratorRole; expiresAt?: number | null }): Promise<void> {
@@ -810,6 +899,12 @@ export class SupabaseBackend implements Backend {
   }
 
   async isAdmin(): Promise<boolean> {
+    // On the team (the back office itself also needs the two-step code: is_admin in the database).
+    try {
+      return !!(await data<boolean>(this.sb.rpc('is_team')));
+    } catch (e) {
+      if (!missingFunction(e)) throw e;
+    }
     return !!(await data<boolean>(this.sb.rpc('is_admin')));
   }
 

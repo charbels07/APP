@@ -146,6 +146,7 @@ const fr = {
   pinForgotFamily: 'Seule la famille peut choisir un nouveau code. Sur le téléphone ou l’ordinateur d’un parent connecté, ouvrez ce tableau puis touchez « Code oublié ? » sur ce clavier.',
   // The other way to prove it is you: the account's password (accounts made with one).
   pinForgotIntroPw: 'Pour choisir un nouveau code, tapez le mot de passe de votre compte, ou recevez un code de vérification à {to}.',
+  pinForgotIntroTwoStep: 'Pour choisir un nouveau code, tapez le code de votre application d’authentification (connexion en deux étapes).',
   pinForgotPassword: 'Mot de passe du compte',
   pinForgotConfirm: 'Confirmer',
   pinForgotWrongPassword: 'Mot de passe incorrect.',
@@ -575,6 +576,7 @@ const en: Dict = {
   pinForgotError: 'Not possible right now (no internet, or asked too soon). Try again in a minute.',
   pinForgotFamily: 'Only the family can choose a new code. On a signed-in parent’s phone or computer, open this board and touch “Forgot the code?” on this keypad.',
   pinForgotIntroPw: 'To choose a new code, type your account’s password, or get a check code at {to}.',
+  pinForgotIntroTwoStep: 'To choose a new code, type the code from your authenticator app (two-step sign-in).',
   pinForgotPassword: 'Account password',
   pinForgotConfirm: 'Confirm',
   pinForgotWrongPassword: 'Wrong password.',
@@ -1000,6 +1002,7 @@ const ar: Dict = {
   pinForgotError: 'غير ممكن الآن (لا يوجد إنترنت، أو طلب قريب جداً من السابق). أعد المحاولة بعد دقيقة.',
   pinForgotFamily: 'العائلة وحدها تستطيع اختيار رمز جديد. على هاتف أو حاسوب أحد الوالدين المسجَّل دخوله، افتح هذه اللوحة ثم المس «نسيت الرمز؟» على لوحة الأرقام هذه.',
   pinForgotIntroPw: 'لاختيار رمز جديد، اكتب كلمة مرور حسابك، أو استلم رمز تحقّق على {to}.',
+  pinForgotIntroTwoStep: 'لاختيار رمز جديد، اكتب رمز تطبيق المصادقة (تسجيل الدخول بخطوتين).',
   pinForgotPassword: 'كلمة مرور الحساب',
   pinForgotConfirm: 'تأكيد',
   pinForgotWrongPassword: 'كلمة المرور غير صحيحة.',

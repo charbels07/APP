@@ -73,6 +73,27 @@ export interface CodeSent {
   signedIn?: boolean;
 }
 
+/** Where the signed-in account stands for two-step sign-in (src/ui/TwoStep.tsx). */
+export interface SecurityState {
+  /** On the app's team: the back office is shown, and opens once the code was typed. */
+  team: boolean;
+  /** Two-step sign-in (a code from an authenticator app) is on for this account. */
+  twoStep: boolean;
+  /** 'aal2': the authenticator code was typed in this session. */
+  level: 'aal1' | 'aal2';
+}
+
+/** Turning two-step sign-in on: what the authenticator app needs. */
+export interface TwoStepSetup {
+  factorId: string;
+  /** The key to type by hand, in groups of letters and digits. */
+  secret: string;
+  /** otpauth:// link (what the QR code holds). */
+  uri: string;
+  /** The QR code as SVG text (the real server makes one). */
+  qrSvg?: string;
+}
+
 export interface Backend {
   readonly kind: 'local' | 'supabase';
 
@@ -106,6 +127,20 @@ export interface Backend {
   changePassword(current: string, next: string): Promise<void>;
   updateAccount(patch: { displayName?: string; email?: string; phone?: string; prefs?: Partial<AccountPrefs> }): Promise<Account>;
   deleteAccount(): Promise<void>;
+
+  // ── Two-step sign-in and fresh proofs ──
+  /** Team or not, two-step on or not, code typed in this session or not (the database decides). */
+  security(): Promise<SecurityState>;
+  /** Starts turning two-step sign-in on: a new authenticator key (not active until confirmed). */
+  twoStepStart(): Promise<TwoStepSetup>;
+  /** The first code from the authenticator app: two-step sign-in is now on. */
+  twoStepConfirm(factorId: string, code: string): Promise<void>;
+  /** The code at sign-in (or as a fresh proof): this session may now read the children's data. */
+  twoStepCode(code: string): Promise<void>;
+  /** Turns it off (a current code is asked first). */
+  twoStepOff(code: string): Promise<void>;
+  /** Demonstration only: the code an authenticator app would show now. */
+  demoTwoStepCode?(): Promise<string | undefined>;
 
   // ── Children's AAC profiles ──
   listProfiles(): Promise<ProfileSummary[]>;

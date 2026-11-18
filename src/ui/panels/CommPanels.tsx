@@ -20,9 +20,8 @@ import { SearchBox } from '../SearchBox';
 import { VoiceButton } from '../VoiceButton';
 import { pressed } from '../a11y';
 import { useSessionMaybe } from '../../state/Session';
-import { codeFrom } from '../../lib/codeInput';
 import { forgotCodeWays } from '../../lib/forgotCode';
-import { PasswordField } from '../start/AuthScreen';
+import { ProveItsYou } from '../ProveItsYou';
 
 export function pathText(loc: Location, app: ReturnType<typeof useApp>): string {
   const { profile, lang, t } = app;
@@ -311,16 +310,6 @@ export function PinPanel() {
   const sess = useSessionMaybe();
   const acc = sess?.account;
   const ways = forgotCodeWays({ account: acc, manager: !!board?.manager, ownCode: !!own });
-  const contact = ways?.contact;
-  const to = ways?.to ?? '';
-  const mayReset = !!sess && !!ways;
-  const [forgot, setForgot] = useState<{ sent: boolean; code: string; pw: string; busy: boolean; err: string | null; demo?: string }>({
-    sent: false,
-    code: '',
-    pw: '',
-    busy: false,
-    err: null,
-  });
   // The account was confirmed: the new code is chosen without the old one.
   const [proved, setProved] = useState(false);
   const [chosen, setChosen] = useState('');
@@ -395,47 +384,13 @@ export function PinPanel() {
     setMsg(null);
     // The preview has no account: forgetting there simply means choosing again.
     if (!own && !board) return setStep('choose');
-    setForgot({ sent: false, code: '', pw: '', busy: false, err: null });
     setStep('forgot');
   };
   // It is the account's owner: the count of wrong codes starts again, and a new code is chosen.
   const confirmed = () => {
     saveLock({ fails: 0, until: 0 });
     setProved(true);
-    setForgot((f) => ({ ...f, pw: '', busy: false }));
     setStep('choose');
-  };
-  const checkPw = async () => {
-    if (!sess || !ways?.password || !forgot.pw || forgot.busy) return;
-    setForgot((f) => ({ ...f, busy: true, err: null }));
-    try {
-      await sess.api.checkPassword(forgot.pw);
-      confirmed();
-    } catch (e) {
-      const wrong = (e as { code?: string })?.code === 'wrong_credentials';
-      setForgot((f) => ({ ...f, busy: false, err: wrong ? t.pinForgotWrongPassword : t.pinForgotError }));
-    }
-  };
-  const sendCode = async () => {
-    if (!sess || !contact) return;
-    setForgot((f) => ({ ...f, busy: true, err: null }));
-    try {
-      const sent = await sess.api.requestPasswordReset(contact);
-      setForgot((f) => ({ ...f, sent: true, busy: false, demo: sent.demoCode }));
-    } catch {
-      setForgot((f) => ({ ...f, busy: false, err: t.pinForgotError }));
-    }
-  };
-  const checkCode = async () => {
-    const typed = codeFrom(forgot.code);
-    if (!sess || !contact || !typed) return;
-    setForgot((f) => ({ ...f, busy: true, err: null }));
-    try {
-      await sess.api.checkResetCode(contact, typed);
-      confirmed();
-    } catch {
-      setForgot((f) => ({ ...f, busy: false, err: t.pinForgotWrong }));
-    }
   };
   const rtlText = rtl ? ({ textAlign: 'right', writingDirection: 'rtl' } as const) : null;
   const hint =
@@ -461,61 +416,30 @@ export function PinPanel() {
       maxWidth={step === 'enter' ? 380 : 440}
       tone="edit"
     >
-      {step === 'forgot' &&
-        (mayReset ? (
-          <View style={{ gap: 12 }}>
-            <Text style={[styles.pinWhyText, rtlText]}>{(ways?.password && !forgot.sent ? t.pinForgotIntroPw : t.pinForgotIntro).replace('{to}', to)}</Text>
-            {/* The account's password, for accounts made with one; hidden once a code was asked for. */}
-            {ways?.password && !forgot.sent && (
-              <>
-                <PasswordField
-                  label={t.pinForgotPassword}
-                  value={forgot.pw}
-                  onChange={(v) => setForgot((f) => ({ ...f, pw: v, err: null }))}
-                  onSubmit={() => void checkPw()}
-                />
-                <Btn kind="primary" icon="check" label={t.pinForgotConfirm} onPress={() => void checkPw()} disabled={forgot.busy || !forgot.pw} />
-              </>
-            )}
-            {forgot.sent && (
-              <Text style={[styles.muted, rtlText]} accessibilityLiveRegion="polite">
-                {t.pinForgotSent.replace('{to}', to)}
-                {forgot.demo ? ` ${t.pinForgotDemo} ${forgot.demo}` : ''}
-              </Text>
-            )}
-            {forgot.sent && (
-              <TextInput
-                value={forgot.code}
-                onChangeText={(v) => setForgot((f) => ({ ...f, code: v, err: null }))}
-                onSubmitEditing={() => void checkCode()}
-                keyboardType="number-pad"
-                autoComplete="one-time-code"
-                textContentType="oneTimeCode"
-                maxLength={60}
-                placeholder={t.pinForgotCode}
-                placeholderTextColor={C.placeholder}
-                accessibilityLabel={t.pinForgotCode}
-                style={styles.codeInput}
-              />
-            )}
-            {forgot.err && (
-              <Text style={[styles.muted, { color: C.help, fontWeight: '700' }, rtlText]} accessibilityLiveRegion="polite">
-                {forgot.err}
-              </Text>
-            )}
-            <View style={[styles.forgotRow, rtl && { flexDirection: 'row-reverse' }]}>
-              {forgot.sent && <Btn kind="primary" label={t.pinForgotCheck} onPress={() => void checkCode()} disabled={forgot.busy || !codeFrom(forgot.code)} />}
-              <Btn
-                kind={forgot.sent || ways?.password ? 'secondary' : 'primary'}
-                label={forgot.sent ? t.pinForgotResend : t.pinForgotSend}
-                onPress={() => void sendCode()}
-                disabled={forgot.busy}
-              />
-            </View>
-          </View>
-        ) : (
-          <Text style={[styles.pinWhyText, rtlText]}>{t.pinForgotFamily}</Text>
-        ))}
+      {step === 'forgot' && (
+        <ProveItsYou
+          ways={sess ? ways : null}
+          twoStep={!!sess?.security?.twoStep}
+          onProved={confirmed}
+          texts={{
+            introPw: t.pinForgotIntroPw,
+            intro: t.pinForgotIntro,
+            introTwoStep: t.pinForgotIntroTwoStep,
+            password: t.pinForgotPassword,
+            confirm: t.pinForgotConfirm,
+            sent: t.pinForgotSent,
+            demo: t.pinForgotDemo,
+            code: t.pinForgotCode,
+            check: t.pinForgotCheck,
+            send: t.pinForgotSend,
+            resend: t.pinForgotResend,
+            wrong: t.pinForgotWrong,
+            wrongPassword: t.pinForgotWrongPassword,
+            error: t.pinForgotError,
+            noWay: t.pinForgotFamily,
+          }}
+        />
+      )}
       {(step === 'choose' || step === 'repeat') && (
         // Choosing a code: what it is and what it protects, before the digits.
         <View style={styles.pinWhy}>
@@ -579,19 +503,6 @@ const styles = StyleSheet.create({
   pinWhyText: { fontSize: 15, lineHeight: 21, color: C.text },
   forgotLink: { alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: 12 },
   forgotText: { color: C.accent, fontSize: 15, fontWeight: '600', textDecorationLine: 'underline' },
-  forgotRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  codeInput: {
-    minHeight: 52,
-    fontSize: 22,
-    letterSpacing: 4,
-    textAlign: 'center',
-    borderWidth: 2,
-    borderColor: C.border,
-    borderRadius: radius.md,
-    color: C.text,
-    backgroundColor: C.surface,
-    paddingHorizontal: 12,
-  },
   muted: { color: C.textMuted, fontSize: 14 },
   result: {
     flexDirection: 'row',

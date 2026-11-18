@@ -30,3 +30,12 @@ export function forgotCodeWays(opts: { account: Account | null | undefined; mana
   if (!contact) return null;
   return { contact, to: a.email || a.phone || '', password: a.provider === 'email' || a.provider === 'phone' };
 }
+
+/**
+ * Before what cannot be undone (deleting the account or a child's profile, linking a device with
+ * full access, downloading all the data): the same two proofs, for any account that has a mailbox
+ * or a phone. A tablet linked with a code has none: it is done from a parent's device.
+ */
+export function proofWays(account: Account | null | undefined): ForgotWays | null {
+  return forgotCodeWays({ account, manager: true, ownCode: false });
+}

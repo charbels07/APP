@@ -1,0 +1,164 @@
+/**
+ * Texts of two-step sign-in (src/ui/TwoStep.tsx) and of the "confirm it is you" step before what
+ * cannot be undone (src/ui/ProveItsYou.tsx). Navigation language (FR / EN / AR).
+ */
+import type { UiLang } from '../model/types';
+
+/** What the person is about to do, said before the proof is asked. */
+export type ProofReason = 'deleteAccount' | 'deleteProfile' | 'linkFull' | 'exportAll' | 'restore';
+
+const fr = {
+  twoStep: 'Connexion en deux étapes',
+  twoStepOff:
+    'Désactivée. Activée, la connexion demande aussi un code à 6 chiffres donné par une application d’authentification sur votre téléphone (Google Authenticator, Microsoft Authenticator, 1Password…).',
+  twoStepOn: 'Activée : la connexion demande aussi le code de votre application d’authentification.',
+  twoStepTeam: 'Obligatoire pour le back-office.',
+  turnOn: 'Activer',
+  turnOff: 'Désactiver',
+  cancel: 'Annuler',
+  stepScan: '1. Dans votre application d’authentification, ajoutez un compte : scannez ce code, ou tapez la clé ci-dessous.',
+  key: 'Clé',
+  stepType: '2. Tapez le code à 6 chiffres que l’application affiche.',
+  code: 'Code à 6 chiffres',
+  confirm: 'Confirmer',
+  wrongCode: 'Ce code n’est pas le bon (ou il a expiré). Tapez le code le plus récent.',
+  nowOn: 'La connexion en deux étapes est activée.',
+  nowOff: 'La connexion en deux étapes est désactivée.',
+  offAsk: 'Pour la désactiver, tapez un code de votre application d’authentification.',
+  lostPhone: 'Téléphone perdu ? Écrivez au support (page d’aide) depuis l’adresse du compte : après vérification, nous retirons la deuxième étape.',
+  demoNow: 'Démonstration : le code est maintenant',
+  failed: 'Cela n’a pas marché. Vérifiez la connexion internet et réessayez.',
+  // At sign-in
+  codeTitle: 'Code de connexion',
+  codeIntro: 'La connexion en deux étapes est activée pour ce compte. Ouvrez votre application d’authentification et tapez le code à 6 chiffres d’Empower Communication.',
+  codeGo: 'Continuer',
+  signOut: 'Se déconnecter',
+  // Back office
+  boRequired: 'Le back-office contient les justificatifs des professionnels : il ne s’ouvre qu’avec la connexion en deux étapes. Activez-la ci-dessous.',
+  boCode: 'Tapez le code de votre application d’authentification pour ouvrir le back-office.',
+  // Fresh proof
+  proofTitle: 'Confirmez que c’est vous',
+  proofBefore: {
+    deleteAccount: 'Avant de supprimer le compte',
+    deleteProfile: 'Avant de supprimer le profil de l’enfant',
+    linkFull: 'Avant de relier un appareil avec accès complet',
+    exportAll: 'Avant de télécharger toutes vos données',
+    restore: 'Avant de remettre le tableau comme il était',
+  } as Record<ProofReason, string>,
+  proofIntroPw: '{why}, confirmez que c’est vous : le mot de passe du compte, ou un code envoyé à {to}.',
+  proofIntro: '{why}, confirmez que c’est vous : un code va être envoyé à {to}.',
+  proofIntroTwoStep: '{why}, tapez le code de votre application d’authentification.',
+  password: 'Mot de passe',
+  sendCode: 'Recevoir un code',
+  resend: 'Renvoyer le code',
+  sent: 'Un code a été envoyé à {to}.',
+  demoCode: 'Démonstration : le code est',
+  received: 'Code reçu',
+  check: 'Vérifier',
+  wrongPassword: 'Mot de passe incorrect.',
+  noWay: 'Sur une tablette reliée par un code, cela se fait depuis le téléphone ou la tablette d’un parent.',
+};
+
+type Dict = typeof fr;
+
+const en: Dict = {
+  twoStep: 'Two-step sign-in',
+  twoStepOff:
+    'Off. When it is on, signing in also asks for a 6-digit code from an authenticator app on your phone (Google Authenticator, Microsoft Authenticator, 1Password…).',
+  twoStepOn: 'On: signing in also asks for the code of your authenticator app.',
+  twoStepTeam: 'Required for the back office.',
+  turnOn: 'Turn on',
+  turnOff: 'Turn off',
+  cancel: 'Cancel',
+  stepScan: '1. In your authenticator app, add an account: scan this code, or type the key below.',
+  key: 'Key',
+  stepType: '2. Type the 6-digit code the app shows.',
+  code: '6-digit code',
+  confirm: 'Confirm',
+  wrongCode: 'This code is not right (or it expired). Type the newest code.',
+  nowOn: 'Two-step sign-in is on.',
+  nowOff: 'Two-step sign-in is off.',
+  offAsk: 'To turn it off, type a code from your authenticator app.',
+  lostPhone: 'Lost your phone? Write to support (help page) from the account’s address: once we have checked it is you, we remove the second step.',
+  demoNow: 'Demonstration: the code now is',
+  failed: 'It did not work. Check the internet connection and try again.',
+  codeTitle: 'Sign-in code',
+  codeIntro: 'Two-step sign-in is on for this account. Open your authenticator app and type the 6-digit code for Empower Communication.',
+  codeGo: 'Continue',
+  signOut: 'Sign out',
+  boRequired: 'The back office holds the professionals’ certificates: it only opens with two-step sign-in. Turn it on below.',
+  boCode: 'Type the code from your authenticator app to open the back office.',
+  proofTitle: 'Confirm it is you',
+  proofBefore: {
+    deleteAccount: 'Before deleting the account',
+    deleteProfile: 'Before deleting the child’s profile',
+    linkFull: 'Before linking a device with full access',
+    exportAll: 'Before downloading all your data',
+    restore: 'Before putting the board back as it was',
+  },
+  proofIntroPw: '{why}, confirm it is you: the account’s password, or a code sent to {to}.',
+  proofIntro: '{why}, confirm it is you: a code will be sent to {to}.',
+  proofIntroTwoStep: '{why}, type the code from your authenticator app.',
+  password: 'Password',
+  sendCode: 'Get a code',
+  resend: 'Send the code again',
+  sent: 'A code was sent to {to}.',
+  demoCode: 'Demonstration: the code is',
+  received: 'Code received',
+  check: 'Check',
+  wrongPassword: 'Wrong password.',
+  noWay: 'On a tablet linked with a code, this is done from a parent’s phone or tablet.',
+};
+
+const ar: Dict = {
+  twoStep: 'تسجيل الدخول بخطوتين',
+  twoStepOff:
+    'غير مفعّل. عند تفعيله، يطلب تسجيل الدخول أيضًا رمزًا من 6 أرقام يعطيه تطبيق مصادقة على هاتفك (Google Authenticator أو Microsoft Authenticator أو 1Password…).',
+  twoStepOn: 'مفعّل: يطلب تسجيل الدخول أيضًا رمز تطبيق المصادقة.',
+  twoStepTeam: 'إلزامي للوحة الإدارة.',
+  turnOn: 'تفعيل',
+  turnOff: 'إيقاف',
+  cancel: 'إلغاء',
+  stepScan: '1. في تطبيق المصادقة، أضف حسابًا: امسح هذا الرمز، أو اكتب المفتاح أدناه.',
+  key: 'المفتاح',
+  stepType: '2. اكتب الرمز المكوّن من 6 أرقام الذي يعرضه التطبيق.',
+  code: 'رمز من 6 أرقام',
+  confirm: 'تأكيد',
+  wrongCode: 'هذا الرمز غير صحيح (أو انتهت صلاحيته). اكتب أحدث رمز.',
+  nowOn: 'تم تفعيل تسجيل الدخول بخطوتين.',
+  nowOff: 'تم إيقاف تسجيل الدخول بخطوتين.',
+  offAsk: 'لإيقافه، اكتب رمزًا من تطبيق المصادقة.',
+  lostPhone: 'فقدت هاتفك؟ راسل الدعم (صفحة المساعدة) من عنوان الحساب: بعد التأكّد من أنك أنت، نزيل الخطوة الثانية.',
+  demoNow: 'عرض تجريبي: الرمز الآن هو',
+  failed: 'لم ينجح ذلك. تحقّق من الاتصال بالإنترنت وحاول مجددًا.',
+  codeTitle: 'رمز تسجيل الدخول',
+  codeIntro: 'تسجيل الدخول بخطوتين مفعّل لهذا الحساب. افتح تطبيق المصادقة واكتب الرمز المكوّن من 6 أرقام الخاص بـ Empower Communication.',
+  codeGo: 'متابعة',
+  signOut: 'تسجيل الخروج',
+  boRequired: 'تحتوي لوحة الإدارة على شهادات المختصين: لا تُفتح إلا بتسجيل الدخول بخطوتين. فعّله أدناه.',
+  boCode: 'اكتب رمز تطبيق المصادقة لفتح لوحة الإدارة.',
+  proofTitle: 'أكّد أنك أنت',
+  proofBefore: {
+    deleteAccount: 'قبل حذف الحساب',
+    deleteProfile: 'قبل حذف ملف الطفل',
+    linkFull: 'قبل ربط جهاز بوصول كامل',
+    exportAll: 'قبل تنزيل كل بياناتك',
+    restore: 'قبل إعادة اللوحة كما كانت',
+  },
+  proofIntroPw: '{why}، أكّد أنك أنت: كلمة مرور الحساب، أو رمز يُرسل إلى {to}.',
+  proofIntro: '{why}، أكّد أنك أنت: سيُرسل رمز إلى {to}.',
+  proofIntroTwoStep: '{why}، اكتب رمز تطبيق المصادقة.',
+  password: 'كلمة المرور',
+  sendCode: 'استلام رمز',
+  resend: 'إعادة إرسال الرمز',
+  sent: 'أُرسل رمز إلى {to}.',
+  demoCode: 'عرض تجريبي: الرمز هو',
+  received: 'الرمز المستلم',
+  check: 'تحقّق',
+  wrongPassword: 'كلمة المرور غير صحيحة.',
+  noWay: 'على جهاز لوحي مربوط برمز، يتم ذلك من هاتف أو جهاز لوحي لأحد الوالدين.',
+};
+
+const DICTS: Record<UiLang, Dict> = { fr, en, ar };
+export type SecurityStrings = Dict;
+export const securityStrings = (lang: UiLang): Dict => DICTS[lang];

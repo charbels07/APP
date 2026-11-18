@@ -14,9 +14,31 @@ create table auth.users (
 );
 create function auth.uid() returns uuid language sql stable as $$
   select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
--- The signed-in person's token; a tablet's says "is_anonymous": true.
+-- The signed-in person's token; a tablet's says "is_anonymous": true. Unless a test says otherwise,
+-- the token has passed the two-step check ("aal2", as a team member's once the code is typed) and
+-- the person signed in just now (the "amr" list: how and when).
 create function auth.jwt() returns jsonb language sql stable as $$
-  select coalesce(nullif(current_setting('request.jwt.claims', true), '')::jsonb, '{}'::jsonb) $$;
+  select jsonb_build_object('aal', 'aal2', 'amr', jsonb_build_array(jsonb_build_object('method', 'password', 'timestamp', extract(epoch from now())::bigint)))
+      || coalesce(nullif(current_setting('request.jwt.claims', true), '')::jsonb, '{}'::jsonb) $$;
+-- Two-step sign-in (authenticator app) and sign-in sessions, as Supabase keeps them.
+create table auth.mfa_factors (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  factor_type text not null default 'totp',
+  status text not null default 'unverified',
+  created_at timestamptz not null default now()
+);
+create table auth.mfa_challenges (
+  id uuid primary key default gen_random_uuid(),
+  factor_id uuid not null references auth.mfa_factors (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  verified_at timestamptz
+);
+create table auth.sessions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  created_at timestamptz not null default now()
+);
 create function auth.email() returns text language sql stable security definer as $$
   select email from auth.users where id = auth.uid() $$;
 grant usage on schema auth to anon, authenticated;

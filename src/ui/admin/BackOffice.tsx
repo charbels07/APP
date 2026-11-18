@@ -34,6 +34,7 @@ import { Row, day, when } from '../settings/TeamTab';
 import { ErrorText, LangSwitch, Logo } from '../start/StartLayout';
 import { C, radius } from '../theme';
 import { BugsView, ContentView, PageIntro, ProductView, RequestsView, SecurityView } from './ProductTabs';
+import { BackOfficeGate } from '../TwoStep';
 
 type Tab = 'pros' | 'admin' | 'product' | 'feedback' | 'bugs' | 'content' | 'security';
 const TABS: Tab[] = ['pros', 'admin', 'product', 'feedback', 'bugs', 'content', 'security'];
@@ -51,7 +52,17 @@ const pct = (n: number, total: number) => (total > 0 ? Math.round((n / total) * 
 const LTR = '\u200E';
 const isPicture = (d: VerificationDoc, url: string) => url.startsWith('data:image') || /\.(jpe?g|png|webp|gif|heic|bmp|svg)$/i.test(d.name);
 
+/** Two-step sign-in first: the back office holds the professionals' certificates. */
 export function BackOffice() {
+  const { uiLang } = useSession();
+  return (
+    <BackOfficeGate title={adminStrings(uiLang).title}>
+      <BackOfficePages />
+    </BackOfficeGate>
+  );
+}
+
+function BackOfficePages() {
   const { api, uiLang, s, enter, signOut, account } = useSession();
   const a = adminStrings(uiLang);
   const p = proStrings(uiLang);

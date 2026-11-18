@@ -20,6 +20,7 @@ import { useSession } from '../state/Session';
 import { Btn } from './common';
 import { Icon } from './Icon';
 import { BackOffice } from './admin/BackOffice';
+import { TwoStepScreen } from './TwoStep';
 import { Onboarding } from './onboarding/Onboarding';
 import { ProHome } from './pro/ProHome';
 import { Root } from './Root';
@@ -69,6 +70,8 @@ function Current() {
       return <ProHome open={stage.open} />;
     case 'admin':
       return <BackOffice />;
+    case 'twoStep':
+      return <TwoStepScreen then={stage.then} />;
   }
 }
 

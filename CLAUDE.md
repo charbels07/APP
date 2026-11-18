@@ -90,7 +90,14 @@
   someone else (synced profile, shared material, proposal, file) goes through `src/lib/safety.ts`
   (`safeLink`, `plain`, `foreignOps` in `profileDiff.ts`); links never travel with shared content.
 - A profile leaves a device through `src/lib/deviceData.ts` (`forgetEverything`, `forgetChild`), never
-  by removing one storage key by hand. Photos and recordings exist only on the device that made them.
+  by removing one storage key by hand. Photos and recordings are copied through the account (`src/state/mediaSync.ts`, pure part
+  `src/lib/mediaPlan.ts`): same file name on every device and in `profile-media/<profile id>/<name>`; only names
+  that pass `isSyncable` travel or become paths. Sent by those who may change the board, received by the whole
+  team, photos shrunk before sending; it never blocks the board (waits and retries). Files received from the
+  account leave the device with the child's copy (`forgetChild`, `forgetEverything`); files made on the device
+  stay at sign-out unless the person ticks erase. The database decides who sends, the kind, the size and the
+  quota (`20261118000300_media_sync.sql`, attacks in `supabase/tests/media_scenario.sql`); files of something
+  erased are deleted by `caa-purge`; the demo server mirrors it (`LocalBackend.uploadMedia`).
 - Demo builds are asked for on purpose: `EXPO_PUBLIC_APP_MODE=demo` (a release build with no server
   address shows "not connected"). Web headers: `public/_headers` (a test checks the policy).
 - Caregiver code: `settings.pin === '1234'` means "not chosen yet"; never show or suggest a default code.

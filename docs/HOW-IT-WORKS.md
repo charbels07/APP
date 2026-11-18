@@ -600,7 +600,7 @@ without being in caregiver mode.
 | The choice | Settings → Voice and the set-up offer four voices, in French, English and Arabic: Woman, Man, Girl, Boy (`voiceOption`, `optionParts` in `src/lib/voices.ts`), plus the speed. "Device voice", the voice height and "a specific voice" are gone from the screens: the owner found them too many. A board left on "device voice" follows the child's gender. |
 | What speaks | Always a voice of the device. Girl: a woman's voice raised (unchanged, judged good). Boy: a man's voice raised by 50 %, aimed a little above a young voice the owner liked (measured: 160–190 Hz against 100–140 Hz for men; then raised once more at his request, to sound more like a child); in Edge each man's voice is raised by what it needs; a woman's voice barely raised when the device has no man's. Android's voices are recognised by their code. |
 | A limit | Chrome's "Google" voices on a computer cannot be made higher or lower: Girl and Boy then sound like adults. A child's voice uses another voice of the device when there is one, and the screen says so. |
-| New words | With Girl or Boy, "Create a new word" asks for a recording in the board's language before "Save" (`PickerPanel`). A recording stays on the device that made it. Words added in bulk (a new activity board, the names of the set-up) are not asked one. |
+| New words | With Girl or Boy, "Create a new word" asks for a recording in the board's language before "Save" (`PickerPanel`). A recording is copied to the child's other devices through the account. Words added in bulk (a new activity board, the names of the set-up) are not asked one. |
 | Children's voices from a service | Tried (Microsoft Azure AI Speech) and removed the same day at the owner's request: billed per character. |
 
 ## Round 34 — Settings tidied into ten groups
@@ -670,6 +670,7 @@ or a lawyer. Database changes are six files dated 2026-11-18 (the owner runs the
 | Download all my data | Settings → Account → Privacy and data (and the professional's account page): one JSON file (`export_my_data`). |
 | Dictation | On the device when the language is installed for it; otherwise "Apple's or Google's service hears the sentence" under the button. |
 | A message to every family | `select public.admin_broadcast('…', '…', '…');` (team or SQL editor): each account gets it in its menu language (incident runbook). |
+| Photos and recordings on every device | `src/state/mediaSync.ts` (planning in `src/lib/mediaPlan.ts`): a word's photo, a board's picture or a family's recording is sent in the background to the child's private folder (`profile-media/<profile id>/<name>`, the same name everywhere) and fetched by the child's other devices. Sent by people who may change the board, received by the whole team (a use-only tablet too). A photo over ~200 KB travels at 1024 px JPEG; a recording as it is. Offline or refused, nothing blocks the board: it waits and tries again (30 s, doubling, at most 1 h); the account's list is read every 12 h. A manager's device removes a replaced picture and, weekly, files no word has used for 7 days. Settings → Account → Devices and sync says "copied to the account" or how many wait. Limits in the database: 2 MB per photo, 3 MB per recording, 1,500 files and 150 MB per child, 1,000 files per person per day. |
 | Never locked in | **Export for another AAC app (.obz)** writes the Open Board Format (`src/lib/zip.ts`, `src/lib/obz.ts`): stored places, folders open their boards without being said, pictograms with their licence, family recordings; app links are not exported. |
 | Core words never move | `src/__tests__/coreLayout.test.ts` compares every starter-board word place (and `TLA_CORE` / `TLA_FUNCTIONS`) with a committed fixture, and checks that `migrate` never moves a card of a saved profile (`fixtures/oldProfile.json`). Changing a place on purpose: `UPDATE_CORE_LAYOUT=1`, after the speech therapist's validation. |
 | No voice for a language | The set-up's voice step and Settings → Voice say so and explain where to install one (`NoVoiceWarning`). |
@@ -705,9 +706,6 @@ or a lawyer. Database changes are six files dated 2026-11-18 (the owner runs the
 - **Robot check (CAPTCHA)** on sign-up: needs a Cloudflare Turnstile key and the store builds.
 - **Adult-user mode** ("this board is for me") and an **offline-only mode** without an account:
   not built (first six months).
-- **Photos and recorded sounds stay on the device that made them**: words, boards and settings
-  sync, but a photo added on the parent's phone does not yet appear on the child's tablet. The
-  private storage folder for it exists (`profile-media`); copying the files is the next step.
 - **Google, Apple and phone sign-in** need settings in Supabase (Google OAuth client, Apple
   Developer account, an SMS provider): the steps are in `supabase/README.md`, section 9. The code is
   written (the browser goes to Google and comes back signed in; the iPad shows Apple's own sheet)

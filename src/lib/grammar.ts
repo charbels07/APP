@@ -168,13 +168,14 @@ export function joinTokens(tokens: Token[]): string {
  */
 export type Segment =
   | { kind: 'tts'; text: string; lang: Lang }
-  | { kind: 'audio'; media: string }
+  /** The family's recording; `text` / `lang`: said by the device's voice while the file has not reached this device. */
+  | { kind: 'audio'; media: string; text?: string; lang?: Lang }
   /** A word said by the dialect's own voice (falls back to synthesis if the clip cannot be read). */
   | { kind: 'clip'; pack: string; text: string; lang: Lang };
 
 /** How one word is said: the family's recording, else the dialect voice, else synthesis. */
 export const tokenSegment = (t: Pick<Token, 'text' | 'lang' | 'audio' | 'clip'>): Segment =>
-  t.audio ? { kind: 'audio', media: t.audio } : t.clip ? { kind: 'clip', pack: t.clip, text: t.text, lang: t.lang } : { kind: 'tts', text: t.text, lang: t.lang };
+  t.audio ? { kind: 'audio', media: t.audio, text: t.text, lang: t.lang } : t.clip ? { kind: 'clip', pack: t.clip, text: t.text, lang: t.lang } : { kind: 'tts', text: t.text, lang: t.lang };
 
 export function toSegments(tokens: Token[]): Segment[] {
   const segs: Segment[] = [];

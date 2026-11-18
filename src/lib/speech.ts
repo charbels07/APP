@@ -142,8 +142,12 @@ export async function speakSegments(segments: Segment[], settings: Settings, onP
       if (uri) await playOne(uri);
       else await speakOne(seg.text, seg.lang, settings);
     } else {
+      // The family's recording; while it has not reached this device yet (it is copied through the
+      // account), the device's voice says the word: the child is never left without a voice.
       const uri = await mediaUri(seg.media);
-      if (uri && mine === generation) await playOne(uri, 1, spanOfName(seg.media));
+      if (mine !== generation) return;
+      if (uri) await playOne(uri, 1, spanOfName(seg.media));
+      else if (seg.text?.trim()) await speakOne(seg.text, seg.lang ?? 'fr', settings);
     }
   }
 }

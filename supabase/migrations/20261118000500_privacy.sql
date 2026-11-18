@@ -23,6 +23,7 @@
 create schema if not exists private;
 revoke all on schema private from public;
 create table private.field_keys (one boolean primary key default true check (one), key text not null);
+alter table private.field_keys enable row level security; -- no rule: only its owner (the functions below) reads it
 
 do $$
 begin

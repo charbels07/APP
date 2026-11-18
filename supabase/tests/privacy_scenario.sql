@@ -113,6 +113,7 @@ select test.ok((select note = 'à table' from list_observations((select v::uuid 
 update observations set note = '';
 select test.ok((select note is null and utterance = 'veux gâteau' from list_observations((select v::uuid from test.ids where k = 'adam'))), 'an empty text clears it');
 select test.expect_error('select note_sealed from observations', 'permission denied for table observations');
+select test.expect_error('select key from private.field_keys', 'permission denied for schema private');
 select test.expect_error('update observations set note_sealed = ''x''', 'permission denied for table observations');
 select set_config('request.jwt.claim.sub', :'eve', false);
 select test.ok((select count(*) = 0 from list_observations((select v::uuid from test.ids where k = 'adam'))) and

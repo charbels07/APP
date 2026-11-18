@@ -69,6 +69,13 @@ const PENDING_ROLE = 'caa.pendingRole';
 
 const isNetworkError = (e: { name?: string; message?: string; status?: number }) =>
   e.name === 'AuthRetryableFetchError' || e.status === 0 || /network|fetch|timed? ?out/i.test(e.message ?? '');
+/**
+ * The server could not answer (down, overloaded, paused, too many requests): that is "no internet"
+ * for the app, never "signed out". Only a clear "this session or account does not exist" signs
+ * out, because signing out erases the child's copy from the device.
+ */
+export const serverUnavailable = (e: { name?: string; message?: string; status?: number }) =>
+  isNetworkError(e) || (e.status ?? 0) >= 500 || e.status === 429 || e.status === 408;
 
 /** The person's name as Google or Apple gave it with the sign-in, if any. */
 export function providerName(meta: Record<string, unknown> | null | undefined): string {
@@ -307,16 +314,19 @@ export class SupabaseBackend implements Backend {
   async currentAccount(): Promise<Account | null> {
     // No internet is not "signed out": the app then keeps working from the device copy.
     const { data: s, error: se } = await this.sb.auth.getSession();
-    if (se && isNetworkError(se)) throw new BackendError('offline', se.message);
+    if (se && serverUnavailable(se)) throw new BackendError('offline', se.message);
     if (!s.session) return null;
     const { data: d, error } = await this.sb.auth.getUser();
     if (error) {
-      if (isNetworkError(error)) throw new BackendError('offline', error.message);
+      if (serverUnavailable(error)) throw new BackendError('offline', error.message);
       return null;
     }
     const u = d.user;
     if (!u) return null;
-    let row = await data<Row | null>(this.sb.from('accounts').select('*').eq('id', u.id).maybeSingle());
+    // The account's row: if the database cannot answer now, the app keeps working from the device.
+    let row = await data<Row | null>(this.sb.from('accounts').select('*').eq('id', u.id).maybeSingle()).catch((e: unknown) => {
+      throw new BackendError('offline', String((e as Error)?.message ?? e));
+    });
     // Google / Apple accounts are created without a role: apply the one chosen before signing in.
     const pending = await AsyncStorage.getItem(PENDING_ROLE);
     if (row && (pending === 'parent' || pending === 'pro') && row.role !== pending && Date.now() - (ms(row.created_at) ?? 0) < 10 * 60 * 1000) {

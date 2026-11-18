@@ -200,14 +200,20 @@ export function SessionProvider({ children, api = backend() }: { children: React
       deviceRef.current = d;
       setDevice(d);
       let a: Account | null = null;
+      // `null` only when the server said clearly that nobody is signed in. Any failure to ask
+      // (no internet, server down) keeps the last account: the child's board must stay on the device.
+      let unknown = false;
       try {
         a = await api.currentAccount();
-      } catch (e) {
-        if (e instanceof BackendError && e.code === 'offline' && d.account) {
+      } catch {
+        unknown = true;
+        if (d.account) {
           setOffline(true);
           a = d.account;
         }
       }
+      // Nothing known and nothing remembered: the welcome page, without erasing anything.
+      if (!a && unknown) return setStage({ name: 'welcome' });
       const kept = await keepSignedIn();
       setKeepState(kept);
       // Signed in without "Keep me logged in", and the app was closed since: the visit is over.

@@ -18,7 +18,7 @@ import type { Profile, UiLang } from '../model/types';
 import type { ProblemItem } from '../lib/product';
 import type { Op } from '../lib/profileDiff';
 import type { AccessLevel, CollaboratorRole, PermissionSet } from '../lib/permissions';
-import { BackendError, type Backend, type CodeSent, type SecurityState, type SignInMethods, type SignUpInput, type TwoStepSetup } from './Backend';
+import { BackendError, type Backend, type BinEntry, type CodeSent, type SecurityState, type SignInMethods, type SignUpInput, type Snapshot, type TwoStepSetup } from './Backend';
 import { normEmail, normPhone } from './local';
 import {
   DEFAULT_PREFS,
@@ -623,7 +623,45 @@ export class SupabaseBackend implements Backend {
   }
 
   async deleteProfile(id: string): Promise<void> {
-    await data(this.sb.from('profiles').delete().eq('id', id));
+    // Into the family's bin (30 days); the database asks for a fresh proof first.
+    try {
+      await data(this.sb.rpc('delete_profile', { p_id: id }));
+    } catch (e) {
+      if (!missingFunction(e)) throw e;
+      await data(this.sb.from('profiles').delete().eq('id', id));
+    }
+  }
+
+  async listBin(): Promise<BinEntry[]> {
+    try {
+      const rows = await data<Row[]>(this.sb.rpc('list_bin'));
+      return rows.map((r) => ({ id: r.id, name: r.name, deletedAt: ms(r.deleted_at) ?? 0, eraseAt: ms(r.erase_at) ?? 0 }));
+    } catch (e) {
+      if (missingFunction(e)) return [];
+      throw e;
+    }
+  }
+
+  async restoreProfile(id: string): Promise<void> {
+    await data(this.sb.rpc('restore_profile', { p_id: id }));
+  }
+
+  async listSnapshots(profileId: string): Promise<Snapshot[]> {
+    try {
+      const rows = await data<Row[]>(this.sb.rpc('list_snapshots', { p_id: profileId }));
+      return rows.map((r) => ({ id: r.id, createdAt: ms(r.created_at) ?? 0, reason: r.reason, version: r.version, words: r.words }));
+    } catch (e) {
+      if (missingFunction(e)) return [];
+      throw e;
+    }
+  }
+
+  async takeSnapshot(profileId: string): Promise<void> {
+    await data(this.sb.rpc('take_snapshot', { p_id: profileId }));
+  }
+
+  async restoreSnapshot(snapshotId: string): Promise<number> {
+    return data<number>(this.sb.rpc('restore_snapshot', { p_snap: snapshotId }));
   }
 
   async myAccess(profileId: string) {

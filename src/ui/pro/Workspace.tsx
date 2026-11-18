@@ -29,6 +29,8 @@ import { DataDashboard } from '../data/DataDashboard';
 import { Icon, type IconName } from '../Icon';
 import { DeleteAccount, MyAccount, Preferences } from '../settings/AccountTab';
 import { useProof } from '../ProveItsYou';
+import { ProfileBin } from '../settings/Backups';
+import { backupStrings } from '../../i18n/backup';
 import { Note, ss } from '../settings/SettingsScreen';
 import { PermissionEditor, Row, when } from '../settings/TeamTab';
 import { LangSwitch, Logo } from '../start/StartLayout';
@@ -630,7 +632,7 @@ function DeleteChild({ user, onDeleted }: { user: ProfileSummary; onDeleted: () 
   if (!typing) return <Btn small kind="danger" icon="trash" label={label} onPress={() => setTyping(true)} style={{ alignSelf: 'flex-start' }} />;
   return (
     <View style={ss.card}>
-      <Note text={x.deleteProfileNote} />
+      <Note text={backupStrings(uiLang).deleteProfileNote} />
       <TextInput value={word} onChangeText={setWord} autoCapitalize="none" style={st.input} accessibilityLabel={user.name} placeholder={user.name} placeholderTextColor={C.placeholder} />
       {error ? <Text style={{ color: C.help, fontWeight: '600' }}>{error}</Text> : null}
       <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -646,7 +648,7 @@ function DeleteChild({ user, onDeleted }: { user: ProfileSummary; onDeleted: () 
           small
           kind="danger"
           icon="trash"
-          label={x.deleteForever}
+          label={backupStrings(uiLang).deleteToBin}
           disabled={word.trim().toLocaleLowerCase() !== user.name.trim().toLocaleLowerCase()}
           onPress={async () => {
             setError(null);
@@ -810,6 +812,7 @@ function ProAccount({ p, verification, users, onVerify }: { p: ProStrings; verif
         <Btn small icon="shield" label={status === 'draft' || status === 'more_info' ? p.editRequest : p.s4Title} onPress={onVerify} />
       </Section>
       <MyAccount x={x} />
+      <ProfileBin />
       <Preferences x={x} />
       <Section title={x.subscription}>
         <Note text={x.subscriptionLater} />

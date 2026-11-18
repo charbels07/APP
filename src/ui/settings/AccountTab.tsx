@@ -25,6 +25,8 @@ import { Row, when } from './TeamTab';
 import { eraseMediaOf } from '../../lib/deviceData';
 import { useProof } from '../ProveItsYou';
 import { TwoStepCard } from '../TwoStep';
+import { BoardVersions, ProfileBin } from './Backups';
+import { backupStrings } from '../../i18n/backup';
 
 export function AccountTab({ board, openTeam }: { board: BoardCtx; openTeam: () => void }) {
   const sess = useSession();
@@ -43,7 +45,9 @@ export function AccountTab({ board, openTeam }: { board: BoardCtx; openTeam: () 
     <>
       <MyAccount x={x} />
       <Children board={board} x={x} />
+      <ProfileBin onRestored={(id) => sess.openProfile(id)} />
       <SyncSection board={board} x={x} />
+      <BoardVersions board={board} />
       <Sharing board={board} x={x} openTeam={openTeam} />
       <Section title={x.subscription}>
         <Note text={x.subscriptionLater} />
@@ -300,7 +304,7 @@ function Privacy({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
       <Btn small kind="danger" icon="trash" label={x.deleteAccount} onPress={() => setTyping('account')} />
       {typing && (
         <View style={ss.card}>
-          <Note text={typing === 'profile' ? x.deleteProfileNote : x.deleteAccountNote} />
+          <Note text={typing === 'profile' ? backupStrings(sess.uiLang).deleteProfileNote : x.deleteAccountNote} />
           <TextInput value={word} onChangeText={setWord} autoCapitalize="none" style={input} accessibilityLabel={expected} placeholder={expected} placeholderTextColor={C.placeholder} />
           <Msg text={error} />
           <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -316,7 +320,7 @@ function Privacy({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
               small
               kind="danger"
               icon="trash"
-              label={x.deleteForever}
+              label={typing === 'profile' ? backupStrings(sess.uiLang).deleteToBin : x.deleteForever}
               disabled={word.trim().toLocaleLowerCase() !== expected.toLocaleLowerCase()}
               onPress={async () => {
                 setError(null);

@@ -18,6 +18,9 @@ import { APP_PRESETS, appLinkOf, isIncomplete, openAppUrl } from '../../lib/appL
 import { exportJson, exportPdf, printDocument } from '../../lib/platform';
 import { boardCells, buildPrintHtml, conceptCell, type PrintOptions } from '../../lib/printHtml';
 import { canSpan } from '../../lib/boardOps';
+import { removeCells } from '../../lib/cellActions';
+import { binItems } from '../../lib/wordBin';
+import { backupStrings } from '../../i18n/backup';
 import { pictoCredit, pictoToMedia } from '../../lib/pictoLibrary';
 import { countFeature, reportProblem } from '../../lib/product';
 import { searchWords } from '../../lib/search';
@@ -203,7 +206,7 @@ function CellEditor({ board, index }: { board: string; index: number }) {
       },
     });
   const remove = () => {
-    app.update((d) => void (d.boards[board].cells[index] = null));
+    app.update((d) => removeCells(d, board, [index]));
     app.setOverlay(null);
   };
   const setCell = (fn: (c: NonNullable<typeof cell>) => void) =>
@@ -1196,6 +1199,14 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
             { value: 'large', label: o.pictoLarge },
           ]}
         />
+        {binItems(app.profile).length > 0 && (
+          <Btn
+            small
+            icon="undo"
+            label={backupStrings(app.profile.settings.uiLang ?? 'fr').wordBinOpen(binItems(app.profile).length)}
+            onPress={() => app.setOverlay({ kind: 'wordBin', back: { kind: 'settings' } })}
+          />
+        )}
       </Group>
 
       <Group title={t.gDisplay} icon="eye">

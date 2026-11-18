@@ -6,6 +6,7 @@
  * elsewhere: its positions are the child's motor plan (cards are copied from it, not taken away).
  */
 import type { ResourceData } from '../backend/types';
+import { binCells } from './wordBin';
 import type { Board, Cell, Profile } from '../model/types';
 import { coveredSlots } from './boardOps';
 import { getConcept, symbolOf } from './lexicon';
@@ -78,9 +79,11 @@ export function addFavourite(d: Profile, concept: string): FavouriteResult {
   return placeCells(d, FAVOURITES_BOARD, [{ concept }]) ? 'added' : 'full';
 }
 
+/** Empties these places; their words go to the board's bin for 30 days (src/lib/wordBin.ts). */
 export function removeCells(d: Profile, boardId: string, indexes: number[]) {
   const b = d.boards[boardId];
   if (!b) return;
+  binCells(d, boardId, indexes);
   for (const i of indexes) b.cells[i] = null;
 }
 

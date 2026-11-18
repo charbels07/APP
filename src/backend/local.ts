@@ -16,7 +16,7 @@ import { exampleBugs, exampleDocument, exampleOverview, exampleProduct, exampleR
 import { COUNTERS, PROBLEM_KINDS, SCREENS, sharesProduct, type ProblemItem } from '../lib/product';
 import { demoObservations, demoUsage } from '../lib/demoUsage';
 import { limitToConsent } from '../lib/usageConsent';
-import { BackendError, type Backend, type CodeSent, type SecurityState, type SignUpInput, type TwoStepSetup } from './Backend';
+import { BackendError, type Backend, type BinEntry, type CodeSent, type SecurityState, type SignUpInput, type Snapshot, type TwoStepSetup } from './Backend';
 import { newTotpSecret, totp, totpMatches, totpUri } from '../lib/totp';
 import {
   DEFAULT_PREFS,
@@ -79,7 +79,12 @@ interface PendingCode {
 }
 interface StoredProfile extends ChildRecord {
   connectionCode?: string;
+  /** In the family's bin since then (erased 30 days later). */
+  deletedAt?: number;
 }
+const BIN_DAYS = 30;
+/** Words on a board, all boards together (as word_count in the database). */
+const wordCount = (d: Profile) => Object.values(d.boards ?? {}).reduce((n, b) => n + (b?.cells ?? []).filter(Boolean).length, 0);
 interface DB {
   accounts: Record<string, StoredAccount>;
   codes: PendingCode[];
@@ -107,6 +112,8 @@ interface DB {
   roadmapVotes?: { itemId: string; userId: string; role: string }[];
   /** The example requests of the back-office demonstration were added. */
   backOfficeSeeded?: boolean;
+  /** Copies of the boards (weekly, before a big change, by hand, before putting one back): 10 per child. */
+  snapshots?: (Snapshot & { profileId: string; data: Profile })[];
 }
 const emptyDb = (): DB => ({
   accounts: {},
@@ -241,7 +248,7 @@ export class LocalBackend implements Backend {
   /** Owner, or an active, non-expired member. */
   private static access(db: DB, profileId: string, userId: string) {
     const p = db.profiles[profileId];
-    if (!p) return null;
+    if (!p || p.deletedAt) return null;
     if (p.ownerId === userId) {
       // A professional who created the profile and is no longer accepted: suspended too.
       if (!LocalBackend.cleared(db, userId)) return null;
@@ -483,6 +490,7 @@ export class LocalBackend implements Backend {
       db.resources = db.resources.filter((x) => x.ownerId !== me.id);
       db.usage = (db.usage ?? []).filter((u) => !owned.has(u.profileId));
       db.observations = (db.observations ?? []).filter((o) => !owned.has(o.profileId));
+      db.snapshots = (db.snapshots ?? []).filter((x) => !owned.has(x.profileId));
       delete db.verifications[me.id];
       db.admins = (db.admins ?? []).filter((id) => id !== me.id);
       db.feedback = (db.feedback ?? []).filter((f) => f.userId !== me.id);
@@ -626,6 +634,7 @@ export class LocalBackend implements Backend {
       if (a.owner && me.role === 'pro' && consentChanged) throw new BackendError('consent_protected');
       // The family stops sharing: what was counted for the team is erased at once.
       if (was.shareStats === 'anonymous' && now.shareStats !== 'anonymous') db.featureDays = (db.featureDays ?? []).filter((f) => f.profileId !== p.id);
+      LocalBackend.snapshotBefore(db, p, data, me.id);
       Object.assign(p, { data: clone(data), version: p.version + 1, updatedAt: Date.now(), updatedBy: me.id });
       return { ok: true, version: p.version };
     });
@@ -635,16 +644,113 @@ export class LocalBackend implements Backend {
     await this.tx((db, m) => {
       const me = LocalBackend.need(m);
       // The owner only, and for a professional only while the certificate is accepted (same as the real server).
-      if (db.profiles[id]?.ownerId !== me.id || !LocalBackend.cleared(db, me.id)) throw new BackendError('forbidden');
-      delete db.profiles[id];
-      const other = <T extends { profileId?: string }>(x: T) => x.profileId !== id;
-      db.members = db.members.filter(other);
-      db.invitations = db.invitations.filter(other);
-      db.proposals = db.proposals.filter(other);
-      db.history = db.history.filter(other);
-      db.devices = db.devices.filter(other);
-      db.usage = (db.usage ?? []).filter((u) => u.profileId !== id);
-      db.observations = (db.observations ?? []).filter(other);
+      const p = db.profiles[id];
+      if (!p || p.deletedAt || p.ownerId !== me.id || !LocalBackend.cleared(db, me.id)) throw new BackendError('forbidden');
+    });
+    await this.requireProof();
+    await this.tx((db) => {
+      // Into the bin: hidden from everybody, put back by the family within 30 days.
+      const p = db.profiles[id];
+      p.deletedAt = Date.now();
+      delete p.connectionCode;
+      db.pairings = db.pairings.filter((x) => x.profileId !== id);
+      for (const inv of db.invitations) if (inv.profileId === id && inv.status === 'pending') inv.status = 'cancelled';
+    });
+  }
+
+  /** Profiles in the bin for more than 30 days are erased for good (done at each look at the bin). */
+  private static eraseOldBin(db: DB) {
+    for (const p of Object.values(db.profiles)) {
+      if (p.deletedAt && p.deletedAt < Date.now() - BIN_DAYS * 86_400_000) LocalBackend.erase(db, p.id);
+    }
+  }
+
+  private static erase(db: DB, id: string) {
+    delete db.profiles[id];
+    const other = <T extends { profileId?: string }>(x: T) => x.profileId !== id;
+    db.members = db.members.filter(other);
+    db.invitations = db.invitations.filter(other);
+    db.proposals = db.proposals.filter(other);
+    db.history = db.history.filter(other);
+    db.devices = db.devices.filter(other);
+    db.usage = (db.usage ?? []).filter((u) => u.profileId !== id);
+    db.observations = (db.observations ?? []).filter(other);
+    db.snapshots = (db.snapshots ?? []).filter(other);
+  }
+
+  async listBin(): Promise<BinEntry[]> {
+    return this.tx((db, m) => {
+      const me = LocalBackend.need(m);
+      LocalBackend.eraseOldBin(db);
+      return Object.values(db.profiles)
+        .filter((p) => p.deletedAt && p.ownerId === me.id && LocalBackend.cleared(db, me.id))
+        .sort((a, b) => b.deletedAt! - a.deletedAt!)
+        .map((p) => ({ id: p.id, name: p.name, deletedAt: p.deletedAt!, eraseAt: p.deletedAt! + BIN_DAYS * 86_400_000 }));
+    });
+  }
+
+  async restoreProfile(id: string): Promise<void> {
+    await this.tx((db, m) => {
+      const me = LocalBackend.need(m);
+      const p = db.profiles[id];
+      if (!p?.deletedAt || p.ownerId !== me.id || !LocalBackend.cleared(db, me.id)) throw new BackendError('forbidden');
+      delete p.deletedAt;
+    });
+  }
+
+  // ── Copies of the board ──
+
+  private static keepSnapshot(db: DB, p: StoredProfile, reason: Snapshot['reason']) {
+    const list = (db.snapshots ??= []);
+    list.push({ id: uid('s'), profileId: p.id, data: clone(p.data), version: p.version, reason, createdAt: Date.now(), words: wordCount(p.data) });
+    const mine = list.filter((x) => x.profileId === p.id).sort((a, b) => b.createdAt - a.createdAt);
+    const drop = new Set(mine.slice(10).map((x) => x.id));
+    db.snapshots = list.filter((x) => !drop.has(x.id));
+  }
+
+  /** Before a save: once a week, and before a big change (as snapshot_before_change in the database). */
+  private static snapshotBefore(db: DB, p: StoredProfile, next: Profile, _by: string) {
+    const mine = (db.snapshots ?? []).filter((x) => x.profileId === p.id);
+    const last = Math.max(0, ...mine.map((x) => x.createdAt));
+    if (Date.now() - last > 7 * 86_400_000) return LocalBackend.keepSnapshot(db, p, 'weekly');
+    const before = wordCount(p.data);
+    const big = (before > 0 && wordCount(next) < before * 0.9) || Object.keys(next.boards ?? {}).length < Object.keys(p.data.boards ?? {}).length;
+    const recent = mine.some((x) => x.reason === 'big_change' && Date.now() - x.createdAt < 3_600_000);
+    if (big && !recent) LocalBackend.keepSnapshot(db, p, 'big_change');
+  }
+
+  async listSnapshots(profileId: string): Promise<Snapshot[]> {
+    return this.tx((db, m) => {
+      LocalBackend.requireManager(db, profileId, LocalBackend.need(m));
+      return (db.snapshots ?? [])
+        .filter((x) => x.profileId === profileId)
+        .sort((a, b) => b.createdAt - a.createdAt)
+        .map(({ id, createdAt, reason, version, words }) => ({ id, createdAt, reason, version, words }));
+    });
+  }
+
+  async takeSnapshot(profileId: string): Promise<void> {
+    await this.tx((db, m) => {
+      LocalBackend.requireManager(db, profileId, LocalBackend.need(m));
+      LocalBackend.keepSnapshot(db, db.profiles[profileId], 'manual');
+    });
+  }
+
+  async restoreSnapshot(snapshotId: string): Promise<number> {
+    return this.tx((db, m) => {
+      const me = LocalBackend.need(m);
+      const snap = (db.snapshots ?? []).find((x) => x.id === snapshotId);
+      if (!snap) throw new BackendError('forbidden');
+      LocalBackend.requireManager(db, snap.profileId, me);
+      const p = db.profiles[snap.profileId];
+      LocalBackend.keepSnapshot(db, p, 'before_restore');
+      const d = clone(snap.data);
+      // The family's own choices stay as they are now.
+      const now = p.data.settings;
+      d.settings = { ...d.settings, dataCollection: now.dataCollection, shareStats: now.shareStats, shareTerms: now.shareTerms, pin: now.pin };
+      Object.assign(p, { data: d, version: p.version + 1, updatedAt: Date.now(), updatedBy: me.id });
+      db.history.push({ id: uid('h'), profileId: p.id, actorId: me.id, actorName: memberName(me), summary: `restore:${new Date(snap.createdAt).toISOString()}`, ops: [], inverse: [], createdAt: Date.now() });
+      return p.version;
     });
   }
 

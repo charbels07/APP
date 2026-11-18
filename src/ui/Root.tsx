@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { WordBinPanel } from './panels/WordBinPanel';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { QUICK_ZONE } from '../data/defaults';
 import { IN_EMBEDDED_PAGE } from '../lib/appLinks';
@@ -47,6 +48,7 @@ export function Root({ banner }: { banner?: React.ReactNode } = {}) {
       {overlay?.kind === 'newTla' && <NewTlaPanel />}
       {overlay?.kind === 'newSequence' && <NewSequencePanel />}
       {overlay?.kind === 'guide' && <GuidePanel />}
+      {overlay?.kind === 'wordBin' && <WordBinPanel />}
       {overlay?.kind === 'settings' && <SettingsScreen />}
       {overlay?.kind === 'peek' && <FolderPeek folder={overlay.folder} />}
       {!banner && !overlay && !profile.guide?.seen && !editMode && !app.playing && !app.recording && <WelcomeCard />}

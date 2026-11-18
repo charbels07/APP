@@ -4,6 +4,7 @@
  * professionals use to ask to join.
  */
 import * as Clipboard from 'expo-clipboard';
+import { backupStrings } from '../../i18n/backup';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, Share, Text, TextInput, View } from 'react-native';
 import type { HistoryEntry, Invitation, Membership, Notice, Proposal } from '../../backend/types';
@@ -610,6 +611,8 @@ function HistoryList({ board, entries, x, onChanged }: { board: BoardCtx; entrie
   const { api, uiLang } = useSession();
   const [msg, setMsg] = useState<string | null>(null);
   const summary = (e: HistoryEntry) => {
+    // A copy of the board put back (Settings → Account → Earlier versions): written by the database.
+    if (e.summary.startsWith('restore:')) return backupStrings(uiLang).historyRestore(when(Date.parse(e.summary.slice(8)), uiLang));
     if (e.summary) return e.summary;
     const items = describeOps(e.ops, app.profile, uiLang, app.lang);
     return items.length > 2 ? `${items[0].text}, ${items[1].text} ${x.more(items.length - 2)}` : items.map((i) => i.text).join(', ');
@@ -634,7 +637,7 @@ function HistoryList({ board, entries, x, onChanged }: { board: BoardCtx; entrie
           muted={!!e.undoneAt}
           title={summary(e)}
           sub={`${e.actorName} · ${when(e.createdAt, uiLang)}${e.undoneAt ? ` · ${x.undone}` : ''}`}
-          right={!e.undoneAt && board.manager ? <Btn small icon="undo" label={x.undo} onPress={() => undo(e)} /> : undefined}
+          right={!e.undoneAt && board.manager && e.ops.length ? <Btn small icon="undo" label={x.undo} onPress={() => undo(e)} /> : undefined}
         />
       ))}
     </Section>

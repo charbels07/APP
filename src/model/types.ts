@@ -96,6 +96,11 @@ export interface Cell {
 
 export type BoardKind = 'core' | 'folder' | 'tla';
 
+/** Something deleted from the board, kept 30 days so it can be put back. */
+export type BinItem =
+  | { id: string; at: number; kind: 'cell'; board: string; index: number; cell: Cell }
+  | { id: string; at: number; kind: 'board'; board: Board; tlaIndex: number };
+
 export interface Board {
   id: string;
   kind: BoardKind;
@@ -253,6 +258,8 @@ export interface Profile {
   monthPlan?: Record<string, MonthEvent>;
   /** One-time additions already applied to this profile (so a removed item is not added back). */
   migrations?: string[];
+  /** Words and activity boards deleted in the last 30 days, to put back (src/lib/wordBin.ts). */
+  bin?: BinItem[];
   /** In-app guide: welcome card dismissed, chapters already read. */
   guide?: {
     seen?: boolean;

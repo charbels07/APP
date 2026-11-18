@@ -83,6 +83,24 @@ export interface SecurityState {
   level: 'aal1' | 'aal2';
 }
 
+/** A child's profile in the family's bin: put back until `eraseAt`, then erased for good. */
+export interface BinEntry {
+  id: string;
+  name: string;
+  deletedAt: number;
+  eraseAt: number;
+}
+
+/** A copy of the board kept by the server (the content is not listed, only when and why). */
+export interface Snapshot {
+  id: string;
+  createdAt: number;
+  reason: 'weekly' | 'big_change' | 'before_restore' | 'manual';
+  version: number;
+  /** Cards with a word on them, all boards together. */
+  words: number;
+}
+
 /** Turning two-step sign-in on: what the authenticator app needs. */
 export interface TwoStepSetup {
   factorId: string;
@@ -150,7 +168,16 @@ export interface Backend {
   profileVersion(id: string): Promise<number>;
   /** Saves only if nobody saved a newer version meanwhile (otherwise returns that version). */
   saveProfile(id: string, data: Profile, baseVersion: number): Promise<SaveResult>;
+  /** Moves the profile to the family's bin (kept 30 days, then erased). Needs a fresh proof (`proof_needed`). */
   deleteProfile(id: string): Promise<void>;
+  /** The family's bin: profiles deleted in the last 30 days. */
+  listBin(): Promise<BinEntry[]>;
+  restoreProfile(id: string): Promise<void>;
+  /** Copies of the board kept by the server (weekly, before a big change, by hand): the family and managers. */
+  listSnapshots(profileId: string): Promise<Snapshot[]>;
+  takeSnapshot(profileId: string): Promise<void>;
+  /** Puts a copy back (the board as it is now is kept first); returns the new version. */
+  restoreSnapshot(snapshotId: string): Promise<number>;
   /** This account's access to a profile. */
   myAccess(profileId: string): Promise<{ owner: boolean; role: CollaboratorRole | 'owner'; level: AccessLevel; perms: PermissionSet } | null>;
 

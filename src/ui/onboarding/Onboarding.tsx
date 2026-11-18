@@ -45,6 +45,7 @@ import { setupHelp, type SetupHelpId } from '../../data/setupHelp';
 import { Icon } from '../Icon';
 import { Root } from '../Root';
 import { ErrorText, LinkBtn, StartLayout, T, st, useRtl } from '../start/StartLayout';
+import { ProfileBin } from '../settings/Backups';
 import { SymbolView } from '../SymbolView';
 import { C, CLASS_COLORS, radius } from '../theme';
 import { checked } from '../a11y';
@@ -167,6 +168,8 @@ export function Onboarding() {
       {stepId === 'child' && pro && <T style={{ color: C.textMuted, fontSize: 14 }}>{proStrings(uiLang).setupFor}</T>}
       {stepId === 'child' && <ChildStep o={o} a={a} set={set} />}
       {stepId === 'child' && !pro && <LinkBtn label={sess.s.haveCode} onPress={() => sess.go({ name: 'invitations' })} />}
+      {/* A child's profile deleted by mistake can be put back from here too (the bin keeps it 30 days). */}
+      {stepId === 'child' && !pro && sess.account && <ProfileBin onRestored={(id) => sess.openProfile(id)} />}
       {stepId === 'arabic' && <ArabicStep o={o} a={a} set={set} />}
       {stepId === 'langs' && <LangStep o={o} a={a} set={set} />}
       {stepId === 'voice' && <VoiceStep o={o} a={a} set={set} />}

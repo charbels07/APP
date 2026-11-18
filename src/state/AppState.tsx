@@ -48,7 +48,9 @@ export type Overlay =
   | { kind: 'model' }
   | { kind: 'newTla' }
   | { kind: 'newSequence' }
-  | { kind: 'guide'; back?: Overlay };
+  | { kind: 'guide'; back?: Overlay }
+  /** Words and activity boards deleted in the last 30 days (src/lib/wordBin.ts). */
+  | { kind: 'wordBin'; back?: Overlay };
 
 /** Where a touched word sits, so a demonstration can replay the exact gesture. */
 export interface TapOrigin {

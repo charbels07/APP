@@ -96,6 +96,14 @@ select set_config('request.jwt.claim.sub', :'zoe', false);
 select set_config('request.jwt.claims', '{"role":"authenticated","aal":"aal2"}', false);
 select test.ok((select (admin_retention() ->> 'inactiveAccounts')::int = 1), 'the team sees how many accounts have not signed in for 24 months (a count)');
 
+-- 4. A message to every family, from the team only.
+select test.expect_error('select admin_broadcast(''x'', '''', ''y'')', 'invalid');
+select test.ok((select admin_broadcast('Maintenance ce soir.', 'Maintenance tonight.', 'صيانة الليلة.') = 5), 'the team writes one message: every account (not the tablets) gets it');
+select set_config('request.jwt.claim.sub', :'rita', false);
+select set_config('request.jwt.claims', '{"role":"authenticated"}', false);
+select test.ok((select count(*) = 1 from notices where text = 'Maintenance ce soir.'), 'in its own menu language');
+select test.expect_error('select admin_broadcast(''a'', ''b'', ''c'')', 'forbidden');
+
 select set_config('request.jwt.claims', '', false);
 reset role;
 do $$ begin raise notice 'PRIVACY SCENARIO PASSED'; end $$;

@@ -56,10 +56,11 @@ describe('notices in the language of the menus', () => {
       'Sarah a partagé « Dentiste ».',
       "Votre demande de vérification n'a pas été acceptée. Licence expirée.",
       "Un appareil vient d'être relié (iPad). Si ce n'est pas vous : Réglages → Compte → Appareils → Retirer.",
+      'Le profil de Adam a été supprimé par la famille.',
     ];
     for (const sample of samples) expect(noticeText(sample, 'en')).not.toBe(sample);
     // The fixed parts of those sentences really are in the database files (so this list stays honest).
-    for (const part of ['ont changé.', 'a été retiré.', 'vous invite à rejoindre', 'demande à rejoindre', ' a révisé : ', 'Proposition acceptée : ', ' a partagé « ', 'est maintenant le parent responsable']) {
+    for (const part of ['ont changé.', 'a été retiré.', 'vous invite à rejoindre', 'demande à rejoindre', ' a révisé : ', 'Proposition acceptée : ', ' a partagé « ', 'est maintenant le parent responsable', 'a été supprimé par la famille.']) {
       expect(sql).toContain(part);
     }
     expect(NOTICE_TEMPLATES.every((t) => t.fr && t.en && t.ar)).toBe(true);

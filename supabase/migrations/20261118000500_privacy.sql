@@ -197,3 +197,29 @@ begin
 end $$;
 revoke execute on function public.export_my_data() from public, anon;
 grant execute on function public.export_my_data() to authenticated;
+
+-- ───────────────────────── 4. A message to every family (incidents, maintenance) ─────────────────────────
+
+-- The team writes one short message in three languages; each account receives it as a notice in its
+-- own menu language (docs/runbooks/INCIDENT-RESPONSE.md). Team only, 5 a day, written in the team's log.
+-- From the SQL editor: select public.admin_broadcast('…', '…', '…');  (as a team member in the app: later)
+create function public.admin_broadcast(p_fr text, p_en text, p_ar text) returns int
+language plpgsql security definer set search_path = public, auth as $$
+declare
+  n int;
+begin
+  if not is_admin() then raise exception 'forbidden'; end if;
+  if coalesce(trim(p_fr), '') = '' or coalesce(trim(p_en), '') = '' or coalesce(trim(p_ar), '') = ''
+     or greatest(length(p_fr), length(p_en), length(p_ar)) > 500 then
+    raise exception 'invalid';
+  end if;
+  perform rate_limit('broadcast', 5, interval '1 day');
+  insert into notices (user_id, kind, text)
+  select u.id, 'access', in_lang(u.id, trim(p_fr), trim(p_en), trim(p_ar))
+    from auth.users u where not coalesce(u.is_anonymous, false);
+  get diagnostics n = row_count;
+  perform admin_note('broadcast', null, null, left(trim(p_en), 200));
+  return n;
+end $$;
+revoke execute on function public.admin_broadcast(text, text, text) from public, anon;
+grant execute on function public.admin_broadcast(text, text, text) to authenticated;

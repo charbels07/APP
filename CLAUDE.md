@@ -247,3 +247,22 @@
   drafts in `docs/legal/` (drafts for a lawyer, never present them as final), store pages in `public/support/`
   and `public/delete-account/` (no script; keep them true when deletion or retention changes). The assessment's
   source is `docs/assessment/` (rebuild with `python3 scripts/assessment/build.py`).
+- Choosing without pointing (Settings → Touch, all off by default): switch scanning (`src/lib/scanning.ts`,
+  `src/ui/Scanner.tsx`), resting the pointer (`src/lib/dwell.ts`, `src/state/access.tsx`), "Where it first lands"
+  (`src/lib/touchChoice.ts`) and "Bigger touch area". The scan never covers the universal bar (the adults' way to
+  Settings) and pauses under every panel; it follows the displayed order (`compactPlaces`), never moves a card.
+  A folder's name is not said in the spoken preview either.
+- Core word places are a release check (`src/__tests__/coreLayout.test.ts`, `fixtures/coreLayout.json`): never
+  rewrite the fixture to make a test pass; only `UPDATE_CORE_LAYOUT=1` after a layout validated by the speech
+  therapist, said in the commit. `migrate` is checked against `fixtures/oldProfile.json`.
+- Links out of the app: on the tablet apps, anything that opens another app or a web page from a screen the child
+  reaches goes through `launchApp` / `app.openLink` (`{ kind: 'pin', then: { kind: 'openLink' } }`, `linkNeedsCode`).
+  Never call `Linking.openURL` / `openAppUrl` directly there; no switch turns this off (store rules for children's
+  apps). The child lock still opens nothing; `freeEdit` and caregiver mode skip the code.
+- "Export for another AAC app (.obz)" sits next to the profile export; `obz.ts` uses the stored cells (never
+  `compactPlaces`), folders get `load_board` and no `vocalization`, links never travel.
+- iOS permission sentences live in `ios.infoPlist` (English) and `locales/{fr,en,ar}.json`; plugins carry none; a
+  change is made in the three languages (`permissionTexts.test.ts`). `NoVoiceWarning` treats an empty voice list
+  as "unknown" and shows nothing.
+- Figures for the team, list 3: "seen" counters (`useSeen`, `src/ui/Seen.tsx`), speed in five steps (`countSpeed`),
+  the app version per day; migration `20261118000400_product_more.sql`; `SHARE_TERMS` is 3 (and `product_terms()`).

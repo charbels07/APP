@@ -505,6 +505,29 @@ const BASE: BaseChapter[] = [
     action: 'settings',
   },
   {
+    id: 'access',
+    track: 'pro',
+    icon: 'pointer',
+    title: { fr: 'Contacteurs, regard, main qui tremble', en: 'Switches, eye gaze, a hand that shakes' },
+    steps: {
+      fr: [
+        'Réglages → Toucher (derrière le code accompagnant). Tout est sur Non au départ : le tableau fonctionne comme avant tant que vous ne choisissez rien et ne touchez pas Enregistrer.',
+        'Toucher qui compte : Où le doigt se lève est le toucher habituel ; Où il se pose d’abord choisit la case où le doigt s’est posé, même s’il glisse sur une autre case avant de se lever (avec Garder le doigt appuyé, le doigt doit rester la durée d’appui, où qu’il glisse). Zone de toucher agrandie : un toucher entre deux cases compte pour la case la plus proche ; les cases gardent leur place et leur taille.',
+        'Choisir en gardant le pointeur dessus (0,5 à 3 s) : avec une souris, un pointeur de tête ou un pointeur commandé par le regard qui déplace le curseur, la case se remplit tant que le pointeur reste dessus, puis elle est choisie. Rien d’autre n’y est choisi avant que le pointeur ne la quitte. Parler, Effacer, Retour et les boutons de la barre fonctionnent de la même façon. Sur iPad, le suivi du regard et AssistiveTouch de l’iPad font déjà les touchers : laissez Non.',
+        'Balayage (contacteur) : Automatique (l’éclairage avance tout seul, un contacteur choisit) ou Pas à pas (un contacteur avance, un second choisit). Parcours : Ligne puis case (une ligne s’éclaire, le contacteur y entre, puis ses cases s’éclairent une à une) ou Case par case (petits tableaux). Temps sur chaque étape et Tours avant l’arrêt : après ces tours le balayage attend, et l’appui suivant le relance. Dire tout bas le mot éclairé : le mot éclairé est dit doucement avant d’être choisi (le nom d’un dossier n’est jamais dit).',
+        'Le contacteur : Espace ou Entrée sur un clavier ou un boîtier de contacteurs (Pas à pas : Espace avance, Entrée choisit), ou Tout l’écran sert de contacteur (un toucher n’importe où sur le tableau choisit ; Pas à pas : moitié gauche avancer, moitié droite choisir). Effacer et Parler (dès qu’il y a une phrase) et Retour (dans un dossier) passent en premier ; après chaque choix le balayage repart du haut, dans le dossier quand un dossier a été ouvert. La barre n’est jamais couverte : Réglages et Accompagnant restent accessibles avec le code. Sur ordinateur, Échap arrête le balayage ; Reprendre le balayage le relance.',
+      ],
+      en: [
+        'Settings → Touch (behind the caregiver code). Everything here is Off at first: the board works as before until you choose something and touch Save.',
+        'Touch that counts: Where the finger lifts is the usual touch; Where it first lands chooses the card the finger landed on, even if it slips onto another card before lifting (with Keep the finger pressed, the finger must stay down the hold time, wherever it slides). Bigger touch area: a touch in the gap between two cards counts for the nearest card; the cards keep their place and size.',
+        'Choose by resting the pointer (0.5 to 3 s): with a mouse, a head pointer or an eye-gaze pointer that moves the cursor, the card fills up while the pointer rests on it, then it is chosen. Nothing more is chosen there until the pointer leaves. Speak, Delete, Back and the buttons of the bar work the same way. On an iPad, its own Eye Tracking and AssistiveTouch already make the touches: leave this Off there.',
+        'Switch scanning: Automatic (the highlight moves by itself, one switch chooses) or Step by step (one switch moves, a second chooses). How it goes: Row, then card (a row lights up, the switch enters it, then its cards light one by one) or Card by card (small boards). Time on each step and Turns before it stops: after those turns the scan waits, and the next press starts it again. Say the lit word quietly: the lit word is said softly before it is chosen (a folder’s name is never said).',
+        'The switch: Space or Enter on a keyboard or a switch interface (Step by step: Space moves, Enter chooses), or The whole screen is the switch (a touch anywhere on the board chooses; Step by step: left half next, right half choose). Delete and Speak (once there is a sentence) and Back (in a folder) come first; after each choice the scan starts again from the top, inside the folder when one was opened. The bar is never covered: Settings and Caregiver stay reachable with the code. On a computer, Escape stops the scan; Start scanning again brings it back.',
+      ],
+    },
+    action: 'settings',
+  },
+  {
     id: 'team',
     track: 'pro',
     icon: 'users',
@@ -897,6 +920,16 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
       'الشريط الدائم: إخفاء «اللوحات» أو «الجدول» أو «المؤقت» إذا لم يحتجها الطفل («التواصل» و«مساعدة» يبقيان دائماً). تحت «الجدول»: جدول الأسبوع وجدول الشهر. لا يتغيّر شيء قبل لمس «حفظ» أسفل الصفحة؛ «إلغاء التغييرات» يعيد كل شيء كما كان.',
       'الصوت: السرعة، و«نوع الصوت»: امرأة، رجل، بنت أو صبي («بنت» و«صبي» من أصوات الجهاز بعد جعلها أحدّ؛ لا توجد في الأجهزة أصوات أطفال حقيقية). «الصوت المستخدم» يبيّن صوت كل لغة: يأتي من الجهاز، و«صوت تقريبي» يعني أن الجهاز لا يملك صوتاً من هذا النوع لهذه اللغة (يمكن تثبيت أصوات أخرى من إعدادات الجهاز). إذا لم يكن على الجهاز أي صوت لإحدى لغات الطفل، تظهر رسالة تقول ذلك وتشرح أين يُثبَّت صوت (iPad: الإعدادات ← تسهيلات الاستخدام ← المحتوى المنطوق ← الأصوات؛ Android: الإعدادات ← النظام ← اللغات ← تحويل النص إلى كلام). زر المساعدة: الرسالة الأولى التي تُقال، والمعلومات المفيدة.',
       'أيضاً: «زر المساعدة» (أعلاه)، «الرمز والبيانات» (رمز المرافق، اقتراحات الذكاء الاصطناعي، إعادة ضبط الملف الشخصي؛ النسخة الاحتياطية للملف في صفحة «الحساب»؛ من دون حساب، يوجد هنا أيضاً «تصدير لتطبيق تواصل بديل آخر (.obz)») و«حول التطبيق» (حقوق وتراخيص الرموز). «وضع القفل (للطفل)» والدليل يُفتحان من الشريط.',
+    ],
+  },
+  access: {
+    title: 'المفاتيح، النظر، اليد المرتجفة',
+    steps: [
+      'الإعدادات ← اللمس (خلف رمز المرافق). كل شيء متوقف في البداية: تعمل اللوحة كما كانت حتى تختار شيئاً وتلمس حفظ.',
+      'اللمسة التي تُحتسب: «حيث يُرفع الإصبع» هي اللمسة المعتادة؛ «حيث يلمس أولاً» تختار البطاقة التي لمسها الإصبع أولاً حتى لو انزلق إلى بطاقة أخرى قبل رفعه (مع «إبقاء الإصبع مضغوطاً» يجب أن يبقى الإصبع مدة الضغط أينما انزلق). منطقة لمس أكبر: اللمس في الفراغ بين بطاقتين يُحتسب للبطاقة الأقرب؛ تبقى البطاقات في مكانها وبحجمها.',
+      'الاختيار بإبقاء المؤشر فوقها (0.5 إلى 3 ث): بالفأرة أو بمؤشر الرأس أو بمؤشر يحرّكه النظر، تمتلئ البطاقة ما دام المؤشر فوقها ثم تُختار. لا يُختار شيء آخر هناك قبل أن يغادرها المؤشر. تكلّم وحذف ورجوع وأزرار الشريط تعمل بالطريقة نفسها. على الآيباد، تتبّع العين وAssistiveTouch يقومان باللمس بأنفسهما: اتركه متوقفاً هناك.',
+      'المسح بالمفتاح: تلقائي (تتقدّم الإضاءة وحدها ويختار مفتاح واحد) أو خطوة بخطوة (مفتاح للتقدّم وآخر للاختيار). طريقة المرور: صفّ ثم بطاقة (يضيء صفّ، يدخله المفتاح، ثم تضيء بطاقاته واحدة بعد أخرى) أو بطاقة بعد بطاقة (للوحات الصغيرة). الوقت على كل خطوة وعدد الدورات قبل التوقف: بعدها ينتظر المسح، والضغطة التالية تعيد تشغيله. نطق الكلمة المضاءة بصوت خافت: تُقال الكلمة المضاءة بهدوء قبل اختيارها (اسم المجلد لا يُقال أبداً).',
+      'المفتاح: المسافة أو الإدخال على لوحة مفاتيح أو جهاز مفاتيح (خطوة بخطوة: المسافة للتقدّم والإدخال للاختيار)، أو «الشاشة كلها تعمل كمفتاح» (لمسة في أي مكان على اللوحة تختار؛ خطوة بخطوة: النصف الأيسر للتالي والنصف الأيمن للاختيار). حذف وتكلّم (عند وجود جملة) ورجوع (داخل مجلد) تأتي أولاً؛ بعد كل اختيار يبدأ المسح من الأعلى، داخل المجلد إذا فُتح مجلد. الشريط لا يُغطّى أبداً: تبقى الإعدادات والمرافق متاحة بالرمز. على الكمبيوتر، Escape يوقف المسح؛ «استئناف المسح» يعيده.',
     ],
   },
   team: {

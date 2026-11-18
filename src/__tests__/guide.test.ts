@@ -11,6 +11,7 @@ import { strings } from '../i18n/ui';
 import { securityStrings } from '../i18n/security';
 import { backupStrings } from '../i18n/backup';
 import { consentText } from '../lib/consent';
+import { accessStrings } from '../i18n/access';
 
 describe('in-app guide', () => {
   it('covers both tracks, in French and English, with the same steps', () => {
@@ -78,6 +79,8 @@ describe('in-app guide', () => {
         securityStrings(lang).twoStep, securityStrings(lang).turnOn, securityStrings(lang).downloadAll,
         backupStrings(lang).binTitle, backupStrings(lang).putBack, backupStrings(lang).versions, backupStrings(lang).keepNow, backupStrings(lang).wordBin,
         consentText[lang].title, st.exportObz,
+        // choosing without pointing: switches, resting the pointer, a hand that shakes
+        accessStrings(lang).scan, accessStrings(lang).dwell, accessStrings(lang).touchPoint, accessStrings(lang).bigTouch, accessStrings(lang).scanScreen, accessStrings(lang).restart, accessStrings(lang).scanSpeak,
       ];
       for (const label of quoted) expect(text(lang)).toContain(label);
       // Removed things are no longer described.

@@ -94,8 +94,21 @@ No screen scrolls sideways at 320 px, and nothing is lost at 200 % zoom in the s
 2. **The tablet app itself.** The same names, roles and states are given to iOS and Android, but
    nothing was tested on a device.
 3. **Text spacing set by the user** (WCAG 1.4.12) and very large system fonts on tablets.
-4. **Switch access and eye gaze**: not supported (the set-up says so). Every action works with a
-   keyboard in a browser, which is the basis for switch access, but scanning is not built.
+4. **Switch access and eye gaze**: built (Settings → Touch, November 2026), still to be tried by people
+   who use them every day.
+   - **Switch scanning**: automatic or step by step, row then card or card by card, 0.5–5 s per step,
+     1–5 turns, an optional quiet spoken preview; the switch is Space or Enter (a keyboard or a switch
+     interface, in a browser) or the whole screen. The highlight is a thick violet ring with a white
+     ring inside, tested at 3:1 or more on the page, white, every card colour and the dark cards of
+     "High contrast" (WCAG 1.4.11). It never covers the bar, so the adults' way to Settings stays
+     open; Escape stops it and "Start scanning again" brings it back (WCAG 2.1.2, no keyboard trap).
+   - **Choosing by resting the pointer** (0.5–3 s, a visible filling) serves mice, head pointers and
+     eye-gaze pointers that move the cursor. iPadOS Eye Tracking and AssistiveTouch already make taps.
+   - **For a hand that shakes**: "Where it first lands" and "Bigger touch area" (WCAG 2.5.2 pointer
+     cancellation is unchanged for the standard touch).
+   - **Tablets** have no key switch inside the app; iOS Switch Control and Android Switch Access work
+     with the app's buttons. New automated scans: the Touch settings, the board being scanned and the
+     "scanning stopped" state.
 5. **Photos added by families** have no description other than the word they illustrate.
 
 ## Points to decide (not failures found by the scan)

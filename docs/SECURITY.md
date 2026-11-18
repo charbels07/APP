@@ -282,8 +282,8 @@ Names move a little between versions of the dashboard; look for the nearest word
 
 | Command | What it proves |
 |---|---|
-| `npm run test:db` | 176 checks on a throw-away database: the normal story, then **every attack of this review, which must fail**, then the hand-over of a profile created by a professional, then the e-mails to the team, then the figures for the team, the technical problems and the votes. |
-| `npm test` | 300 tests; `security.test.ts` covers links, other people's changes, what stays on the device, the print page, the website protections. |
+| `npm run test:db` | 318 checks on a throw-away database: the normal story, then **every attack of this review, which must fail**, then the hand-over of a profile created by a professional, the e-mails to the team, the figures for the team, the problems and the votes, then the second round: two-step sign-in, fresh proofs, hidden addresses, the purge queue, the bin and the copies, consent, retention, sealed sentences, the full export, and photos and recordings. The same runs on GitHub at every change (`.github/workflows/checks.yml`). |
+| `npm test` | 437 tests; `security.test.ts` covers links, other people's changes, what stays on the device, the print page, the website protections. |
 | `npm audit` | Known flaws in libraries. Today: none in what ships to families (4 medium ones in build tools only). |
 | `npm run test:a11y` | The screens still pass the accessibility scan after these changes. |
 

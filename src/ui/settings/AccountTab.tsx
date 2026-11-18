@@ -20,6 +20,7 @@ import { WriteTeam } from '../admin/WriteTeam';
 import { Btn, Field, Section, Segmented, Toggle } from '../common';
 import { groupCode } from '../start/PairScreen';
 import { C } from '../theme';
+import { ObzExportButton } from './ObzExport';
 import { Note, ss } from './SettingsScreen';
 import { Row, when } from './TeamTab';
 import { eraseMediaOf } from '../../lib/deviceData';
@@ -287,6 +288,7 @@ function Privacy({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
         <Note key={p} text={`• ${p}`} />
       ))}
       <Btn small icon="download" label={x.exportProfile} onPress={() => exportJson(`profil-${board.childName || 'caa'}.json`, app.profile)} />
+      <ObzExportButton small profile={app.profile} childName={board.childName} label={x.exportObz} busy={x.exportObzBusy} failed={x.exportObzFailed} />
       {owner && <Btn small kind="danger" icon="trash" label={`${x.deleteProfile} ${board.childName}`} onPress={() => setTyping('profile')} />}
       <Btn small kind="danger" icon="trash" label={x.deleteAccount} onPress={() => setTyping('account')} />
       {typing && (

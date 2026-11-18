@@ -34,6 +34,7 @@ import { PictoSearch } from '../PictoPicker';
 import { SearchBox } from '../SearchBox';
 import { VoiceButton } from '../VoiceButton';
 import { PrintPreview } from '../PrintPreview';
+import { ObzExportButton } from '../settings/ObzExport';
 import { SymbolView, useMediaUri } from '../SymbolView';
 import { useWiggle } from '../wiggle';
 import { scheduleTitle } from '../screens/ScheduleScreen';
@@ -1355,6 +1356,7 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
         <View style={s.wrapRow}>
           {/* With an account, the backup is on the Account page (Privacy): not twice. */}
           {!board && <Btn icon="download" label={t.sExport} onPress={() => exportJson('profil-caa.json', profile)} />}
+          {!board && <ObzExportButton profile={profile} label={t.sExportObz} busy={t.sExportObzBusy} failed={t.sExportObzFailed} />}
           <Btn
             kind="danger"
             icon="trash"

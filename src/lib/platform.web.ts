@@ -51,6 +51,18 @@ export async function exportText(filename: string, text: string, mimeType: strin
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
+/** Downloads a binary file (the boards for another AAC app, `.obz`). */
+export async function exportBytes(filename: string, bytes: Uint8Array, mimeType: string): Promise<void> {
+  const url = URL.createObjectURL(new Blob([bytes as Uint8Array<ArrayBuffer>], { type: mimeType }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+
 export async function readAssetBytes(mod: number): Promise<Uint8Array> {
   const res = await fetch(Asset.fromModule(mod).uri);
   return new Uint8Array(await res.arrayBuffer());

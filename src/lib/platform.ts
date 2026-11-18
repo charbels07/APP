@@ -43,7 +43,7 @@ export async function exportJson(filename: string, data: unknown): Promise<void>
 /** Exported files (a profile, a table of figures) wait in the cache folder for the share sheet: erased with the account. */
 export async function clearExports(): Promise<void> {
   for (const item of Paths.cache.list()) {
-    if (item instanceof File && /\.(json|csv|pdf|caa)$/i.test(item.name)) item.delete();
+    if (item instanceof File && /\.(json|csv|pdf|caa|obz)$/i.test(item.name)) item.delete();
   }
 }
 
@@ -54,6 +54,15 @@ export async function exportText(filename: string, text: string, mimeType: strin
   file.create();
   await file.write(mimeType === 'text/csv' ? `\uFEFF${text}` : text);
   await Sharing.shareAsync(file.uri, { mimeType });
+}
+
+/** A binary file (the boards for another AAC app, `.obz`) through the share sheet. */
+export async function exportBytes(filename: string, bytes: Uint8Array, mimeType: string): Promise<void> {
+  const file = new File(Paths.cache, filename);
+  if (file.exists) file.delete();
+  file.create();
+  await file.write(bytes);
+  await Sharing.shareAsync(file.uri, { mimeType, UTI: mimeType === 'application/zip' ? 'public.zip-archive' : undefined });
 }
 
 /** Reads a bundled asset (e.g. the pictogram library) as bytes or text. */

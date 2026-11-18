@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { BackendError } from '../backend/Backend';
 import { LocalBackend } from '../backend/local';
+import type { FeatureDay } from '../backend/types';
 import { createDefaultProfile } from '../data/defaults';
 import { productStrings } from '../i18n/product';
 import { applyAnswers, emptyAnswers } from '../lib/onboarding';
@@ -11,27 +12,43 @@ import {
   FEATURES,
   PROBLEM_KINDS,
   SCREENS,
+  SEEN_COUNTERS,
   SHARE_TERMS,
+  SPEED_BUCKETS,
+  SPEED_COUNTERS,
+  SPEEDS,
+  VERSION_PATTERN,
+  cleanVersion,
   countFeature,
+  countSeen,
+  countSpeed,
   describeProblem,
   deviceForm,
+  firstBoardShown,
+  holdProduct,
   placeInCode,
   reportProblem,
   setProductSink,
   setScreen,
   shareChoice,
   sharesProduct,
+  speedBucket,
+  startupWaited,
+  type Counter,
   type ProblemItem,
 } from '../lib/product';
 import { ProductCounter } from '../state/productCounters';
 import { ADOPTION } from '../ui/data/Charts';
 
-const SQL = readFileSync(join(__dirname, '../../supabase/migrations/20261117000000_product.sql'), 'utf8');
+const read = (file: string) => readFileSync(join(__dirname, '../../supabase/migrations', file), 'utf8');
+/** The latest definitions: the lists of 20261117000000_product.sql as 20261118000400_product_more.sql replaced them. */
+const SQL = read('20261118000400_product_more.sql');
 /** The quoted words of the SQL list that follows `marker`. */
-const sqlList = (marker: string): string[] => {
-  const from = SQL.indexOf(marker);
-  const open = SQL.indexOf('array[', from);
-  return [...SQL.slice(open, SQL.indexOf(']', open)).matchAll(/'([A-Za-z]+)'/g)].map((m) => m[1]);
+const sqlList = (marker: string, sql = SQL): string[] => {
+  const from = sql.indexOf(marker);
+  if (from < 0) throw new Error(`not in the SQL: ${marker}`);
+  const open = sql.indexOf('array[', from);
+  return [...sql.slice(open, sql.indexOf(']', open)).matchAll(/'([A-Za-z0-9.:]+)'/g)].map((m) => m[1]);
 };
 
 const api = new LocalBackend();
@@ -61,11 +78,28 @@ beforeAll(async () => {
 
 describe('what the app may tell its team: fixed lists, shared with the database', () => {
   it('the app and the database accept exactly the same names', () => {
-    expect(sqlList('create function public.product_keys()')).toEqual([...COUNTERS]);
+    expect(sqlList('create or replace function public.product_keys()')).toEqual([...COUNTERS]);
     expect(sqlList("if k is null or not (k = any (array[")).toEqual([...PROBLEM_KINDS]);
     expect(sqlList("case when it ->> 'screen' = any (array[")).toEqual(SCREENS.filter((s) => s !== 'other'));
-    // The adoption chart of the back office is computed for the features, in this order.
-    expect(sqlList('select k, ord from unnest(array[')).toEqual([...FEATURES]);
+    // The adoption, "seen" and version charts of the back office are computed for the features, in this order.
+    expect(sqlList('create function public.product_features()')).toEqual([...FEATURES]);
+    expect(sqlList('create function public.product_speeds()')).toEqual([...SPEEDS]);
+    expect(sqlList('create function public.product_speed_buckets()')).toEqual([...SPEED_BUCKETS]);
+    // The first list, replaced: it is still the beginning of today's.
+    expect(sqlList('create function public.product_keys()', read('20261117000000_product.sql'))).toEqual(COUNTERS.slice(0, 30));
+  });
+
+  it('the database asks for the same agreement and keeps the same versions as the app', () => {
+    expect(/create function public\.product_terms\(\)[^$]*\$\$\s*select (\d+)\s*\$\$/.exec(SQL)?.[1]).toBe(String(SHARE_TERMS));
+    expect(SQL).toContain(`v ~ '${VERSION_PATTERN.source}'`);
+    expect(['1.4.0', '1.0', '2026.11.18.1'].map(cleanVersion)).toEqual(['1.4.0', '1.0', '2026.11.18.1']);
+    expect(['1.4.0-beta', 'Adam 1.4', '12345.1', '1.2.3.4.5', '', 42, null].map(cleanVersion)).toEqual(['', '', '', '', '', '', '']);
+  });
+
+  it('"seen" twins each feature; a waiting time is only one of five steps', () => {
+    expect(SEEN_COUNTERS).toEqual(FEATURES.map((f) => `seen:${f}`));
+    expect(SPEED_COUNTERS).toHaveLength(SPEEDS.length * SPEED_BUCKETS.length);
+    expect([0, 499, 500, 999, 1000, 1999, 2000, 4999, 5000, 600000].map(speedBucket)).toEqual(['0.5', '0.5', '1', '1', '2', '2', '5', '5', 'more', 'more']);
   });
 
   it('every name has its words in the three languages', () => {
@@ -74,7 +108,10 @@ describe('what the app may tell its team: fixed lists, shared with the database'
       for (const f of FEATURES) expect([f, !!x.features[f]]).toEqual([f, true]);
       for (const k of PROBLEM_KINDS) expect([k, !!x.problemKinds[k]]).toEqual([k, true]);
       for (const s of SCREENS) expect([s, !!x.screens[s]]).toEqual([s, true]);
+      for (const s of SPEEDS) expect([s, !!x.speedKinds[s]]).toEqual([s, true]);
       expect(x.groups).toHaveLength(ADOPTION.length);
+      expect(x.speedSteps).toHaveLength(SPEED_BUCKETS.length);
+      expect(x.seenGroups).toHaveLength(3);
     }
   });
 
@@ -98,6 +135,9 @@ describe('what the app may tell its team: fixed lists, shared with the database'
     // Agreed before the counters existed: not enough.
     expect(sharesProduct({ shareStats: 'anonymous' })).toBe(false);
     expect(sharesProduct({ shareStats: 'anonymous', shareTerms: 1 })).toBe(false);
+    // Agreed before "seen", the versions and the speed figures: asked again, nothing sent meanwhile.
+    expect(sharesProduct({ shareStats: 'anonymous', shareTerms: 2 })).toBe(false);
+    expect(SHARE_TERMS).toBe(3);
     expect(sharesProduct(shareChoice(true))).toBe(true);
     expect(shareChoice(false)).toEqual({ shareStats: 'none' });
   });
@@ -141,7 +181,7 @@ describe('counting on the device, only with the family’s agreement', () => {
     countFeature('timer');
     reportProblem('crash', new TypeError('x'));
     await c.flush();
-    expect(c.local()).toEqual({ days: {}, pending: [], problems: [] });
+    expect(c.local()).toEqual({ days: {}, versions: {}, pending: [], problems: [] });
     await api.demoOpenBackOffice();
     expect((await api.adminBugs()).top.some((p) => p.version === '1.4.0')).toBe(false);
     await api.signIn({ email: 'rita@example.com', password: 'secret123' });
@@ -193,7 +233,7 @@ describe('counting on the device, only with the family’s agreement', () => {
     await share(false);
     agreed = false;
     await c.forget();
-    expect(c.local()).toEqual({ days: {}, pending: [], problems: [] });
+    expect(c.local()).toEqual({ days: {}, versions: {}, pending: [], problems: [] });
     expect(await AsyncStorage.getItem(`caa.product.${profileId}`)).toBeNull();
     c.close();
     // Counters left by an older session are erased when the board opens without the agreement.
@@ -202,6 +242,100 @@ describe('counting on the device, only with the family’s agreement', () => {
     expect(again.local().days).toEqual({});
     expect(await AsyncStorage.getItem(`caa.product.${profileId}`)).toBeNull();
     again.close();
+  });
+
+  it('"seen" is one yes a day; a wait is only its step; a day keeps the version it was counted with', async () => {
+    await share(true);
+    agreed = true;
+    clock = new Date(2026, 10, 17, 9, 0, 0).getTime();
+    const sent = jest.spyOn(api, 'saveFeatureDay');
+    const c = await ProductCounter.open(api, profileId, 'ipad', DEVICE, () => agreed, () => clock);
+    setProductSink(c);
+    countSeen('timer');
+    const changed = jest.spyOn(c as unknown as { changed: () => void }, 'changed');
+    countSeen('timer');
+    countSeen('timer');
+    expect(changed).not.toHaveBeenCalled(); // already a yes today: nothing to write again
+    (countSeen as (f: string) => void)('theWordApple');
+    countSpeed('voice', 320);
+    countSpeed('voice', 740);
+    countSpeed('voice', 999);
+    countSpeed('sync', 12000);
+    countSpeed('start', -1);
+    countSpeed('voice', NaN);
+    (countSpeed as (k: string, ms: number) => void)('theWordApple', 10);
+    expect(c.local().days['2026-11-17']).toEqual({ 'seen:timer': 1, 'voice:0.5': 1, 'voice:1': 2, 'sync:more': 1 });
+    expect(c.local().versions).toEqual({ '2026-11-17': '1.4.0' });
+    // A name that is not on the list never reaches the device's store either.
+    expect(Object.keys(c.local().days['2026-11-17']).every((k) => COUNTERS.includes(k as Counter))).toBe(true);
+    await c.flush();
+    c.close();
+    setProductSink(null);
+    // The app is updated before that day was sent for good: the day keeps its own version.
+    clock += 24 * 3600 * 1000;
+    const after = await ProductCounter.open(api, profileId, 'ipad', { ...DEVICE, version: '1.5.0' }, () => agreed, () => clock);
+    setProductSink(after);
+    countSeen('board');
+    sent.mockClear();
+    await after.flush();
+    expect(sent.mock.calls.map(([, d]) => [d.day, d.appVersion])).toEqual([
+      ['2026-11-17', '1.4.0'],
+      ['2026-11-18', '1.5.0'],
+    ]);
+    expect(sent.mock.calls[0][1].counts).toEqual({ 'seen:timer': 1, 'voice:0.5': 1, 'voice:1': 2, 'sync:more': 1 });
+    sent.mockRestore();
+    await share(false);
+    agreed = false;
+    await after.forget();
+    after.close();
+    setProductSink(null);
+  });
+
+  it('what is counted while a board opens waits for its counter; nothing waits when no board opens', () => {
+    const got: [Counter, number][] = [];
+    const sink = { count: (k: Counter, n: number) => void got.push([k, n]), problem: () => {} };
+    setProductSink(null);
+    countSeen('guide'); // the preview, a professional's workspace: nobody to hand it to
+    holdProduct();
+    countSeen('search');
+    countSpeed('start', 1500);
+    setProductSink(sink);
+    expect(got).toEqual([
+      ['seen:search', 1],
+      ['start:2', 1],
+    ]);
+    setProductSink(null);
+    holdProduct();
+    countSeen('timer');
+    setProductSink(null); // the board closed before its counter was ready: dropped
+    setProductSink(sink);
+    expect(got).toHaveLength(2);
+    setProductSink(null);
+  });
+
+  it('the opening time is counted once, and only when no screen waited for a person first', () => {
+    jest.isolateModules(() => {
+      const p = require('../lib/product') as typeof import('../lib/product');
+      const got: string[] = [];
+      p.setProductSink({ count: (k) => void got.push(k), problem: () => {} });
+      p.firstBoardShown();
+      p.firstBoardShown();
+      expect(got).toHaveLength(1);
+      expect(got[0]).toMatch(/^start:(0\.5|1|2|5|more)$/);
+      p.setProductSink(null);
+    });
+    jest.isolateModules(() => {
+      const p = require('../lib/product') as typeof import('../lib/product');
+      const got: string[] = [];
+      p.setProductSink({ count: (k) => void got.push(k), problem: () => {} });
+      p.startupWaited(); // the sign-in screen came first
+      p.firstBoardShown();
+      expect(got).toEqual([]);
+      p.setProductSink(null);
+    });
+    // This file's own copy: the guards are exported for the board.
+    expect(typeof firstBoardShown).toBe('function');
+    expect(typeof startupWaited).toBe('function');
   });
 
   it('counting and reporting never break the app, even with nobody listening', () => {
@@ -230,9 +364,24 @@ describe('demo server: the same rules as the database', () => {
     await expectCode(api.saveFeatureDay(profileId, day), 'forbidden');
     await expectCode(api.reportProblems(profileId, [{ kind: 'crash', name: 'Error', at: '', screen: 'board', n: 1, platform: 'ios', form: 'tablet', version: '1.4.0' }]), 'forbidden');
     await share(true, 1);
-    await expectCode(api.saveFeatureDay(profileId, day), 'forbidden'); // agreed to the old list only
+    await expectCode(api.saveFeatureDay(profileId, day), 'forbidden'); // agreed to the first list only
+    await share(true, 2);
+    await expectCode(api.saveFeatureDay(profileId, day), 'forbidden'); // agreed before "seen", versions and speed
+    await expectCode(api.reportProblems(profileId, [{ kind: 'crash', name: 'Error', at: '', screen: 'board', n: 1, platform: 'ios', form: 'tablet', version: '1.4.0' }]), 'forbidden');
     await share(true);
     await api.saveFeatureDay(profileId, day);
+    // "Seen" is a yes for the day, a version is digits and dots only (same rules as the database).
+    await api.saveFeatureDay(profileId, {
+      ...day,
+      day: '2026-11-14',
+      counts: { 'seen:timer': 5, 'voice:1': 2.5, timer: 1, theWordApple: 3 } as FeatureDay['counts'],
+      appVersion: '1.4.0 for Adam',
+    });
+    const kept = await (api as unknown as { tx: <T>(f: (db: { featureDays?: { data: FeatureDay }[] }) => T) => Promise<T> }).tx(
+      (db) => db.featureDays?.find((f) => f.data.day === '2026-11-14')?.data,
+    );
+    expect(kept).toMatchObject({ counts: { 'seen:timer': 1, 'voice:1': 2, timer: 1 }, appVersion: '' });
+    expect(Object.keys(kept!.counts)).toHaveLength(3);
     // A stranger, then a professional of the child's team.
     await api.signOut();
     await signUp('parent', 'Mallory', 'mallory@example.com');
@@ -281,6 +430,22 @@ describe('demo server: the same rules as the database', () => {
     expect(p.example).toBe(true);
     expect(p.features!.map((f) => f.key)).toEqual([...FEATURES]);
     for (const f of p.features!) if ('regular' in f) expect(f.regular + f.occasional + f.abandoned + f.never).toBe(p.children);
+    // Seen and used, by version, speed: the same shapes as the database's, and the same rule
+    // (a group of 1 to 4 children is never a number).
+    const small = (n: number) => n > 0 && n < 5;
+    expect(p.seen!.map((f) => f.key)).toEqual([...FEATURES]);
+    for (const f of p.seen!) {
+      if ('seenOnly' in f) expect(f.used + f.seenOnly + f.unseen).toBe(p.children30);
+      if ('seen' in f) expect(f.seen + f.unseen).toBe(p.children30);
+      for (const n of Object.values(f).filter((v): v is number => typeof v === 'number')) expect(small(n)).toBe(false);
+    }
+    expect(p.byVersion!.map((v) => v.version)).toEqual(['1.2.0', '1.1.0', 'other']);
+    for (const v of p.byVersion!) {
+      expect(v.features.map((f) => f.key)).toEqual([...FEATURES]);
+      for (const f of v.features) if ('used' in f) expect([small(f.used), small(v.children - f.used)]).toEqual([false, false]);
+    }
+    expect(p.speed!.map((s) => s.key)).toEqual([...SPEEDS]);
+    for (const s of p.speed!) expect(Object.keys(s.buckets).sort()).toEqual([...SPEED_BUCKETS].sort());
     const b = await api.adminBugs();
     expect(b.example).toBe(true);
     expect(b.daily).toHaveLength(30);

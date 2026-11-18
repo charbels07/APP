@@ -1,9 +1,11 @@
 /**
  * Pages of the back office that help decide what to build next:
- *  - Product: how each feature is used (regular / now and then / given up / never), and a few
- *    figures to look at before an update;
+ *  - Product: how each feature is used (regular / now and then / given up / never), whether it
+ *    was seen before being used or not, its use by version of the app, and a few figures to
+ *    look at before an update;
  *  - Requests: what parents and professionals wrote, and the ideas they vote for;
- *  - Bugs: technical problems counted by the app and the ones people wrote;
+ *  - Bugs: technical problems counted by the app and the ones people wrote, and how long people
+ *    wait (opening, sync, voice);
  *  - Content: what ships with the app (pictograms, words, languages, guide);
  *  - Security: what the families agreed to share, what is never collected, the team's history.
  * Everything that comes from the children is a sum over at least 5 children of 5 families who
@@ -11,7 +13,19 @@
  */
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import type { AdminBugs, AdminLogEntry, AdminOverview, AdminProduct, AdminRoadmapItem, FeatureAdoption, Feedback, RoadmapStatus } from '../../backend/types';
+import type {
+  AdminBugs,
+  AdminLogEntry,
+  AdminOverview,
+  AdminProduct,
+  AdminRoadmapItem,
+  FeatureAdoption,
+  FeatureSeen,
+  Feedback,
+  RoadmapStatus,
+  SpeedFigures,
+  VersionAdoption,
+} from '../../backend/types';
 import { FEEDBACK_KINDS } from '../../backend/types';
 import { BUILTIN_CONCEPTS } from '../../data/concepts';
 import { DIALECT_ORDER, DIALECT_WORDS, dialectName } from '../../data/dialects';
@@ -24,7 +38,7 @@ import type { AdminStrings } from '../../i18n/admin';
 import { dataStrings } from '../../i18n/data';
 import { productStrings, type ProductStrings } from '../../i18n/product';
 import { UI_LANG_NAMES } from '../../i18n/ui';
-import { FEATURES } from '../../lib/product';
+import { FEATURES, SPEED_BUCKETS, SPEEDS } from '../../lib/product';
 import type { UiLang } from '../../model/types';
 import { useSession } from '../../state/Session';
 import { selected } from '../a11y';
@@ -61,11 +75,45 @@ function adoptionLine(f: FeatureAdoption, x: ProductStrings): { end: string; par
   return { text: x.hidden };
 }
 
+/** The same for "seen, then used?": used / seen without using / never seen, or two of them put together. */
+function seenLine(f: FeatureSeen, x: ProductStrings): ReturnType<typeof adoptionLine> {
+  if ('seenOnly' in f) {
+    const total = f.used + f.seenOnly + f.unseen;
+    return { end: x.seenEnd(pct(f.unseen, total)), parts: [f.used, f.seenOnly, f.unseen], colors: [0, 2, 3], labels: x.seenGroups };
+  }
+  if ('notUsed' in f) return { end: x.usingNow(pct(f.used, f.used + f.notUsed)), parts: [f.used, f.notUsed], colors: [0, 3], labels: x.seenTwoUsed };
+  if ('seen' in f) return { end: x.seenEnd(pct(f.unseen, f.seen + f.unseen)), parts: [f.seen, f.unseen], colors: [1, 3], labels: x.seenTwoSeen };
+  return { text: x.hidden };
+}
+
+/** One feature's line of the adoption or "seen" chart. */
+function FeatureLine({ name, line }: { name: string; line: ReturnType<typeof adoptionLine> }) {
+  const rtl = useNavRtl();
+  return 'text' in line ? (
+    <View style={{ gap: 2 }}>
+      <Text style={[st.featureName, rtl && ss.rtl]}>{name}</Text>
+      <Text style={[st.small, rtl && ss.rtl]}>{line.text}</Text>
+    </View>
+  ) : (
+    <AdoptionBar label={name} end={line.end} parts={line.parts} colors={line.colors} labels={line.labels} />
+  );
+}
+
+/** A cell of the table by version: the share of the children who used the feature, or which side is too small. */
+function versionCell(v: VersionAdoption, key: string, x: ProductStrings): string {
+  const f = v.features.find((c) => c.key === key);
+  if (!f || 'hidden' in f) return '—';
+  if ('few' in f) return f.few === 'using' ? x.cellFew : x.cellFewNot;
+  return `${pct(f.used, v.children)} %`;
+}
+
 export function ProductView({ o, product }: { o: AdminOverview; product: AdminProduct }) {
   const { uiLang } = useSession();
   const x = productStrings(uiLang);
   const rtl = useNavRtl();
   const t = product.tasks ?? {};
+  const seen = (product.seen ?? []).filter((f) => (FEATURES as readonly string[]).includes(f.key));
+  const versions = product.byVersion ?? [];
   const has = (...keys: string[]) => keys.every((k) => t[k] != null);
   const share = (a: number, b: number) => `${pct(a, b)} %  (${x.ofN(a, b)})`;
   // The aunt's list of "what to look at": each line is shown only when enough children are behind it.
@@ -97,21 +145,47 @@ export function ProductView({ o, product }: { o: AdminOverview; product: AdminPr
             <View style={{ gap: 14, marginTop: 4 }}>
               {(product.features ?? [])
                 .filter((f) => (FEATURES as readonly string[]).includes(f.key))
-                .map((f) => {
-                  const line = adoptionLine(f, x);
-                  const name = x.features[f.key] ?? f.key;
-                  return 'text' in line ? (
-                    <View key={f.key} style={{ gap: 2 }}>
-                      <Text style={[st.featureName, rtl && ss.rtl]}>{name}</Text>
-                      <Text style={[st.small, rtl && ss.rtl]}>{line.text}</Text>
-                    </View>
-                  ) : (
-                    <AdoptionBar key={f.key} label={name} end={line.end} parts={line.parts} colors={line.colors} labels={line.labels} />
-                  );
-                })}
+                .map((f) => (
+                  <FeatureLine key={f.key} name={x.features[f.key] ?? f.key} line={adoptionLine(f, x)} />
+                ))}
             </View>
             <Note text={x.smallGroups} />
           </ChartCard>
+
+          {/* Never found, or found and left aside: needs the database's figures of what was seen. */}
+          {!product.seen ? (
+            <View style={ss.card}>
+              <Note text={x.needsMore} />
+            </View>
+          ) : (
+            <ChartCard title={x.seenTitle} note={x.seenNote}>
+              {seen.length === 0 || seen.every((f) => 'hidden' in f) ? (
+                <Note text={x.seenNone} />
+              ) : (
+                <>
+                  <AdoptionLegend
+                    labels={[x.seenGroups[0], x.seenEither, x.seenGroups[1], x.seenGroups[2]]}
+                    only={seen.some((f) => 'seen' in f) ? [0, 1, 2, 3] : [0, 2, 3]}
+                  />
+                  <View style={{ gap: 14, marginTop: 4 }}>
+                    {seen.map((f) => (
+                      <FeatureLine key={f.key} name={x.features[f.key] ?? f.key} line={seenLine(f, x)} />
+                    ))}
+                  </View>
+                  <Note text={x.smallGroups} />
+                </>
+              )}
+            </ChartCard>
+          )}
+
+          {versions.length > 0 && (
+            <ChartCard title={x.byVersionTitle} note={x.byVersionNote}>
+              <DataTable
+                head={[x.featureCol, ...versions.map((v) => x.versionHead(v.version === 'other' ? x.otherVersions : v.version, v.children))]}
+                rows={FEATURES.map((k) => [x.features[k] ?? k, ...versions.map((v) => versionCell(v, k, x))])}
+              />
+            </ChartCard>
+          )}
 
           {rows.length > 0 && (
             <ChartCard title={x.decide} note={x.decideNote(product.children30 ?? product.children)}>
@@ -284,7 +358,48 @@ export function MessageList({ a, list, onChanged }: { a: AdminStrings; list: Fee
 
 // ───────────────────────── Bugs ─────────────────────────
 
-export function BugsView({ a, o, bugs, messages, onChanged }: { a: AdminStrings; o: AdminOverview; bugs: AdminBugs; messages: Feedback[]; onChanged: () => Promise<void> }) {
+/** How long people waited (start, sync, voice): how many times in each step; a step met by fewer than 5 children says so. */
+function SpeedCard({ speed }: { speed: SpeedFigures[] }) {
+  const { uiLang } = useSession();
+  const x = productStrings(uiLang);
+  const rtl = useNavRtl();
+  const kinds = speed.filter((s) => (SPEEDS as readonly string[]).includes(s.key));
+  return (
+    <ChartCard title={x.speedTitle} note={x.speedNote}>
+      {kinds.length === 0 && <Note text={x.speedNone} />}
+      {kinds.map((s) => (
+        <View key={s.key} style={{ gap: 6 }}>
+          <Text style={[st.sub, rtl && ss.rtl]}>
+            {x.speedKinds[s.key] ?? s.key} · {x.speedChildren(s.children)}
+          </Text>
+          <BarList
+            items={SPEED_BUCKETS.map((b, i) => {
+              const v = s.buckets[b];
+              return { key: b, label: x.speedSteps[i], value: typeof v === 'number' ? v : 0, valueText: typeof v === 'number' ? undefined : x.cellFew };
+            })}
+          />
+        </View>
+      ))}
+    </ChartCard>
+  );
+}
+
+export function BugsView({
+  a,
+  o,
+  bugs,
+  speed,
+  messages,
+  onChanged,
+}: {
+  a: AdminStrings;
+  o: AdminOverview;
+  bugs: AdminBugs;
+  /** From the product figures (5 children of 5 families); absent until the database has them. */
+  speed?: SpeedFigures[];
+  messages: Feedback[];
+  onChanged: () => Promise<void>;
+}) {
   const { uiLang } = useSession();
   const x = productStrings(uiLang);
   const rtl = useNavRtl();
@@ -339,6 +454,7 @@ export function BugsView({ a, o, bugs, messages, onChanged }: { a: AdminStrings;
           </ChartCard>
         </>
       )}
+      {speed && <SpeedCard speed={speed} />}
       <Text style={[st.h2, rtl && ss.rtl]} accessibilityRole="header">
         {x.writtenTitle}
       </Text>

@@ -187,7 +187,7 @@ export function BackOffice() {
               <RequestsView a={a} messages={messages} ideas={ideas} onChanged={load} />
             </>
           ) : tab === 'bugs' ? (
-            overview && (bugs ? <BugsView a={a} o={overview} bugs={bugs} messages={messages} onChanged={load} /> : <Note text={x.notInstalled} />)
+            overview && (bugs ? <BugsView a={a} o={overview} bugs={bugs} speed={product?.speed} messages={messages} onChanged={load} /> : <Note text={x.notInstalled} />)
           ) : tab === 'content' ? (
             <ContentView />
           ) : (

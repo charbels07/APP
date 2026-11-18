@@ -32,6 +32,7 @@ import { Icon, type IconName } from '../Icon';
 import { expanded } from '../a11y';
 import { PictoSearch } from '../PictoPicker';
 import { SearchBox } from '../SearchBox';
+import { useSeen } from '../Seen';
 import { VoiceButton } from '../VoiceButton';
 import { PrintPreview } from '../PrintPreview';
 import { SymbolView, useMediaUri } from '../SymbolView';
@@ -525,6 +526,8 @@ type PictureSource = 'pictos' | 'photo';
 /** Where a word's picture comes from: the app's library of pictograms, or the person's own pictures. */
 function PictureSources({ value, onChange }: { value: PictureSource; onChange: (v: PictureSource) => void }) {
   const { t } = useApp();
+  // For the app's team (families who agreed): the way to a photo ("Your library") was on screen.
+  useSeen('photo');
   return (
     <Segmented
       value={value}

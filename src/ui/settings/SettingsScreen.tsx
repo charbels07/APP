@@ -19,6 +19,7 @@ import { useSession } from '../../state/Session';
 import { Btn, Panel, Segmented, useNavRtl } from '../common';
 import { normalize } from '../../lib/search';
 import { Icon } from '../Icon';
+import { useSeen } from '../Seen';
 import { BoardSettingsBody, matchesSearch, SettingsSearch, useSettingsDraft } from '../panels/CaregiverPanels';
 import { DataDashboard } from '../data/DataDashboard';
 import { C } from '../theme';
@@ -48,6 +49,8 @@ export function SettingsScreen() {
   const isDevice = account?.provider === 'device';
   const seesData = !!board && !isDevice && (board.manager || !!board.access?.perms.viewData);
   const tabs: Tab[] = board ? (isDevice ? ['board', 'account'] : ['board', 'team', ...(seesData ? (['data'] as Tab[]) : []), 'account']) : ['board', 'team', 'data', 'account'];
+  // For the app's team (families who agreed): the way to the follow-up was on screen.
+  useSeen(seesData && 'followUp');
 
   // Things waiting for the parent: shown as a number on the Team page.
   const [waiting, setWaiting] = useState(0);

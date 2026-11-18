@@ -5,6 +5,7 @@ import { useBoard } from '../state/BoardContext';
 import { adminStrings } from '../i18n/admin';
 import { useSession } from '../state/Session';
 import { Icon, type IconName } from './Icon';
+import { useSeen } from './Seen';
 import { C } from './theme';
 
 export const formatTime = (ms: number) => {
@@ -40,6 +41,8 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
   // The adult's panels: straight in while caregiver mode is open, otherwise the caregiver code first.
   const behindCode = (kind: 'settings' | 'lock') => () => app.setOverlay(editMode ? { kind } : { kind: 'pin', then: { kind } });
   const bar = profile.settings.bar;
+  // For the app's team (families who agreed): which ways to a feature this bar shows.
+  useSeen('board', 'search', 'guide', 'edit', bar.tla && 'tla', bar.schedule && 'schedule', bar.timer && 'timer', !!board && 'lock');
   const timerLabel =
     timer.endAt || (timer.remainingMs > 0 && timer.remainingMs < timer.totalMs) ? formatTime(timer.remainingMs) : t.timer;
 

@@ -10,6 +10,7 @@ import type { Segment } from './grammar';
 import { speechTag } from './lexicon';
 import { chooseVoice, forVoice, plainKind, voiceGender, type VoiceChoice, type VoiceGender, type VoiceInfo } from './voices';
 import { mediaUri } from './media';
+import { countSpeed } from './product';
 import { spanOfName, type Span } from './trimSilence';
 import { clipUri } from './voiceClips';
 
@@ -33,7 +34,7 @@ export function stopSpeech(): void {
 /** Progress while speaking: segment index and character offset of the word being said. */
 export type SpeechProgress = (segment: number, charIndex: number) => void;
 
-function speakOne(text: string, lang: Lang, settings: Settings, onWord?: (charIndex: number) => void): Promise<void> {
+function speakOne(text: string, lang: Lang, settings: Settings, onWord?: (charIndex: number) => void, onStart?: () => void): Promise<void> {
   // Until the device's voices are known, the pitch already follows the chosen voice.
   const choice =
     plan[lang] ?? chooseVoice([], lang, speechTag(lang), plainKind(settings), settings.voiceAge ?? 'adult');
@@ -51,6 +52,7 @@ function speakOne(text: string, lang: Lang, settings: Settings, onWord?: (charIn
       voice: choice.id,
       // The voice as it is (1), raised for a child, or lowered / raised when the device has no voice of the chosen kind.
       pitch: choice.pitch,
+      onStart,
       onDone: done,
       onStopped: done,
       onError: done,
@@ -120,12 +122,19 @@ function playOne(uri: string, rate = 1, span?: Span): Promise<void> {
 export async function speakSegments(segments: Segment[], settings: Settings, onProgress?: SpeechProgress): Promise<void> {
   stopSpeech();
   const mine = generation;
+  // For the app's team (families who agreed): how long the device's voice took to start after
+  // the touch, in fixed steps. Only when the sentence starts with the device's voice and the
+  // device says when it starts.
+  const askedAt = Date.now();
+  const started = () => {
+    if (mine === generation) countSpeed('voice', Date.now() - askedAt);
+  };
   for (const [i, seg] of segments.entries()) {
     if (mine !== generation) return;
     onProgress?.(i, 0);
     if (seg.kind === 'tts') {
       if (seg.text.trim())
-        await speakOne(seg.text, seg.lang, settings, onProgress && ((c) => mine === generation && onProgress(i, c)));
+        await speakOne(seg.text, seg.lang, settings, onProgress && ((c) => mine === generation && onProgress(i, c)), i === 0 ? started : undefined);
     } else if (seg.kind === 'clip') {
       // The dialect's own voice; if the clip cannot be read, the tablet's voice says the word.
       const uri = await clipUri(seg.pack, seg.text);

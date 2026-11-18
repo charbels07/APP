@@ -3,10 +3,10 @@
  * the app's team — only while the family agreed to it ("Help improve the app", `sharesProduct`),
  * and never on a professional's or the team's own account.
  *
- * What leaves the device: per day, a number for each name of a fixed list (`COUNTERS`), and
- * problems as known values (`ProblemItem`). The server checks the agreement again and keeps
- * nothing else. When the family stops sharing, what this device kept is erased (`forget`), and
- * the server erases its side.
+ * What leaves the device: per day, a number for each name of a fixed list (`COUNTERS`: used,
+ * seen, waiting times in fixed steps) with the app's version, and problems as known values
+ * (`ProblemItem`). The server checks the agreement again and keeps nothing else. When the
+ * family stops sharing, what this device kept is erased (`forget`), and the server erases its side.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Backend } from '../backend/Backend';
@@ -20,12 +20,18 @@ const MAX_PROBLEMS = 40;
 
 interface Stored {
   days: Record<string, Partial<Record<Counter, number>>>;
+  /** The app's version each day was counted with (a day sent after an update keeps its own). */
+  versions: Record<string, string>;
   pending: string[];
   problems: ProblemItem[];
 }
 
+const empty = (): Stored => ({ days: {}, versions: {}, pending: [], problems: [] });
+/** Most a counter can say in a day: 1 for "seen", a day in milliseconds for a `…Ms`, otherwise 100,000. */
+const capOf = (key: Counter) => (key.startsWith('seen:') ? 1 : key.endsWith('Ms') ? 86400000 : 100000);
+
 export class ProductCounter implements ProductSink {
-  private store: Stored = { days: {}, pending: [], problems: [] };
+  private store: Stored = empty();
   private saveTimer?: ReturnType<typeof setTimeout>;
   private uploadTimer?: ReturnType<typeof setTimeout>;
   private undoWatch?: () => void;
@@ -50,7 +56,7 @@ export class ProductCounter implements ProductSink {
     const c = new ProductCounter(api, profileId, deviceId, device, agreed, now);
     try {
       const raw = await AsyncStorage.getItem(c.key);
-      if (raw) c.store = { days: {}, pending: [], problems: [], ...JSON.parse(raw) };
+      if (raw) c.store = { ...empty(), ...JSON.parse(raw) };
     } catch {
       /* start empty */
     }
@@ -68,7 +74,10 @@ export class ProductCounter implements ProductSink {
     if (!this.agreed() || !COUNTERS.includes(key) || !(n > 0)) return;
     const d = dayOf(this.now());
     const day = (this.store.days[d] ??= {});
-    day[key] = Math.min((day[key] ?? 0) + Math.round(n), key.endsWith('Ms') ? 86400000 : 100000);
+    // "Seen" is a yes for the day: once it is there, nothing to write again.
+    if (key.startsWith('seen:') && day[key]) return;
+    day[key] = Math.min((day[key] ?? 0) + Math.round(n), capOf(key));
+    this.store.versions[d] = this.device.version;
     if (!this.store.pending.includes(d)) this.store.pending.push(d);
     this.changed();
   };
@@ -91,6 +100,7 @@ export class ProductCounter implements ProductSink {
     if (isForgotten(this.profileId)) return;
     const keys = Object.keys(this.store.days).sort();
     for (const k of keys.slice(0, Math.max(0, keys.length - KEEP_DAYS))) delete this.store.days[k];
+    for (const k of Object.keys(this.store.versions)) if (!this.store.days[k]) delete this.store.versions[k];
     await AsyncStorage.setItem(this.key, JSON.stringify(this.store)).catch(() => {});
   }
 
@@ -113,7 +123,7 @@ export class ProductCounter implements ProductSink {
           counts,
           platform: this.device.platform,
           form: this.device.form,
-          appVersion: this.device.version,
+          appVersion: this.store.versions[d] ?? this.device.version,
         });
         // Today's count can still grow: it is sent again later.
         if (d !== today) this.store.pending = this.store.pending.filter((x) => x !== d);
@@ -141,7 +151,7 @@ export class ProductCounter implements ProductSink {
 
   /** The family stopped sharing: what this device kept is erased too. */
   async forget() {
-    this.store = { days: {}, pending: [], problems: [] };
+    this.store = empty();
     clearTimeout(this.saveTimer);
     await AsyncStorage.removeItem(this.key).catch(() => {});
   }

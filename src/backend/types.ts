@@ -258,6 +258,31 @@ export type FeatureAdoption =
   | { key: string; few: 'using' | 'notUsing' }
   | { key: string; hidden: true };
 
+/**
+ * One feature, last 30 days: children who used it, who had its button or panel on screen without
+ * using it, who never had it on screen. A group of 1 to 4 is never a number: two groups are then
+ * given together (`notUsed`, or `seen`), or nothing (`hidden`).
+ */
+export type FeatureSeen =
+  | { key: string; used: number; seenOnly: number; unseen: number }
+  | { key: string; used: number; notUsed: number }
+  | { key: string; seen: number; unseen: number }
+  | { key: string; hidden: true };
+
+/** The features on one version of the app ("other": the versions used by fewer than 5 children of 5 families, together). */
+export interface VersionAdoption {
+  version: string;
+  children: number;
+  features: ({ key: string; used: number } | { key: string; few: 'using' | 'notUsing' } | { key: string; hidden: true })[];
+}
+
+/** How long people waited for one thing (start, sync, voice): how many times in each step; "few": met by 1 to 4 children. */
+export interface SpeedFigures {
+  key: string;
+  children: number;
+  buckets: Record<string, number | 'few'>;
+}
+
 /** Product figures of the back office: sums over at least `minimum` children of as many families. */
 export interface AdminProduct {
   at: string;
@@ -270,6 +295,12 @@ export interface AdminProduct {
   enough: boolean;
   days: number;
   features?: FeatureAdoption[];
+  /** Seen and used, last 30 days (days counted by a version of the app that counts what is seen). */
+  seen?: FeatureSeen[];
+  /** The features by version of the app, last 30 days, the newest first. */
+  byVersion?: VersionAdoption[];
+  /** Waiting times of the last 30 days (a kind met by fewer than 5 children of 5 families is left out). */
+  speed?: SpeedFigures[];
   children30?: number;
   /** Sums of the last 30 days (a sum is missing when fewer than `minimum` children took part). */
   tasks?: Counts;

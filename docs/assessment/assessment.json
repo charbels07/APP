@@ -6199,7 +6199,7 @@
       "<b>Supabase → Edge Functions:</b> deploy caa-purge with \"Verify JWT\" off. If team_mail_connect() was never run (it was needed for caa-mail), run it once.",
       "<b>Supabase → Database → Extensions:</b> turn on pg_cron, or the nightly removal of old data does not run (the privacy migration says so when it is off).",
       "<b>Supabase → Storage:</b> the project's upload size limit must be at least 3 MB (50 MB by default), for recordings.",
-      "<b>Every team account:</b> turn on two-step sign-in (Settings → Account → My account) before using the back office.",
+      "<b>Every team account:</b> turn on two-step sign-in (Settings → Account → My account) before using the back office.", "<b>Supabase → SQL Editor, once after the privacy file:</b> read the key of the sealed sentences (<i>select decrypted_secret from vault.decrypted_secrets where name = 'caa_field_key'</i>) and keep it in the company password manager; never delete that secret (docs/runbooks/BACKUP-AND-RESTORE.md).",
       "<b>Placeholders:</b> fill the drafts in docs/legal/ with the lawyer, and the e-mail addresses of the two store pages (public/support/, public/delete-account/).",
       "<b>GitHub → Settings → Code security:</b> turn on secret scanning and push protection.",
       "<b>Already yours in the launch plan:</b> two-step sign-in on Supabase, GitHub, Cloudflare and Google (1.9); Supabase Pro (1.11); then the weekly off-site copy (docs/runbooks/BACKUP-AND-RESTORE.md)."

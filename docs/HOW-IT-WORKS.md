@@ -649,6 +649,35 @@ week and month schedules, the bar). The guide and the set-up help name the new g
 | Phone screens | The password field (shared with the sign-in screen) no longer pushes its eye button out of the box in a narrow panel. |
 | Tests | `forgotCode.test.ts`: who is offered it; the password checked without change; a Google account and a tablet refused; the new family code saved by the family and refused from an editor. `forgotCodeServer.test.ts` (real-server requests, faked): the password goes with the account's own address; the e-mailed code is checked as a reset code without choosing a new password; a tablet is refused before anything is sent. `npm run test:a11y` now goes through the family's set-up and scans "Forgot the code?" and the new-code keypad. |
 
+## Round 38 — Security and data protection, second round; never locked in, never lost (18 November 2026)
+
+Everything in the launch plan that is development work and does not need the store accounts, billing
+or a lawyer. Database changes are six files dated 2026-11-18 (the owner runs them: `supabase/README.md` §11).
+
+| What | How it was done |
+|---|---|
+| Two-step sign-in | Settings → Account → My account: **Turn on**, scan the code with an authenticator app, type the first code (`TwoStepCard`, `src/ui/TwoStep.tsx`; Supabase MFA). At each sign-in the code is asked before anything else (stage `twoStep`). The database refuses the children's data until it is typed (`mfa_ok`). Required for the back office (`is_admin()` needs "aal2"; `BackOfficeGate` shows the set-up first). The demo server plays real authenticator codes (`src/lib/totp.ts`, RFC 6238) and shows the current one. |
+| Confirm it is you | Deleting the account or a child's profile, a full-access device code, "Download all my data": the database asks a proof from the last 10 minutes (`fresh_proof`); the screen shows it in place — password, a code by e-mail, or the authenticator code — and tries again (`useProof`, `ProveItsYou`). "Forgot the code?" on the keypad uses the same component. |
+| Team members' addresses | Only the family, the managers and each person themself see an address in the team (`list_members`); the family code only through its function. |
+| The session in the Keychain / Keystore | `src/lib/deviceVault.ts` (expo-secure-store, pieces of 1,800 characters, a session from the older storage moved once); the browser keeps its storage. |
+| Server errors | A server that answers with an error (down, paused, overloaded) is "offline": the board keeps working; only "this session does not exist" signs out (`serverUnavailable`). Before, the child's copy could be erased. |
+| Files erased by the server | `storage_purge` queue + function `caa-purge` (`supabase/functions/caa-purge`). |
+| The bins | A deleted child's profile: 30 days in **Deleted profiles** (Settings → Account; the professional's account page; the first set-up step), **Put back**, then erased with its files. Deleted words and activity boards: 30 days in **Deleted words and boards** (Settings → Board → Words and pictures), back to their place or the first empty place, never moving another word (`src/lib/wordBin.ts`). |
+| Earlier versions | The server keeps a copy of the board weekly, before a big change (a tenth of the words or a board gone at once) and on **Keep a copy now**; 10 per child. **Put back** keeps the current board first and never changes the code, follow-up or sharing; the history says "Board put back as it was on …". |
+| The parent's consent | On the set-up's follow-up step (and when parents take over a profile a professional prepared), **Your agreement** with a box to tick; the database keeps who, when and which text (`consents`) and refuses the profile without it (`src/lib/consent.ts`, `ConsentBox`). |
+| Retention | Every night: follow-up 24 months (sentences 12), history 24 months, notices 12 months, messages to the team 3 years, the team's log 5 years, finished invitations 12 months (`retention_daily`). Back office → Security → **Retention and protections**: two-step in the team, accounts without a sign-in for 24 months (counted, not deleted), profiles in the bin, files waiting. |
+| Sealed sentences | The children's sentences and the observations' texts are encrypted in the database with a key in Supabase Vault, read back only through `usage_of` / `list_observations`. |
+| Download all my data | Settings → Account → Privacy and data (and the professional's account page): one JSON file (`export_my_data`). |
+| Dictation | On the device when the language is installed for it; otherwise "Apple's or Google's service hears the sentence" under the button. |
+| A message to every family | `select public.admin_broadcast('…', '…', '…');` (team or SQL editor): each account gets it in its menu language (incident runbook). |
+| Never locked in | **Export for another AAC app (.obz)** writes the Open Board Format (`src/lib/zip.ts`, `src/lib/obz.ts`): stored places, folders open their boards without being said, pictograms with their licence, family recordings; app links are not exported. |
+| Core words never move | `src/__tests__/coreLayout.test.ts` compares every starter-board word place (and `TLA_CORE` / `TLA_FUNCTIONS`) with a committed fixture, and checks that `migrate` never moves a card of a saved profile (`fixtures/oldProfile.json`). Changing a place on purpose: `UPDATE_CORE_LAYOUT=1`, after the speech therapist's validation. |
+| No voice for a language | The set-up's voice step and Settings → Voice say so and explain where to install one (`NoVoiceWarning`). |
+| Links out behind the code | On the tablet apps, a pictogram that opens another app first asks the caregiver code ("The board is about to open another app"); no switch to turn it off (store rules for children's apps). |
+| Permission sentences | iOS microphone, camera, photos, speech recognition: English in `app.json`, French / English / Arabic in `locales/`. |
+| Figures for the team, list 3 | "Seen" next to "used" for each feature (`useSeen`), the app version of each day, speed in five steps (start-up, sync, voice; `countSpeed`). Families are asked to agree again (`SHARE_TERMS` 3). Product page: "Seen, then used?", "Use by version"; Bugs page: "Speed". |
+| Documents | `docs/runbooks/` (release checklist, backup and restore, incident response, data breach, contingency and risk register), `docs/ACCESS-LIST.md`, `docs/ARCHITECTURE.md`, `docs/legal/` (drafts for the lawyer), store pages `public/support/` and `public/delete-account/`, `scripts/backup-offsite.sh`, `.github/` (Dependabot, checks on every change). |
+
 ## How everything is checked
 
 | Check | What it does |

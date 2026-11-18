@@ -82,8 +82,10 @@ insert into feedback (user_id, kind, text, created_at) values (:'rita', 'other',
 insert into admin_log (action, created_at) values ('old', now() - interval '6 years'), ('new', now());
 select retention_daily();
 select test.ok((select count(*) = 2 from usage_days), 'follow-up days older than 24 months are erased');
-select test.ok((select count(*) = 1 from usage_days where data ? 'samples') and (select data ? 'samples' from usage_days where day = current_date - 10),
+select test.ok((select count(*) = 1 from usage_days where samples_sealed is not null) and (select samples_sealed is not null from usage_days where day = current_date - 10),
   'the children''s sentences go after 12 months; the counts stay');
+select test.ok((select count(*) = 0 from usage_days where data ? 'samples'), 'the sentences are never kept readable in the document');
+select test.ok((select position('encore' in encode(samples_sealed, 'escape')) = 0 from usage_days where day = current_date - 10), 'they are sealed (encrypted)');
 select test.ok((select count(*) = 1 from history where summary = 'old') = false and (select count(*) = 1 from history where summary = 'new'), 'change history: 24 months');
 select test.ok((select count(*) = 1 from notices where user_id = :'rita'), 'notices: 12 months');
 select test.ok((select count(*) = 1 from feedback), 'messages to the team: 3 years');
@@ -96,7 +98,29 @@ select set_config('request.jwt.claim.sub', :'zoe', false);
 select set_config('request.jwt.claims', '{"role":"authenticated","aal":"aal2"}', false);
 select test.ok((select (admin_retention() ->> 'inactiveAccounts')::int = 1), 'the team sees how many accounts have not signed in for 24 months (a count)');
 
--- 4. A message to every family, from the team only.
+-- 4. Sealed sentences and notes: read back only through the functions, by who may see the data.
+select set_config('request.jwt.claim.sub', :'rita', false);
+select set_config('request.jwt.claims', '{"role":"authenticated"}', false);
+select test.ok((select bool_or(d -> 'samples' -> 0 ->> 't' = 'encore') from usage_of((select v::uuid from test.ids where k = 'adam'), current_date - 30) d),
+  'the family reads the child''s sentences back');
+select test.expect_error('select samples_sealed from usage_days', 'permission denied for table usage_days');
+insert into observations (profile_id, created_by, author_name, at, utterance, note)
+  values ((select v::uuid from test.ids where k = 'adam'), :'rita', 'Rita', now(), 'veux gâteau', 'à table');
+select test.ok((select utterance is null and note is null from observations), 'an observation''s texts are not kept readable');
+select test.ok((select utterance = 'veux gâteau' and note = 'à table' from list_observations((select v::uuid from test.ids where k = 'adam'))), 'the family reads them back');
+update observations set result = 'understood';
+select test.ok((select note = 'à table' from list_observations((select v::uuid from test.ids where k = 'adam'))), 'changing another field keeps the texts');
+update observations set note = '';
+select test.ok((select note is null and utterance = 'veux gâteau' from list_observations((select v::uuid from test.ids where k = 'adam'))), 'an empty text clears it');
+select test.expect_error('select note_sealed from observations', 'permission denied for table observations');
+select test.expect_error('update observations set note_sealed = ''x''', 'permission denied for table observations');
+select set_config('request.jwt.claim.sub', :'eve', false);
+select test.ok((select count(*) = 0 from list_observations((select v::uuid from test.ids where k = 'adam'))) and
+               (select count(*) = 0 from usage_of((select v::uuid from test.ids where k = 'adam'), current_date - 30)), 'someone else reads nothing');
+select set_config('request.jwt.claim.sub', :'zoe', false);
+select set_config('request.jwt.claims', '{"role":"authenticated","aal":"aal2"}', false);
+
+-- 5. A message to every family, from the team only.
 select test.expect_error('select admin_broadcast(''x'', '''', ''y'')', 'invalid');
 select test.ok((select admin_broadcast('Maintenance ce soir.', 'Maintenance tonight.', 'صيانة الليلة.') = 5), 'the team writes one message: every account (not the tablets) gets it');
 select set_config('request.jwt.claim.sub', :'rita', false);

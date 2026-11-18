@@ -131,7 +131,7 @@ select update_member(:'adam', :'eve', 1, '{"viewData":true}', null, null, false)
 select set_config('request.jwt.claim.sub', :'eve', false);
 update observations set note = 'changed';
 delete from observations;
-select test.ok((select count(*) = 1 and bool_and(note = 'note de Rita') from observations), 'someone who may see the data cannot rewrite or delete another person''s note');
+select test.ok((select count(*) = 1 and bool_and(note = 'note de Rita') from list_observations(:'adam')), 'someone who may see the data cannot rewrite or delete another person''s note');
 
 -- 10. A material shared "to edit" cannot be taken.
 select set_config('request.jwt.claim.sub', :'rita', false);

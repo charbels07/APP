@@ -229,18 +229,21 @@ const toVerification = (r: Row): Verification => ({
   submittedAt: ms(r.submitted_at),
   decidedAt: ms(r.decided_at),
 });
+/** An observation's readable columns (its texts are sealed: read through list_observations). */
+const OBSERVATION_COLS = 'id, profile_id, created_by, author_name, at, sample_t, utterance, function, context, partner, autonomy, result, note, created_at, updated_at';
+
 const toObservation = (r: Row): Observation => ({
   id: r.id,
   profileId: r.profile_id,
   at: ms(r.at) ?? 0,
   sampleT: r.sample_t ?? undefined,
-  utterance: r.utterance ?? undefined,
+  utterance: r.utterance || undefined,
   function: r.function ?? undefined,
   context: r.context ?? undefined,
   partner: r.partner ?? undefined,
   autonomy: r.autonomy ?? undefined,
   result: r.result ?? undefined,
-  note: r.note ?? undefined,
+  note: r.note || undefined,
   createdBy: r.created_by ?? '',
   authorName: r.author_name ?? '',
   createdAt: ms(r.created_at) ?? 0,
@@ -1052,6 +1055,12 @@ export class SupabaseBackend implements Backend {
   }
 
   async listUsage(profileId: string, fromDay: string): Promise<UsageDay[]> {
+    // The children's sentences are sealed in the database: read back through usage_of.
+    try {
+      return await data<UsageDay[]>(this.sb.rpc('usage_of', { p_id: profileId, p_from: fromDay }));
+    } catch (e) {
+      if (!missingFunction(e)) throw e;
+    }
     const rows = await data<Row[]>(this.sb.from('usage_days').select('data').eq('profile_id', profileId).gte('day', fromDay));
     return rows.map((r) => r.data as UsageDay);
   }
@@ -1094,6 +1103,12 @@ export class SupabaseBackend implements Backend {
   }
 
   async listObservations(profileId: string): Promise<Observation[]> {
+    // What the child said and the adult's note are sealed in the database: read back through list_observations.
+    try {
+      return (await data<Row[]>(this.sb.rpc('list_observations', { p_id: profileId }))).map(toObservation);
+    } catch (e) {
+      if (!missingFunction(e)) throw e;
+    }
     const rows = await data<Row[]>(this.sb.from('observations').select('*').eq('profile_id', profileId).order('at', { ascending: false }));
     return rows.map(toObservation);
   }
@@ -1104,19 +1119,21 @@ export class SupabaseBackend implements Backend {
       profile_id: o.profileId,
       at: new Date(o.at).toISOString(),
       sample_t: o.sampleT ?? null,
-      utterance: o.utterance ?? null,
+      // '' clears a text (the database seals the texts and keeps them when a column is left out).
+      utterance: o.utterance ?? '',
       function: o.function ?? null,
       context: o.context ?? null,
       partner: o.partner ?? null,
       autonomy: o.autonomy ?? null,
       result: o.result ?? null,
-      note: o.note ?? null,
+      note: o.note ?? '',
       updated_at: new Date().toISOString(),
     };
     const saved = o.id
-      ? await data<Row>(this.sb.from('observations').update(row).eq('id', o.id).select().single())
-      : await data<Row>(this.sb.from('observations').insert({ ...row, created_by: me.id, author_name: me.displayName }).select().single());
-    return toObservation(saved);
+      ? await data<Row>(this.sb.from('observations').update(row).eq('id', o.id).select(OBSERVATION_COLS).single())
+      : await data<Row>(this.sb.from('observations').insert({ ...row, created_by: me.id, author_name: me.displayName }).select(OBSERVATION_COLS).single());
+    // The database gives the sealed texts back empty: they are the ones just written.
+    return toObservation({ ...saved, utterance: o.utterance, note: o.note });
   }
 
   async deleteObservation(id: string): Promise<void> {

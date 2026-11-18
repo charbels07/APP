@@ -10,7 +10,129 @@
 --     5 years, finished deletion work 30 days. Accounts without a sign-in for 24 months are only
 --     counted for the team, who decide (nothing is deleted without a warning).
 --  3. Export: one file with everything the database holds about the person and their children.
+--  0. (first below) The children's sentences and the adults' observations are sealed (encrypted) at rest.
 -- The values are a proposal to validate with the lawyer (docs/legal/RETENTION-SCHEDULE.md).
+
+-- ───────────────────────── 0. The children's sentences and the adults' notes, sealed ─────────────────────────
+
+-- The sentences a child said (follow-up level "sentences") and the adults' observations are kept
+-- encrypted in the database (pgcrypto), with a key kept in Supabase Vault: a copy of the database
+-- (a dump, a backup file) holds them unreadable. They are read back only through the functions
+-- below, which check who may see them. (A project without Vault, like the tests, keeps the key in
+-- a closed table instead.)
+create schema if not exists private;
+revoke all on schema private from public;
+create table private.field_keys (one boolean primary key default true check (one), key text not null);
+
+do $$
+begin
+  if exists (select 1 from pg_extension where extname = 'supabase_vault') then
+    if not exists (select 1 from vault.secrets where name = 'caa_field_key') then
+      perform vault.create_secret(encode(gen_random_bytes(32), 'hex'), 'caa_field_key', 'Empower Communication: key of the sealed sentences and notes');
+    end if;
+  else
+    insert into private.field_keys (key) values (encode(gen_random_bytes(32), 'hex')) on conflict do nothing;
+  end if;
+end $$;
+
+create function private.field_key() returns text
+language plpgsql stable security definer set search_path = public as $$
+declare
+  k text;
+begin
+  if exists (select 1 from pg_extension where extname = 'supabase_vault') then
+    execute 'select decrypted_secret from vault.decrypted_secrets where name = $1 limit 1' into k using 'caa_field_key';
+  end if;
+  if k is null then select key into k from private.field_keys; end if;
+  if k is null then raise exception 'no_field_key'; end if;
+  return k;
+end $$;
+
+create function private.seal(t text) returns bytea
+language sql volatile security definer set search_path = public, extensions as $$
+  select case when t is null or t = '' then null else pgp_sym_encrypt(t, private.field_key()) end
+$$;
+create function private.unseal(b bytea) returns text
+language sql stable security definer set search_path = public, extensions as $$
+  select case when b is null then null else pgp_sym_decrypt(b, private.field_key()) end
+$$;
+revoke all on all functions in schema private from public;
+
+-- Follow-up days: the sentences leave the readable document for a sealed column.
+alter table public.usage_days add column samples_sealed bytea;
+create function public.seal_usage() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.data ? 'samples' then
+    new.samples_sealed := private.seal((new.data -> 'samples')::text);
+    new.data := new.data - 'samples';
+  elsif tg_op = 'INSERT' or new.data is distinct from old.data then
+    -- a day saved again without sentences (the family lowered the follow-up level): none kept
+    new.samples_sealed := null;
+  end if;
+  return new;
+end $$;
+create trigger seal_usage before insert or update on public.usage_days
+for each row execute function public.seal_usage();
+revoke execute on function public.seal_usage() from public, anon, authenticated;
+update public.usage_days set data = data where data ? 'samples';
+revoke select on public.usage_days from authenticated, anon;
+grant select (profile_id, device_id, day, data, updated_at) on public.usage_days to authenticated;
+
+create function public.usage_of(p_id uuid, p_from date) returns setof jsonb
+language sql stable security definer set search_path = public as $$
+  select u.data || case when u.samples_sealed is null then '{}'::jsonb
+                        else jsonb_build_object('samples', private.unseal(u.samples_sealed)::jsonb) end
+    from usage_days u
+   where u.profile_id = p_id and u.day >= p_from and can_view_data(p_id)
+$$;
+revoke execute on function public.usage_of(uuid, date) from public, anon;
+grant execute on function public.usage_of(uuid, date) to authenticated;
+
+-- Observations: what the child said and the adult's note, sealed. The app sends the whole note each
+-- time ('' clears a text; a missing column keeps it).
+alter table public.observations add column utterance_sealed bytea, add column note_sealed bytea;
+create function public.seal_observation() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.utterance is not null then
+    new.utterance_sealed := private.seal(new.utterance);
+    new.utterance := null;
+  elsif tg_op = 'INSERT' then
+    new.utterance_sealed := null;
+  end if;
+  if new.note is not null then
+    new.note_sealed := private.seal(new.note);
+    new.note := null;
+  elsif tg_op = 'INSERT' then
+    new.note_sealed := null;
+  end if;
+  return new;
+end $$;
+create trigger seal_observation before insert or update on public.observations
+for each row execute function public.seal_observation();
+revoke execute on function public.seal_observation() from public, anon, authenticated;
+update public.observations set utterance = utterance, note = note where utterance is not null or note is not null;
+revoke select, insert, update on public.observations from authenticated, anon;
+grant select (id, profile_id, created_by, author_name, at, sample_t, utterance, function, context, partner, autonomy, result, note, created_at, updated_at)
+  on public.observations to authenticated;
+grant insert (profile_id, created_by, author_name, at, sample_t, utterance, function, context, partner, autonomy, result, note, updated_at)
+  on public.observations to authenticated;
+grant update (profile_id, at, sample_t, utterance, function, context, partner, autonomy, result, note, updated_at)
+  on public.observations to authenticated;
+
+create function public.list_observations(p_id uuid)
+returns table (id uuid, profile_id uuid, created_by uuid, author_name text, at timestamptz, sample_t bigint, utterance text,
+               function text, context text, partner text, autonomy text, result text, note text, created_at timestamptz, updated_at timestamptz)
+language sql stable security definer set search_path = public as $$
+  select o.id, o.profile_id, o.created_by, o.author_name, o.at, o.sample_t, private.unseal(o.utterance_sealed),
+         o.function, o.context, o.partner, o.autonomy, o.result, private.unseal(o.note_sealed), o.created_at, o.updated_at
+    from observations o
+   where o.profile_id = p_id and can_view_data(p_id)
+   order by o.at desc
+$$;
+revoke execute on function public.list_observations(uuid) from public, anon;
+grant execute on function public.list_observations(uuid) to authenticated;
 
 -- ───────────────────────── 1. Consent ─────────────────────────
 
@@ -103,8 +225,8 @@ declare
 begin
   delete from usage_days where day < current_date - interval '24 months';
   get diagnostics n = row_count; out := out || jsonb_build_object('usageDays', n);
-  -- The children's sentences (follow-up level "sentences") go after 12 months; the counts stay.
-  update usage_days set data = data - 'samples' where day < current_date - interval '12 months' and data ? 'samples';
+  -- The children's sentences (follow-up level "sentences", sealed: section 5) go after 12 months; the counts stay.
+  update usage_days set samples_sealed = null where day < current_date - interval '12 months' and samples_sealed is not null;
   get diagnostics n = row_count; out := out || jsonb_build_object('sentences', n);
   delete from history where created_at < now() - interval '24 months';
   get diagnostics n = row_count; out := out || jsonb_build_object('history', n);
@@ -182,8 +304,15 @@ begin
     'proposals', (select coalesce(jsonb_agg(to_jsonb(x) order by x.created_at), '[]') from proposals x where x.profile_id = any (mine) or x.author_id = me),
     'history', (select coalesce(jsonb_agg(to_jsonb(h) order by h.created_at), '[]') from history h where h.profile_id = any (mine)),
     'devices', (select coalesce(jsonb_agg(to_jsonb(d) order by d.created_at), '[]') from devices d where d.profile_id = any (mine) or d.user_id = me),
-    'followUpDays', (select coalesce(jsonb_agg(to_jsonb(u) order by u.day), '[]') from usage_days u where u.profile_id = any (mine)),
-    'observations', (select coalesce(jsonb_agg(to_jsonb(o) order by o.at), '[]') from observations o where o.profile_id = any (mine) or o.created_by = me),
+    'followUpDays', (select coalesce(jsonb_agg(jsonb_build_object('profileId', u.profile_id, 'device', u.device_id, 'day', u.day)
+                                                || u.data || case when u.samples_sealed is null then '{}'::jsonb
+                                                                  else jsonb_build_object('samples', private.unseal(u.samples_sealed)::jsonb) end
+                                                order by u.day), '[]')
+                       from usage_days u where u.profile_id = any (mine)),
+    'observations', (select coalesce(jsonb_agg(to_jsonb(o) - 'utterance_sealed' - 'note_sealed'
+                                               || jsonb_build_object('utterance', private.unseal(o.utterance_sealed), 'note', private.unseal(o.note_sealed))
+                                               order by o.at), '[]')
+                       from observations o where o.profile_id = any (mine) or o.created_by = me),
     'featureCounts', (select coalesce(jsonb_agg(to_jsonb(f) order by f.day), '[]') from feature_days f where f.profile_id = any (mine)),
     'boardCopies', (select coalesce(jsonb_agg(jsonb_build_object('profileId', s.profile_id, 'createdAt', s.created_at, 'reason', s.reason, 'board', s.data) order by s.created_at), '[]')
                       from profile_snapshots s where s.profile_id = any (mine)),

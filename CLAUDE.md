@@ -226,6 +226,10 @@
   (sentences 12), history 24 months, notices 12 months, messages to the team 3 years, the team's log 5 years.
   Inactive accounts are only counted (Back office → Security): never delete accounts automatically unless asked.
   The values are in `docs/legal/RETENTION-SCHEDULE.md`; change both together.
+- The children's sentences (`usage_days.samples_sealed`) and the observations' texts (`utterance_sealed`,
+  `note_sealed`) are sealed with a key in Supabase Vault (`private.seal` / `private.unseal`): read them only through
+  `usage_of` and `list_observations`; the app sends an observation's texts each time ('' clears one). A new field
+  holding what a child said, or free text about a child, is sealed the same way.
 - "Download all my data" (`export_my_data`, `DownloadMyData`) must cover every new table holding a person's or
   their child's data: add it there when a table is created.
 - Dictation runs on the device when the language is installed for it (`installedFor`); otherwise the screen says

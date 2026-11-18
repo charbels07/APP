@@ -189,7 +189,45 @@ The back office can now show how the features are used and which technical probl
 7. Messages written to the team carry a name and an e-mail address: who answers access and
    deletion requests, and how long they are kept.
 
+### Added later: second round (18 November 2026)
+
+The items of the honest list below (§5) that could be built without a store build or a key are
+built, each with its attack replayed by `npm run test:db`:
+
+| What | How it protects | Where |
+|---|---|---|
+| **Two-step sign-in** (a 6-digit code from an authenticator app) | Offered to everyone (Settings → Account → My account), **required for the back office**: `is_admin()` now also needs the code typed in this session ("aal2"). Once a person turns it on, the database shows nothing of the children until the code is typed (`mfa_ok` in `access_of`, `owns_profile`, `list_profiles`, plus a "restrictive" rule on every table). A stolen password alone opens nothing. | `…20261118000000_security_2.sql`, `src/ui/TwoStep.tsx` |
+| **A fresh proof before what cannot be undone** | Deleting the account or a child's profile, linking a device with **full access**, downloading all the data: the database asks for a sign-in, a password, an e-mailed code or an authenticator code from the last 10 minutes (`fresh_proof`). A borrowed, unlocked phone cannot do these. A linked tablet never can. | same, `src/ui/ProveItsYou.tsx` |
+| **Team members no longer read each other's e-mail, nor the family's connection code** | Column rights: the address only for the family, the team's managers and the person themself (`list_members`); the family code only through `connection_code()` (managers). | same |
+| **The session in the iOS Keychain / Android Keystore** | On phones and tablets the sign-in session is in the system's secure storage, readable after the first unlock, never copied to another device. A copy of the app's files holds no usable session. | `src/lib/deviceVault.ts` |
+| **Files deleted by the server** | When an account, a child's profile or a professional's document is erased, the database queues its files and the server function `caa-purge` deletes them with the server's key, whatever the device did. | `…20261118000100_storage_purge.sql`, `supabase/functions/caa-purge` |
+| **Nothing disappears by one mistake** | A deleted child's profile stays 30 days in the family's bin (hidden from everybody), then is erased with its files. The server keeps copies of the board (weekly, before a big change, by hand; 10 per child) that the family puts back in one touch. | `…20261118000200_bin_snapshots.sql` |
+| **The parent's consent kept as a record** | Before a family creates a child's profile, or takes over one a professional prepared, the parent ticks a statement; the database keeps who, when and which text version, and refuses the profile without it. | `…20261118000500_privacy.sql`, `src/lib/consent.ts` |
+| **Data kept no longer than needed** | Every night: follow-up 24 months (the children's sentences 12), history 24 months, notices 12 months, messages to the team 3 years, the team's log 5 years. Inactive accounts are counted for the team (Back office → Security), not deleted. | same |
+| **"Download all my data"** | One file with everything the server keeps about the account and its children (GDPR access and portability), after a fresh proof. | same, `src/ui/settings/DownloadMyData.tsx` |
+| **Dictation on the device** | When the language is installed for it, dictation runs on the device and no audio leaves it; otherwise a line says that Apple's or Google's service hears the sentence. | `src/ui/VoiceButton.tsx` |
+| **A server error is not a sign-out** | A server that cannot answer (down, paused, overloaded) no longer makes the app erase the child's copy: only a clear "this session does not exist" signs out. | `src/backend/supabase.ts`, `src/state/Session.tsx` |
+| **Links out of the app behind the code** | On the tablet apps, a pictogram that opens another app (YouTube…) first asks the caregiver code (store rules for children's apps). | `src/lib/appLinks.ts` |
+
+What these need on the server is in §4 ("After the update of 18 November 2026").
+
 ## 4. What only you can do
+
+### After the update of 18 November 2026 (about 20 minutes)
+
+1. **Run the new database files**, in this order, in Supabase → SQL Editor (each answers "Success"):
+   `20261118000000_security_2.sql`, `20261118000100_storage_purge.sql`,
+   `20261118000200_bin_snapshots.sql`, then the other `20261118…` files in the order of their
+   names. Until they run, the app keeps working with the older rules (it falls back), but the new
+   protections are not active on the server.
+2. **Deploy the function `caa-purge`** exactly like `caa-mail` (supabase/README.md §11), with
+   *Verify JWT* turned **off**. It uses the connection already made for the team's e-mails.
+3. **Turn on two-step sign-in for every team account**: sign in to the app with it; the back
+   office now shows "Turn on" first (Settings → Account → My account works too). Keep the
+   authenticator on a phone that is not shared. A lost phone: Supabase → Authentication → Users →
+   the person → remove the factor, after checking it is them.
+4. Check that **TOTP** is enabled in Authentication → Multi-Factor (it is by default).
+
 
 ### Now (10 minutes)
 
@@ -233,16 +271,11 @@ Names move a little between versions of the dashboard; look for the nearest word
 
 | What | Why it waits |
 |---|---|
-| A second step (code from a phone app) to open the back office | Needs a small screen to enrol; then one line in the database makes it mandatory. |
-| Asking the password again before linking a full-access device or deleting | Not possible the same way for Google accounts; to design. |
-| Keeping the session in the phone's secure storage (iOS Keychain / Android Keystore) | Needs a native module and a test on real devices; do it with the first App Store build. |
-| A robot check (CAPTCHA) on sign-up and on tablet sign-ins | Needs a Cloudflare Turnstile key and a small change in the app. |
-| Deleting files from the server side when an account is deleted | Done from the app today (best effort); a server function with the secret key would guarantee it. |
+| A robot check (CAPTCHA) on sign-up and on tablet sign-ins | Needs a Cloudflare Turnstile key, and on the store apps a web view (native module) or the stores' own checks (App Attest, Play Integrity): to do with the first store builds. Supabase's rate limits and the confirmed e-mail hold meanwhile. |
 | "Has this e-mail an account?" can still be learned by inviting or sharing | Limited to 30 invitations and 40 shares a day; hiding it fully changes how sharing answers. |
-| Team members (even a use-only tablet) can read the other members' e-mail and the family code | Needs the app to stop reading whole rows. |
-| A full-access device is active as soon as its code is typed | Safer: the family confirms it on their own screen. |
-| Speech: the phone's dictation may send audio to Apple or Google | Texts in the app should say so, or dictation should be limited to on-device recognition where it exists. |
-| A test by a security professional, and the legal side (privacy policy, where the data is hosted) | Before selling: an outside review is worth its price for an app about children. |
+| A full-access device is active as soon as its code is typed | Making the code now asks a fresh proof of the parent (above), which removes the main risk (a borrowed phone). A confirmation on the parent's screen remains possible later. |
+| Field-level encryption of the children's sentences and of the observations | Supabase encrypts disks and backups; the sentences are now erased after 12 months. Encrypting the column itself (key in Supabase Vault) is planned for the first six months. |
+| A test by a security professional, and the legal side (privacy policy, DPIA, contracts) | Before selling: drafts are in `docs/legal/`, to be completed by a lawyer; an outside test is worth its price for an app about children. |
 
 ## 6. How it stays checked
 

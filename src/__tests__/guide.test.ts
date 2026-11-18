@@ -8,6 +8,9 @@ import { onboardingStrings } from '../i18n/onboarding';
 import { proStrings } from '../i18n/pro';
 import { settingsStrings } from '../i18n/settings';
 import { strings } from '../i18n/ui';
+import { securityStrings } from '../i18n/security';
+import { backupStrings } from '../i18n/backup';
+import { consentText } from '../lib/consent';
 
 describe('in-app guide', () => {
   it('covers both tracks, in French and English, with the same steps', () => {
@@ -71,6 +74,10 @@ describe('in-app guide', () => {
         dataStrings(lang).shareTitle,
         // a word recorded by the family, per language; which voice the device uses
         t.voice, e.recordVoice, t.voiceUsed,
+        // security and data (November 2026, second round): two-step sign-in, the bin, earlier versions, the full download, the consent
+        securityStrings(lang).twoStep, securityStrings(lang).turnOn, securityStrings(lang).downloadAll,
+        backupStrings(lang).binTitle, backupStrings(lang).putBack, backupStrings(lang).versions, backupStrings(lang).keepNow, backupStrings(lang).wordBin,
+        consentText[lang].title, st.exportObz,
       ];
       for (const label of quoted) expect(text(lang)).toContain(label);
       // Removed things are no longer described.

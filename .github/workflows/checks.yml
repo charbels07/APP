@@ -1,0 +1,51 @@
+# The checks of every change (CLAUDE.md, docs/runbooks/RELEASE-CHECKLIST.md): TypeScript, the
+# Jest tests, and the database rules with every known attack on a throw-away PostgreSQL.
+# No secret is needed: nothing here talks to the real server.
+# Not here: `npm run test:a11y` (needs Playwright, about 10 minutes) and `npm run test:live`
+# (needs a test project): run them on a computer before a release.
+name: Checks
+
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    name: Typecheck and tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Tests
+        run: npx jest --ci
+
+  database:
+    name: Database rules
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install PostgreSQL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql
+      # The script runs initdb and pg_ctl from /usr/lib/postgresql/*/bin as the current user
+      # (the runner's own user, not root), on a port of its own, and stops it at the end.
+      - name: Database rules and attacks
+        run: npm run test:db

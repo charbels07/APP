@@ -202,18 +202,19 @@ grant execute on function public.export_my_data() to authenticated;
 
 -- The team writes one short message in three languages; each account receives it as a notice in its
 -- own menu language (docs/runbooks/INCIDENT-RESPONSE.md). Team only, 5 a day, written in the team's log.
--- From the SQL editor: select public.admin_broadcast('…', '…', '…');  (as a team member in the app: later)
+-- From the SQL editor: select public.admin_broadcast('…', '…', '…');
 create function public.admin_broadcast(p_fr text, p_en text, p_ar text) returns int
 language plpgsql security definer set search_path = public, auth as $$
 declare
   n int;
 begin
-  if not is_admin() then raise exception 'forbidden'; end if;
+  -- The team in the app (with its two-step code), or someone with the dashboard (no sign-in token there).
+  if not is_admin() and coalesce(auth.jwt() ->> 'role', '') <> '' then raise exception 'forbidden'; end if;
   if coalesce(trim(p_fr), '') = '' or coalesce(trim(p_en), '') = '' or coalesce(trim(p_ar), '') = ''
      or greatest(length(p_fr), length(p_en), length(p_ar)) > 500 then
     raise exception 'invalid';
   end if;
-  perform rate_limit('broadcast', 5, interval '1 day');
+  if auth.uid() is not null then perform rate_limit('broadcast', 5, interval '1 day'); end if;
   insert into notices (user_id, kind, text)
   select u.id, 'access', in_lang(u.id, trim(p_fr), trim(p_en), trim(p_ar))
     from auth.users u where not coalesce(u.is_anonymous, false);

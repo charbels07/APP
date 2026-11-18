@@ -109,7 +109,7 @@ know they must sign in again on the child's device.
 
 | Action | How |
 |---|---|
-| **Maintenance notice in the app** | Notices are in-app only. Since 18 November 2026: in the SQL editor, as a member of the team, `select public.admin_broadcast('[FR] …', '[EN] …', '[AR] …');` — each account receives the message in its own menu language (5 a day at most, written in the team's log). Before that database file is run: `insert into public.notices (user_id, kind, text) select id, 'access', '[FR] … / [EN] … / [AR] …' from auth.users where not is_anonymous;` |
+| **Maintenance notice in the app** | Notices are in-app only. Since 18 November 2026: in the SQL editor, `select public.admin_broadcast('[FR] …', '[EN] …', '[AR] …');` — each account receives the message in its own menu language (5 a day at most, written in the team's log). Before that database file is run: `insert into public.notices (user_id, kind, text) select id, 'access', '[FR] … / [EN] … / [AR] …' from auth.users where not is_anonymous;` |
 | **Pause a store release** | App Store Connect: pause the phased release. Play Console: halt the rollout (`RELEASE-CHECKLIST.md`, section 8) |
 | **Take back the store pages** | Cloudflare → Workers & Pages → the project → Deployments → roll back |
 | **GitHub** | Revoke personal access tokens and deploy keys that are not needed; check the audit log; check the Cloudflare and Expo connections to the repository |

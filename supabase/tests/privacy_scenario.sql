@@ -103,6 +103,10 @@ select set_config('request.jwt.claim.sub', :'rita', false);
 select set_config('request.jwt.claims', '{"role":"authenticated"}', false);
 select test.ok((select count(*) = 1 from notices where text = 'Maintenance ce soir.'), 'in its own menu language');
 select test.expect_error('select admin_broadcast(''a'', ''b'', ''c'')', 'forbidden');
+reset role;
+select set_config('request.jwt.claims', '', false);
+select test.ok((select admin_broadcast('Retour à la normale.', 'Back to normal.', 'عاد كل شيء طبيعيًا.') = 5), 'from the dashboard''s SQL editor (no sign-in token) it works too');
+set role authenticated;
 
 select set_config('request.jwt.claims', '', false);
 reset role;

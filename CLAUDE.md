@@ -194,3 +194,45 @@
   (`roadmap`, one vote per account, ideas written by the team in three languages). It is a message sent on
   purpose: it never depends on the sharing switch. Keep the "no personal or medical information" reminder.
 - Services and keys: `docs/API-KEYS.md` (keep it up to date when a feature starts needing one).
+- Two-step sign-in (`src/ui/TwoStep.tsx`, migration `20261118000000_security_2.sql`): offered to everyone in
+  My account, required for the back office (`is_admin()` needs "aal2"; `is_team()` only shows the way in). Once
+  on, the database shows nothing of the children until the code is typed (`mfa_ok` in `access_of`,
+  `owns_profile`, `list_profiles`, and a restrictive rule on every table): a new table with row rules gets that
+  restrictive rule too. Sign-in routes to the `twoStep` stage first (`route` in `Session.tsx`).
+- What cannot be undone asks a fresh proof, decided by the database (`fresh_proof`: signed in, password, e-mailed
+  code or authenticator code in the last 10 minutes; error `proof_needed`): deleting the account or a child's
+  profile, a full-access device code, "Download all my data". The screen wraps the call in `useProof(reason)`
+  (`src/ui/ProveItsYou.tsx`), which shows the proof in place and tries once more; the keypad's "Forgot the
+  code?" uses the same `ProveItsYou`. Never ask the proof in the app only.
+- Team members do not read each other's e-mail nor the family's connection code: the app reads the team with
+  `list_members` and profiles with explicit columns (`PROFILE_COLS`), never `select('*')` on `profiles` or
+  `members` (column rights refuse it).
+- The session is kept in the system's secure storage on phones and tablets (`src/lib/deviceVault.ts`, through
+  `sessionStore`); the browser keeps its storage.
+- A server that cannot answer is "offline", never "signed out" (`serverUnavailable` in `supabase.ts`): only a
+  clear "no session" may lead to `forgetEverything`, which erases the child's copy.
+- Deleting a child's profile puts it in the family's bin for 30 days (`delete_profile`; `list_bin`,
+  `restore_profile`; `ProfileBin`), then the nightly job erases it; the direct table delete is closed. The
+  server keeps copies of the board (weekly, before a big change, by hand; 10 per child: `BoardVersions`);
+  putting one back keeps the current board first and never changes the family's choices (code, follow-up,
+  sharing). Words and activity boards deleted on the board go to the profile's own bin for 30 days
+  (`src/lib/wordBin.ts`, `removeCells` / `binBoard`); putting back never moves another word.
+- Stored files of something erased (account, profile, document) are deleted by the server (`storage_purge`
+  queue, function `caa-purge`, same key as `caa-mail`); the app's own deletions stay "best effort".
+- Consent: a family's child profile is created, or a professional's one taken over, only with the parent's
+  consent recorded (`give_consent`, `consents`; text and version in `src/lib/consent.ts`, `ConsentBox`). A new
+  text: raise `CHILD_DATA_CONSENT` and `consent_version()` together.
+- Retention runs every night (`retention_daily`, migration `20261118000500_privacy.sql`): follow-up 24 months
+  (sentences 12), history 24 months, notices 12 months, messages to the team 3 years, the team's log 5 years.
+  Inactive accounts are only counted (Back office → Security): never delete accounts automatically unless asked.
+  The values are in `docs/legal/RETENTION-SCHEDULE.md`; change both together.
+- "Download all my data" (`export_my_data`, `DownloadMyData`) must cover every new table holding a person's or
+  their child's data: add it there when a table is created.
+- Dictation runs on the device when the language is installed for it (`installedFor`); otherwise the screen says
+  Apple's or Google's service hears it (`t.dictateOnline`). Never hide that line.
+- Database changes since 18 November 2026 come with a scenario in `supabase/tests/` added to `scripts/test-db.sh`;
+  the app must keep working before the owner runs a migration (`missingFunction` fallbacks in `supabase.ts`).
+- Owner-facing documents: runbooks in `docs/runbooks/`, `docs/ACCESS-LIST.md`, `docs/ARCHITECTURE.md`, legal
+  drafts in `docs/legal/` (drafts for a lawyer, never present them as final), store pages in `public/support/`
+  and `public/delete-account/` (no script; keep them true when deletion or retention changes). The assessment's
+  source is `docs/assessment/` (rebuild with `python3 scripts/assessment/build.py`).

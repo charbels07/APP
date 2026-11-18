@@ -73,7 +73,12 @@ const results = [];
     await step('16b-pin-forgot', async () => {
       const digits = async (c) => { for (const d of c) { await p.getByRole('button', { name: d, exact: true }).last().click(); await p.waitForTimeout(100); } };
       await p.getByRole('radio', { name: /Lebanese/ }).first().click();
-      for (let i = 0; i < 25 && !(await p.getByRole('button', { name: 'Finish', exact: true }).count()); i++) { await btn('Continue').click(); await p.waitForTimeout(300); }
+      for (let i = 0; i < 25 && !(await p.getByRole('button', { name: 'Finish', exact: true }).count()); i++) {
+        // The parent's consent, on the follow-up step, before the profile can be kept.
+        const agree = p.getByRole('checkbox', { name: /legal guardian/ });
+        if ((await agree.count()) && (await agree.first().getAttribute('aria-checked')) !== 'true') { await scan('15c-consent'); await agree.first().click(); }
+        await btn('Continue').click(); await p.waitForTimeout(300);
+      }
       await btn('Finish').click(); await p.getByText('The caregiver code protects', { exact: false }).first().waitFor();
       await digits('2580'); await p.waitForTimeout(200); await digits('2580'); await p.waitForTimeout(1000); await p.keyboard.press('Escape'); await p.waitForTimeout(400);
       await btn(L.caregiver).click(); await btn('Forgot the code?').click(); await p.getByLabel('Account password').waitFor(); await scan('16b-pin-forgot');

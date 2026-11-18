@@ -8,7 +8,7 @@ import { Platform } from 'react-native';
 import type { Lang, Settings } from '../model/types';
 import type { Segment } from './grammar';
 import { speechTag } from './lexicon';
-import { chooseVoice, forVoice, plainKind, voiceGender, type VoiceChoice, type VoiceGender, type VoiceInfo } from './voices';
+import { chooseVoice, forVoice, langsWithoutVoice, plainKind, voiceGender, type VoiceChoice, type VoiceGender, type VoiceInfo } from './voices';
 import { mediaUri } from './media';
 import { spanOfName, type Span } from './trimSilence';
 import { clipUri } from './voiceClips';
@@ -162,6 +162,11 @@ function deviceVoices(): Promise<VoiceInfo[]> {
     return vs;
   });
   return voiceList;
+}
+
+/** The child's languages this device cannot say (Settings → Voice, the set-up's voice step). */
+export async function missingVoices(langs: Lang[]): Promise<Lang[]> {
+  return langsWithoutVoice(await deviceVoices(), langs);
 }
 
 /** Voice and pitch used for each language, from Settings → Voice (woman, man, girl or boy). */

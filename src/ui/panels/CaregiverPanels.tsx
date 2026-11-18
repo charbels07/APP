@@ -33,6 +33,7 @@ import { expanded } from '../a11y';
 import { PictoSearch } from '../PictoPicker';
 import { SearchBox } from '../SearchBox';
 import { VoiceButton } from '../VoiceButton';
+import { NoVoiceWarning } from '../VoiceCheck';
 import { PrintPreview } from '../PrintPreview';
 import { ObzExportButton } from '../settings/ObzExport';
 import { SymbolView, useMediaUri } from '../SymbolView';
@@ -1311,6 +1312,7 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
         />
         {st.voiceAge === 'child' && <Text style={s.note}>{t.voiceKidsNote}</Text>}
         <VoicesUsed st={st} />
+        <NoVoiceWarning langs={childLangs} uiLang={st.uiLang} />
       </Group>
 
       <Group title={t.sBar} icon="grid">

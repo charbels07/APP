@@ -11,7 +11,7 @@ with people who use a screen reader, a switch or a keyboard every day.
 
 | | |
 |---|---|
-| Screens scanned by the program | 57 different screens, at several sizes and in Arabic: 204 scans |
+| Screens scanned by the program | 64 different screens (42 of the family side, 22 of the professional side), at four sizes and in Arabic: 232 scans, 0 violations (18 November 2026) |
 | Rule breaks found at the start | 4 kinds, on almost every screen (see below) |
 | Rule breaks left in the scans | 0 |
 | Keyboard-only use | works: Tab, Enter, Space, Escape; the focus is always visible |

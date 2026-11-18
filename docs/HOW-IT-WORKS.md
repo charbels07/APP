@@ -694,10 +694,17 @@ or a lawyer. Database changes are six files dated 2026-11-18 (the owner runs the
 - **Billing** (deferred).
 - **Back office**: built and tested on a local database, but **not yet run on the real Supabase
   project** (the new migration must be run there, and an account added to `admins`). It lives inside
-  the app, so opening it on a computer needs the app's web version online (the repository is ready
-  for Cloudflare, see `supabase/README.md`; the first build there has not been seen working yet). The team's accounts have a password only: turn on two-step sign-in
-  in Supabase before real certificates arrive. Certificates that are PDF files open in a new tab,
-  pictures open in the page.
+  the app. Since Round 38 it needs two-step sign-in (each team account turns it on the first time).
+  Certificates that are PDF files open in a new tab, pictures open in the page.
+- **The database files of 18 November 2026** (Round 38) and the function `caa-purge` must be run /
+  deployed in Supabase by the owner (`supabase/README.md` §11); until then the app works with the
+  older rules.
+- **Native store apps**: never built yet (by choice: billing and the store accounts come first). The
+  session in the Keychain / Keystore, on-device dictation, the permission sentences, switch access and
+  the link gate are written for them and must be tried on real devices.
+- **Robot check (CAPTCHA)** on sign-up: needs a Cloudflare Turnstile key and the store builds.
+- **Adult-user mode** ("this board is for me") and an **offline-only mode** without an account:
+  not built (first six months).
 - **Photos and recorded sounds stay on the device that made them**: words, boards and settings
   sync, but a photo added on the parent's phone does not yet appear on the child's tablet. The
   private storage folder for it exists (`profile-media`); copying the files is the next step.

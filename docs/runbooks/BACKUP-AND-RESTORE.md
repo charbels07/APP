@@ -175,3 +175,17 @@ Kept by `[owner]` in `[place]`. One line per run, per test, per restore.
 | Decrypted files (`copy.dump`) | Deleted right after use | They are readable |
 
 The privacy policy and the account-deletion page tell families these numbers.
+
+## The key of the sealed sentences (since 18 November 2026)
+
+The children's sentences and the observations' texts are encrypted in the database with a key kept in
+Supabase Vault (`caa_field_key`). Supabase's own backups restore it with the project. A `pg_dump` copied
+to **another** project cannot read it (Vault secrets are encrypted with the project's own root key), so:
+
+1. Once, after running `20261118000500_privacy.sql`: in the SQL editor,
+   `select decrypted_secret from vault.decrypted_secrets where name = 'caa_field_key';`
+   and store the value in the company password manager (two people can open it). Never paste it in a chat,
+   an e-mail or a ticket.
+2. When restoring into a new project: before anything reads the follow-up, create the same secret there:
+   `select vault.create_secret('<the value>', 'caa_field_key');`
+3. Never delete or change that secret: the sealed sentences and notes would become unreadable.

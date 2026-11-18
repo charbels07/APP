@@ -14,6 +14,7 @@ import { exportJson } from '../../lib/platform';
 import type { UiLang } from '../../model/types';
 import { useApp } from '../../state/AppState';
 import type { BoardCtx } from '../../state/BoardContext';
+import type { MediaSync } from '../../state/mediaSync';
 import { forgetLocal } from '../../state/profileSync';
 import { useSession } from '../../state/Session';
 import { WriteTeam } from '../admin/WriteTeam';
@@ -179,6 +180,7 @@ function SyncSection({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
           </Text>
         </View>
         <Note text={`${x.lastSynced} : ${board.sync.lastSyncedAt ? when(board.sync.lastSyncedAt, uiLang) : x.never} · ${x.lastBackup} : ${backup ? when(backup, uiLang) : x.never}`} />
+        {board.media && <MediaLine media={board.media} x={x} />}
         <Btn
           small
           icon="refresh"
@@ -186,6 +188,7 @@ function SyncSection({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
           onPress={async () => {
             await board.sync.flush();
             await board.sync.pull();
+            void board.media?.run();
             load();
           }}
         />
@@ -253,6 +256,19 @@ function SyncSection({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
       )}
     </Section>
   );
+}
+
+/** Where the child's photos and recordings are: copied to the account, or how many still wait. */
+function MediaLine({ media, x }: { media: MediaSync; x: SettingsStrings }) {
+  const st = useSyncExternalStore(media.subscribe, media.status);
+  if (!st.total) return null;
+  const m = x.mediaStates;
+  const parts: string[] = [];
+  if (st.waiting) parts.push(st.localOnly ? m.here : m.waiting(st.waiting));
+  if (st.full) parts.push(m.full);
+  if (st.refused) parts.push(m.refused(st.refused));
+  if (st.receiving) parts.push(m.receiving(st.receiving));
+  return <Note text={`${x.media} : ${parts.length ? parts.join(' · ') : m.copied}`} />;
 }
 
 function Sharing({ board, x, openTeam }: { board: BoardCtx; x: SettingsStrings; openTeam: () => void }) {

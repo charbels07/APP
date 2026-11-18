@@ -27,3 +27,5 @@ $P -d aac -c "delete from profiles; delete from auth.users; delete from storage.
 $P -d aac -f supabase/tests/team_mail_scenario.sql 2>&1 | grep -E "ok —|PASSED|ERROR"
 $P -d aac -c "delete from profiles; delete from auth.users; delete from storage.objects;"
 $P -d aac -f supabase/tests/product_scenario.sql 2>&1 | grep -E "ok —|PASSED|ERROR"
+$P -d aac -c "delete from profiles; delete from auth.users; delete from storage.objects;"
+$P -d aac -f supabase/tests/media_scenario.sql 2>&1 | grep -E "ok —|PASSED|ERROR"

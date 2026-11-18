@@ -163,6 +163,22 @@ export interface Backend {
   /** On a new device: links it to the child's profile. */
   redeemPairingCode(code: string, device: { id: string; name: string; platform: string }): Promise<string>;
 
+  // ── A child's photos and recordings, copied through the account (src/state/mediaSync.ts) ──
+  // Private: `profile-media/<profile id>/<name>`, for the child's team only. The name is the one
+  // the profile uses (`isSyncable` in src/lib/mediaPlan.ts); anything else is refused.
+  /**
+   * Sends one file. Refused ('forbidden'): this person may not change the board (a use-only tablet,
+   * someone removed from the team); 'too_large', 'media_type', 'media_quota' (the child's space is
+   * full), 'too_many' (too many today); 'exists': the account already has it.
+   */
+  uploadMedia(profileId: string, name: string, body: ArrayBuffer | Blob, contentType: string): Promise<void>;
+  /** An address that downloads one file for a few minutes ('not_found' when the account does not have it). */
+  mediaUrl(profileId: string, name: string): Promise<string>;
+  /** The files the account keeps for this child. */
+  listMedia(profileId: string): Promise<{ name: string; size: number; createdAt: number }[]>;
+  /** Removes files from the account (the child's managers; a missing file, or someone else's refusal, is silent). */
+  removeMedia(profileId: string, names: string[]): Promise<void>;
+
   // ── Professional verification ──
   getVerification(): Promise<Verification | null>;
   saveVerification(v: Omit<Verification, 'userId' | 'status' | 'submittedAt' | 'decidedAt'>): Promise<Verification>;

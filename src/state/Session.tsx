@@ -73,7 +73,7 @@ interface SessionCtx {
   enter: (opts?: { profileId?: string; app?: boolean }) => Promise<void>;
   /** This account belongs to the app's team (the server decides; this only shows the way in). */
   isAdmin: boolean;
-  /** `eraseMedia`: also erase the photos and recordings kept on this device (they are not saved online). */
+  /** `eraseMedia`: also erase the photos and recordings made on this device (those received from the account always leave). */
   signOut: (opts?: { eraseMedia?: boolean }) => Promise<void>;
   /** Reads the account again (after changing the name, for example). */
   refreshAccount: () => Promise<void>;

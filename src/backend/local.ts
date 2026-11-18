@@ -12,6 +12,7 @@ import type { Profile, UiLang } from '../model/types';
 import type { Op } from '../lib/profileDiff';
 import { type AccessLevel, type CollaboratorRole, type PermissionSet, preset } from '../lib/permissions';
 import { deleteMedia, mediaUri, saveMedia } from '../lib/media';
+import { isSyncable, MEDIA_LIMITS, mediaKind } from '../lib/mediaPlan';
 import { exampleBugs, exampleDocument, exampleOverview, exampleProduct, exampleRequests, exampleRoadmap } from '../lib/demoBackOffice';
 import { COUNTERS, PROBLEM_KINDS, SCREENS, sharesProduct, type ProblemItem } from '../lib/product';
 import { demoObservations, demoUsage } from '../lib/demoUsage';
@@ -97,6 +98,11 @@ interface DB {
   roadmapVotes?: { itemId: string; userId: string; role: string }[];
   /** The example requests of the back-office demonstration were added. */
   backOfficeSeeded?: boolean;
+  /**
+   * A child's photos and recordings "in the account": only their names and sizes (the files
+   * already live on this device; the demonstration follows the real server's rules).
+   */
+  media?: Record<string, { name: string; size: number; createdAt: number }[]>;
 }
 const emptyDb = (): DB => ({
   accounts: {},
@@ -549,6 +555,7 @@ export class LocalBackend implements Backend {
       db.devices = db.devices.filter(other);
       db.usage = (db.usage ?? []).filter((u) => u.profileId !== id);
       db.observations = (db.observations ?? []).filter(other);
+      if (db.media) delete db.media[id];
     });
   }
 
@@ -1025,6 +1032,53 @@ export class LocalBackend implements Backend {
     });
     await store.set(SESSION_KEY, deviceAccount.id);
     return deviceAccount.profileId;
+  }
+
+  // ── A child's photos and recordings (the files stay on this device; the rules are the server's) ──
+
+  async uploadMedia(profileId: string, name: string, body: ArrayBuffer | Blob, contentType: string): Promise<void> {
+    await this.tx((db, m) => {
+      const me = LocalBackend.need(m);
+      const a = LocalBackend.access(db, profileId, me.id);
+      // Those who may change the board: not a use-only tablet, not someone removed from the team.
+      if (!a || !(a.owner || a.perms.manager || a.level >= 3)) throw new BackendError('forbidden');
+      if (!isSyncable(name)) throw new BackendError('invalid');
+      const kind = mediaKind(name)!;
+      if (!contentType.startsWith(`${kind}/`)) throw new BackendError('media_type');
+      const size = typeof Blob !== 'undefined' && body instanceof Blob ? body.size : (body as ArrayBuffer).byteLength;
+      if (size > MEDIA_LIMITS[kind]) throw new BackendError('too_large');
+      const list = ((db.media ??= {})[profileId] ??= []);
+      if (list.some((f) => f.name === name)) throw new BackendError('exists');
+      if (list.length >= MEDIA_LIMITS.files || list.reduce((n, f) => n + f.size, size) > MEDIA_LIMITS.bytes) throw new BackendError('media_quota');
+      list.push({ name, size, createdAt: Date.now() });
+    });
+  }
+
+  async mediaUrl(profileId: string, name: string): Promise<string> {
+    await this.tx((db, m) => {
+      LocalBackend.requireAccess(db, profileId, LocalBackend.need(m));
+      if (!db.media?.[profileId]?.some((f) => f.name === name)) throw new BackendError('not_found');
+    });
+    // The demonstration's "account" is this device: the file is wherever it was made.
+    const uri = isSyncable(name) ? await mediaUri(name) : undefined;
+    if (!uri) throw new BackendError('not_found');
+    return uri;
+  }
+
+  async listMedia(profileId: string): Promise<{ name: string; size: number; createdAt: number }[]> {
+    return this.tx((db, m) => {
+      LocalBackend.requireAccess(db, profileId, LocalBackend.need(m));
+      return clone(db.media?.[profileId] ?? []);
+    });
+  }
+
+  async removeMedia(profileId: string, names: string[]): Promise<void> {
+    await this.tx((db, m) => {
+      const a = LocalBackend.access(db, profileId, LocalBackend.need(m).id);
+      // Like the storage server: someone who may not remove gets no error, and nothing is removed.
+      if (!a || !(a.owner || a.perms.manager) || !db.media?.[profileId]) return;
+      db.media[profileId] = db.media[profileId].filter((f) => !names.includes(f.name));
+    });
   }
 
   // ── Verification ──

@@ -215,7 +215,7 @@ const fr = {
   rules: [
     'Le nom d’un enfant, sa date de naissance exacte, son diagnostic.',
     'Les mots touchés, les phrases dites, les mots cherchés.',
-    'Les photos et les voix enregistrées (elles restent sur l’appareil).',
+    'Les photos et les voix enregistrées (espace privé de l’équipe de l’enfant).',
     'Le contenu des tableaux, des plannings et des observations.',
     'Le texte d’une erreur, l’adresse d’un appareil, une position.',
     'Un chiffre qui concerne moins de 5 enfants de 5 familles.',
@@ -433,7 +433,7 @@ const en: Dict = {
   rules: [
     'A child’s name, exact date of birth, diagnosis.',
     'The words touched, the sentences said, the words looked for.',
-    'Photos and recorded voices (they stay on the device).',
+    'Photos and recorded voices (private space of the child’s team).',
     'What is on the boards, in the schedules and in the observations.',
     'The text of an error, a device’s address, a location.',
     'A figure that concerns fewer than 5 children of 5 families.',
@@ -649,7 +649,7 @@ const ar: Dict = {
   rules: [
     'اسم الطفل، تاريخ ميلاده الدقيق، تشخيصه.',
     'الكلمات الملموسة، الجمل المنطوقة، الكلمات التي بُحث عنها.',
-    'الصور والأصوات المسجّلة (تبقى على الجهاز).',
+    'الصور والأصوات المسجّلة (مساحة خاصة بفريق الطفل).',
     'محتوى اللوحات والجداول والملاحظات.',
     'نص خطأ، عنوان جهاز، موقع.',
     'رقم يخصّ أقل من 5 أطفال من 5 عائلات.',

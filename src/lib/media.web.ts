@@ -1,29 +1,53 @@
 /**
- * Media store (web build, used for the browser demo): IndexedDB, with an
- * in-memory fallback when storage is blocked (private mode, sandboxed previews).
+ * Media store (web build): IndexedDB, with an in-memory fallback when storage is blocked
+ * (private mode, sandboxed previews). A copy travels through the account to the child's other
+ * devices (`src/state/mediaSync.ts`) under the same name.
  */
 const DB_NAME = 'caa-media';
 const STORE = 'files';
 const memory = new Map<string, Blob>();
 const urlCache = new Map<string, string>();
 
+let opening: Promise<IDBDatabase | null> | null = null;
+
+/** One connection for the whole visit (the copying of a child's files asks it many times). */
 function openDb(): Promise<IDBDatabase | null> {
-  return new Promise((resolve) => {
+  opening ??= new Promise((resolve) => {
     try {
       const req = indexedDB.open(DB_NAME, 1);
       req.onupgradeneeded = () => req.result.createObjectStore(STORE);
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => resolve(null);
+      req.onsuccess = () => {
+        const db = req.result;
+        // Another tab updates the store: this connection steps aside and the next call opens a new one.
+        db.onversionchange = () => {
+          db.close();
+          opening = null;
+        };
+        db.onclose = () => {
+          opening = null;
+        };
+        resolve(db);
+      };
+      req.onerror = () => {
+        opening = null;
+        resolve(null);
+      };
     } catch {
+      opening = null;
       resolve(null);
     }
   });
+  return opening;
 }
 
-async function put(name: string, blob: Blob): Promise<void> {
-  memory.set(name, blob);
+/** `keep`: also held in memory (what is shown now); a file received in the background is not. */
+async function put(name: string, blob: Blob, keep = true): Promise<void> {
+  if (keep) memory.set(name, blob);
   const db = await openDb();
-  if (!db) return;
+  if (!db) {
+    memory.set(name, blob);
+    return;
+  }
   await new Promise<void>((resolve) => {
     try {
       const tx = db.transaction(STORE, 'readwrite');
@@ -36,7 +60,7 @@ async function put(name: string, blob: Blob): Promise<void> {
   });
 }
 
-async function get(name: string): Promise<Blob | undefined> {
+async function get(name: string, keep = true): Promise<Blob | undefined> {
   if (memory.has(name)) return memory.get(name);
   const db = await openDb();
   if (!db) return undefined;
@@ -45,7 +69,7 @@ async function get(name: string): Promise<Blob | undefined> {
       const req = db.transaction(STORE, 'readonly').objectStore(STORE).get(name);
       req.onsuccess = () => {
         const blob = req.result as Blob | undefined;
-        if (blob) memory.set(name, blob);
+        if (blob && keep) memory.set(name, blob);
         resolve(blob);
       };
       req.onerror = () => resolve(undefined);
@@ -127,4 +151,35 @@ export async function saveMediaBytes(bytes: Uint8Array, ext: string): Promise<st
     ext === 'webp' ? 'image/webp' : ext === 'png' ? 'image/png' : ext === 'jpg' ? 'image/jpeg' : ext === 'wav' ? 'audio/wav' : 'application/octet-stream';
   await put(name, new Blob([bytes as Uint8Array<ArrayBuffer>], { type }));
   return name;
+}
+
+/** True when this browser has the file (without reading it). */
+export async function hasMedia(name: string): Promise<boolean> {
+  if (memory.has(name)) return true;
+  const db = await openDb();
+  if (!db) return false;
+  return new Promise((resolve) => {
+    try {
+      const req = db.transaction(STORE, 'readonly').objectStore(STORE).count(name);
+      req.onsuccess = () => resolve(req.result > 0);
+      req.onerror = () => resolve(false);
+    } catch {
+      resolve(false);
+    }
+  });
+}
+
+/** The file as it is (sent to the account), without keeping it in memory. */
+export async function mediaContent(name: string): Promise<Uint8Array | Blob | undefined> {
+  return get(name, false);
+}
+
+/** Stores a file received from the account under the name the profile uses. */
+export async function saveMediaFrom(url: string, name: string): Promise<void> {
+  if (await hasMedia(name)) return;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`download ${res.status}`);
+  const blob = await res.blob();
+  if (!blob.size) throw new Error('empty');
+  await put(name, blob, false);
 }

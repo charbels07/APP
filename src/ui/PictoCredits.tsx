@@ -5,7 +5,7 @@
  * website, licence, copyright notice, attribution statement and whether drawings were modified.
  * Licences that must be reproduced in full (MIT, ISC, Apache, OFL, Unicode) can be opened here.
  */
-import React, { useState } from 'react';
+import React, { createContext, useContext, useMemo, useState } from 'react';
 import { Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { pictoCreditLine } from '../data/pictoCredit';
@@ -84,12 +84,15 @@ const T = {
 } satisfies Record<UiLang, unknown>;
 
 const open = (url: string) => Linking.openURL(url).catch(() => {});
+/** How a link of the page opens on a tablet: at once, or (from the board) after the caregiver code. */
+const LinkOpener = createContext<(url: string) => void>(open);
 
 function Link({ url }: { url: string }) {
+  const openUrl = useContext(LinkOpener);
   // In a browser: a real link (it answers the keyboard and opens in a new tab). On tablets: a press.
   const web = Platform.OS === 'web' ? ({ href: url, hrefAttrs: { target: '_blank', rel: 'noopener noreferrer' } } as object) : null;
   return (
-    <Text style={st.link} onPress={web ? undefined : () => open(url)} accessibilityRole="link" {...web}>
+    <Text style={st.link} onPress={web ? undefined : () => openUrl(url)} accessibilityRole="link" {...web}>
       {url.replace(/^https?:\/\//, '')}
     </Text>
   );
@@ -177,10 +180,22 @@ export function PictoCreditsBody({ lang }: { lang: UiLang }) {
 /**
  * A short credit line and a button that opens the full page. `compact`: the button only
  * (welcome page). Usable anywhere, also outside the board (it brings its own window).
+ * `onLink`: on a page the child can reach (the guide), how a website opens on a tablet (after the
+ * caregiver code: `openLink` of the board); the page closes first so the keypad is seen.
  */
-export function PictoCredit({ lang, compact = false }: { lang: UiLang; compact?: boolean }) {
+export function PictoCredit({ lang, compact = false, onLink }: { lang: UiLang; compact?: boolean; onLink?: (url: string) => void }) {
   const [shown, setShown] = useState(false);
   const t = T[lang];
+  const opener = useMemo(
+    () =>
+      onLink
+        ? (url: string) => {
+            setShown(false);
+            onLink(url);
+          }
+        : open,
+    [onLink],
+  );
   return (
     <View style={{ gap: 6 }}>
       {!compact && <Text style={[st.muted, lang === 'ar' && st.rtl]}>{pictoCreditLine(lang)}</Text>}
@@ -204,7 +219,9 @@ export function PictoCredit({ lang, compact = false }: { lang: UiLang; compact?:
             </Pressable>
           </View>
           <ScrollView contentContainerStyle={st.body}>
-            <PictoCreditsBody lang={lang} />
+            <LinkOpener.Provider value={opener}>
+              <PictoCreditsBody lang={lang} />
+            </LinkOpener.Provider>
           </ScrollView>
         </SafeAreaView>
       </Modal>

@@ -22,6 +22,7 @@ import { pressed } from '../a11y';
 import { useSessionMaybe } from '../../state/Session';
 import { codeFrom } from '../../lib/codeInput';
 import { forgotCodeWays } from '../../lib/forgotCode';
+import { openAppUrl } from '../../lib/appLinks';
 import { PasswordField } from '../start/AuthScreen';
 
 export function pathText(loc: Location, app: ReturnType<typeof useApp>): string {
@@ -347,8 +348,15 @@ export function PinPanel() {
   // chooses its code before reading the guide.
   const then = app.overlay?.kind === 'pin' ? app.overlay.then : undefined;
   const beforeGuide = then?.kind === 'guide';
+  // Another app or a web page is about to open from the board (a parental gate: `linkNeedsCode`).
+  const leaving = then?.kind === 'openLink' ? then : undefined;
   const rtl = useNavRtl();
   const open = () => {
+    if (then?.kind === 'openLink') {
+      app.setOverlay(null);
+      void openAppUrl(then.url);
+      return;
+    }
     // The settings, the child lock and the guide open on their own: the board stays as the child uses it.
     if (then && opensAlone(then)) return app.setOverlay(then);
     app.setEditMode(true);
@@ -454,7 +462,7 @@ export function PinPanel() {
   const error = !!msg;
   return (
     <Panel
-      title={step === 'forgot' ? t.pinForgotTitle : step === 'enter' ? t.pinTitle : t.pinChooseTitle}
+      title={step === 'forgot' ? t.pinForgotTitle : step === 'enter' && !leaving ? t.pinTitle : t.pinChooseTitle}
       // Closed without choosing, on the first opening: the guide still opens (the code is asked later).
       onClose={() => app.setOverlay(beforeGuide ? { kind: 'guide' } : null)}
       onBack={step === 'forgot' ? () => setStep('enter') : undefined}
@@ -529,6 +537,9 @@ export function PinPanel() {
       )}
       {step !== 'forgot' && (
         <>
+          {leaving && (
+            <Text style={[styles.pinWhyText, { fontWeight: '700' }, rtlText]}>{t.pinOpensApp.replace('{name}', leaving.name)}</Text>
+          )}
           <Text
             style={[
               styles.muted,

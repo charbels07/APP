@@ -130,6 +130,8 @@ const fr = {
     'Ce n’est pas le code des familles : chaque famille choisit le sien sur ses appareils. Vous pourrez changer le vôtre dans Réglages → Code et données.',
   ],
   pinThenGuide: 'Ensuite, le guide s’ouvre.',
+  // Before another app or a web page opens from the board (tablet apps).
+  pinOpensApp: 'Le tableau va ouvrir une autre application : {name}.',
   pinHint: 'Entrez le code accompagnant',
   // Forgotten code: a code sent to the account's e-mail (or phone) proves it is the family.
   pinForgot: 'Code oublié ?',
@@ -564,6 +566,7 @@ const en: Dict = {
     'It is not the families’ code: each family chooses its own on its devices. You can change yours in Settings → Code and data.',
   ],
   pinThenGuide: 'Then the guide opens.',
+  pinOpensApp: 'The board is about to open another app: {name}.',
   pinHint: 'Enter the caregiver code',
   pinForgot: 'Forgot the code?',
   pinForgotTitle: 'Forgotten code',
@@ -992,6 +995,7 @@ const ar: Dict = {
     'ليس رمز العائلات: كل عائلة تختار رمزها على أجهزتها. يمكنك تغيير رمزك من الإعدادات ← الرمز والبيانات.',
   ],
   pinThenGuide: 'بعد ذلك يُفتح الدليل.',
+  pinOpensApp: 'ستفتح اللوحة تطبيقاً آخر: {name}.',
   pinHint: 'أدخل رمز المرافق',
   pinForgot: 'نسيت الرمز؟',
   pinForgotTitle: 'رمز منسيّ',

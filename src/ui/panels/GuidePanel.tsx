@@ -107,7 +107,8 @@ export function GuidePanel() {
           lockedNote={c.action && NEEDS_CAREGIVER.includes(c.action) && !editMode ? t.guideUnlock : undefined}
         />
       ))}
-      <PictoCredit lang={ui} />
+      {/* The guide is open to the child: on a tablet, a website of the credits asks the caregiver code first. */}
+      <PictoCredit lang={ui} onLink={(url) => app.openLink(url, url.replace(/^https?:\/\//, '').split('/')[0])} />
     </Panel>
   );
 }

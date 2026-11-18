@@ -15,10 +15,11 @@ import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
 import { sessionStore } from '../lib/keepSignedIn';
 import type { Profile, UiLang } from '../model/types';
+import { isSyncable } from '../lib/mediaPlan';
 import type { ProblemItem } from '../lib/product';
 import type { Op } from '../lib/profileDiff';
 import type { AccessLevel, CollaboratorRole, PermissionSet } from '../lib/permissions';
-import { BackendError, type Backend, type CodeSent, type SignInMethods, type SignUpInput } from './Backend';
+import { BackendError, type AdminRetention, type Backend, type BinEntry, type CodeSent, type SecurityState, type SignInMethods, type SignUpInput, type Snapshot, type TwoStepSetup } from './Backend';
 import { normEmail, normPhone } from './local';
 import {
   DEFAULT_PREFS,
@@ -69,6 +70,13 @@ const PENDING_ROLE = 'caa.pendingRole';
 
 const isNetworkError = (e: { name?: string; message?: string; status?: number }) =>
   e.name === 'AuthRetryableFetchError' || e.status === 0 || /network|fetch|timed? ?out/i.test(e.message ?? '');
+/**
+ * The server could not answer (down, overloaded, paused, too many requests): that is "no internet"
+ * for the app, never "signed out". Only a clear "this session or account does not exist" signs
+ * out, because signing out erases the child's copy from the device.
+ */
+export const serverUnavailable = (e: { name?: string; message?: string; status?: number }) =>
+  isNetworkError(e) || (e.status ?? 0) >= 500 || e.status === 429 || e.status === 408;
 
 /** The person's name as Google or Apple gave it with the sign-in, if any. */
 export function providerName(meta: Record<string, unknown> | null | undefined): string {
@@ -94,10 +102,63 @@ function fail(error: { message?: string } | null | undefined): never {
   if (/network|fetch/i.test(m)) throw new BackendError('offline', m);
   throw new BackendError(m.split(/\s/)[0], m);
 }
+/**
+ * File storage error → the app's short codes (a child's photos and recordings). The storage
+ * server answers with a status and a message; the database's own refusals (`media_quota`,
+ * `media_type`, `too_large`, `too_many`: migration 20261118000300) arrive inside the message.
+ */
+export function mediaFail(error: unknown): never {
+  const e = (error ?? {}) as { message?: string; status?: number; statusCode?: string; code?: string; name?: string };
+  const m = e.message ?? 'unknown';
+  const status = Number(e.status ?? e.statusCode ?? NaN);
+  if (/media_quota/.test(m)) throw new BackendError('media_quota', m);
+  if (/too_many/.test(m)) throw new BackendError('too_many', m);
+  if (/already exists|duplicate/i.test(m) || status === 409 || e.code === 'ResourceAlreadyExists') throw new BackendError('exists', m);
+  if (/too_large|maximum allowed size|too large/i.test(m) || status === 413 || e.code === 'EntityTooLarge') throw new BackendError('too_large', m);
+  if (/media_type|mime type|not supported/i.test(m) || status === 415 || e.code === 'InvalidMimeType') throw new BackendError('media_type', m);
+  if (/not.?found/i.test(m) || status === 404 || e.code === 'NoSuchKey') throw new BackendError('not_found', m);
+  if (/row-level security|unauthori[sz]ed|access denied|permission|forbidden/i.test(m) || status === 403 || status === 401) throw new BackendError('forbidden', m);
+  if (/network|fetch|timed? ?out|abort/i.test(m) || status === 0 || e.name === 'StorageUnknownError') throw new BackendError('offline', m);
+  throw new BackendError('media_error', m);
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** The place of a child's file in the account; a name the app does not make never becomes a path. */
+function mediaPath(profileId: string, name: string): string {
+  if (!UUID.test(profileId) || !isSyncable(name)) throw new BackendError('invalid');
+  return `${profileId}/${name}`;
+}
+
 async function data<T>(q: PromiseLike<{ data: T | null; error: { message?: string } | null }>): Promise<T> {
   const { data: d, error } = await q;
   if (error) fail(error);
   return d as T;
+}
+
+/** The database has not received the newest update yet (the app may be published before it). */
+const missingFunction = (e: unknown) => /could not find the function|does not exist|PGRST202/i.test(String((e as { message?: string })?.message ?? e));
+
+/** What the app reads of a child's profile (the family's connection code is read through its function). */
+const PROFILE_COLS = 'id, owner_id, name, age, intake, data, version, updated_at, updated_by';
+
+/** The QR code Supabase gives is an SVG "data:" address: its text. */
+export function svgOfDataUrl(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  if (url.trim().startsWith('<svg')) return url;
+  const m = /^data:image\/svg\+xml(;[^,]*)?,(.*)$/s.exec(url);
+  if (!m) return undefined;
+  if (/;base64/.test(m[1] ?? '')) {
+    try {
+      return typeof atob === 'function' ? atob(m[2]) : Buffer.from(m[2], 'base64').toString('utf8');
+    } catch {
+      return undefined;
+    }
+  }
+  try {
+    return decodeURIComponent(m[2]);
+  } catch {
+    return m[2];
+  }
 }
 
 const toProfileRec = (r: Row): ChildRecord => ({
@@ -196,18 +257,21 @@ const toVerification = (r: Row): Verification => ({
   submittedAt: ms(r.submitted_at),
   decidedAt: ms(r.decided_at),
 });
+/** An observation's readable columns (its texts are sealed: read through list_observations). */
+const OBSERVATION_COLS = 'id, profile_id, created_by, author_name, at, sample_t, utterance, function, context, partner, autonomy, result, note, created_at, updated_at';
+
 const toObservation = (r: Row): Observation => ({
   id: r.id,
   profileId: r.profile_id,
   at: ms(r.at) ?? 0,
   sampleT: r.sample_t ?? undefined,
-  utterance: r.utterance ?? undefined,
+  utterance: r.utterance || undefined,
   function: r.function ?? undefined,
   context: r.context ?? undefined,
   partner: r.partner ?? undefined,
   autonomy: r.autonomy ?? undefined,
   result: r.result ?? undefined,
-  note: r.note ?? undefined,
+  note: r.note || undefined,
   createdBy: r.created_by ?? '',
   authorName: r.author_name ?? '',
   createdAt: ms(r.created_at) ?? 0,
@@ -281,16 +345,19 @@ export class SupabaseBackend implements Backend {
   async currentAccount(): Promise<Account | null> {
     // No internet is not "signed out": the app then keeps working from the device copy.
     const { data: s, error: se } = await this.sb.auth.getSession();
-    if (se && isNetworkError(se)) throw new BackendError('offline', se.message);
+    if (se && serverUnavailable(se)) throw new BackendError('offline', se.message);
     if (!s.session) return null;
     const { data: d, error } = await this.sb.auth.getUser();
     if (error) {
-      if (isNetworkError(error)) throw new BackendError('offline', error.message);
+      if (serverUnavailable(error)) throw new BackendError('offline', error.message);
       return null;
     }
     const u = d.user;
     if (!u) return null;
-    let row = await data<Row | null>(this.sb.from('accounts').select('*').eq('id', u.id).maybeSingle());
+    // The account's row: if the database cannot answer now, the app keeps working from the device.
+    let row = await data<Row | null>(this.sb.from('accounts').select('*').eq('id', u.id).maybeSingle()).catch((e: unknown) => {
+      throw new BackendError('offline', String((e as Error)?.message ?? e));
+    });
     // Google / Apple accounts are created without a role: apply the one chosen before signing in.
     const pending = await AsyncStorage.getItem(PENDING_ROLE);
     if (row && (pending === 'parent' || pending === 'pro') && row.role !== pending && Date.now() - (ms(row.created_at) ?? 0) < 10 * 60 * 1000) {
@@ -420,9 +487,11 @@ export class SupabaseBackend implements Backend {
     // without Wi-Fi must not stay signed in), and the person's other devices stay signed in.
     const { error } = await this.sb.auth.signOut({ scope: 'local' });
     if (error) {
-      // Last resort: remove the stored session ourselves.
+      // Last resort: remove the stored session ourselves (secure storage and ordinary storage).
       const keys = await AsyncStorage.getAllKeys().catch(() => [] as readonly string[]);
       await AsyncStorage.multiRemove(keys.filter((k) => /^sb-.*-auth-token/.test(k) || k === this.opts.storageKey)).catch(() => {});
+      const key = this.opts.storageKey ?? `sb-${new URL(this.url).hostname.split('.')[0]}-auth-token`;
+      for (const k of [key, `${key}-code-verifier`, `${key}-user`]) await sessionStore.removeItem(k).catch(() => {});
     }
     await AsyncStorage.removeItem(PENDING_ROLE).catch(() => {});
   }
@@ -504,6 +573,63 @@ export class SupabaseBackend implements Backend {
     await this.signOut();
   }
 
+  // ── Two-step sign-in and fresh proofs ──
+
+  async security(): Promise<SecurityState> {
+    try {
+      const r = await data<Row>(this.sb.rpc('my_security'));
+      return { team: !!r.team, twoStep: !!r.twoStep, level: r.level === 'aal2' ? 'aal2' : 'aal1' };
+    } catch (e) {
+      if (!missingFunction(e)) throw e;
+      // Database not updated yet: the same answers from the sign-in service.
+      const { data: f } = await this.sb.auth.mfa.listFactors();
+      const { data: l } = await this.sb.auth.mfa.getAuthenticatorAssuranceLevel();
+      const team = !!(await data<boolean>(this.sb.rpc('is_admin')).catch(() => false));
+      return { team, twoStep: !!f?.totp?.length, level: l?.currentLevel === 'aal2' ? 'aal2' : 'aal1' };
+    }
+  }
+
+  async twoStepStart(): Promise<TwoStepSetup> {
+    // A setting-up left half-way has no use: it is removed first (its name must be unique).
+    const { data: f } = await this.sb.auth.mfa.listFactors();
+    for (const old of f?.all ?? []) {
+      if (old.status !== 'verified') await this.sb.auth.mfa.unenroll({ factorId: old.id }).catch(() => {});
+    }
+    const { data: d, error } = await this.sb.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Empower Communication', issuer: 'Empower Communication' });
+    if (error || !d) fail(error);
+    return { factorId: d.id, secret: d.totp.secret, uri: d.totp.uri, qrSvg: svgOfDataUrl(d.totp.qr_code) };
+  }
+
+  async twoStepConfirm(factorId: string, code: string): Promise<void> {
+    const { error } = await this.sb.auth.mfa.challengeAndVerify({ factorId, code: code.replace(/\D/g, '') });
+    if (error) throw new BackendError('code_invalid', error.message);
+  }
+
+  private async verifiedFactor(): Promise<string> {
+    const { data: f, error } = await this.sb.auth.mfa.listFactors();
+    if (error) fail(error);
+    const id = f?.totp?.[0]?.id;
+    if (!id) throw new BackendError('two_step_off');
+    return id;
+  }
+
+  async twoStepCode(code: string): Promise<void> {
+    const factorId = await this.verifiedFactor();
+    const { error } = await this.sb.auth.mfa.challengeAndVerify({ factorId, code: code.replace(/\D/g, '') });
+    if (error) throw new BackendError('code_invalid', error.message);
+  }
+
+  async twoStepOff(code: string): Promise<void> {
+    await this.twoStepCode(code);
+    const { data: f } = await this.sb.auth.mfa.listFactors();
+    for (const factor of f?.all ?? []) {
+      const { error } = await this.sb.auth.mfa.unenroll({ factorId: factor.id });
+      if (error) fail(error);
+    }
+    // A new session without the second step: the token says so at once.
+    await this.sb.auth.refreshSession().catch(() => {});
+  }
+
   // ── Profiles ──
 
   async listProfiles(): Promise<ProfileSummary[]> {
@@ -511,16 +637,30 @@ export class SupabaseBackend implements Backend {
     return rows.map((r) => ({ id: r.id, name: r.name, age: r.age ?? undefined, ownerId: r.owner_id, access: r.access, level: r.level, updatedAt: ms(r.updated_at) ?? 0 }));
   }
 
-  async createProfile(input: { name: string; age?: number; intake?: Intake; data: Profile }): Promise<ChildRecord> {
+  async createProfile(input: { name: string; age?: number; intake?: Intake; data: Profile; consent?: number }): Promise<ChildRecord> {
     const uid = await this.uid();
+    // The parent's consent is kept by the database first; the profile is refused without it.
+    if (input.consent) await this.giveConsent(input.consent);
     const r = await data<Row>(
-      this.sb.from('profiles').insert({ owner_id: uid, name: input.name.trim(), age: input.age ?? null, intake: input.intake ?? null, data: input.data }).select().single(),
+      this.sb.from('profiles').insert({ owner_id: uid, name: input.name.trim(), age: input.age ?? null, intake: input.intake ?? null, data: input.data }).select(PROFILE_COLS).single(),
     );
     return toProfileRec(r);
   }
 
+  async giveConsent(version: number): Promise<void> {
+    try {
+      await data(this.sb.rpc('give_consent', { p_kind: 'child_data', p_version: version }));
+    } catch (e) {
+      if (!missingFunction(e)) throw e;
+    }
+  }
+
+  async exportMyData(): Promise<unknown> {
+    return data<unknown>(this.sb.rpc('export_my_data'));
+  }
+
   async getProfile(id: string): Promise<ChildRecord> {
-    const r = await data<Row | null>(this.sb.from('profiles').select('*').eq('id', id).maybeSingle());
+    const r = await data<Row | null>(this.sb.from('profiles').select(PROFILE_COLS).eq('id', id).maybeSingle());
     if (!r) throw new BackendError('forbidden');
     return toProfileRec(r);
   }
@@ -538,7 +678,45 @@ export class SupabaseBackend implements Backend {
   }
 
   async deleteProfile(id: string): Promise<void> {
-    await data(this.sb.from('profiles').delete().eq('id', id));
+    // Into the family's bin (30 days); the database asks for a fresh proof first.
+    try {
+      await data(this.sb.rpc('delete_profile', { p_id: id }));
+    } catch (e) {
+      if (!missingFunction(e)) throw e;
+      await data(this.sb.from('profiles').delete().eq('id', id));
+    }
+  }
+
+  async listBin(): Promise<BinEntry[]> {
+    try {
+      const rows = await data<Row[]>(this.sb.rpc('list_bin'));
+      return rows.map((r) => ({ id: r.id, name: r.name, deletedAt: ms(r.deleted_at) ?? 0, eraseAt: ms(r.erase_at) ?? 0 }));
+    } catch (e) {
+      if (missingFunction(e)) return [];
+      throw e;
+    }
+  }
+
+  async restoreProfile(id: string): Promise<void> {
+    await data(this.sb.rpc('restore_profile', { p_id: id }));
+  }
+
+  async listSnapshots(profileId: string): Promise<Snapshot[]> {
+    try {
+      const rows = await data<Row[]>(this.sb.rpc('list_snapshots', { p_id: profileId }));
+      return rows.map((r) => ({ id: r.id, createdAt: ms(r.created_at) ?? 0, reason: r.reason, version: r.version, words: r.words }));
+    } catch (e) {
+      if (missingFunction(e)) return [];
+      throw e;
+    }
+  }
+
+  async takeSnapshot(profileId: string): Promise<void> {
+    await data(this.sb.rpc('take_snapshot', { p_id: profileId }));
+  }
+
+  async restoreSnapshot(snapshotId: string): Promise<number> {
+    return data<number>(this.sb.rpc('restore_snapshot', { p_snap: snapshotId }));
   }
 
   async myAccess(profileId: string) {
@@ -550,7 +728,13 @@ export class SupabaseBackend implements Backend {
   // ── Team ──
 
   async listMembers(profileId: string): Promise<Membership[]> {
-    return (await data<Row[]>(this.sb.from('members').select('*').eq('profile_id', profileId))).map(toMember);
+    // Through the database's function: the addresses only for the family and the team's managers.
+    try {
+      return (await data<Row[]>(this.sb.rpc('list_members', { p_id: profileId }))).map(toMember);
+    } catch (e) {
+      if (!missingFunction(e)) throw e;
+      return (await data<Row[]>(this.sb.from('members').select('*').eq('profile_id', profileId))).map(toMember);
+    }
   }
 
   async updateMember(profileId: string, userId: string, patch: { level?: AccessLevel; perms?: PermissionSet; role?: CollaboratorRole; expiresAt?: number | null }): Promise<void> {
@@ -747,6 +931,44 @@ export class SupabaseBackend implements Backend {
     return toVerification(await data<Row>(this.sb.rpc('submit_verification')));
   }
 
+  // ── A child's photos and recordings ──
+
+  async uploadMedia(profileId: string, name: string, body: ArrayBuffer | Blob, contentType: string): Promise<void> {
+    const path = mediaPath(profileId, name);
+    // A name is never used twice for different files: a file that is already there is not replaced.
+    const { error } = await this.sb.storage.from('profile-media').upload(path, body, { contentType, upsert: false, cacheControl: '31536000' });
+    if (error) mediaFail(error);
+  }
+
+  async mediaUrl(profileId: string, name: string): Promise<string> {
+    const { data: d, error } = await this.sb.storage.from('profile-media').createSignedUrl(mediaPath(profileId, name), 300);
+    if (error || !d) mediaFail(error);
+    return d.signedUrl;
+  }
+
+  async listMedia(profileId: string): Promise<{ name: string; size: number; createdAt: number }[]> {
+    if (!UUID.test(profileId)) throw new BackendError('invalid');
+    const out: { name: string; size: number; createdAt: number }[] = [];
+    for (let offset = 0; offset < 5000; offset += 1000) {
+      const { data: page, error } = await this.sb.storage.from('profile-media').list(profileId, { limit: 1000, offset, sortBy: { column: 'name', order: 'asc' } });
+      if (error) mediaFail(error);
+      for (const f of page ?? []) {
+        if (!f.id || !isSyncable(f.name)) continue;
+        out.push({ name: f.name, size: Number(f.metadata?.size ?? 0), createdAt: ms(f.created_at) ?? 0 });
+      }
+      if ((page ?? []).length < 1000) break;
+    }
+    return out;
+  }
+
+  async removeMedia(profileId: string, names: string[]): Promise<void> {
+    const paths = names.map((n) => mediaPath(profileId, n));
+    for (let i = 0; i < paths.length; i += 100) {
+      const { error } = await this.sb.storage.from('profile-media').remove(paths.slice(i, i + 100));
+      if (error) mediaFail(error);
+    }
+  }
+
   // ── Messages to the app's team ──
 
   async sendFeedback(input: { kind: FeedbackKind; text: string; platform: string; appVersion: string }): Promise<void> {
@@ -791,6 +1013,12 @@ export class SupabaseBackend implements Backend {
     return data<AdminBugs>(this.sb.rpc('admin_bugs'));
   }
 
+  async adminRetention(): Promise<AdminRetention> {
+    const r = await data<Row>(this.sb.rpc('admin_retention'));
+    const n = (k: string) => Number(r?.[k] ?? 0) || 0;
+    return { inactiveAccounts: n('inactiveAccounts'), inBin: n('inBin'), filesWaiting: n('filesWaiting'), twoStepTeam: n('twoStepTeam'), team: n('team'), consents: n('consents') };
+  }
+
   async adminRoadmap(): Promise<AdminRoadmapItem[]> {
     return (await data<Row[]>(this.sb.rpc('admin_roadmap'))).map((r) => ({
       id: r.id,
@@ -808,6 +1036,12 @@ export class SupabaseBackend implements Backend {
   }
 
   async isAdmin(): Promise<boolean> {
+    // On the team (the back office itself also needs the two-step code: is_admin in the database).
+    try {
+      return !!(await data<boolean>(this.sb.rpc('is_team')));
+    } catch (e) {
+      if (!missingFunction(e)) throw e;
+    }
     return !!(await data<boolean>(this.sb.rpc('is_admin')));
   }
 
@@ -887,6 +1121,12 @@ export class SupabaseBackend implements Backend {
   }
 
   async listUsage(profileId: string, fromDay: string): Promise<UsageDay[]> {
+    // The children's sentences are sealed in the database: read back through usage_of.
+    try {
+      return await data<UsageDay[]>(this.sb.rpc('usage_of', { p_id: profileId, p_from: fromDay }));
+    } catch (e) {
+      if (!missingFunction(e)) throw e;
+    }
     const rows = await data<Row[]>(this.sb.from('usage_days').select('data').eq('profile_id', profileId).gte('day', fromDay));
     return rows.map((r) => r.data as UsageDay);
   }
@@ -929,6 +1169,12 @@ export class SupabaseBackend implements Backend {
   }
 
   async listObservations(profileId: string): Promise<Observation[]> {
+    // What the child said and the adult's note are sealed in the database: read back through list_observations.
+    try {
+      return (await data<Row[]>(this.sb.rpc('list_observations', { p_id: profileId }))).map(toObservation);
+    } catch (e) {
+      if (!missingFunction(e)) throw e;
+    }
     const rows = await data<Row[]>(this.sb.from('observations').select('*').eq('profile_id', profileId).order('at', { ascending: false }));
     return rows.map(toObservation);
   }
@@ -939,19 +1185,21 @@ export class SupabaseBackend implements Backend {
       profile_id: o.profileId,
       at: new Date(o.at).toISOString(),
       sample_t: o.sampleT ?? null,
-      utterance: o.utterance ?? null,
+      // '' clears a text (the database seals the texts and keeps them when a column is left out).
+      utterance: o.utterance ?? '',
       function: o.function ?? null,
       context: o.context ?? null,
       partner: o.partner ?? null,
       autonomy: o.autonomy ?? null,
       result: o.result ?? null,
-      note: o.note ?? null,
+      note: o.note ?? '',
       updated_at: new Date().toISOString(),
     };
     const saved = o.id
-      ? await data<Row>(this.sb.from('observations').update(row).eq('id', o.id).select().single())
-      : await data<Row>(this.sb.from('observations').insert({ ...row, created_by: me.id, author_name: me.displayName }).select().single());
-    return toObservation(saved);
+      ? await data<Row>(this.sb.from('observations').update(row).eq('id', o.id).select(OBSERVATION_COLS).single())
+      : await data<Row>(this.sb.from('observations').insert({ ...row, created_by: me.id, author_name: me.displayName }).select(OBSERVATION_COLS).single());
+    // The database gives the sealed texts back empty: they are the ones just written.
+    return toObservation({ ...saved, utterance: o.utterance, note: o.note });
   }
 
   async deleteObservation(id: string): Promise<void> {

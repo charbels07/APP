@@ -8,6 +8,10 @@ import { onboardingStrings } from '../i18n/onboarding';
 import { proStrings } from '../i18n/pro';
 import { settingsStrings } from '../i18n/settings';
 import { strings } from '../i18n/ui';
+import { securityStrings } from '../i18n/security';
+import { backupStrings } from '../i18n/backup';
+import { consentText } from '../lib/consent';
+import { accessStrings } from '../i18n/access';
 
 describe('in-app guide', () => {
   it('covers both tracks, in French and English, with the same steps', () => {
@@ -71,6 +75,12 @@ describe('in-app guide', () => {
         dataStrings(lang).shareTitle,
         // a word recorded by the family, per language; which voice the device uses
         t.voice, e.recordVoice, t.voiceUsed,
+        // security and data (November 2026, second round): two-step sign-in, the bin, earlier versions, the full download, the consent
+        securityStrings(lang).twoStep, securityStrings(lang).turnOn, securityStrings(lang).downloadAll,
+        backupStrings(lang).binTitle, backupStrings(lang).putBack, backupStrings(lang).versions, backupStrings(lang).keepNow, backupStrings(lang).wordBin,
+        consentText[lang].title, st.exportObz,
+        // choosing without pointing: switches, resting the pointer, a hand that shakes
+        accessStrings(lang).scan, accessStrings(lang).dwell, accessStrings(lang).touchPoint, accessStrings(lang).bigTouch, accessStrings(lang).scanScreen, accessStrings(lang).restart, accessStrings(lang).scanSpeak,
       ];
       for (const label of quoted) expect(text(lang)).toContain(label);
       // Removed things are no longer described.

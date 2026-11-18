@@ -12,7 +12,12 @@
       "usesAppleSignIn": true,
       "requireFullScreen": true,
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleAllowMixedLocalizations": true,
+        "NSMicrophoneUsageDescription": "The microphone records how a word is said (a name, a word in dialect) and lets an adult dictate a sentence to show it on the board. Recordings are kept in the child’s private space in the family’s account, so they also play on the child’s other devices.",
+        "NSSpeechRecognitionUsageDescription": "Speech recognition turns what an adult says into words: to find a word by saying it, or to show a dictated sentence on the board.",
+        "NSCameraUsageDescription": "The camera takes a photo of a person, an object or a place to add it to the child’s words. Photos are kept in the child’s private space in the family’s account, so they also appear on the child’s other devices. A photo taken to suggest an activity board is only sent once to the AI, and not kept.",
+        "NSPhotoLibraryUsageDescription": "Photos from the library illustrate the child’s words. They are kept in the child’s private space in the family’s account, so they also appear on the child’s other devices. A photo chosen to suggest an activity board is only sent once to the AI, and not kept."
       }
     },
     "android": {
@@ -28,31 +33,25 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "locales": {
+      "fr": "./locales/fr.json",
+      "en": "./locales/en.json",
+      "ar": "./locales/ar.json"
+    },
     "plugins": [
       [
         "expo-audio",
         {
-          "microphonePermission": "Le micro sert uniquement à enregistrer la prononciation d’un mot (prénom, mot en dialecte). Les enregistrements restent sur l’appareil."
+          "enableBackgroundPlayback": false
         }
       ],
-      [
-        "expo-image-picker",
-        {
-          "photosPermission": "Les photos servent à illustrer les mots du vocabulaire personnel. Elles restent sur l’appareil.",
-          "cameraPermission": "L’appareil photo sert à photographier une personne, un objet ou un lieu pour l’ajouter au vocabulaire."
-        }
-      ],
-      [
-        "expo-speech-recognition",
-        {
-          "microphonePermission": "Le micro sert à enregistrer la prononciation d’un mot et à dicter une phrase pour la montrer sur la grille. Rien n’est conservé sans votre accord.",
-          "speechRecognitionPermission": "La reconnaissance vocale transforme la phrase dictée par l’accompagnant en mots montrés sur la grille."
-        }
-      ],
+      "expo-image-picker",
+      "expo-speech-recognition",
       "expo-sharing",
       "expo-asset",
       "expo-web-browser",
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      "expo-secure-store"
     ]
   }
 }

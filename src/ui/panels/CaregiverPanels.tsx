@@ -5,6 +5,9 @@ import { useSession } from '../../state/Session';
 import { PictoCredit } from '../PictoCredits';
 import { onboardingStrings } from '../../i18n/onboarding';
 import { editStrings } from '../../i18n/edit';
+import { accessStrings } from '../../i18n/access';
+import { DWELL_TIMES } from '../../lib/dwell';
+import { SCAN_LOOPS, SCAN_SPEEDS, scanOf } from '../../lib/scanning';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Image, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { DIALECT_ORDER, dialectName } from '../../data/dialects';
@@ -18,6 +21,9 @@ import { APP_PRESETS, appLinkOf, isIncomplete, openAppUrl } from '../../lib/appL
 import { exportJson, exportPdf, printDocument } from '../../lib/platform';
 import { boardCells, buildPrintHtml, conceptCell, type PrintOptions } from '../../lib/printHtml';
 import { canSpan } from '../../lib/boardOps';
+import { removeCells } from '../../lib/cellActions';
+import { binItems } from '../../lib/wordBin';
+import { backupStrings } from '../../i18n/backup';
 import { pictoCredit, pictoToMedia } from '../../lib/pictoLibrary';
 import { countFeature, reportProblem } from '../../lib/product';
 import { searchWords } from '../../lib/search';
@@ -32,8 +38,11 @@ import { Icon, type IconName } from '../Icon';
 import { expanded } from '../a11y';
 import { PictoSearch } from '../PictoPicker';
 import { SearchBox } from '../SearchBox';
+import { useSeen } from '../Seen';
 import { VoiceButton } from '../VoiceButton';
+import { NoVoiceWarning } from '../VoiceCheck';
 import { PrintPreview } from '../PrintPreview';
+import { ObzExportButton } from '../settings/ObzExport';
 import { SymbolView, useMediaUri } from '../SymbolView';
 import { useWiggle } from '../wiggle';
 import { scheduleTitle } from '../screens/ScheduleScreen';
@@ -203,7 +212,7 @@ function CellEditor({ board, index }: { board: string; index: number }) {
       },
     });
   const remove = () => {
-    app.update((d) => void (d.boards[board].cells[index] = null));
+    app.update((d) => removeCells(d, board, [index]));
     app.setOverlay(null);
   };
   const setCell = (fn: (c: NonNullable<typeof cell>) => void) =>
@@ -525,6 +534,8 @@ type PictureSource = 'pictos' | 'photo';
 /** Where a word's picture comes from: the app's library of pictograms, or the person's own pictures. */
 function PictureSources({ value, onChange }: { value: PictureSource; onChange: (v: PictureSource) => void }) {
   const { t } = useApp();
+  // For the app's team (families who agreed): the way to a photo ("Your library") was on screen.
+  useSeen('photo');
   return (
     <Segmented
       value={value}
@@ -1080,7 +1091,15 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
   const sess = useSession();
   const board = useBoard();
   const o = onboardingStrings(profile.settings.uiLang);
+  const ax = accessStrings(profile.settings.uiLang);
   const { st, set, pin, setPin } = draft;
+  const scan = scanOf(st);
+  const setScan = (fn: (x: NonNullable<Profile['settings']['scan']>) => void) =>
+    set((x) => {
+      const next = scanOf(x);
+      fn(next);
+      x.scan = next;
+    });
   const searching = !!useContext(SettingsSearch).q;
   const langs = availableLangs(st);
   const childLangs = st.langs?.length ? st.langs : [st.lang];
@@ -1196,6 +1215,14 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
             { value: 'large', label: o.pictoLarge },
           ]}
         />
+        {binItems(app.profile).length > 0 && (
+          <Btn
+            small
+            icon="undo"
+            label={backupStrings(app.profile.settings.uiLang ?? 'fr').wordBinOpen(binItems(app.profile).length)}
+            onPress={() => app.setOverlay({ kind: 'wordBin', back: { kind: 'settings' } })}
+          />
+        )}
       </Group>
 
       <Group title={t.gDisplay} icon="eye">
@@ -1257,6 +1284,66 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
             ...[1, 2, 3, 5].map((n) => ({ value: String(n), label: `${n} s` })),
           ]}
         />
+        {/* For a hand that shakes or slips: which touch counts, and a touch area reaching into the gaps. */}
+        {(st.access ?? 'release') !== 'press' && (
+          <>
+            <Text style={s.label}>{ax.touchPoint}</Text>
+            <Segmented
+              value={st.touchPoint ?? 'lift'}
+              onChange={(v: 'lift' | 'land') => set((x) => void (x.touchPoint = v))}
+              options={(['lift', 'land'] as const).map((v) => ({ value: v, label: ax.touchPoints[v] }))}
+            />
+          </>
+        )}
+        <Toggle label={ax.bigTouch} value={!!st.bigTouch} onChange={(v) => set((x) => void (x.bigTouch = v))} />
+        {/* A mouse, a head pointer or an eye-gaze pointer: resting on a card chooses it. */}
+        <Text style={s.label}>{ax.dwell}</Text>
+        <Segmented
+          value={String(st.dwell ?? 0)}
+          onChange={(v) => set((x) => void (x.dwell = Number(v)))}
+          options={[{ value: '0', label: ax.off }, ...DWELL_TIMES.map((n) => ({ value: String(n), label: `${n} s` }))]}
+        />
+        {/* Switch scanning: a highlight goes over the board, a switch chooses. */}
+        <Text style={s.label}>{ax.scan}</Text>
+        <Segmented
+          value={scan.mode}
+          onChange={(v: 'off' | 'auto' | 'step') => setScan((x) => void (x.mode = v))}
+          options={(['off', 'auto', 'step'] as const).map((v) => ({ value: v, label: ax.scanModes[v] }))}
+        />
+        {scan.mode !== 'off' && (
+          <View style={s.under}>
+            <Text style={s.note}>{scan.mode === 'auto' ? ax.scanKeysAuto : ax.scanKeysStep}</Text>
+            <Text style={s.label}>{ax.scanPattern}</Text>
+            <Segmented
+              value={scan.pattern}
+              onChange={(v: 'rows' | 'cards') => setScan((x) => void (x.pattern = v))}
+              options={(['rows', 'cards'] as const).map((v) => ({ value: v, label: ax.scanPatterns[v] }))}
+            />
+            {scan.mode === 'auto' && (
+              <>
+                <Text style={s.label}>{ax.scanSpeed}</Text>
+                <Segmented
+                  value={String(scan.speed)}
+                  onChange={(v) => setScan((x) => void (x.speed = Number(v)))}
+                  options={SCAN_SPEEDS.map((n) => ({ value: String(n), label: `${n} s` }))}
+                />
+                <Text style={s.label}>{ax.scanLoops}</Text>
+                <Segmented
+                  value={String(scan.loops)}
+                  onChange={(v) => setScan((x) => void (x.loops = Number(v)))}
+                  options={SCAN_LOOPS.map((n) => ({ value: String(n), label: String(n) }))}
+                />
+              </>
+            )}
+            <Toggle label={ax.scanSpeak} value={scan.speak} onChange={(v) => setScan((x) => void (x.speak = v))} />
+            <Toggle
+              label={ax.scanScreen}
+              note={scan.mode === 'step' ? ax.scanScreenStep : undefined}
+              value={scan.screen}
+              onChange={(v) => setScan((x) => void (x.screen = v))}
+            />
+          </View>
+        )}
       </Group>
 
       <Group title={t.gSentence} icon="pencil">
@@ -1310,6 +1397,7 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
         />
         {st.voiceAge === 'child' && <Text style={s.note}>{t.voiceKidsNote}</Text>}
         <VoicesUsed st={st} />
+        <NoVoiceWarning langs={childLangs} uiLang={st.uiLang} />
       </Group>
 
       <Group title={t.sBar} icon="grid">
@@ -1355,6 +1443,7 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
         <View style={s.wrapRow}>
           {/* With an account, the backup is on the Account page (Privacy): not twice. */}
           {!board && <Btn icon="download" label={t.sExport} onPress={() => exportJson('profil-caa.json', profile)} />}
+          {!board && <ObzExportButton profile={profile} label={t.sExportObz} busy={t.sExportObzBusy} failed={t.sExportObzFailed} />}
           <Btn
             kind="danger"
             icon="trash"

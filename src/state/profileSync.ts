@@ -13,6 +13,7 @@ import type { Backend } from '../backend/Backend';
 import { BackendError } from '../backend/Backend';
 import type { ChildRecord } from '../backend/types';
 import { applyOps, diffProfiles, type Op } from '../lib/profileDiff';
+import { countSpeed } from '../lib/product';
 import { migrate } from '../lib/storage';
 import type { Profile } from '../model/types';
 import { forgetChild, isForgotten, remember } from '../lib/deviceData';
@@ -50,6 +51,7 @@ export async function forgetLocal(id: string) {
 }
 
 const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v));
+const PULL_TIMING_EVERY = 5 * 60 * 1000;
 const isOffline = (e: unknown) => e instanceof BackendError && e.code === 'offline';
 
 export class ProfileSync {
@@ -69,6 +71,8 @@ export class ProfileSync {
   reason?: string;
   /** Last time this device was in step with the server. */
   lastSyncedAt?: number;
+  /** When a look for changes was last timed (for the app's team). */
+  private pullTimedAt = 0;
 
   private constructor(readonly id: string, private api: Backend, copy: LocalCopy, readonly pushDelay: number) {
     this.copy = copy;
@@ -153,7 +157,10 @@ export class ProfileSync {
     this.setState('saving');
     let r;
     try {
+      const askedAt = Date.now();
       r = await this.api.saveProfile(this.id, sent, this.copy.version);
+      // For the app's team (families who agreed): how long the server took to answer, in fixed steps.
+      countSpeed('sync', Date.now() - askedAt);
     } catch (e) {
       if (isOffline(e)) return this.setState('offline');
       if (e instanceof BackendError && (e.code === 'forbidden' || e.code === 'core_protected')) {
@@ -193,15 +200,20 @@ export class ProfileSync {
   async pull(): Promise<void> {
     if (this.copy.dirty) return this.push().catch(() => {});
     try {
-      if ((await this.api.profileVersion(this.id)) > this.copy.version) {
-        const r = await this.api.getProfile(this.id);
-        // Changed here while it downloaded: the next save puts ours on top of theirs instead.
-        if (r.version > this.copy.version && !this.copy.dirty) {
-          const data = migrate(r.data);
-          this.copy = { ...this.copy, data, base: clone(data), version: r.version, name: r.name };
-          await this.writeNow();
-          this.onRemote?.(data);
-        }
+      const askedAt = Date.now();
+      const r = (await this.api.profileVersion(this.id)) > this.copy.version ? await this.api.getProfile(this.id) : null;
+      // For the app's team (families who agreed): how long the look for changes took, in fixed
+      // steps — once every 5 minutes at most (a board looks every 30 s).
+      if (askedAt - this.pullTimedAt >= PULL_TIMING_EVERY) {
+        this.pullTimedAt = askedAt;
+        countSpeed('sync', Date.now() - askedAt);
+      }
+      // Changed here while it downloaded: the next save puts ours on top of theirs instead.
+      if (r && r.version > this.copy.version && !this.copy.dirty) {
+        const data = migrate(r.data);
+        this.copy = { ...this.copy, data, base: clone(data), version: r.version, name: r.name };
+        await this.writeNow();
+        this.onRemote?.(data);
       }
       this.lastSyncedAt = Date.now();
       if (this.state === 'offline') this.setState('saved');

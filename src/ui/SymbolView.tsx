@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Image, Text, View } from 'react-native';
 import { SYMBOL_IMAGES } from '../data/symbolMap';
 import { mediaUri } from '../lib/media';
+import { onMediaArrived } from '../lib/mediaArrivals';
 import { pictoImageUriByKey } from '../lib/pictoLibrary';
 import type { SymbolRef } from '../model/types';
 
@@ -10,9 +11,16 @@ export function useMediaUri(name: string | undefined): string | undefined {
   useEffect(() => {
     let alive = true;
     setUri(undefined);
-    if (name) mediaUri(name).then((u) => alive && setUri(u));
+    if (!name) return;
+    const load = () => mediaUri(name).then((u) => alive && setUri(u));
+    void load();
+    // Made on another device: it is drawn as soon as its copy arrives from the account.
+    const off = onMediaArrived((n) => {
+      if (n === name) void load();
+    });
     return () => {
       alive = false;
+      off();
     };
   }, [name]);
   return uri;

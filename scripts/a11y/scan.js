@@ -73,7 +73,12 @@ const results = [];
     await step('16b-pin-forgot', async () => {
       const digits = async (c) => { for (const d of c) { await p.getByRole('button', { name: d, exact: true }).last().click(); await p.waitForTimeout(100); } };
       await p.getByRole('radio', { name: /Lebanese/ }).first().click();
-      for (let i = 0; i < 25 && !(await p.getByRole('button', { name: 'Finish', exact: true }).count()); i++) { await btn('Continue').click(); await p.waitForTimeout(300); }
+      for (let i = 0; i < 25 && !(await p.getByRole('button', { name: 'Finish', exact: true }).count()); i++) {
+        // The parent's consent, on the follow-up step, before the profile can be kept.
+        const agree = p.getByRole('checkbox', { name: /legal guardian/ });
+        if ((await agree.count()) && (await agree.first().getAttribute('aria-checked')) !== 'true') { await scan('15c-consent'); await agree.first().click(); }
+        await btn('Continue').click(); await p.waitForTimeout(300);
+      }
       await btn('Finish').click(); await p.getByText('The caregiver code protects', { exact: false }).first().waitFor();
       await digits('2580'); await p.waitForTimeout(200); await digits('2580'); await p.waitForTimeout(1000); await p.keyboard.press('Escape'); await p.waitForTimeout(400);
       await btn(L.caregiver).click(); await btn('Forgot the code?').click(); await p.getByLabel('Account password').waitFor(); await scan('16b-pin-forgot');
@@ -112,6 +117,18 @@ const results = [];
     await step('19-settings', async () => {
       await btn(L.settings).click(); await p.waitForTimeout(700); await scan('19-settings-board');
       for (const [i, t] of L.tabs.entries()) { const tb = p.getByRole('radio', { name: new RegExp(`^${t}`) }).first(); if (await tb.count()) { await tb.click(); await p.waitForTimeout(600); await scan(`19-settings-${t.toLowerCase()}`); } }
+    });
+    // Settings → Touch with switch scanning chosen, then the board being scanned (the whole screen
+    // is the switch), and stopped with Escape.
+    await step('19e-scanning', async () => {
+      await p.getByRole('radio', { name: /^Board/ }).first().click(); await p.waitForTimeout(500);
+      await btn('Touch').click(); await p.waitForTimeout(300);
+      await p.getByRole('radio', { name: 'Step by step' }).click(); await p.getByRole('switch', { name: 'The whole screen is the switch' }).click(); await p.waitForTimeout(300);
+      await scan('19e-settings-touch');
+      await btn('Save').click(); await p.waitForTimeout(300); await p.keyboard.press('Escape'); await p.waitForTimeout(400);
+      await btn(L.caregiver).click(); await p.waitForTimeout(400); if (await btn('Later').count()) await btn('Later').click();
+      await p.keyboard.press(' '); await p.waitForTimeout(300); await scan('19f-board-scanning');
+      await p.keyboard.press('Escape'); await p.waitForTimeout(300); await scan('19g-board-scanning-stopped');
     });
   }
   fs.writeFileSync(`${OUT}/result-${tag}.json`, JSON.stringify(results, null, 1));

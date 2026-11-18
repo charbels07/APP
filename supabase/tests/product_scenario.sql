@@ -13,6 +13,7 @@
 \set zoe '00000000-0000-0000-0000-0000000000d9'
 \set mallory '00000000-0000-0000-0000-0000000000da'
 \set tablet '00000000-0000-0000-0000-0000000000db'
+\set two '00000000-0000-0000-0000-0000000000dc'
 
 truncate test.ids;
 delete from feedback; delete from admins; delete from admin_log; delete from rate_log;
@@ -24,6 +25,7 @@ insert into auth.users (id, email, email_confirmed_at, raw_user_meta_data) value
   (:'p5', 'p5@example.com', now(), '{"role":"parent","display_name":"P5"}'),
   (:'p6', 'p6@example.com', now(), '{"role":"parent","display_name":"P6"}'),
   (:'old', 'old@example.com', now(), '{"role":"parent","display_name":"Old"}'),
+  (:'two', 'two@example.com', now(), '{"role":"parent","display_name":"Two"}'),
   (:'pro', 'pro@clinic.fr', now(), '{"role":"pro","display_name":"Pro"}'),
   (:'zoe', 'zoe@team.example', now(), '{"role":"parent","display_name":"Zoe"}'),
   (:'mallory', 'mallory@example.com', now(), '{"role":"parent","display_name":"Mallory"}');
@@ -32,8 +34,9 @@ insert into verifications (user_id, full_name, country, profession, status) valu
 insert into admins (user_id) values (:'zoe');
 set role authenticated;
 
--- Six families who agreed to the new list, one who agreed to the old list only.
-\set board '{"boards":{"core":{"cells":[{"concept":"i"}]}},"settings":{"shareStats":"anonymous","shareTerms":2,"dataCollection":"off","pin":"4821"}}'
+-- Six families who agreed to today's list (3), one who agreed to the first list only, one who
+-- agreed to the second list (feature counters and problems, before "seen", versions and speed).
+\set board '{"boards":{"core":{"cells":[{"concept":"i"}]}},"settings":{"shareStats":"anonymous","shareTerms":3,"dataCollection":"off","pin":"4821"}}'
 select set_config('request.jwt.claim.sub', :'p1', false);
 with c as (insert into profiles (owner_id, name, age, data) values (:'p1', 'A', 5, :'board') returning id) insert into test.ids select 'c1', id::text from c;
 select register_device((select v::uuid from test.ids where k = 'c1'), 'd1', 'iPad', 'companion', 'ios', '1.4.0');
@@ -57,6 +60,11 @@ with c as (insert into profiles (owner_id, name, age, data) values (:'old', 'G',
   '{"boards":{"core":{"cells":[{"concept":"i"}]}},"settings":{"shareStats":"anonymous","dataCollection":"off","pin":"4821"}}') returning id)
 insert into test.ids select 'c7', id::text from c;
 select register_device((select v::uuid from test.ids where k = 'c7'), 'd7', 'iPad', 'companion', 'ios', '1.4.0');
+select set_config('request.jwt.claim.sub', :'two', false);
+with c as (insert into profiles (owner_id, name, age, data) values (:'two', 'H', 6,
+  '{"boards":{"core":{"cells":[{"concept":"i"}]}},"settings":{"shareStats":"anonymous","shareTerms":2,"dataCollection":"off","pin":"4821"}}') returning id)
+insert into test.ids select 'c8', id::text from c;
+select register_device((select v::uuid from test.ids where k = 'c8'), 'd8', 'iPad', 'companion', 'ios', '1.4.0');
 
 -- 1. A family that agreed sends its day: only known names with a number are kept.
 select set_config('request.jwt.claim.sub', :'p1', false);
@@ -76,6 +84,11 @@ select set_config('request.jwt.claim.sub', :'old', false);
 select test.expect_error(format('select save_feature_day(%L, ''d7'', current_date, ''{"board":1}'')', (select v from test.ids where k = 'c7')), 'forbidden');
 select test.expect_error(format('select report_problems(%L, ''[{"kind":"crash"}]'')', (select v from test.ids where k = 'c7')), 'forbidden');
 select test.ok(true, 'a family that agreed to the first list only sends neither counters nor problems: it must agree to the new list');
+select set_config('request.jwt.claim.sub', :'two', false);
+select test.expect_error(format('select save_feature_day(%L, ''d8'', current_date, ''{"board":1}'')', (select v from test.ids where k = 'c8')), 'forbidden');
+select test.expect_error(format('select save_feature_day(%L, ''d8'', current_date, ''{"seen:timer":1,"voice:1":2}'', ''ios'', ''tablet'', ''1.5.0'')', (select v from test.ids where k = 'c8')), 'forbidden');
+select test.expect_error(format('select report_problems(%L, ''[{"kind":"crash"}]'')', (select v from test.ids where k = 'c8')), 'forbidden');
+select test.ok(true, 'a family that agreed to the second list (before "seen", versions and speed) stops sending anything until it agrees again');
 select set_config('request.jwt.claim.sub', :'p1', false);
 select test.expect_error(format('select save_feature_day(%L, ''unknown'', current_date, ''{"board":1}'')', (select v from test.ids where k = 'c1')), 'forbidden');
 select test.expect_error(format('select save_feature_day(%L, ''d1'', current_date - 200, ''{"board":1}'')', (select v from test.ids where k = 'c1')), 'invalid');
@@ -91,7 +104,7 @@ select test.expect_error(format('select save_feature_day(%L, ''dpro'', current_d
 select test.ok(true, 'a professional of the team does not feed the counters: her way of working is not measured');
 -- She cannot agree in the family''s place either.
 select test.expect_error(format('select save_profile(%L, %L, 1)', (select v from test.ids where k = 'c1'),
-  '{"boards":{"core":{"cells":[{"concept":"i"}]}},"settings":{"shareStats":"anonymous","shareTerms":3,"dataCollection":"off","pin":"4821"}}'), 'consent_protected');
+  '{"boards":{"core":{"cells":[{"concept":"i"}]}},"settings":{"shareStats":"anonymous","shareTerms":4,"dataCollection":"off","pin":"4821"}}'), 'consent_protected');
 select test.ok(true, 'only the family changes what it agreed to share');
 
 -- 3. A profile cannot be born "already agreed" without the family''s choice to share.
@@ -152,7 +165,7 @@ select test.ok((select admin_product()::text !~ '(c1|d1|A"|p1@)' and admin_produ
 -- 6. The family withdraws: what was counted for the team is erased at once.
 select set_config('request.jwt.claim.sub', :'p6', false);
 select test.ok((select (save_profile((select v::uuid from test.ids where k = 'c6'),
-  '{"boards":{"core":{"cells":[{"concept":"i"}]}},"settings":{"shareStats":"none","shareTerms":2,"dataCollection":"off","pin":"4821"}}', 1)) ->> 'ok' = 'true'), 'a family turns sharing off');
+  '{"boards":{"core":{"cells":[{"concept":"i"}]}},"settings":{"shareStats":"none","shareTerms":3,"dataCollection":"off","pin":"4821"}}', 1)) ->> 'ok' = 'true'), 'a family turns sharing off');
 reset role;
 select test.ok((select count(*) = 0 from feature_days where profile_id = (select v::uuid from test.ids where k = 'c6')), 'its counters are deleted');
 set role authenticated;
@@ -225,5 +238,146 @@ select roadmap_vote((select v::uuid from test.ids where k = 'idea1'), false);
 select test.ok((select votes = 1 and not mine from roadmap_list()), 'a vote can be taken back');
 reset role;
 select test.ok((select count(*) = 2 from admin_log where action = 'roadmap'), 'what the team adds to the list of ideas is written in the history');
+
+-- 9. The list grew (3): what was seen, the app's version, how long people waited.
+select test.ok(product_terms() = 3, 'the families must have agreed to the list number 3');
+select test.ok(clean_version('1.4.0') = '1.4.0' and clean_version('2026.11.18.1') = '2026.11.18.1' and clean_version('1.4.0-beta') = ''
+               and clean_version('Adam is 4') = '' and clean_version('12345.1') = '' and clean_version('1.2.3.4.5') = '' and clean_version(null) = '',
+  'a version is digits and dots only: no word, no tag, nothing long');
+select test.ok(product_shown(0, 0) and product_shown(5, 5) and not product_shown(4, 4) and not product_shown(5, 4) and not product_shown(1, 1),
+  'a group is a number only when it is empty or has 5 children of 5 families');
+set role authenticated;
+select set_config('request.jwt.claim.sub', :'p1', false);
+select test.expect_error('select product_terms()', 'permission denied for function product_terms');
+select test.expect_error('select clean_version(''x'')', 'permission denied for function clean_version');
+select test.ok(true, 'the lists and the cleaning tools are not for the app to call');
+-- The family that stopped agrees again; the one that had agreed to list 2 agrees to list 3.
+select set_config('request.jwt.claim.sub', :'p6', false);
+select test.ok((select (save_profile((select v::uuid from test.ids where k = 'c6'),
+  '{"boards":{"core":{"cells":[{"concept":"i"}]}},"settings":{"shareStats":"anonymous","shareTerms":3,"dataCollection":"off","pin":"4821"}}',
+  (select version from profiles where id = (select v::uuid from test.ids where k = 'c6')))) ->> 'ok' = 'true'), 'a family agrees again, to today''s list');
+
+-- An unknown name, text instead of a number, text in the version: dropped.
+select set_config('request.jwt.claim.sub', :'p1', false);
+select save_feature_day((select v::uuid from test.ids where k = 'c1'), 'd1', current_date,
+  '{"board": 1, "seen:board": 1, "seen:timer": 7, "seen:secret": 1, "seen:Adam": 1, "start:0.1": 3, "start:Adam": 1, "voice:1": 2.9, "voice:more": "slow", "sync:0.5": 4}',
+  'ios', 'tablet', 'Adam is 4');
+reset role;
+select test.ok((select counts = '{"board": 1, "seen:board": 1, "seen:timer": 1, "voice:1": 2, "sync:0.5": 4}'::jsonb and app_version = ''
+                  from feature_days where profile_id = (select v::uuid from test.ids where k = 'c1') and day = current_date),
+  'an unknown counter is dropped, "seen" is 1 a day at most, a wait is only a known step, and a version with text in it is not kept');
+set role authenticated;
+select save_feature_day((select v::uuid from test.ids where k = 'c1'), 'd1', current_date, '{"board": 2, "seen:board": 1}', 'ios', 'tablet', '1.4.0-beta <b>');
+select report_problems((select v::uuid from test.ids where k = 'c1'), '[{"kind":"audio","screen":"board","platform":"ios","form":"tablet","version":"1.5.0 for Adam"}]');
+reset role;
+select test.ok((select app_version = '' from feature_days where profile_id = (select v::uuid from test.ids where k = 'c1') and day = current_date)
+               and (select count(*) = 0 from error_counts where app_version !~ '^[0-9.]*$'),
+  'the same for a tag after the number, in a day of counters as in a problem');
+set role authenticated;
+select save_feature_day((select v::uuid from test.ids where k = 'c1'), 'd1', current_date, '{"board": 3, "seen:board": 1}', 'ios', 'tablet', '1.5.0');
+reset role;
+select test.ok((select app_version = '1.5.0' from feature_days where profile_id = (select v::uuid from test.ids where k = 'c1') and day = current_date),
+  'a real version is kept with the child''s day');
+set role authenticated;
+select set_config('request.jwt.claim.sub', :'pro', false);
+select test.expect_error(format('select save_feature_day(%L, ''dpro'', current_date, ''{"seen:timer":1,"start:1":1}'', ''web'', ''computer'', ''1.5.0'')',
+  (select v from test.ids where k = 'c1')), 'forbidden');
+select test.ok(true, 'a professional sends neither what she saw nor how long she waited');
+select set_config('request.jwt.claim.sub', :'two', false);
+select test.ok((select (save_profile((select v::uuid from test.ids where k = 'c8'),
+  '{"boards":{"core":{"cells":[{"concept":"i"}]}},"settings":{"shareStats":"anonymous","shareTerms":3,"dataCollection":"off","pin":"4821"}}', 1)) ->> 'ok' = 'true'), 'the family of list 2 agrees to list 3');
+select save_feature_day((select v::uuid from test.ids where k = 'c8'), 'd8', current_date, '{"board": 1, "seen:board": 1}', 'ios', 'tablet', '1.5.0');
+select test.ok(true, 'and its device sends again');
+select save_profile((select v::uuid from test.ids where k = 'c8'),
+  '{"boards":{"core":{"cells":[{"concept":"i"}]}},"settings":{"shareStats":"anonymous","shareTerms":2,"dataCollection":"off","pin":"4821"}}', 2);
+
+-- Below 5 children of 5 families: nothing new at all.
+reset role;
+delete from feature_days;
+insert into feature_days (profile_id, device_id, day, counts, platform, form, app_version)
+select t.v::uuid, 'd' || right(t.k, 1), current_date - 1, '{"board": 5, "seen:board": 1, "seen:timer": 1, "voice:0.5": 3}', 'ios', 'tablet', '1.5.0'
+  from test.ids t where t.k in ('c1', 'c2', 'c3', 'c4');
+set role authenticated;
+select set_config('request.jwt.claim.sub', :'zoe', false);
+select test.ok((select not (admin_product() ->> 'enough')::boolean and not admin_product() ?| array['seen', 'byVersion', 'speed']),
+  'four children: no "seen", no version, no waiting time');
+
+-- Six children: c1..c6 on 1.5.0 yesterday; c1..c4 on 1.4.0 and c5 on 1.3.0 three days ago (an
+-- older app: nothing "seen"); the family of list 2 and the one of list 1 have rows that must not count.
+reset role;
+delete from feature_days;
+insert into feature_days (profile_id, device_id, day, counts, platform, form, app_version)
+select t.v::uuid, 'd' || right(t.k, 1), current_date - 1,
+       '{"board": 5, "seen:board": 1, "seen:search": 1, "seen:timer": 1, "sync:0.5": 10, "voice:0.5": 3}'::jsonb
+       || case when t.k <> 'c6' then '{"timer": 2}'::jsonb else '{}'::jsonb end
+       || case when t.k in ('c1', 'c2', 'c3', 'c4') then '{"start:1": 1}'::jsonb else '{}'::jsonb end
+       || case when t.k = 'c1' then '{"tla": 1, "seen:keyboard": 1, "voice:more": 2}'::jsonb else '{}'::jsonb end,
+       'ios', 'tablet', '1.5.0'
+  from test.ids t where t.k in ('c1', 'c2', 'c3', 'c4', 'c5', 'c6');
+insert into feature_days (profile_id, device_id, day, counts, platform, form, app_version)
+select t.v::uuid, 'd' || right(t.k, 1), current_date - 3,
+       '{"board": 2}'::jsonb || case when t.k = 'c1' then '{"lock": 1}'::jsonb else '{}'::jsonb end,
+       'ios', 'tablet', case when t.k = 'c5' then '1.3.0' else '1.4.0' end
+  from test.ids t where t.k in ('c1', 'c2', 'c3', 'c4', 'c5');
+insert into feature_days (profile_id, device_id, day, counts, platform, form, app_version) values
+  ((select v::uuid from test.ids where k = 'c8'), 'd8', current_date - 1, '{"schedule": 3, "seen:board": 1, "seen:schedule": 1, "voice:5": 40}', 'ios', 'tablet', '1.5.0'),
+  ((select v::uuid from test.ids where k = 'c7'), 'd7', current_date - 1, '{"schedule": 3, "seen:board": 1, "seen:schedule": 1, "voice:5": 40}', 'ios', 'tablet', '1.5.0');
+set role authenticated;
+select set_config('request.jwt.claim.sub', :'zoe', false);
+create temporary table seen_of as select f ->> 'key' as k, f from jsonb_array_elements(admin_product() -> 'seen') f;
+select test.ok((select f = '{"key":"board","used":6,"seenOnly":0,"unseen":0}'::jsonb from seen_of where k = 'board'), 'the board: used by the six');
+select test.ok((select f = '{"key":"search","used":0,"seenOnly":6,"unseen":0}'::jsonb from seen_of where k = 'search'),
+  'the search: seen by the six, used by none ("found it and did not use it")');
+select test.ok((select f = '{"key":"schedule","used":0,"seenOnly":0,"unseen":6}'::jsonb from seen_of where k = 'schedule'),
+  'the schedule: never on screen ("never found it"); the families that did not agree to list 3 are not counted');
+select test.ok((select f = '{"key":"timer","seen":6,"unseen":0}'::jsonb from seen_of where k = 'timer'),
+  'five used the timer, one only saw it: the single child is not told apart, only "the six saw it"');
+select test.ok((select f = '{"key":"keyboard","used":0,"notUsed":6}'::jsonb from seen_of where k = 'keyboard'),
+  'one child saw the keyboard: only "nobody used it" is said');
+select test.ok((select f = '{"key":"tla","hidden":true}'::jsonb from seen_of where k = 'tla'), 'one child used activity boards: nothing is shown');
+select test.ok((select f = '{"key":"lock","used":0,"seenOnly":0,"unseen":6}'::jsonb from seen_of where k = 'lock'),
+  'days counted by an older app (that does not count what is seen) are left out of "seen and used"');
+select test.ok((select count(*) = 16 from seen_of), 'one line per feature');
+drop table seen_of;
+
+select test.ok((select jsonb_agg(v ->> 'version' order by i) = '["1.5.0", "other"]'::jsonb and jsonb_agg((v ->> 'children')::int order by i) = '[6, 5]'::jsonb
+                  from jsonb_array_elements(admin_product() -> 'byVersion') with ordinality as t(v, i)),
+  'by version: the newest first; versions used by fewer than 5 children (1.4.0 by 4, 1.3.0 by 1) are only counted together, as "other"');
+select test.ok((select f = '{"key":"timer","few":"notUsing"}'::jsonb
+                  from jsonb_array_elements(admin_product() -> 'byVersion') v, jsonb_array_elements(v -> 'features') f
+                 where v ->> 'version' = '1.5.0' and f ->> 'key' = 'timer'), 'on 1.5.0, five used the timer and one did not: "fewer than 5 do not", never "1"');
+select test.ok((select f = '{"key":"board","used":6}'::jsonb
+                  from jsonb_array_elements(admin_product() -> 'byVersion') v, jsonb_array_elements(v -> 'features') f
+                 where v ->> 'version' = '1.5.0' and f ->> 'key' = 'board'), 'the board on 1.5.0: six children');
+select test.ok((select f = '{"key":"lock","hidden":true}'::jsonb
+                  from jsonb_array_elements(admin_product() -> 'byVersion') v, jsonb_array_elements(v -> 'features') f
+                 where v ->> 'version' = 'other' and f ->> 'key' = 'lock'), 'one child of five used the lock on an older version: hidden');
+
+select test.ok((select jsonb_agg(s ->> 'key' order by i) = '["sync", "voice"]'::jsonb from jsonb_array_elements(admin_product() -> 'speed') with ordinality as t(s, i)),
+  'waiting times: the opening, timed for 4 children only, is not shown');
+select test.ok((select s -> 'buckets' = '{"0.5": 18, "1": 0, "2": 0, "5": 0, "more": "few"}'::jsonb and (s ->> 'children')::int = 6
+                  from jsonb_array_elements(admin_product() -> 'speed') s where s ->> 'key' = 'voice'),
+  'the voice: how many times in each step; a step only one child met is "few", never a number (the families out of list 3 are not counted)');
+select test.ok((select (s -> 'buckets' ->> '0.5')::int = 60 from jsonb_array_elements(admin_product() -> 'speed') s where s ->> 'key' = 'sync'), 'saves and looks for changes');
+select test.ok((select not (admin_product() -> 'tasks') ?| array['seen:board', 'sync:0.5', 'voice:0.5'] and (admin_product() -> 'tasks' ->> 'board')::int = 40),
+  'the sums of tasks stay the sums of tasks');
+select test.ok((select admin_product()::text !~ (select v from test.ids where k = 'c1') and admin_product()::text !~ '(d1|p1@|"A")'),
+  'no name, no device, no profile in what the team reads');
+select set_config('request.jwt.claim.sub', :'mallory', false);
+select test.expect_error('select admin_product()', 'forbidden');
+select test.ok(true, 'someone outside the team reads none of it');
+reset role;
+select test.ok(not has_function_privilege('anon', 'public.admin_product()', 'execute')
+               and not has_function_privilege('anon', 'public.save_feature_day(uuid, text, date, jsonb, text, text, text)', 'execute')
+               and not has_function_privilege('anon', 'public.report_problems(uuid, jsonb)', 'execute'),
+  'nothing of it for someone who is not signed in');
+select test.ok(not has_function_privilege('authenticated', 'public.product_keys()', 'execute')
+               and not has_function_privilege('authenticated', 'public.product_features()', 'execute')
+               and not has_function_privilege('authenticated', 'public.product_speeds()', 'execute')
+               and not has_function_privilege('authenticated', 'public.product_speed_buckets()', 'execute')
+               and not has_function_privilege('authenticated', 'public.product_shown(bigint, bigint)', 'execute')
+               and not has_function_privilege('anon', 'public.clean_version(text)', 'execute')
+               and not has_function_privilege('anon', 'public.shares_product(uuid)', 'execute'),
+  'the lists and tools behind the figures are not callable from outside');
 
 do $$ begin raise notice 'PASSED — product figures, problems, requests and votes'; end $$;

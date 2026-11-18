@@ -243,3 +243,15 @@ export function chooseVoice(
 export function forVoice(text: string): string {
   return /^\s*\p{Lu}\s*[.!?…,;:]*\s*$/u.test(text) ? text.toLowerCase() : text;
 }
+
+/**
+ * The child's languages this device has no voice for: their words cannot be said (an Android
+ * tablet without Arabic voice data, a computer without a French voice…). An empty list of voices
+ * means "not known" (a browser that never said which voices it has): nothing is reported then.
+ * Android may list a voice whose data still has to be downloaded: the list cannot tell.
+ */
+export function langsWithoutVoice(voices: Pick<VoiceInfo, 'language'>[], langs: Lang[]): Lang[] {
+  if (!voices.length) return [];
+  const has = (l: Lang) => voices.some((v) => v.language.toLowerCase().replace('_', '-').split('-')[0] === l);
+  return [...new Set(langs)].filter((l) => !has(l));
+}

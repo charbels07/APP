@@ -3,7 +3,7 @@
  * decision, example messages and example figures. Nothing here is a real person or a real number;
  * the back-office page says so while it shows them.
  */
-import type { AdminBugs, AdminOverview, AdminProduct, Feedback, RoadmapStatus, Verification, VerificationDoc } from '../backend/types';
+import type { AdminBugs, AdminOverview, AdminProduct, Feedback, RoadmapStatus, Verification, VerificationDoc, VersionAdoption } from '../backend/types';
 import type { UiLang } from '../model/types';
 
 const HOUR = 3600000;
@@ -207,9 +207,45 @@ export function exampleOverview(now: number): AdminOverview {
   };
 }
 
-/** Feature adoption and task figures (invented). The last two lines show what a small group looks like. */
+/** How often each feature is used, as a share of the children, in the invented figures by version. */
+const EXAMPLE_RATES: Record<string, number> = {
+  board: 0.99,
+  tla: 0.72,
+  schedule: 0.78,
+  firstThen: 0.58,
+  timer: 0.66,
+  search: 0.62,
+  keyboard: 0.36,
+  model: 0.33,
+  edit: 0.84,
+  photo: 0.38,
+  recording: 0.27,
+  print: 0.34,
+  followUp: 0.33,
+  ai: 0.45,
+  guide: 0.52,
+  lock: 0.03,
+};
+
+/** One version's line (invented): the same rule as the server, a group of 1 to 4 children is never a number. */
+function exampleVersion(version: string, children: number, factor: (key: string) => number): VersionAdoption {
+  return {
+    version,
+    children,
+    features: Object.entries(EXAMPLE_RATES).map(([key, rate]) => {
+      const used = Math.round(children * Math.min(1, rate * factor(key)));
+      if (used > 0 && used < 5) return { key, few: 'using' as const };
+      if (children - used > 0 && children - used < 5) return { key, few: 'notUsing' as const };
+      return { key, used };
+    }),
+  };
+}
+
+/** Feature adoption and task figures (invented). The last lines of each list show what a small group looks like. */
 export function exampleProduct(now: number): AdminProduct {
   const f = (key: string, regular: number, occasional: number, abandoned: number, never: number) => ({ key, regular, occasional, abandoned, never });
+  // Seen and used, out of 131 children: used / seen without using / never seen.
+  const s = (key: string, used: number, seenOnly: number, unseen: number) => ({ key, used, seenOnly, unseen });
   return {
     at: new Date(now).toISOString(),
     example: true,
@@ -235,6 +271,35 @@ export function exampleProduct(now: number): AdminProduct {
       f('ai', 31, 40, 24, 53),
       f('guide', 20, 55, 40, 33),
       { key: 'lock', few: 'using' },
+    ],
+    seen: [
+      s('board', 131, 0, 0),
+      s('tla', 98, 25, 8),
+      s('schedule', 104, 19, 8),
+      s('firstThen', 79, 37, 15),
+      s('timer', 88, 37, 6),
+      s('search', 95, 36, 0),
+      s('keyboard', 50, 72, 9),
+      s('model', 45, 77, 9),
+      s('edit', 113, 18, 0),
+      s('photo', 52, 51, 28),
+      s('recording', 38, 55, 38),
+      s('print', 47, 40, 44),
+      s('followUp', 46, 59, 26),
+      s('ai', 61, 22, 48),
+      s('guide', 70, 61, 0),
+      // 3 children used the child lock: "used" and "seen without using" are only given together.
+      { key: 'lock', seen: 126, unseen: 5 },
+    ],
+    byVersion: [
+      exampleVersion('1.2.0', 96, (k) => (k === 'search' ? 1.2 : 1)),
+      exampleVersion('1.1.0', 41, () => 0.9),
+      exampleVersion('other', 12, () => 0.8),
+    ],
+    speed: [
+      { key: 'start', children: 118, buckets: { '0.5': 210, '1': 640, '2': 380, '5': 95, more: 22 } },
+      { key: 'sync', children: 131, buckets: { '0.5': 52400, '1': 6100, '2': 1250, '5': 310, more: 'few' } },
+      { key: 'voice', children: 127, buckets: { '0.5': 18900, '1': 2650, '2': 410, '5': 35, more: 'few' } },
     ],
     children30: 131,
     tasks: {

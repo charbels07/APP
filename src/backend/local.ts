@@ -12,11 +12,13 @@ import type { Profile, UiLang } from '../model/types';
 import type { Op } from '../lib/profileDiff';
 import { type AccessLevel, type CollaboratorRole, type PermissionSet, preset } from '../lib/permissions';
 import { deleteMedia, mediaUri, saveMedia } from '../lib/media';
+import { isSyncable, MEDIA_LIMITS, mediaKind } from '../lib/mediaPlan';
 import { exampleBugs, exampleDocument, exampleOverview, exampleProduct, exampleRequests, exampleRoadmap } from '../lib/demoBackOffice';
-import { COUNTERS, PROBLEM_KINDS, SCREENS, sharesProduct, type ProblemItem } from '../lib/product';
+import { cleanVersion, COUNTERS, PROBLEM_KINDS, SCREENS, sharesProduct, type ProblemItem } from '../lib/product';
 import { demoObservations, demoUsage } from '../lib/demoUsage';
 import { limitToConsent } from '../lib/usageConsent';
-import { BackendError, type Backend, type CodeSent, type SignUpInput } from './Backend';
+import { BackendError, type AdminRetention, type Backend, type BinEntry, type CodeSent, type SecurityState, type SignUpInput, type Snapshot, type TwoStepSetup } from './Backend';
+import { newTotpSecret, totp, totpMatches, totpUri } from '../lib/totp';
 import {
   DEFAULT_PREFS,
   type Observation,
@@ -55,11 +57,20 @@ import {
 
 const DB_KEY = 'caa.server.v1';
 const SESSION_KEY = 'caa.session.v1';
+/** This session's two-step level and when the person last proved who they are (sign-in, password, code). */
+const SESSION_META_KEY = 'caa.session.meta.v1';
+const PROOF_TTL = 10 * 60 * 1000;
+interface SessionMeta {
+  aal: 'aal1' | 'aal2';
+  proofAt: number;
+}
 const CODE_TTL = 10 * 60 * 1000;
 
 interface StoredAccount extends Account {
   salt: string;
   hash?: string;
+  /** Two-step sign-in: the authenticator key; `on` once its first code was typed. */
+  twoStep?: { secret: string; on: boolean };
 }
 interface PendingCode {
   target: string;
@@ -69,7 +80,12 @@ interface PendingCode {
 }
 interface StoredProfile extends ChildRecord {
   connectionCode?: string;
+  /** In the family's bin since then (erased 30 days later). */
+  deletedAt?: number;
 }
+const BIN_DAYS = 30;
+/** Words on a board, all boards together (as word_count in the database). */
+const wordCount = (d: Profile) => Object.values(d.boards ?? {}).reduce((n, b) => n + (b?.cells ?? []).filter(Boolean).length, 0);
 interface DB {
   accounts: Record<string, StoredAccount>;
   codes: PendingCode[];
@@ -97,6 +113,15 @@ interface DB {
   roadmapVotes?: { itemId: string; userId: string; role: string }[];
   /** The example requests of the back-office demonstration were added. */
   backOfficeSeeded?: boolean;
+  /** The parents' consents (who, when, which text version, for which child). */
+  consents?: { userId: string; version: number; profileId?: string; at: number }[];
+  /** Copies of the boards (weekly, before a big change, by hand, before putting one back): 10 per child. */
+  snapshots?: (Snapshot & { profileId: string; data: Profile })[];
+  /**
+   * A child's photos and recordings "in the account": only their names and sizes (the files
+   * already live on this device; the demonstration follows the real server's rules).
+   */
+  media?: Record<string, { name: string; size: number; createdAt: number }[]>;
 }
 const emptyDb = (): DB => ({
   accounts: {},
@@ -114,6 +139,8 @@ const emptyDb = (): DB => ({
 });
 
 let seq = 0;
+/** Set for each call: the signed-in account turned two-step on and has not typed its code yet. */
+let codeOwed = false;
 /**
  * Device storage, with a memory fallback: if the browser refuses storage (private window,
  * sandboxed page), the demo keeps working for the session instead of failing.
@@ -180,6 +207,9 @@ export class LocalBackend implements Backend {
       const db: DB = raw ? { ...emptyDb(), ...JSON.parse(raw) } : emptyDb();
       const sid = (await store.get(SESSION_KEY)) ?? '';
       const me = db.accounts[sid] ?? null;
+      const level = (await this.meta()).aal;
+      codeOwed = !!me?.twoStep?.on && level !== 'aal2';
+      LocalBackend.adminLevel = level === 'aal2';
       const out = await fn(db, me);
       await store.set(DB_KEY, JSON.stringify(db));
       return out;
@@ -191,7 +221,31 @@ export class LocalBackend implements Backend {
 
   private static need(me: StoredAccount | null): StoredAccount {
     if (!me) throw new BackendError('not_signed_in');
+    // Same rule as the real database: nothing about the children before the two-step code.
+    if (codeOwed) throw new BackendError('two_step_needed');
     return me;
+  }
+
+  private async meta(): Promise<SessionMeta> {
+    try {
+      const raw = await store.get(SESSION_META_KEY);
+      if (raw) return JSON.parse(raw) as SessionMeta;
+    } catch {
+      /* none */
+    }
+    return { aal: 'aal1', proofAt: 0 };
+  }
+  private async setMeta(patch: Partial<SessionMeta>): Promise<void> {
+    await store.set(SESSION_META_KEY, JSON.stringify({ ...(await this.meta()), ...patch }));
+  }
+  /** A new sign-in: a fresh proof, and the two-step code still to type (if it is on). */
+  private async startSession(accountId: string, aal: SessionMeta['aal'] = 'aal1'): Promise<void> {
+    await store.set(SESSION_KEY, accountId);
+    await store.set(SESSION_META_KEY, JSON.stringify({ aal, proofAt: Date.now() }));
+  }
+  /** Signed in or proved again in the last 10 minutes (as the real database's fresh_proof). */
+  private async requireProof(): Promise<void> {
+    if (Date.now() - (await this.meta()).proofAt > PROOF_TTL) throw new BackendError('proof_needed');
   }
 
   private static notify(db: DB, userId: string | undefined, kind: NoticeKind, text: string, extra: { profileId?: string; refId?: string } = {}) {
@@ -202,7 +256,7 @@ export class LocalBackend implements Backend {
   /** Owner, or an active, non-expired member. */
   private static access(db: DB, profileId: string, userId: string) {
     const p = db.profiles[profileId];
-    if (!p) return null;
+    if (!p || p.deletedAt) return null;
     if (p.ownerId === userId) {
       // A professional who created the profile and is no longer accepted: suspended too.
       if (!LocalBackend.cleared(db, userId)) return null;
@@ -220,9 +274,11 @@ export class LocalBackend implements Backend {
   }
   private static requireAdmin(db: DB, me: StoredAccount | null): StoredAccount {
     const a = LocalBackend.need(me);
-    if (!(db.admins ?? []).includes(a.id)) throw new BackendError('forbidden');
+    if (!(db.admins ?? []).includes(a.id) || !LocalBackend.adminLevel) throw new BackendError('forbidden');
     return a;
   }
+  /** Set for each call: this session typed its two-step code (the back office needs it, as on the real server). */
+  private static adminLevel = false;
   private static adminNote(db: DB, me: StoredAccount, action: string, targetName?: string, detail?: string) {
     (db.adminLog ??= []).unshift({ id: uid('l'), adminName: memberName(me), action, targetName, detail, createdAt: Date.now() });
   }
@@ -318,7 +374,7 @@ export class LocalBackend implements Backend {
       LocalBackend.attachInvitations(db, a);
       return a;
     });
-    await store.set(SESSION_KEY, acc.id);
+    await this.startSession(acc.id);
     return LocalBackend.public(acc);
   }
 
@@ -332,7 +388,7 @@ export class LocalBackend implements Backend {
     const acc = await this.tx((db) => LocalBackend.findAccount(db, input) ?? null);
     if (!acc?.hash || (await sha256(acc.salt + input.password)) !== acc.hash) throw new BackendError('wrong_credentials');
     if (!acc.verified) throw new BackendError('not_verified');
-    await store.set(SESSION_KEY, acc.id);
+    await this.startSession(acc.id);
     return LocalBackend.public(acc);
   }
 
@@ -357,12 +413,13 @@ export class LocalBackend implements Backend {
       }
       return a;
     });
-    await store.set(SESSION_KEY, acc.id);
+    await this.startSession(acc.id);
     return LocalBackend.public(acc);
   }
 
   async signOut(): Promise<void> {
     await store.remove(SESSION_KEY);
+    await store.remove(SESSION_META_KEY);
   }
 
   async requestPasswordReset(target: { email?: string; phone?: string }): Promise<CodeSent> {
@@ -393,6 +450,7 @@ export class LocalBackend implements Backend {
     const t = normEmail(target.email) ?? normPhone(target.phone);
     if (!t) throw new BackendError('missing_contact');
     await this.tx((db) => LocalBackend.takeCode(db, t, code, 'reset'));
+    await this.setMeta({ proofAt: Date.now() });
   }
 
   async checkPassword(password: string): Promise<void> {
@@ -400,6 +458,7 @@ export class LocalBackend implements Backend {
     if (me.provider === 'device') throw new BackendError('forbidden');
     // Google / Apple accounts have no password here: only the e-mailed code proves them.
     if (!me.hash || (await sha256(me.salt + password)) !== me.hash) throw new BackendError('wrong_credentials');
+    await this.setMeta({ proofAt: Date.now() });
   }
 
   async changePassword(current: string, next: string): Promise<void> {
@@ -424,6 +483,7 @@ export class LocalBackend implements Backend {
   }
 
   async deleteAccount(): Promise<void> {
+    await this.requireProof();
     await this.tx((db, m) => {
       const me = LocalBackend.need(m);
       const owned = new Set(Object.values(db.profiles).filter((p) => p.ownerId === me.id).map((p) => p.id));
@@ -438,12 +498,65 @@ export class LocalBackend implements Backend {
       db.resources = db.resources.filter((x) => x.ownerId !== me.id);
       db.usage = (db.usage ?? []).filter((u) => !owned.has(u.profileId));
       db.observations = (db.observations ?? []).filter((o) => !owned.has(o.profileId));
+      db.snapshots = (db.snapshots ?? []).filter((x) => !owned.has(x.profileId));
+      for (const id of owned) if (db.media) delete db.media[id];
       delete db.verifications[me.id];
       db.admins = (db.admins ?? []).filter((id) => id !== me.id);
       db.feedback = (db.feedback ?? []).filter((f) => f.userId !== me.id);
       delete db.accounts[me.id];
     });
     await store.remove(SESSION_KEY);
+  }
+
+  // ── Two-step sign-in and fresh proofs ──
+
+  async security(): Promise<SecurityState> {
+    const meta = await this.meta();
+    return this.tx((db, me) => ({
+      team: !!me && me.provider !== 'device' && (db.admins ?? []).includes(me.id),
+      twoStep: !!me?.twoStep?.on,
+      level: meta.aal,
+    }));
+  }
+
+  async twoStepStart(): Promise<TwoStepSetup> {
+    return this.tx((db, m) => {
+      if (!m) throw new BackendError('not_signed_in');
+      if (m.provider === 'device') throw new BackendError('forbidden');
+      if (m.twoStep?.on) throw new BackendError('two_step_on');
+      const secret = newTotpSecret();
+      db.accounts[m.id].twoStep = { secret, on: false };
+      return { factorId: `totp-${m.id}`, secret, uri: totpUri(secret, m.email || m.phone || m.displayName) };
+    });
+  }
+
+  async twoStepConfirm(_factorId: string, code: string): Promise<void> {
+    await this.tx((db, m) => {
+      const t = m && db.accounts[m.id].twoStep;
+      if (!t) throw new BackendError('not_signed_in');
+      if (!totpMatches(t.secret, code)) throw new BackendError('code_invalid');
+      t.on = true;
+    });
+    await this.setMeta({ aal: 'aal2', proofAt: Date.now() });
+  }
+
+  async twoStepCode(code: string): Promise<void> {
+    await this.tx((_db, m) => {
+      if (!m?.twoStep?.on) throw new BackendError('two_step_off');
+      if (!totpMatches(m.twoStep.secret, code)) throw new BackendError('code_invalid');
+    });
+    await this.setMeta({ aal: 'aal2', proofAt: Date.now() });
+  }
+
+  async twoStepOff(code: string): Promise<void> {
+    await this.twoStepCode(code);
+    await this.tx((db, m) => {
+      if (m) delete db.accounts[m.id].twoStep;
+    });
+  }
+
+  async demoTwoStepCode(): Promise<string | undefined> {
+    return this.tx((_db, m) => (m?.twoStep ? totp(m.twoStep.secret) : undefined));
   }
 
   // ── Profiles ──
@@ -461,10 +574,12 @@ export class LocalBackend implements Backend {
     });
   }
 
-  async createProfile(input: { name: string; age?: number; intake?: Intake; data: Profile }): Promise<ChildRecord> {
+  async createProfile(input: { name: string; age?: number; intake?: Intake; data: Profile; consent?: number }): Promise<ChildRecord> {
     return this.tx((db, m) => {
       const me = LocalBackend.need(m);
       const data = clone(input.data);
+      // The demonstration keeps the consent as the real server does (which also refuses a family's profile without it).
+      const consent = input.consent && me.role !== 'pro' ? { userId: me.id, version: input.consent, at: Date.now() } : null;
       if (me.role === 'pro') {
         // A professional prepares a child's profile before the family has an account: only once
         // accepted, and nothing is recorded or shared until the family decides (same as the real server).
@@ -486,7 +601,46 @@ export class LocalBackend implements Backend {
         updatedBy: me.id,
       };
       db.profiles[rec.id] = rec;
+      if (consent) (db.consents ??= []).push({ ...consent, profileId: rec.id });
       return clone(rec);
+    });
+  }
+
+  async giveConsent(version: number): Promise<void> {
+    await this.tx((db, m) => {
+      const me = LocalBackend.need(m);
+      if (me.provider === 'device') throw new BackendError('forbidden');
+      (db.consents ??= []).push({ userId: me.id, version, at: Date.now() });
+    });
+  }
+
+  async exportMyData(): Promise<unknown> {
+    await this.requireProof();
+    return this.tx((db, m) => {
+      const me = LocalBackend.need(m);
+      if (me.provider === 'device') throw new BackendError('forbidden');
+      const mine = new Set(Object.values(db.profiles).filter((p) => p.ownerId === me.id).map((p) => p.id));
+      const of = <T extends { profileId?: string }>(list: T[] | undefined) => (list ?? []).filter((x) => x.profileId && mine.has(x.profileId));
+      return clone({
+        exportedAt: new Date().toISOString(),
+        format: 'empower-communication/export-1',
+        account: LocalBackend.public(me),
+        consents: (db.consents ?? []).filter((c) => c.userId === me.id),
+        children: Object.values(db.profiles).filter((p) => mine.has(p.id)),
+        teams: db.members.filter((x) => mine.has(x.profileId) || x.userId === me.id),
+        invitations: db.invitations.filter((i) => mine.has(i.profileId) || i.fromUserId === me.id || i.toUserId === me.id),
+        proposals: db.proposals.filter((x) => mine.has(x.profileId) || x.authorId === me.id),
+        history: of(db.history),
+        devices: db.devices.filter((d) => mine.has(d.profileId) || d.userId === me.id),
+        followUpDays: (db.usage ?? []).filter((u) => mine.has(u.profileId)).map((u) => u.data),
+        observations: (db.observations ?? []).filter((o) => mine.has(o.profileId) || o.createdBy === me.id),
+        boardCopies: of(db.snapshots),
+        notices: db.notices.filter((n) => n.userId === me.id),
+        verification: db.verifications[me.id] ?? null,
+        materials: db.resources.filter((r) => r.ownerId === me.id),
+        messagesToTheTeam: (db.feedback ?? []).filter((f) => f.userId === me.id),
+        notIncluded: 'Photos and recordings: they are files, kept in the app.',
+      });
     });
   }
 
@@ -530,6 +684,7 @@ export class LocalBackend implements Backend {
       if (a.owner && me.role === 'pro' && consentChanged) throw new BackendError('consent_protected');
       // The family stops sharing: what was counted for the team is erased at once.
       if (was.shareStats === 'anonymous' && now.shareStats !== 'anonymous') db.featureDays = (db.featureDays ?? []).filter((f) => f.profileId !== p.id);
+      LocalBackend.snapshotBefore(db, p, data, me.id);
       Object.assign(p, { data: clone(data), version: p.version + 1, updatedAt: Date.now(), updatedBy: me.id });
       return { ok: true, version: p.version };
     });
@@ -539,16 +694,114 @@ export class LocalBackend implements Backend {
     await this.tx((db, m) => {
       const me = LocalBackend.need(m);
       // The owner only, and for a professional only while the certificate is accepted (same as the real server).
-      if (db.profiles[id]?.ownerId !== me.id || !LocalBackend.cleared(db, me.id)) throw new BackendError('forbidden');
-      delete db.profiles[id];
-      const other = <T extends { profileId?: string }>(x: T) => x.profileId !== id;
-      db.members = db.members.filter(other);
-      db.invitations = db.invitations.filter(other);
-      db.proposals = db.proposals.filter(other);
-      db.history = db.history.filter(other);
-      db.devices = db.devices.filter(other);
-      db.usage = (db.usage ?? []).filter((u) => u.profileId !== id);
-      db.observations = (db.observations ?? []).filter(other);
+      const p = db.profiles[id];
+      if (!p || p.deletedAt || p.ownerId !== me.id || !LocalBackend.cleared(db, me.id)) throw new BackendError('forbidden');
+    });
+    await this.requireProof();
+    await this.tx((db) => {
+      // Into the bin: hidden from everybody, put back by the family within 30 days.
+      const p = db.profiles[id];
+      p.deletedAt = Date.now();
+      delete p.connectionCode;
+      db.pairings = db.pairings.filter((x) => x.profileId !== id);
+      for (const inv of db.invitations) if (inv.profileId === id && inv.status === 'pending') inv.status = 'cancelled';
+    });
+  }
+
+  /** Profiles in the bin for more than 30 days are erased for good (done at each look at the bin). */
+  private static eraseOldBin(db: DB) {
+    for (const p of Object.values(db.profiles)) {
+      if (p.deletedAt && p.deletedAt < Date.now() - BIN_DAYS * 86_400_000) LocalBackend.erase(db, p.id);
+    }
+  }
+
+  private static erase(db: DB, id: string) {
+    delete db.profiles[id];
+    const other = <T extends { profileId?: string }>(x: T) => x.profileId !== id;
+    db.members = db.members.filter(other);
+    db.invitations = db.invitations.filter(other);
+    db.proposals = db.proposals.filter(other);
+    db.history = db.history.filter(other);
+    db.devices = db.devices.filter(other);
+    db.usage = (db.usage ?? []).filter((u) => u.profileId !== id);
+    db.observations = (db.observations ?? []).filter(other);
+    db.snapshots = (db.snapshots ?? []).filter(other);
+    if (db.media) delete db.media[id];
+  }
+
+  async listBin(): Promise<BinEntry[]> {
+    return this.tx((db, m) => {
+      const me = LocalBackend.need(m);
+      LocalBackend.eraseOldBin(db);
+      return Object.values(db.profiles)
+        .filter((p) => p.deletedAt && p.ownerId === me.id && LocalBackend.cleared(db, me.id))
+        .sort((a, b) => b.deletedAt! - a.deletedAt!)
+        .map((p) => ({ id: p.id, name: p.name, deletedAt: p.deletedAt!, eraseAt: p.deletedAt! + BIN_DAYS * 86_400_000 }));
+    });
+  }
+
+  async restoreProfile(id: string): Promise<void> {
+    await this.tx((db, m) => {
+      const me = LocalBackend.need(m);
+      const p = db.profiles[id];
+      if (!p?.deletedAt || p.ownerId !== me.id || !LocalBackend.cleared(db, me.id)) throw new BackendError('forbidden');
+      delete p.deletedAt;
+    });
+  }
+
+  // ── Copies of the board ──
+
+  private static keepSnapshot(db: DB, p: StoredProfile, reason: Snapshot['reason']) {
+    const list = (db.snapshots ??= []);
+    list.push({ id: uid('s'), profileId: p.id, data: clone(p.data), version: p.version, reason, createdAt: Date.now(), words: wordCount(p.data) });
+    const mine = list.filter((x) => x.profileId === p.id).sort((a, b) => b.createdAt - a.createdAt);
+    const drop = new Set(mine.slice(10).map((x) => x.id));
+    db.snapshots = list.filter((x) => !drop.has(x.id));
+  }
+
+  /** Before a save: once a week, and before a big change (as snapshot_before_change in the database). */
+  private static snapshotBefore(db: DB, p: StoredProfile, next: Profile, _by: string) {
+    const mine = (db.snapshots ?? []).filter((x) => x.profileId === p.id);
+    const last = Math.max(0, ...mine.map((x) => x.createdAt));
+    if (Date.now() - last > 7 * 86_400_000) return LocalBackend.keepSnapshot(db, p, 'weekly');
+    const before = wordCount(p.data);
+    const big = (before > 0 && wordCount(next) < before * 0.9) || Object.keys(next.boards ?? {}).length < Object.keys(p.data.boards ?? {}).length;
+    const recent = mine.some((x) => x.reason === 'big_change' && Date.now() - x.createdAt < 3_600_000);
+    if (big && !recent) LocalBackend.keepSnapshot(db, p, 'big_change');
+  }
+
+  async listSnapshots(profileId: string): Promise<Snapshot[]> {
+    return this.tx((db, m) => {
+      LocalBackend.requireManager(db, profileId, LocalBackend.need(m));
+      return (db.snapshots ?? [])
+        .filter((x) => x.profileId === profileId)
+        .sort((a, b) => b.createdAt - a.createdAt)
+        .map(({ id, createdAt, reason, version, words }) => ({ id, createdAt, reason, version, words }));
+    });
+  }
+
+  async takeSnapshot(profileId: string): Promise<void> {
+    await this.tx((db, m) => {
+      LocalBackend.requireManager(db, profileId, LocalBackend.need(m));
+      LocalBackend.keepSnapshot(db, db.profiles[profileId], 'manual');
+    });
+  }
+
+  async restoreSnapshot(snapshotId: string): Promise<number> {
+    return this.tx((db, m) => {
+      const me = LocalBackend.need(m);
+      const snap = (db.snapshots ?? []).find((x) => x.id === snapshotId);
+      if (!snap) throw new BackendError('forbidden');
+      LocalBackend.requireManager(db, snap.profileId, me);
+      const p = db.profiles[snap.profileId];
+      LocalBackend.keepSnapshot(db, p, 'before_restore');
+      const d = clone(snap.data);
+      // The family's own choices stay as they are now.
+      const now = p.data.settings;
+      d.settings = { ...d.settings, dataCollection: now.dataCollection, shareStats: now.shareStats, shareTerms: now.shareTerms, pin: now.pin };
+      Object.assign(p, { data: d, version: p.version + 1, updatedAt: Date.now(), updatedBy: me.id });
+      db.history.push({ id: uid('h'), profileId: p.id, actorId: me.id, actorName: memberName(me), summary: `restore:${new Date(snap.createdAt).toISOString()}`, ops: [], inverse: [], createdAt: Date.now() });
+      return p.version;
     });
   }
 
@@ -563,8 +816,11 @@ export class LocalBackend implements Backend {
 
   async listMembers(profileId: string): Promise<Membership[]> {
     return this.tx((db, m) => {
-      LocalBackend.requireAccess(db, profileId, LocalBackend.need(m));
-      return clone(db.members.filter((x) => x.profileId === profileId));
+      const me = LocalBackend.need(m);
+      LocalBackend.requireAccess(db, profileId, me);
+      // The addresses only for the family, the team's managers and each person their own (as list_members).
+      const manager = LocalBackend.managers(db, profileId).includes(me.id);
+      return clone(db.members.filter((x) => x.profileId === profileId)).map((x) => (manager || x.userId === me.id ? x : { ...x, email: undefined }));
     });
   }
 
@@ -981,6 +1237,7 @@ export class LocalBackend implements Backend {
   }
 
   async createPairingCode(profileId: string, access: 'full' | 'use'): Promise<{ code: string; expiresAt: number }> {
+    if (access === 'full') await this.requireProof();
     return this.tx((db, m) => {
       LocalBackend.requireManager(db, profileId, LocalBackend.need(m));
       const code = friendlyCode();
@@ -1023,8 +1280,57 @@ export class LocalBackend implements Backend {
       db.devices.push({ ...device, profileId: pairing.profileId, userId: acc.id, kind: full ? 'primary' : 'secondary', pendingChanges: 0, revoked: false, createdAt: Date.now() });
       return { id: acc.id, profileId: pairing.profileId };
     });
+    // A tablet signs in without a password: it can never give a fresh proof (as on the real server).
     await store.set(SESSION_KEY, deviceAccount.id);
+    await store.set(SESSION_META_KEY, JSON.stringify({ aal: 'aal1', proofAt: 0 }));
     return deviceAccount.profileId;
+  }
+
+  // ── A child's photos and recordings (the files stay on this device; the rules are the server's) ──
+
+  async uploadMedia(profileId: string, name: string, body: ArrayBuffer | Blob, contentType: string): Promise<void> {
+    await this.tx((db, m) => {
+      const me = LocalBackend.need(m);
+      const a = LocalBackend.access(db, profileId, me.id);
+      // Those who may change the board: not a use-only tablet, not someone removed from the team.
+      if (!a || !(a.owner || a.perms.manager || a.level >= 3)) throw new BackendError('forbidden');
+      if (!isSyncable(name)) throw new BackendError('invalid');
+      const kind = mediaKind(name)!;
+      if (!contentType.startsWith(`${kind}/`)) throw new BackendError('media_type');
+      const size = typeof Blob !== 'undefined' && body instanceof Blob ? body.size : (body as ArrayBuffer).byteLength;
+      if (size > MEDIA_LIMITS[kind]) throw new BackendError('too_large');
+      const list = ((db.media ??= {})[profileId] ??= []);
+      if (list.some((f) => f.name === name)) throw new BackendError('exists');
+      if (list.length >= MEDIA_LIMITS.files || list.reduce((n, f) => n + f.size, size) > MEDIA_LIMITS.bytes) throw new BackendError('media_quota');
+      list.push({ name, size, createdAt: Date.now() });
+    });
+  }
+
+  async mediaUrl(profileId: string, name: string): Promise<string> {
+    await this.tx((db, m) => {
+      LocalBackend.requireAccess(db, profileId, LocalBackend.need(m));
+      if (!db.media?.[profileId]?.some((f) => f.name === name)) throw new BackendError('not_found');
+    });
+    // The demonstration's "account" is this device: the file is wherever it was made.
+    const uri = isSyncable(name) ? await mediaUri(name) : undefined;
+    if (!uri) throw new BackendError('not_found');
+    return uri;
+  }
+
+  async listMedia(profileId: string): Promise<{ name: string; size: number; createdAt: number }[]> {
+    return this.tx((db, m) => {
+      LocalBackend.requireAccess(db, profileId, LocalBackend.need(m));
+      return clone(db.media?.[profileId] ?? []);
+    });
+  }
+
+  async removeMedia(profileId: string, names: string[]): Promise<void> {
+    await this.tx((db, m) => {
+      const a = LocalBackend.access(db, profileId, LocalBackend.need(m).id);
+      // Like the storage server: someone who may not remove gets no error, and nothing is removed.
+      if (!a || !(a.owner || a.perms.manager) || !db.media?.[profileId]) return;
+      db.media[profileId] = db.media[profileId].filter((f) => !names.includes(f.name));
+    });
   }
 
   // ── Verification ──
@@ -1135,10 +1441,14 @@ export class LocalBackend implements Backend {
       const counts: FeatureDay['counts'] = {};
       for (const k of COUNTERS) {
         const v = (day.counts as Record<string, unknown>)[k];
-        if (typeof v === 'number' && Number.isFinite(v)) counts[k] = Math.floor(Math.max(0, Math.min(v, k.endsWith('Ms') ? 86400000 : 100000)));
+        const cap = k.startsWith('seen:') ? 1 : k.endsWith('Ms') ? 86400000 : 100000;
+        if (typeof v === 'number' && Number.isFinite(v)) counts[k] = Math.floor(Math.max(0, Math.min(v, cap)));
       }
       db.featureDays = (db.featureDays ?? []).filter((f) => !(f.profileId === profileId && f.data.deviceId === day.deviceId && f.data.day === day.day));
-      db.featureDays.push({ profileId, data: { day: day.day, deviceId: day.deviceId, counts, platform: day.platform, form: day.form, appVersion: day.appVersion } });
+      db.featureDays.push({
+        profileId,
+        data: { day: day.day, deviceId: day.deviceId, counts, platform: day.platform, form: day.form, appVersion: cleanVersion(day.appVersion) },
+      });
     });
   }
 
@@ -1156,7 +1466,7 @@ export class LocalBackend implements Backend {
           name: /^[A-Za-z]{1,30}$/.test(it.name) ? it.name : 'Error',
           at: /^\d{1,7}:\d{1,7}$/.test(it.at) ? it.at : '',
           screen: SCREENS.includes(it.screen) ? it.screen : 'other',
-          version: /^[0-9A-Za-z.+-]{1,20}$/.test(it.version) ? it.version : '',
+          version: cleanVersion(it.version),
           platform: ['ios', 'android', 'web'].includes(it.platform) ? it.platform : '?',
         };
         const key = Object.values(row).join('|');
@@ -1308,6 +1618,21 @@ export class LocalBackend implements Backend {
     });
   }
 
+  async adminRetention(): Promise<AdminRetention> {
+    return this.tx((db, m) => {
+      LocalBackend.requireAdmin(db, m);
+      const team = db.admins ?? [];
+      return {
+        inactiveAccounts: 0,
+        inBin: Object.values(db.profiles).filter((p) => p.deletedAt).length,
+        filesWaiting: 0,
+        twoStepTeam: team.filter((id) => db.accounts[id]?.twoStep?.on).length,
+        team: team.length,
+        consents: (db.consents ?? []).filter((c) => Date.now() - c.at < 30 * 86_400_000).length,
+      };
+    });
+  }
+
   async adminRoadmap(): Promise<AdminRoadmapItem[]> {
     return this.tx((db, m) => {
       LocalBackend.requireAdmin(db, m);
@@ -1363,7 +1688,8 @@ export class LocalBackend implements Backend {
       }
       return a;
     });
-    await store.set(SESSION_KEY, acc.id);
+    // The demonstration's shortcut stands for a team member who signed in with the two-step code.
+    await this.startSession(acc.id, 'aal2');
     return LocalBackend.public(acc);
   }
 

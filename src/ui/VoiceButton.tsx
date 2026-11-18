@@ -2,6 +2,7 @@ import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-spe
 import React, { useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { arabicLocale, label } from '../lib/lexicon';
+import { installedFor } from '../lib/dictation';
 import { strings } from '../i18n/ui';
 import type { Lang, Profile, UiLang } from '../model/types';
 import { useAppMaybe } from '../state/AppState';
@@ -65,6 +66,8 @@ export function VoiceButton({
     setError(true);
   });
 
+  // The system's online service hears this dictation (said under the button while it listens).
+  const [online, setOnline] = useState(false);
   const start = async () => {
     setError(false);
     setTranscript('');
@@ -80,11 +83,26 @@ export function VoiceButton({
             .map((c) => label(profile, c!.concept, lang))
             .slice(0, 100)
         : [];
+      const locale = recognitionLang(lang, arabicLocale(profile?.settings ?? { arabic: 'lb' }));
+      // On the device when the system can (the audio never leaves it); otherwise the system's service.
+      let onDevice = false;
+      if (Platform.OS !== 'web') {
+        try {
+          if (ExpoSpeechRecognitionModule.supportsOnDeviceRecognition()) {
+            const { installedLocales } = await ExpoSpeechRecognitionModule.getSupportedLocales({});
+            onDevice = installedFor(installedLocales, locale);
+          }
+        } catch {
+          onDevice = false;
+        }
+      }
+      setOnline(Platform.OS !== 'web' && !onDevice);
       ExpoSpeechRecognitionModule.start({
-        lang: recognitionLang(lang, arabicLocale(profile?.settings ?? { arabic: 'lb' })),
+        lang: locale,
         interimResults: true,
         continuous: false,
         contextualStrings: vocab,
+        requiresOnDeviceRecognition: onDevice,
       });
       mine.current = true;
       setListening(true);
@@ -106,6 +124,7 @@ export function VoiceButton({
       </Pressable>
       {transcript && !onPartial ? <Text style={styles.transcript}>« {transcript} »</Text> : null}
       {error && <Text style={[styles.note, styles.warn]}>{t.dictateUnavailable}</Text>}
+      {listening && online && <Text style={styles.note}>{t.dictateOnline}</Text>}
     </View>
   );
 }

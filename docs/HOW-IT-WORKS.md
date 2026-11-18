@@ -600,7 +600,7 @@ without being in caregiver mode.
 | The choice | Settings → Voice and the set-up offer four voices, in French, English and Arabic: Woman, Man, Girl, Boy (`voiceOption`, `optionParts` in `src/lib/voices.ts`), plus the speed. "Device voice", the voice height and "a specific voice" are gone from the screens: the owner found them too many. A board left on "device voice" follows the child's gender. |
 | What speaks | Always a voice of the device. Girl: a woman's voice raised (unchanged, judged good). Boy: a man's voice raised by 50 %, aimed a little above a young voice the owner liked (measured: 160–190 Hz against 100–140 Hz for men; then raised once more at his request, to sound more like a child); in Edge each man's voice is raised by what it needs; a woman's voice barely raised when the device has no man's. Android's voices are recognised by their code. |
 | A limit | Chrome's "Google" voices on a computer cannot be made higher or lower: Girl and Boy then sound like adults. A child's voice uses another voice of the device when there is one, and the screen says so. |
-| New words | With Girl or Boy, "Create a new word" asks for a recording in the board's language before "Save" (`PickerPanel`). A recording stays on the device that made it. Words added in bulk (a new activity board, the names of the set-up) are not asked one. |
+| New words | With Girl or Boy, "Create a new word" asks for a recording in the board's language before "Save" (`PickerPanel`). A recording is copied to the child's other devices through the account. Words added in bulk (a new activity board, the names of the set-up) are not asked one. |
 | Children's voices from a service | Tried (Microsoft Azure AI Speech) and removed the same day at the owner's request: billed per character. |
 
 ## Round 34 — Settings tidied into ten groups
@@ -649,15 +649,46 @@ week and month schedules, the bar). The guide and the set-up help name the new g
 | Phone screens | The password field (shared with the sign-in screen) no longer pushes its eye button out of the box in a narrow panel. |
 | Tests | `forgotCode.test.ts`: who is offered it; the password checked without change; a Google account and a tablet refused; the new family code saved by the family and refused from an editor. `forgotCodeServer.test.ts` (real-server requests, faked): the password goes with the account's own address; the e-mailed code is checked as a reset code without choosing a new password; a tablet is refused before anything is sent. `npm run test:a11y` now goes through the family's set-up and scans "Forgot the code?" and the new-code keypad. |
 
+## Round 38 — Security and data protection, second round; never locked in, never lost (18 November 2026)
+
+Everything in the launch plan that is development work and does not need the store accounts, billing
+or a lawyer. Database changes are six files dated 2026-11-18 (the owner runs them: `supabase/README.md` §11).
+
+| What | How it was done |
+|---|---|
+| Two-step sign-in | Settings → Account → My account: **Turn on**, scan the code with an authenticator app, type the first code (`TwoStepCard`, `src/ui/TwoStep.tsx`; Supabase MFA). At each sign-in the code is asked before anything else (stage `twoStep`). The database refuses the children's data until it is typed (`mfa_ok`). Required for the back office (`is_admin()` needs "aal2"; `BackOfficeGate` shows the set-up first). The demo server plays real authenticator codes (`src/lib/totp.ts`, RFC 6238) and shows the current one. |
+| Confirm it is you | Deleting the account or a child's profile, a full-access device code, "Download all my data": the database asks a proof from the last 10 minutes (`fresh_proof`); the screen shows it in place — password, a code by e-mail, or the authenticator code — and tries again (`useProof`, `ProveItsYou`). "Forgot the code?" on the keypad uses the same component. |
+| Team members' addresses | Only the family, the managers and each person themself see an address in the team (`list_members`); the family code only through its function. |
+| The session in the Keychain / Keystore | `src/lib/deviceVault.ts` (expo-secure-store, pieces of 1,800 characters, a session from the older storage moved once); the browser keeps its storage. |
+| Server errors | A server that answers with an error (down, paused, overloaded) is "offline": the board keeps working; only "this session does not exist" signs out (`serverUnavailable`). Before, the child's copy could be erased. |
+| Files erased by the server | `storage_purge` queue + function `caa-purge` (`supabase/functions/caa-purge`). |
+| The bins | A deleted child's profile: 30 days in **Deleted profiles** (Settings → Account; the professional's account page; the first set-up step), **Put back**, then erased with its files. Deleted words and activity boards: 30 days in **Deleted words and boards** (Settings → Board → Words and pictures), back to their place or the first empty place, never moving another word (`src/lib/wordBin.ts`). |
+| Earlier versions | The server keeps a copy of the board weekly, before a big change (a tenth of the words or a board gone at once) and on **Keep a copy now**; 10 per child. **Put back** keeps the current board first and never changes the code, follow-up or sharing; the history says "Board put back as it was on …". |
+| The parent's consent | On the set-up's follow-up step (and when parents take over a profile a professional prepared), **Your agreement** with a box to tick; the database keeps who, when and which text (`consents`) and refuses the profile without it (`src/lib/consent.ts`, `ConsentBox`). |
+| Retention | Every night: follow-up 24 months (sentences 12), history 24 months, notices 12 months, messages to the team 3 years, the team's log 5 years, finished invitations 12 months (`retention_daily`). Back office → Security → **Retention and protections**: two-step in the team, accounts without a sign-in for 24 months (counted, not deleted), profiles in the bin, files waiting. |
+| Sealed sentences | The children's sentences and the observations' texts are encrypted in the database with a key in Supabase Vault, read back only through `usage_of` / `list_observations`. |
+| Download all my data | Settings → Account → Privacy and data (and the professional's account page): one JSON file (`export_my_data`). |
+| Dictation | On the device when the language is installed for it; otherwise "Apple's or Google's service hears the sentence" under the button. |
+| A message to every family | `select public.admin_broadcast('…', '…', '…');` (team or SQL editor): each account gets it in its menu language (incident runbook). |
+| Photos and recordings on every device | `src/state/mediaSync.ts` (planning in `src/lib/mediaPlan.ts`): a word's photo, a board's picture or a family's recording is sent in the background to the child's private folder (`profile-media/<profile id>/<name>`, the same name everywhere) and fetched by the child's other devices. Sent by people who may change the board, received by the whole team (a use-only tablet too). A photo over ~200 KB travels at 1024 px JPEG; a recording as it is. Offline or refused, nothing blocks the board: it waits and tries again (30 s, doubling, at most 1 h); the account's list is read every 12 h. A manager's device removes a replaced picture and, weekly, files no word has used for 7 days. Settings → Account → Devices and sync says "copied to the account" or how many wait. Limits in the database: 2 MB per photo, 3 MB per recording, 1,500 files and 150 MB per child, 1,000 files per person per day. |
+| Choosing without pointing | Settings → Touch, all off at first. **Switch scanning** (`src/lib/scanning.ts`, `src/ui/Scanner.tsx`): automatic or step by step, row then card or card by card, time per step, turns before it waits, the lit word said quietly (`speakPreview`); the switch is Space / Enter (switch interfaces type them; listened to in a browser) or the whole screen. Delete, Speak and a folder's Back come first; it never covers the bar and pauses under any panel; Escape stops it. **Choose by resting the pointer** (`src/lib/dwell.ts`): a mouse, head or eye-gaze pointer rests, the card fills, then it is chosen (iPadOS eye tracking makes real taps: leave it off there). **Touch that counts — Where it first lands** and **Bigger touch area** for a hand that shakes; cards keep their places and sizes. Settings `scan`, `dwell`, `touchPoint`, `bigTouch`, migrated for older profiles. |
+| Never locked in | **Export for another AAC app (.obz)** writes the Open Board Format (`src/lib/zip.ts`, `src/lib/obz.ts`): stored places, folders open their boards without being said, pictograms with their licence, family recordings; app links are not exported. |
+| Core words never move | `src/__tests__/coreLayout.test.ts` compares every starter-board word place (and `TLA_CORE` / `TLA_FUNCTIONS`) with a committed fixture, and checks that `migrate` never moves a card of a saved profile (`fixtures/oldProfile.json`). Changing a place on purpose: `UPDATE_CORE_LAYOUT=1`, after the speech therapist's validation. |
+| No voice for a language | The set-up's voice step and Settings → Voice say so and explain where to install one (`NoVoiceWarning`). |
+| Links out behind the code | On the tablet apps, a pictogram that opens another app first asks the caregiver code ("The board is about to open another app"); no switch to turn it off (store rules for children's apps). |
+| Permission sentences | iOS microphone, camera, photos, speech recognition: English in `app.json`, French / English / Arabic in `locales/`. |
+| Figures for the team, list 3 | "Seen" next to "used" for each feature (`useSeen`), the app version of each day, speed in five steps (start-up, sync, voice; `countSpeed`). Families are asked to agree again (`SHARE_TERMS` 3). Product page: "Seen, then used?", "Use by version"; Bugs page: "Speed". |
+| Documents | `docs/runbooks/` (release checklist, backup and restore, incident response, data breach, contingency and risk register), `docs/ACCESS-LIST.md`, `docs/ARCHITECTURE.md`, `docs/legal/` (drafts for the lawyer), store pages `public/support/` and `public/delete-account/`, `scripts/backup-offsite.sh`, `.github/` (Dependabot, checks on every change). |
+
 ## How everything is checked
 
 | Check | What it does |
 |---|---|
 | `npm run typecheck` | TypeScript reads the whole code and refuses mistakes such as a missing field or a wrong type. |
-| `npm test` | 300 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office, colour contrast. |
-| `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger, a tablet and a member of our team; then every attack found by the security review, which must fail; then a professional who prepares a profile and hands it to the parents; then the e-mails to the team; then the figures for the team, the problems and the votes; 176 checks. |
+| `npm test` | 437 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office, colour contrast. |
+| `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger, a tablet and a member of our team; then every attack found by the security review, which must fail; then a professional who prepares a profile and hands it to the parents; then the e-mails to the team; then the figures for the team, the problems and the votes; then the second round of 18 November (two-step sign-in, fresh proofs, the purge queue, the bin and the copies, consent, retention, sealed sentences, photos and recordings); 318 checks. The same runs on GitHub at every change. |
 | `npm run test:live` | The same story on a second, empty Supabase project (never the one families use), through the app's own code: 13 steps, including devices, history undo, invitation codes, revisions and materials (needs "Confirm email" off while it runs). Last full run: before the back office (all 13 passed); **to run again once the back-office migration is on the real project**. |
-| `npm run test:a11y` | Accessibility: 204 scans of 57 screens against WCAG 2.2 AA (four sizes, Arabic), then a keyboard-only run. Last run: 0 rule break. |
+| `npm run test:a11y` | Accessibility: 232 scans of 64 screens against WCAG 2.2 AA (four sizes, Arabic), then a keyboard-only run. Last run: 0 rule break. |
 | Browser walkthroughs | Playwright drives the web version like a person: the parent journey, the team (invite, undo, join with a code), the professional journey (verification, tour, request, draft, proposal, approval), and the Arabic screens. |
 
 ## Not done yet (honest list)
@@ -665,13 +696,17 @@ week and month schedules, the bar). The guide and the set-up help name the new g
 - **Billing** (deferred).
 - **Back office**: built and tested on a local database, but **not yet run on the real Supabase
   project** (the new migration must be run there, and an account added to `admins`). It lives inside
-  the app, so opening it on a computer needs the app's web version online (the repository is ready
-  for Cloudflare, see `supabase/README.md`; the first build there has not been seen working yet). The team's accounts have a password only: turn on two-step sign-in
-  in Supabase before real certificates arrive. Certificates that are PDF files open in a new tab,
-  pictures open in the page.
-- **Photos and recorded sounds stay on the device that made them**: words, boards and settings
-  sync, but a photo added on the parent's phone does not yet appear on the child's tablet. The
-  private storage folder for it exists (`profile-media`); copying the files is the next step.
+  the app. Since Round 38 it needs two-step sign-in (each team account turns it on the first time).
+  Certificates that are PDF files open in a new tab, pictures open in the page.
+- **The database files of 18 November 2026** (Round 38) and the function `caa-purge` must be run /
+  deployed in Supabase by the owner (`supabase/README.md` §11); until then the app works with the
+  older rules.
+- **Native store apps**: never built yet (by choice: billing and the store accounts come first). The
+  session in the Keychain / Keystore, on-device dictation, the permission sentences, switch access and
+  the link gate are written for them and must be tried on real devices.
+- **Robot check (CAPTCHA)** on sign-up: needs a Cloudflare Turnstile key and the store builds.
+- **Adult-user mode** ("this board is for me") and an **offline-only mode** without an account:
+  not built (first six months).
 - **Google, Apple and phone sign-in** need settings in Supabase (Google OAuth client, Apple
   Developer account, an SMS provider): the steps are in `supabase/README.md`, section 9. The code is
   written (the browser goes to Google and comes back signed in; the iPad shows Apple's own sheet)
@@ -698,7 +733,7 @@ week and month schedules, the bar). The guide and the set-up help name the new g
   a child). Negligible once real families arrive; to be excluded in the database if exact numbers matter.
 - **Accessibility**: checked by a program against WCAG 2.2 AA on the web version (`docs/ACCESSIBILITY.md`);
   not yet listened to with a real screen reader, and not tested on a tablet.
-- **Switch access and eye gaze**: not available (the set-up says so).
+- **Switch scanning and eye gaze**: built (Settings → Touch). Tablets have no in-app key switch (use the whole screen as the switch, or the device's Switch Control / Switch Access). Not yet tried with real switches or eye-gaze devices.
 - **Arabic texts** are a first version: to be reviewed by a native speaker.
 - **Arabic dialects**: the seven dialect word lists (Syrian, Jordanian / Palestinian, Egyptian, Saudi,
   Gulf, Iraqi, Standard Arabic) were written without a native reviewer. Before selling in a country,

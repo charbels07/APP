@@ -64,7 +64,9 @@ describe('dialect voices', () => {
   it('lets the family’s own recording or wording win', () => {
     const recorded = child({});
     recorded.overrides.want = { audio: { ar: 'maman.m4a' } };
-    expect(tokenSegment(renderStrip([word('want')], recorded)[0])).toEqual({ kind: 'audio', media: 'maman.m4a' });
+    // the word travels with the recording: said by the device's voice while the file has not arrived
+    expect(tokenSegment(renderStrip([word('want')], recorded)[0])).toMatchObject({ kind: 'audio', media: 'maman.m4a', lang: 'ar' });
+    expect((tokenSegment(renderStrip([word('want')], recorded)[0]) as { text?: string }).text).toBeTruthy();
     const reworded = child({});
     reworded.overrides.want = { labels: { ar: 'نفسي' } };
     expect(tokenSegment(renderStrip([word('want')], reworded)[0])).toEqual({ kind: 'tts', text: 'نفسي', lang: 'ar' });

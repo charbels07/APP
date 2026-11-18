@@ -10,6 +10,9 @@ import { errorText } from '../../i18n/account';
 import { settingsStrings } from '../../i18n/settings';
 import { useSession } from '../../state/Session';
 import { Btn, Field } from '../common';
+import { ConsentBox } from '../ConsentBox';
+import { CHILD_DATA_CONSENT } from '../../lib/consent';
+import { BackendError } from '../../backend/Backend';
 import { ErrorText, LinkBtn, StartLayout, T, st } from './StartLayout';
 
 export function InvitationsScreen() {
@@ -19,6 +22,9 @@ export function InvitationsScreen() {
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Taking over a profile a professional prepared (a "parent" invitation): the parent's consent first.
+  const [consent, setConsent] = useState(false);
+  const [askConsent, setAskConsent] = useState(false);
   useEffect(() => {
     api
       .myInvitations()
@@ -29,8 +35,11 @@ export function InvitationsScreen() {
     setBusy(true);
     setError(null);
     try {
+      if (consent) await api.giveConsent(CHILD_DATA_CONSENT);
       await fn();
     } catch (e) {
+      // A code that hands over a child's profile: the database asks the parent's consent.
+      if (e instanceof BackendError && e.code === 'consent_needed') setAskConsent(true);
       setError(errorText(s, e));
     } finally {
       setBusy(false);
@@ -60,7 +69,7 @@ export function InvitationsScreen() {
               kind="primary"
               label={s.acceptInvite}
               style={{ flex: 2 }}
-              disabled={busy}
+              disabled={busy || (i.role === 'parent' && account?.role === 'parent' && !consent)}
               onPress={() =>
                 run(async () => {
                   await api.respondInvitation(i.id, true);
@@ -71,6 +80,9 @@ export function InvitationsScreen() {
           </View>
         </View>
       ))}
+      {(askConsent || list.some((i) => i.role === 'parent')) && account?.role === 'parent' && (
+        <ConsentBox value={consent} onChange={(v) => (setConsent(v), setError(null))} lang={uiLang} />
+      )}
       <Field label={s.inviteCode} value={code} onChangeText={(v) => setCode(v.toUpperCase())} autoCapitalize="characters" autoCorrect={false} />
       <ErrorText text={error} />
       <Btn

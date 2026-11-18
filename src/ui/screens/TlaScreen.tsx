@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { binBoard } from '../../lib/wordBin';
 import { isRtl, label, symbolOf } from '../../lib/lexicon';
 import { useApp } from '../../state/AppState';
 import { Btn } from '../common';
@@ -45,6 +46,8 @@ export function TlaScreen() {
     }
     const id = current.id;
     app.update((d) => {
+      // Kept 30 days in the board's bin (Settings → Board → Words and pictures).
+      binBoard(d, id);
       d.tlaOrder = d.tlaOrder.filter((x) => x !== id);
       delete d.boards[id];
       if (d.lastTla === id) d.lastTla = d.tlaOrder[0];

@@ -13,7 +13,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { backend } from '../backend';
-import type { Backend } from '../backend/Backend';
+import type { Backend, SecurityState } from '../backend/Backend';
 import { BackendError } from '../backend/Backend';
 import type { Account, AccountPrefs, Role } from '../backend/types';
 import { createDefaultProfile } from '../data/defaults';
@@ -24,6 +24,7 @@ import type { UiLang } from '../model/types';
 import { forgetLocal } from './profileSync';
 import { forgetEverything } from '../lib/deviceData';
 import { keepSignedIn, setKeepSignedIn } from '../lib/keepSignedIn';
+import { CHILD_DATA_CONSENT } from '../lib/consent';
 import { markVisit, sameVisit } from '../lib/visit';
 
 export type Stage =
@@ -39,7 +40,9 @@ export type Stage =
   /** The professional workspace; `open`: the child to show first (a profile just created). */
   | { name: 'pro'; open?: string }
   /** The app's own team: certificates to accept, figures, messages (src/ui/admin). */
-  | { name: 'admin' };
+  | { name: 'admin' }
+  /** Two-step sign-in is on: the authenticator code before anything else (src/ui/TwoStep.tsx). */
+  | { name: 'twoStep'; then?: { profileId?: string; app?: boolean } };
 
 interface DevicePrefs {
   uiLang: UiLang;
@@ -73,7 +76,10 @@ interface SessionCtx {
   enter: (opts?: { profileId?: string; app?: boolean }) => Promise<void>;
   /** This account belongs to the app's team (the server decides; this only shows the way in). */
   isAdmin: boolean;
-  /** `eraseMedia`: also erase the photos and recordings kept on this device (they are not saved online). */
+  /** Two-step sign-in of this account (null: not known, e.g. without internet or a linked tablet). */
+  security: SecurityState | null;
+  refreshSecurity: () => Promise<void>;
+  /** `eraseMedia`: also erase the photos and recordings made on this device (those received from the account always leave). */
   signOut: (opts?: { eraseMedia?: boolean }) => Promise<void>;
   /** Reads the account again (after changing the name, for example). */
   refreshAccount: () => Promise<void>;
@@ -133,6 +139,7 @@ export function SessionProvider({ children, api = backend() }: { children: React
   const [stage, setStage] = useState<Stage>({ name: 'loading' });
   const [offline, setOffline] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [security, setSecurity] = useState<SecurityState | null>(null);
   const [keep, setKeepState] = useState(true);
 
   const saveDevice = useCallback((patch: Partial<DevicePrefs>) => {
@@ -145,8 +152,13 @@ export function SessionProvider({ children, api = backend() }: { children: React
   /** Where a signed-in person lands. */
   const route = useCallback(
     async (a: Account, opts: { profileId?: string; app?: boolean } = {}) => {
+      // Two-step sign-in on and its code not typed yet: nothing else before it (the database would
+      // show no child, which must never look like "no child yet").
+      const sec = a.provider === 'device' ? null : await api.security().catch(() => null);
+      setSecurity(sec);
+      if (sec?.twoStep && sec.level !== 'aal2') return setStage({ name: 'twoStep', then: opts });
       // The app's team lands in the back office (a tablet linked with a code is never in the team).
-      const admin = a.provider !== 'device' && (await api.isAdmin().catch(() => false));
+      const admin = a.provider !== 'device' && (sec ? sec.team : await api.isAdmin().catch(() => false));
       setIsAdmin(admin);
       if (admin && !opts.app && !opts.profileId) return setStage({ name: 'admin' });
       if (a.role === 'pro') return setStage({ name: 'pro' });
@@ -163,7 +175,8 @@ export function SessionProvider({ children, api = backend() }: { children: React
           data.settings.uiLang = lang;
           data.settings.lang = lang;
           data.settings.langs = [lang, ...(['fr', 'en', 'ar'] as const).filter((l) => l !== lang)];
-          const rec = await api.createProfile({ name: adminStrings(lang).testChild, data });
+          // The team member's own test profile: their consent, as for any family.
+          const rec = await api.createProfile({ name: adminStrings(lang).testChild, data, consent: CHILD_DATA_CONSENT });
           return setStage({ name: 'board', profileId: rec.id });
         }
         // Invited before having a child of their own (grandparent, nanny…): the invitations first.
@@ -187,14 +200,20 @@ export function SessionProvider({ children, api = backend() }: { children: React
       deviceRef.current = d;
       setDevice(d);
       let a: Account | null = null;
+      // `null` only when the server said clearly that nobody is signed in. Any failure to ask
+      // (no internet, server down) keeps the last account: the child's board must stay on the device.
+      let unknown = false;
       try {
         a = await api.currentAccount();
-      } catch (e) {
-        if (e instanceof BackendError && e.code === 'offline' && d.account) {
+      } catch {
+        unknown = true;
+        if (d.account) {
           setOffline(true);
           a = d.account;
         }
       }
+      // Nothing known and nothing remembered: the welcome page, without erasing anything.
+      if (!a && unknown) return setStage({ name: 'welcome' });
       const kept = await keepSignedIn();
       setKeepState(kept);
       // Signed in without "Keep me logged in", and the app was closed since: the visit is over.
@@ -248,8 +267,14 @@ export function SessionProvider({ children, api = backend() }: { children: React
     saveDevice({ account: undefined, localProfiles: [] });
     setAccount(null);
     setIsAdmin(false);
+    setSecurity(null);
     setStage({ name: 'welcome' });
   }, [api, saveDevice]);
+
+  const refreshSecurity = useCallback(async () => {
+    const sec = await api.security().catch(() => null);
+    if (sec) setSecurity(sec);
+  }, [api]);
 
   const refreshAccount = useCallback(async () => {
     const a = await api.currentAccount().catch(() => null);
@@ -323,6 +348,8 @@ export function SessionProvider({ children, api = backend() }: { children: React
       offline,
       enter,
       isAdmin,
+      security,
+      refreshSecurity,
       signOut,
       refreshAccount,
       updatePrefs,
@@ -333,7 +360,7 @@ export function SessionProvider({ children, api = backend() }: { children: React
       keep,
       setKeep,
     }),
-    [api, stage, account, uiLang, setUiLang, device?.deviceId, offline, enter, isAdmin, signOut, refreshAccount, updatePrefs, openProfile, rememberLocal, device?.childLock, setChildLock, keep, setKeep],
+    [api, stage, account, uiLang, setUiLang, device?.deviceId, offline, enter, isAdmin, security, refreshSecurity, signOut, refreshAccount, updatePrefs, openProfile, rememberLocal, device?.childLock, setChildLock, keep, setKeep],
   );
 
   return (

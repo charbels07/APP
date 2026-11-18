@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { WordBinPanel } from './panels/WordBinPanel';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { QUICK_ZONE } from '../data/defaults';
 import { IN_EMBEDDED_PAGE } from '../lib/appLinks';
@@ -20,11 +21,14 @@ import { BoardScreen } from './screens/BoardScreen';
 import { ScheduleScreen } from './screens/ScheduleScreen';
 import { TlaScreen } from './screens/TlaScreen';
 import { SentenceStrip } from './SentenceStrip';
+import { Seen } from './Seen';
 import { SymbolView } from './SymbolView';
 import { C, radius } from './theme';
 import { TimerCard } from './TimerCard';
 import { UniversalBar } from './UniversalBar';
 import { linkTarget } from '../lib/safety';
+import { AccessProvider } from '../state/access';
+import { Scanner } from './Scanner';
 
 /** `banner`: shown above the sentence strip (e.g. the preview's "nothing is saved"). */
 export function Root({ banner }: { banner?: React.ReactNode } = {}) {
@@ -47,6 +51,7 @@ export function Root({ banner }: { banner?: React.ReactNode } = {}) {
       {overlay?.kind === 'newTla' && <NewTlaPanel />}
       {overlay?.kind === 'newSequence' && <NewSequencePanel />}
       {overlay?.kind === 'guide' && <GuidePanel />}
+      {overlay?.kind === 'wordBin' && <WordBinPanel />}
       {overlay?.kind === 'settings' && <SettingsScreen />}
       {overlay?.kind === 'peek' && <FolderPeek folder={overlay.folder} />}
       {!banner && !overlay && !profile.guide?.seen && !editMode && !app.playing && !app.recording && <WelcomeCard />}
@@ -105,6 +110,7 @@ export function Root({ banner }: { banner?: React.ReactNode } = {}) {
           )}
           <Btn small icon="settings" label={compact ? undefined : t.settings} accessibilityLabel={t.settings} onPress={() => app.setOverlay({ kind: 'settings' })} />
           <Btn small icon="printer" label={compact ? undefined : t.print} accessibilityLabel={t.print} onPress={() => app.setOverlay({ kind: 'print' })} />
+          <Seen feature="print" />
           <Btn small kind="primary" icon="check" label={t.exit} onPress={() => app.setEditMode(false)} />
         </View>
       )}
@@ -115,23 +121,27 @@ export function Root({ banner }: { banner?: React.ReactNode } = {}) {
       {/* Docked above the board: the board shrinks a little, nothing is covered. */}
       <TimerCard />
       {content}
+      {/* Switch scanning (Settings → Touch): over the sentence and the board, never over the bar. */}
+      <Scanner />
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.root} edges={['top', 'bottom', 'left', 'right']}>
-      {landscape ? (
-        <View style={{ flex: 1, flexDirection: 'row' }}>
-          <UniversalBar vertical />
-          {main}
-        </View>
-      ) : (
-        <View style={{ flex: 1 }}>
-          {main}
-          <UniversalBar vertical={false} />
-        </View>
-      )}
-    </SafeAreaView>
+    <AccessProvider>
+      <SafeAreaView style={styles.root} edges={['top', 'bottom', 'left', 'right']}>
+        {landscape ? (
+          <View style={{ flex: 1, flexDirection: 'row' }}>
+            <UniversalBar vertical />
+            {main}
+          </View>
+        ) : (
+          <View style={{ flex: 1 }}>
+            {main}
+            <UniversalBar vertical={false} />
+          </View>
+        )}
+      </SafeAreaView>
+    </AccessProvider>
   );
 }
 

@@ -5,6 +5,7 @@
  */
 import { createContext, useContext } from 'react';
 import type { AccessLevel, CollaboratorRole, PermissionSet } from '../lib/permissions';
+import type { MediaSync } from './mediaSync';
 import type { ProfileSync } from './profileSync';
 import type { UsageTracker } from './usageTracker';
 
@@ -25,6 +26,8 @@ export interface BoardCtx {
   manager: boolean;
   /** Communication data recorder of this device (null until ready). */
   tracker?: UsageTracker | null;
+  /** Copies of the child's photos and recordings through the account (null until ready). */
+  media?: MediaSync | null;
 }
 
 export const BoardContext = createContext<BoardCtx | null>(null);

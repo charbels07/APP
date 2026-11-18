@@ -15,6 +15,7 @@ import { useAppMaybe } from '../state/AppState';
 import { Btn, PanelScrollLock } from './common';
 import { DrawPad } from './DrawPad';
 import { Icon } from './Icon';
+import { useSeen } from './Seen';
 import { C, radius } from './theme';
 import { VoiceButton } from './VoiceButton';
 
@@ -51,6 +52,8 @@ export function SearchBox({
       alive = false;
     };
   }, []);
+  // For the app's team (families who agreed): the AI's "Draw" button was on screen.
+  useSeen(canDraw && 'ai');
   // While a finger draws, the panel around must not scroll.
   const lockScroll = useContext(PanelScrollLock);
   useEffect(() => () => lockScroll(false), [lockScroll]);

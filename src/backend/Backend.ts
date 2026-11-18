@@ -73,6 +73,55 @@ export interface CodeSent {
   signedIn?: boolean;
 }
 
+/** Security page of the back office: counts only. */
+export interface AdminRetention {
+  inactiveAccounts: number;
+  inBin: number;
+  filesWaiting: number;
+  twoStepTeam: number;
+  team: number;
+  consents: number;
+}
+
+/** Where the signed-in account stands for two-step sign-in (src/ui/TwoStep.tsx). */
+export interface SecurityState {
+  /** On the app's team: the back office is shown, and opens once the code was typed. */
+  team: boolean;
+  /** Two-step sign-in (a code from an authenticator app) is on for this account. */
+  twoStep: boolean;
+  /** 'aal2': the authenticator code was typed in this session. */
+  level: 'aal1' | 'aal2';
+}
+
+/** A child's profile in the family's bin: put back until `eraseAt`, then erased for good. */
+export interface BinEntry {
+  id: string;
+  name: string;
+  deletedAt: number;
+  eraseAt: number;
+}
+
+/** A copy of the board kept by the server (the content is not listed, only when and why). */
+export interface Snapshot {
+  id: string;
+  createdAt: number;
+  reason: 'weekly' | 'big_change' | 'before_restore' | 'manual';
+  version: number;
+  /** Cards with a word on them, all boards together. */
+  words: number;
+}
+
+/** Turning two-step sign-in on: what the authenticator app needs. */
+export interface TwoStepSetup {
+  factorId: string;
+  /** The key to type by hand, in groups of letters and digits. */
+  secret: string;
+  /** otpauth:// link (what the QR code holds). */
+  uri: string;
+  /** The QR code as SVG text (the real server makes one). */
+  qrSvg?: string;
+}
+
 export interface Backend {
   readonly kind: 'local' | 'supabase';
 
@@ -107,15 +156,43 @@ export interface Backend {
   updateAccount(patch: { displayName?: string; email?: string; phone?: string; prefs?: Partial<AccountPrefs> }): Promise<Account>;
   deleteAccount(): Promise<void>;
 
+  // ── Two-step sign-in and fresh proofs ──
+  /** Team or not, two-step on or not, code typed in this session or not (the database decides). */
+  security(): Promise<SecurityState>;
+  /** Starts turning two-step sign-in on: a new authenticator key (not active until confirmed). */
+  twoStepStart(): Promise<TwoStepSetup>;
+  /** The first code from the authenticator app: two-step sign-in is now on. */
+  twoStepConfirm(factorId: string, code: string): Promise<void>;
+  /** The code at sign-in (or as a fresh proof): this session may now read the children's data. */
+  twoStepCode(code: string): Promise<void>;
+  /** Turns it off (a current code is asked first). */
+  twoStepOff(code: string): Promise<void>;
+  /** Demonstration only: the code an authenticator app would show now. */
+  demoTwoStepCode?(): Promise<string | undefined>;
+
   // ── Children's AAC profiles ──
   listProfiles(): Promise<ProfileSummary[]>;
-  createProfile(input: { name: string; age?: number; intake?: Intake; data: Profile }): Promise<ChildRecord>;
+  /** `consent`: the version of the parent's consent the person ticked (src/lib/consent.ts); a family needs it. */
+  createProfile(input: { name: string; age?: number; intake?: Intake; data: Profile; consent?: number }): Promise<ChildRecord>;
+  /** The parent's consent, kept with its date and text version (before taking over a profile a professional prepared). */
+  giveConsent(version: number): Promise<void>;
+  /** Everything the server holds about this account and the children whose profile it owns (one JSON document). Needs a fresh proof. */
+  exportMyData(): Promise<unknown>;
   getProfile(id: string): Promise<ChildRecord>;
   /** Only the server's version number of a profile (a few bytes): an open board asks it often, the whole profile only when newer. */
   profileVersion(id: string): Promise<number>;
   /** Saves only if nobody saved a newer version meanwhile (otherwise returns that version). */
   saveProfile(id: string, data: Profile, baseVersion: number): Promise<SaveResult>;
+  /** Moves the profile to the family's bin (kept 30 days, then erased). Needs a fresh proof (`proof_needed`). */
   deleteProfile(id: string): Promise<void>;
+  /** The family's bin: profiles deleted in the last 30 days. */
+  listBin(): Promise<BinEntry[]>;
+  restoreProfile(id: string): Promise<void>;
+  /** Copies of the board kept by the server (weekly, before a big change, by hand): the family and managers. */
+  listSnapshots(profileId: string): Promise<Snapshot[]>;
+  takeSnapshot(profileId: string): Promise<void>;
+  /** Puts a copy back (the board as it is now is kept first); returns the new version. */
+  restoreSnapshot(snapshotId: string): Promise<number>;
   /** This account's access to a profile. */
   myAccess(profileId: string): Promise<{ owner: boolean; role: CollaboratorRole | 'owner'; level: AccessLevel; perms: PermissionSet } | null>;
 
@@ -162,6 +239,22 @@ export interface Backend {
   createPairingCode(profileId: string, access: 'full' | 'use'): Promise<{ code: string; expiresAt: number }>;
   /** On a new device: links it to the child's profile. */
   redeemPairingCode(code: string, device: { id: string; name: string; platform: string }): Promise<string>;
+
+  // ── A child's photos and recordings, copied through the account (src/state/mediaSync.ts) ──
+  // Private: `profile-media/<profile id>/<name>`, for the child's team only. The name is the one
+  // the profile uses (`isSyncable` in src/lib/mediaPlan.ts); anything else is refused.
+  /**
+   * Sends one file. Refused ('forbidden'): this person may not change the board (a use-only tablet,
+   * someone removed from the team); 'too_large', 'media_type', 'media_quota' (the child's space is
+   * full), 'too_many' (too many today); 'exists': the account already has it.
+   */
+  uploadMedia(profileId: string, name: string, body: ArrayBuffer | Blob, contentType: string): Promise<void>;
+  /** An address that downloads one file for a few minutes ('not_found' when the account does not have it). */
+  mediaUrl(profileId: string, name: string): Promise<string>;
+  /** The files the account keeps for this child. */
+  listMedia(profileId: string): Promise<{ name: string; size: number; createdAt: number }[]>;
+  /** Removes files from the account (the child's managers; a missing file, or someone else's refusal, is silent). */
+  removeMedia(profileId: string, names: string[]): Promise<void>;
 
   // ── Professional verification ──
   getVerification(): Promise<Verification | null>;
@@ -223,6 +316,8 @@ export interface Backend {
   /** Technical problems of the last 30 days. */
   adminBugs(): Promise<AdminBugs>;
   adminRoadmap(): Promise<AdminRoadmapItem[]>;
+  /** Counts for the Security page: accounts without a sign-in for 24 months, profiles in the bin, files waiting to be deleted… */
+  adminRetention(): Promise<AdminRetention>;
   /** Adds an idea to vote for (no `id`) or changes its title or status. */
   adminRoadmapSave(input: { id?: string; title: Record<UiLang, string>; status: RoadmapStatus }): Promise<void>;
   /** Demonstration only (local backend): signs in as the app's team, with example requests and figures. */

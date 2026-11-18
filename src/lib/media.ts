@@ -1,6 +1,7 @@
 /**
  * Media store (native): personal photos and voice recordings are stored locally
- * in the app's document directory (spec §34: photos stay on the device by default).
+ * in the app's document directory; a copy travels through the account to the child's other
+ * devices (`src/state/mediaSync.ts`) under the same name.
  * Profiles reference media by file *name*, never by absolute path, because the
  * iOS container path changes between app updates.
  */
@@ -57,4 +58,40 @@ export async function saveMediaBytes(bytes: Uint8Array, ext: string): Promise<st
   file.create();
   await file.write(bytes);
   return name;
+}
+
+/** True when this device has the file. */
+export async function hasMedia(name: string): Promise<boolean> {
+  return new File(dir(), name).exists;
+}
+
+/** The file as it is (sent to the account): bytes here, a Blob in a browser; undefined when it is not here. */
+export async function mediaContent(name: string): Promise<Uint8Array | Blob | undefined> {
+  const f = new File(dir(), name);
+  return f.exists ? f.bytes() : undefined;
+}
+
+/**
+ * Stores a file received from the account under the name the profile uses. Downloaded aside
+ * first, then moved into place: a download cut short never leaves half a file in the store.
+ */
+export async function saveMediaFrom(url: string, name: string): Promise<void> {
+  const dest = new File(dir(), name);
+  if (dest.exists) return;
+  const aside = () => new File(Paths.cache, `incoming-${name}`);
+  const tmp = aside();
+  if (tmp.exists) tmp.delete();
+  let moved = false;
+  try {
+    await File.downloadFileAsync(url, tmp, { idempotent: true });
+    if (!tmp.size) throw new Error('empty');
+    if (!dest.exists) {
+      // (after a move, `tmp` names the file in its new place)
+      await tmp.move(dest);
+      moved = true;
+    }
+  } finally {
+    const left = aside();
+    if (!moved && left.exists) left.delete();
+  }
 }

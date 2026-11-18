@@ -127,6 +127,9 @@ const fr = {
     incomplete: 'Il manque une information.',
     not_found: 'Introuvable.',
     generic: 'Une erreur est survenue. Réessayez.',
+    consent_needed: 'Votre accord est nécessaire avant de garder le profil de l’enfant.',
+    proof_needed: 'Confirmez d’abord que c’est vous.',
+    two_step_needed: 'Tapez d’abord le code de votre application d’authentification.',
   } as Record<string, string>,
 };
 
@@ -255,6 +258,9 @@ const en: Dict = {
     incomplete: 'Something is missing.',
     not_found: 'Not found.',
     generic: 'Something went wrong. Try again.',
+    consent_needed: 'Your agreement is needed before the child’s profile can be kept.',
+    proof_needed: 'First confirm it is you.',
+    two_step_needed: 'First type the code from your authenticator app.',
   },
 };
 
@@ -376,6 +382,9 @@ const ar: Dict = {
     incomplete: 'هناك معلومة ناقصة.',
     not_found: 'غير موجود.',
     generic: 'حدث خطأ. حاول مجدداً.',
+    consent_needed: 'موافقتك ضرورية قبل حفظ ملف الطفل.',
+    proof_needed: 'أكّد أولًا أنك أنت.',
+    two_step_needed: 'اكتب أولًا رمز تطبيق المصادقة.',
   },
 };
 

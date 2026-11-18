@@ -14,15 +14,22 @@ import { exportJson } from '../../lib/platform';
 import type { UiLang } from '../../model/types';
 import { useApp } from '../../state/AppState';
 import type { BoardCtx } from '../../state/BoardContext';
+import type { MediaSync } from '../../state/mediaSync';
 import { forgetLocal } from '../../state/profileSync';
 import { useSession } from '../../state/Session';
 import { WriteTeam } from '../admin/WriteTeam';
 import { Btn, Field, Section, Segmented, Toggle } from '../common';
 import { groupCode } from '../start/PairScreen';
 import { C } from '../theme';
+import { ObzExportButton } from './ObzExport';
 import { Note, ss } from './SettingsScreen';
 import { Row, when } from './TeamTab';
 import { eraseMediaOf } from '../../lib/deviceData';
+import { useProof } from '../ProveItsYou';
+import { TwoStepCard } from '../TwoStep';
+import { BoardVersions, ProfileBin } from './Backups';
+import { DownloadMyData } from './DownloadMyData';
+import { backupStrings } from '../../i18n/backup';
 
 export function AccountTab({ board, openTeam }: { board: BoardCtx; openTeam: () => void }) {
   const sess = useSession();
@@ -41,7 +48,9 @@ export function AccountTab({ board, openTeam }: { board: BoardCtx; openTeam: () 
     <>
       <MyAccount x={x} />
       <Children board={board} x={x} />
+      <ProfileBin onRestored={(id) => sess.openProfile(id)} />
       <SyncSection board={board} x={x} />
+      <BoardVersions board={board} />
       <Sharing board={board} x={x} openTeam={openTeam} />
       <Section title={x.subscription}>
         <Note text={x.subscriptionLater} />
@@ -112,6 +121,7 @@ export function MyAccount({ x }: { x: SettingsStrings }) {
         </>
       )}
       <Msg ok={msg?.ok} text={msg?.text ?? null} />
+      <TwoStepCard />
       {leaving ? (
         <View style={ss.card}>
           <Note text={x.signOutNote} />
@@ -162,6 +172,8 @@ function SyncSection({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
   const [backup, setBackup] = useState<number | undefined>();
   const [pair, setPair] = useState<{ code: string; expiresAt: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // A device with full access: the database asks for a fresh proof first.
+  const proof = useProof('linkFull');
   const canManage = board.manager || !!board.access?.perms.manageDevices;
   const load = () => {
     if (canManage) api.listDevices(board.profileId).then(setDevices).catch(() => {});
@@ -179,6 +191,7 @@ function SyncSection({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
           </Text>
         </View>
         <Note text={`${x.lastSynced} : ${board.sync.lastSyncedAt ? when(board.sync.lastSyncedAt, uiLang) : x.never} · ${x.lastBackup} : ${backup ? when(backup, uiLang) : x.never}`} />
+        {board.media && <MediaLine media={board.media} x={x} />}
         <Btn
           small
           icon="refresh"
@@ -186,6 +199,7 @@ function SyncSection({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
           onPress={async () => {
             await board.sync.flush();
             await board.sync.pull();
+            void board.media?.run();
             load();
           }}
         />
@@ -231,8 +245,9 @@ function SyncSection({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
                 label={a === 'full' ? x.linkFull : x.linkUse}
                 onPress={async () => {
                   setError(null);
+                  setPair(null);
                   try {
-                    setPair(await api.createPairingCode(board.profileId, a));
+                    await proof.run(async () => setPair(await api.createPairingCode(board.profileId, a)));
                   } catch (e) {
                     setError(String((e as Error).message));
                   }
@@ -240,6 +255,7 @@ function SyncSection({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
               />
             ))}
           </View>
+          {proof.gate}
           {pair && (
             <View style={ss.card}>
               <Text style={ss.code} selectable>
@@ -253,6 +269,19 @@ function SyncSection({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
       )}
     </Section>
   );
+}
+
+/** Where the child's photos and recordings are: copied to the account, or how many still wait. */
+function MediaLine({ media, x }: { media: MediaSync; x: SettingsStrings }) {
+  const st = useSyncExternalStore(media.subscribe, media.status);
+  if (!st.total) return null;
+  const m = x.mediaStates;
+  const parts: string[] = [];
+  if (st.waiting) parts.push(st.localOnly ? m.here : m.waiting(st.waiting));
+  if (st.full) parts.push(m.full);
+  if (st.refused) parts.push(m.refused(st.refused));
+  if (st.receiving) parts.push(m.receiving(st.receiving));
+  return <Note text={`${x.media} : ${parts.length ? parts.join(' · ') : m.copied}`} />;
 }
 
 function Sharing({ board, x, openTeam }: { board: BoardCtx; x: SettingsStrings; openTeam: () => void }) {
@@ -281,17 +310,21 @@ function Privacy({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
   const [error, setError] = useState<string | null>(null);
   const owner = !!board.access?.owner;
   const expected = typing === 'profile' ? board.childName.trim() : x.deleteWord;
+  const proofProfile = useProof('deleteProfile');
+  const proofAccount = useProof('deleteAccount');
   return (
     <Section title={x.privacy}>
       {x.privacyPoints.map((p) => (
         <Note key={p} text={`• ${p}`} />
       ))}
       <Btn small icon="download" label={x.exportProfile} onPress={() => exportJson(`profil-${board.childName || 'caa'}.json`, app.profile)} />
+      <ObzExportButton small profile={app.profile} childName={board.childName} label={x.exportObz} busy={x.exportObzBusy} failed={x.exportObzFailed} />
+      <DownloadMyData />
       {owner && <Btn small kind="danger" icon="trash" label={`${x.deleteProfile} ${board.childName}`} onPress={() => setTyping('profile')} />}
       <Btn small kind="danger" icon="trash" label={x.deleteAccount} onPress={() => setTyping('account')} />
       {typing && (
         <View style={ss.card}>
-          <Note text={typing === 'profile' ? x.deleteProfileNote : x.deleteAccountNote} />
+          <Note text={typing === 'profile' ? backupStrings(sess.uiLang).deleteProfileNote : x.deleteAccountNote} />
           <TextInput value={word} onChangeText={setWord} autoCapitalize="none" style={input} accessibilityLabel={expected} placeholder={expected} placeholderTextColor={C.placeholder} />
           <Msg text={error} />
           <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -307,20 +340,24 @@ function Privacy({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
               small
               kind="danger"
               icon="trash"
-              label={x.deleteForever}
+              label={typing === 'profile' ? backupStrings(sess.uiLang).deleteToBin : x.deleteForever}
               disabled={word.trim().toLocaleLowerCase() !== expected.toLocaleLowerCase()}
               onPress={async () => {
                 setError(null);
                 try {
                   if (typing === 'profile') {
-                    await api.deleteProfile(board.profileId);
-                    await forgetLocal(board.profileId);
-                    await eraseMediaOf(app.profile);
-                    await sess.updatePrefs({ activeProfileId: undefined });
-                    await sess.enter();
+                    await proofProfile.run(async () => {
+                      await api.deleteProfile(board.profileId);
+                      await forgetLocal(board.profileId);
+                      await eraseMediaOf(app.profile);
+                      await sess.updatePrefs({ activeProfileId: undefined });
+                      await sess.enter();
+                    });
                   } else {
-                    await api.deleteAccount();
-                    await sess.signOut({ eraseMedia: true });
+                    await proofAccount.run(async () => {
+                      await api.deleteAccount();
+                      await sess.signOut({ eraseMedia: true });
+                    });
                   }
                 } catch (e) {
                   setError(errorText(s, e));
@@ -328,6 +365,8 @@ function Privacy({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
               }}
             />
           </View>
+          {proofProfile.gate}
+          {proofAccount.gate}
         </View>
       )}
     </Section>
@@ -366,6 +405,7 @@ export function DeleteAccount({ x }: { x: SettingsStrings }) {
   const [open, setOpen] = useState(false);
   const [word, setWord] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const proof = useProof('deleteAccount');
   return (
     <View style={{ gap: 8 }}>
       <Btn small kind="danger" icon="trash" label={x.deleteAccount} onPress={() => setOpen(true)} />
@@ -382,13 +422,16 @@ export function DeleteAccount({ x }: { x: SettingsStrings }) {
             disabled={word.trim().toLocaleLowerCase() !== x.deleteWord.toLocaleLowerCase()}
             onPress={async () => {
               try {
-                await sess.api.deleteAccount();
-                await sess.signOut({ eraseMedia: true });
+                await proof.run(async () => {
+                  await sess.api.deleteAccount();
+                  await sess.signOut({ eraseMedia: true });
+                });
               } catch (e) {
                 setError(errorText(sess.s, e));
               }
             }}
           />
+          {proof.gate}
         </View>
       )}
     </View>

@@ -78,6 +78,13 @@ export async function pictoImageUriByKey(key: string): Promise<string | undefine
   return id === undefined ? undefined : pictoImageUri(id);
 }
 
+/** The picture's bytes (WebP), by the pictogram's stable key; undefined when the library has none. */
+export async function pictoBytesByKey(key: string): Promise<Uint8Array | undefined> {
+  const lib = await loadPictoLibrary();
+  const id = lib.byKey.get(key);
+  return id === undefined ? undefined : bytesOf(id);
+}
+
 /** Copies a library pictogram into the media store so the word keeps it. */
 export async function pictoToMedia(id: number): Promise<string | undefined> {
   const bytes = await bytesOf(id);

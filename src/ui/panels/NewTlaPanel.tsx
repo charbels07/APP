@@ -17,6 +17,7 @@ import { useApp } from '../../state/AppState';
 import { Btn, Field, Panel, Section, Toggle, useNavRtl } from '../common';
 import { moveItem, Reorderable } from '../Reorderable';
 import { PictoSearch, PictoThumb, usePictoLibrary } from '../PictoPicker';
+import { useSeen } from '../Seen';
 import { ImportTla } from './EditMenus';
 import { SymbolView } from '../SymbolView';
 import { C, radius } from '../theme';
@@ -200,6 +201,8 @@ export function NewTlaPanel() {
   const [busy, setBusy] = useState(false);
   const aiCtl = useRef<AbortController | null>(null);
   const aiEnabled = aiOk && profile.settings.aiSuggestions !== false;
+  // For the app's team (families who agreed): the AI's buttons were on screen.
+  useSeen(aiEnabled && 'ai');
   const e = editStrings(ui);
   // For the app's team (families who agreed): a board was started, finished, in how long, and
   // whether the suggestion was kept as it was. Never its name or its words.

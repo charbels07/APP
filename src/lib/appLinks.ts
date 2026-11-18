@@ -75,6 +75,18 @@ export async function openAppUrl(url: string): Promise<boolean> {
 export const APPS_NEED_TAP = Platform.OS === 'web';
 
 /**
+ * Leaving the board for another app or a web page (an app pictogram, a link in the guide): on the
+ * tablet apps the caregiver code is asked first, with a sentence saying another app is about to
+ * open. The stores' rules for apps made for children ask for a parental gate before any link out
+ * of the app, so there is no switch to turn it off. Not asked in caregiver mode (the code was just
+ * typed) nor for the app's own team (never asked a code, `freeEdit`). In a browser the page is not
+ * a store app: unchanged (a tap on "Open").
+ */
+export function linkNeedsCode({ os, freeEdit, caregiver }: { os: string; freeEdit: boolean; caregiver: boolean }): boolean {
+  return os !== 'web' && !freeEdit && !caregiver;
+}
+
+/**
  * The web app is shown inside another page (the online demo). Such pages are sandboxed and
  * every tab they open inherits the sandbox: sites that protect themselves with a
  * Cross-Origin-Opener-Policy header — YouTube does — then refuse to load

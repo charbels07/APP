@@ -8,7 +8,7 @@ insert into profiles (id, owner_id, name, data) values ('00000000-0000-0000-0000
 set role authenticated;
 select set_config('request.jwt.claim.sub', :'rita', false);
 insert into storage.objects (bucket_id, name) values ('verification-docs', :'rita' || '/diplome.pdf');
-insert into storage.objects (bucket_id, name) values ('profile-media', '00000000-0000-0000-0000-0000000000f1/photo.jpg');
+insert into storage.objects (bucket_id, name) values ('profile-media', '00000000-0000-0000-0000-0000000000f1/1762000000000_ab12cd.jpg');
 select set_config('request.jwt.claim.sub', :'eve', false);
 select test.ok((select count(*) = 0 from storage.objects), 'nobody else sees diplomas or a child''s photos');
 select test.expect_error(format('insert into storage.objects (bucket_id, name) values (''verification-docs'', %L)', :'rita' || '/fake.pdf'),

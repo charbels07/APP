@@ -26,6 +26,8 @@ const TEMPLATES: Template[] = [
   // access
   { fr: 'Vos droits sur le profil de {1} ont changé.', en: 'Your rights on {1}’s profile have changed.', ar: 'تغيّرت صلاحياتك على ملف {1}.' },
   { fr: 'Votre accès au profil de {1} a été retiré.', en: 'Your access to {1}’s profile was removed.', ar: 'أُزيل وصولك إلى ملف {1}.' },
+  // the family put the child's profile in its bin (delete_profile)
+  { fr: 'Le profil de {1} a été supprimé par la famille.', en: '{1}’s profile was deleted by the family.', ar: 'حذفت العائلة ملف {1}.' },
   {
     fr: '{1} est maintenant le parent responsable du profil de {2}. Vous restez dans son équipe.',
     en: '{1} is now the parent in charge of {2}’s profile. You stay on the team.',

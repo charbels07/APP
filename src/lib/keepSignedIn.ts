@@ -7,6 +7,7 @@
  * A tablet linked with a code always stays connected (the child must never meet a sign-in page).
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { deviceVault } from './deviceVault';
 import { visitStore } from './visit';
 
 const KEY = 'caa.keep.v1';
@@ -27,25 +28,26 @@ export async function setKeepSignedIn(keep: boolean): Promise<void> {
 }
 
 /**
- * Where a sign-in session is written: on the device, or in the visit's store. Reading looks in
- * both (the visit first), so a session is found wherever the choice put it.
+ * Where a sign-in session is written: on the device (in the iOS Keychain / Android Keystore on
+ * phones and tablets: `deviceVault`), or in the visit's store. Reading looks in both (the visit
+ * first), so a session is found wherever the choice put it.
  */
 export const sessionStore = {
   async getItem(key: string): Promise<string | null> {
-    return visitStore.get(key) ?? (await AsyncStorage.getItem(key));
+    return visitStore.get(key) ?? (await deviceVault.getItem(key));
   },
   async setItem(key: string, value: string): Promise<void> {
     if (await keepSignedIn()) {
       visitStore.remove(key);
-      await AsyncStorage.setItem(key, value);
+      await deviceVault.setItem(key, value);
     } else {
       visitStore.set(key, value);
-      await AsyncStorage.removeItem(key);
+      await deviceVault.removeItem(key);
     }
   },
   async removeItem(key: string): Promise<void> {
     visitStore.remove(key);
-    await AsyncStorage.removeItem(key);
+    await deviceVault.removeItem(key);
   },
 };
 

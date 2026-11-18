@@ -58,6 +58,6 @@ describe('code-switching (spec §26)', () => {
     const p = createDefaultProfile();
     p.overrides.grandma = { audio: { ar: 'teta.m4a' } };
     const segments = toSegments(renderStrip(strip('ar', 'i', 'want', 'grandma'), p));
-    expect(segments[segments.length - 1]).toEqual({ kind: 'audio', media: 'teta.m4a' });
+    expect(segments[segments.length - 1]).toMatchObject({ kind: 'audio', media: 'teta.m4a' });
   });
 });

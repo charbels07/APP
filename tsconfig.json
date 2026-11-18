@@ -12,6 +12,7 @@
     "scripts",
     "dist",
     "jest.setup.js",
-    "supabase/functions"
+    "supabase/functions",
+    ".claude"
   ]
 }

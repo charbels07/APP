@@ -28,6 +28,10 @@ import { PictoCredit } from '../PictoCredits';
 import { DataDashboard } from '../data/DataDashboard';
 import { Icon, type IconName } from '../Icon';
 import { DeleteAccount, MyAccount, Preferences } from '../settings/AccountTab';
+import { useProof } from '../ProveItsYou';
+import { ProfileBin } from '../settings/Backups';
+import { DownloadMyData } from '../settings/DownloadMyData';
+import { backupStrings } from '../../i18n/backup';
 import { Note, ss } from '../settings/SettingsScreen';
 import { PermissionEditor, Row, when } from '../settings/TeamTab';
 import { LangSwitch, Logo } from '../start/StartLayout';
@@ -624,11 +628,12 @@ function DeleteChild({ user, onDeleted }: { user: ProfileSummary; onDeleted: () 
   const [typing, setTyping] = useState(false);
   const [word, setWord] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const proof = useProof('deleteProfile');
   const label = `${x.deleteProfile} ${user.name}`;
   if (!typing) return <Btn small kind="danger" icon="trash" label={label} onPress={() => setTyping(true)} style={{ alignSelf: 'flex-start' }} />;
   return (
     <View style={ss.card}>
-      <Note text={x.deleteProfileNote} />
+      <Note text={backupStrings(uiLang).deleteProfileNote} />
       <TextInput value={word} onChangeText={setWord} autoCapitalize="none" style={st.input} accessibilityLabel={user.name} placeholder={user.name} placeholderTextColor={C.placeholder} />
       {error ? <Text style={{ color: C.help, fontWeight: '600' }}>{error}</Text> : null}
       <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -644,20 +649,23 @@ function DeleteChild({ user, onDeleted }: { user: ProfileSummary; onDeleted: () 
           small
           kind="danger"
           icon="trash"
-          label={x.deleteForever}
+          label={backupStrings(uiLang).deleteToBin}
           disabled={word.trim().toLocaleLowerCase() !== user.name.trim().toLocaleLowerCase()}
           onPress={async () => {
             setError(null);
             try {
-              await api.deleteProfile(user.id);
-              await forgetLocal(user.id);
-              onDeleted();
+              await proof.run(async () => {
+                await api.deleteProfile(user.id);
+                await forgetLocal(user.id);
+                onDeleted();
+              });
             } catch (e) {
               setError(errorText(s, e));
             }
           }}
         />
       </View>
+      {proof.gate}
     </View>
   );
 }
@@ -805,11 +813,13 @@ function ProAccount({ p, verification, users, onVerify }: { p: ProStrings; verif
         <Btn small icon="shield" label={status === 'draft' || status === 'more_info' ? p.editRequest : p.s4Title} onPress={onVerify} />
       </Section>
       <MyAccount x={x} />
+      <ProfileBin />
       <Preferences x={x} />
       <Section title={x.subscription}>
         <Note text={x.subscriptionLater} />
       </Section>
       <WriteTeam />
+      <DownloadMyData />
       <DeleteAccount x={x} />
       <PictoCredit lang={uiLang} />
     </>

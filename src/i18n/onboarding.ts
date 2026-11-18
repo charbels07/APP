@@ -168,7 +168,7 @@ const fr = {
   holdTime: 'Durée d’appui',
   repeatDelay: 'Délai avant de pouvoir répéter le même mot',
   sec: 's',
-  accessLater: 'Contacteurs et commande oculaire : pas encore disponibles.',
+  accessLater: 'Balayage par contacteur, choix en gardant le pointeur dessus (souris, tête, regard) et options pour une main qui tremble : Réglages → Toucher.',
   reduceMotionToggle: 'Moins d’animations',
   presentationAccess: 'Présentation et accès',
 
@@ -344,7 +344,7 @@ const en: Dict = {
   holdTime: 'Hold time',
   repeatDelay: 'Delay before the same word can be repeated',
   sec: 's',
-  accessLater: 'Switch access and eye gaze: not available yet.',
+  accessLater: 'Switch scanning, choosing by resting the pointer (mouse, head or eye gaze) and options for a hand that shakes: Settings → Touch.',
   reduceMotionToggle: 'Fewer animations',
   presentationAccess: 'Presentation and access',
 
@@ -518,7 +518,7 @@ const ar: Dict = {
   holdTime: 'مدة الضغط',
   repeatDelay: 'المدة قبل تكرار الكلمة نفسها',
   sec: 'ث',
-  accessLater: 'المفاتيح والتحكم بالعين: غير متوفرة بعد.',
+  accessLater: 'المسح بالمفتاح، والاختيار بإبقاء المؤشر فوق الصورة (فأرة أو رأس أو نظر)، وخيارات لليد المرتجفة: الإعدادات ← اللمس.',
   reduceMotionToggle: 'حركة أقل',
   presentationAccess: 'العرض وطريقة الاختيار',
 

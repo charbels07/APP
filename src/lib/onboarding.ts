@@ -63,6 +63,8 @@ export interface Answers {
   dataCollection?: 'off' | 'usage' | 'vocabulary' | 'language';
   /** "Help improve the app" (anonymous figures for the team): off unless the family turns it on. */
   shareStats?: boolean;
+  /** The parent ticked the consent (src/lib/consent.ts): needed before the profile is kept. */
+  consent?: boolean;
 }
 
 export function emptyAnswers(lang: Lang): Answers {

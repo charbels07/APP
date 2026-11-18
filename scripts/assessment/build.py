@@ -37,7 +37,7 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.platypus import (BaseDocTemplate, Flowable, Frame, KeepTogether, NextPageTemplate,
+from reportlab.platypus import (BaseDocTemplate, CondPageBreak, Flowable, Frame, KeepTogether, NextPageTemplate,
                                 PageBreak, PageTemplate, Paragraph, Spacer, Table, TableStyle)
 from reportlab.platypus.tableofcontents import TableOfContents
 
@@ -88,7 +88,7 @@ def status_colour(status):
     s = status.lower()
     if s.startswith('done'):
         return GREEN
-    if s.startswith('ready') or s.startswith('partly') or s.startswith('built'):
+    if s.startswith('ready') or s.startswith('partly') or s.startswith('built') or s.startswith('draft'):
         return BLUE
     if s.startswith('optional') or s.startswith('not '):
         return GREY
@@ -100,7 +100,7 @@ PAGE_W, PAGE_H = A4
 MARGIN_X = 18 * mm
 CONTENT_W = PAGE_W - 2 * MARGIN_X
 TOP = 18 * mm            # frame top, from the top edge
-BOTTOM = 25 * mm         # frame bottom, from the bottom edge
+BOTTOM = 18 * mm         # frame bottom, from the bottom edge
 FOOTER_RULE_Y = 11 * mm
 FOOTER_TEXT_Y = 7.2 * mm
 Q_INDENT = 31.2          # Part B answers start under the question text
@@ -502,7 +502,13 @@ def keep_headings(blocks):
             group = []
             for x in blocks[i:end]:
                 group.extend(render_block(x))
-            flow.append(KeepTogether(group))
+            last = blocks[end - 1]
+            if len(last.get('table', {}).get('rows', [])) > 18 or len(last.get('plan', [])) > 18:
+                # a table longer than a page: start it low on a page rather than leave a gap
+                flow.append(CondPageBreak(160))
+                flow.extend(group)
+            else:
+                flow.append(KeepTogether(group))
             i = end
         else:
             flow.extend(render_block(b))

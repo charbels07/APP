@@ -12,7 +12,7 @@
   "subtitle": "Technical, financial, legal and operational assessment",
   "intro": "Answers to the 22-part questionnaire (about 300 questions), and a launch plan of everything still to do. For each question: the answer, an estimated cost, the supporting source, the person responsible and the deadline. Where a question cannot be answered from the application, the entry explains how to think about it and whom to ask.",
   "facts": [
-   ["Date", "17 November 2026, updated 18 November 2026"],
+   ["Date", "17 November 2026, updated 18 November 2026 (evening: development round)"],
    ["Based on", "The application's repository (code, database rules, tests, documentation) and public price lists checked in November 2026"],
    ["Prepared with", "Claude Code, from the repository; to be reviewed by the founder and the experts named in each answer"],
    ["Not", "Legal, tax, medical-regulatory or financial advice"]
@@ -31,6 +31,9 @@
       "blocks": [
        {
         "small": "<b>Updated on 18 November 2026.</b> The report now follows the plan you set that day: native apps only (iPhone, iPad, Android), sold only in the App Store and Google Play; families subscribe monthly or yearly, therapists pay once; the web app is not offered. Table A4 says which costs the plan needs and its minimum; tables A5, A5b (store rules) and A6 (the stores' fee, the therapists' purchase), section 1 and sections 2, 9, 12, 13, 14, 15 and 17 follow the plan (summary in Appendix E3). <b>New: the launch plan</b>, the chapter right after Part A, lists everything still to do until the app is on both stores. On 17 November, two findings of the first version were fixed in the app and merged into the live branch (the website rebuilds by itself): (1) an open board no longer downloads the whole profile every 30 seconds, only its version number, which removes about 99% of the server traffic (pull request #4, from the suggested task); (2) a forgotten caregiver code no longer locks a family out: \"Forgot the code?\" under the keypad sends a code to the parent's e-mail, then the family chooses a new code (pull request #5); its new e-mail text was pasted in Supabase on 18 November (the subject line still to change). Also updated: 1.3, 1.4, 1.10, 2.7, 3.1, 3.2, 3.4, 3.6, 3.9, 4.11, 6.7, 6.18, 6.21, 11.x, 15.5, 16.12, 18.x, 19.6, 21.1, 21.11, 22.x and tables A7, A8, A9."
+       },
+       {
+        "small": "<b>Evening of 18 November 2026: development round.</b> You asked to build everything in the plan that is development work, security and data protection first, except billing (deferred) and the native store builds (not asked yet). Built, with tests: two-step sign-in (offered to everyone, required for the back office); a fresh proof before what cannot be undone; team members no longer read each other's e-mail or the family's code; the session in the iOS Keychain / Android Keystore; server-side deletion of files; a bin and server copies of the board; parental consent recorded; data erased on a schedule every night; \"Download all my data\"; the children's sentences and the adults' observations sealed in the database; dictation on the device; photo and recording sync; switch scanning, selection by resting the pointer and tremor options; the OBZ export; a core-layout release test; a voice check; links out of the app behind the caregiver code; \"seen\" counters, the app version and speed figures for the back office; a message to every family for incidents; and a fix for a server error that signed the device out and erased the board copy. Also written: runbooks, the access list, an architecture and hand-over guide, legal drafts for the lawyer, the support and account-deletion pages, an off-site backup script and automatic checks on GitHub. Database changes are migration files that you run in Supabase. <b>Appendix F</b> lists what was built, the steps that are yours in the dashboards and what is not built. Updated for this round: A2, A3, A5, A5b, A7, A8, the launch plan, Appendix E and the answers named in Appendix F."
        }
       ]
      }
@@ -79,7 +82,7 @@
         "h": 92,
         "style": "green",
         "title": "Child's tablet or phone",
-        "lines": ["Board copy: works offline", "Device voices speak", "24,128 pictograms inside", "Photos and recordings (here only)"]
+        "lines": ["Board copy: works offline", "Device voices speak", "24,128 pictograms inside", "Photos and recordings (also synced)"]
        },
        {
         "x": 0,
@@ -88,20 +91,21 @@
         "h": 92,
         "style": "navy",
         "title": "Parents and professionals",
-        "lines": ["Phone or tablet (apps only)", "Settings, team, proposals", "Professional workspace", "Back office (app team only)"]
+        "lines": ["Phone or tablet (apps only)", "Settings, team, proposals", "Professional workspace", "Back office (team, two-step sign-in)"]
        },
        {
         "x": 169.4,
         "y": 22,
         "w": 154.4,
-        "h": 120,
+        "h": 131,
         "style": "teal",
         "title": "Supabase (EU region)",
         "lines": [
          "PostgreSQL + row-level security",
-         "Sign-in (e-mail, Google, Apple)",
-         "Private file storage",
+         "Sign-in (e-mail, Google, Apple, two-step)",
+         "Private files (photos, recordings)",
          "Functions: caa-mail (on),",
+         "   caa-purge (written, to deploy),",
          "   caa-ai (written, not deployed)",
          "Daily backups on Pro plan only"
         ]
@@ -144,10 +148,10 @@
      }
     },
     {
-     "p": "<b>What is built:</b> a tablet-first AAC app for French, English and Arabic (eight kinds of Arabic), one code base for iPad, Android and the web; accounts and teams with roles and parental approval; a professional workspace with verification; consent-based follow-up; a back office; 24,128 pictograms from ten libraries that allow commercial use; about 49,000 lines of code with 300 unit tests, 176 database security checks and 204 accessibility scans. <b>What is not built yet:</b> billing, the native store apps (never built or tested on a device), copying photos and recordings between devices, switch scanning and eye gaze, two-step sign-in for the team, legal documents (privacy policy, terms)."
+     "p": "<b>What is built:</b> a tablet-first AAC app for French, English and Arabic (eight kinds of Arabic), one code base for iPad, Android and the web; accounts and teams with roles and parental approval; a professional workspace with verification; consent-based follow-up; a back office; 24,128 pictograms from ten libraries that allow commercial use. Since the development round of 18 November 2026 (Appendix F): two-step sign-in, photo and recording sync, switch scanning and selection by resting the pointer, a bin and server copies of the board, recorded parental consent, data erased on a schedule, the OBZ export. About 49,000 lines of code on 17 November (more since), with 437 unit tests, 318 database security checks and 232 accessibility scans (0 failures). <b>What is not built yet:</b> billing (deferred), the native store apps (never built or tested on a device), a robot check on sign-up, an adult-user mode, an offline-only mode. The legal documents (privacy policy, terms) are drafts for the lawyer."
     },
     {
-     "small": "<b>Native apps only (decided 18 November 2026).</b> The web app will not be offered to families or therapists: no web sign-in, no web demo. Its weak points (it needs internet to start; some computer voices are online) disappear. What so far only worked or was only tested in a browser must work in the native apps before launch: speech recognition (a native module: test on a real build, not Expo Go), search by drawing (written for the website; tablets still have to send the drawing as a picture) and the accessibility checks (run on the web build; VoiceOver and TalkBack still to try on devices). Therapists work on a tablet or phone, not a computer. The team's back office stays reachable inside the app (same code). The child lock works best with the device's own tools (Guided Access on iPad, screen pinning on Android). Every release now waits for store review, about 1 to 3 days, instead of a few minutes for the website. All of this is in the launch plan (next chapter)."
+     "small": "<b>Native apps only (decided 18 November 2026).</b> The web app will not be offered to families or therapists: no web sign-in, no web demo. Its weak points (it needs internet to start; some computer voices are online) disappear. What so far only worked or was only tested in a browser must work in the native apps before launch: speech recognition (a native module, on the device when the language is installed for it: test on a real build, not Expo Go), search by drawing (written for the website; tablets still have to send the drawing as a picture) the accessibility checks (run on the web build; VoiceOver and TalkBack still to try on devices) and the new switch scanning and session storage. Therapists work on a tablet or phone, not a computer. The team's back office stays reachable inside the app (same code). The child lock works best with the device's own tools (Guided Access on iPad, screen pinning on Android). Every release now waits for store review, about 1 to 3 days, instead of a few minutes for the website. All of this is in the launch plan (next chapter)."
     },
     {"h2": "A3 · Twelve things to know"},
     {
@@ -155,14 +159,14 @@
       "<b>The child can always speak.</b> The board runs from a copy on the device, works without internet, and core word positions never move. This is the right foundation for AAC.",
       "<b>Servers are cheap; people are not.</b> About US$40 a month up to ~1,000 active children; 1–4 US cents per active child per month beyond. Maintenance, support and compliance are the real costs (table A4).",
       "<b>One habit drove scale costs: fixed.</b> Every open board used to download the whole profile every 30 seconds. Since 17 November 2026 it asks only the version number and downloads the profile only when it changed: about 99% less traffic; servers for 100,000 children fall from about $2,860 to $875 a month.",
-      "<b>No backups on the free plan.</b> Move to Supabase Pro (daily backups) before real families, add a weekly off-site copy, and test a restore every quarter.",
-      "<b>Photos and recordings live on one device.</b> A lost tablet loses them. The private server folder exists; copying files is the next step (5–10 days). This is the main data-loss risk.",
+      "<b>No backups on the free plan.</b> Move to Supabase Pro (daily backups) before real families, run the weekly off-site copy (scripts/backup-offsite.sh, written on 18 November) and test a restore every quarter (docs/runbooks/BACKUP-AND-RESTORE.md). The new server copies of each board and the 30-day bin protect against mistakes, not against losing the server.",
+      "<b>Photos and recordings: now synced.</b> Since 18 November 2026 they are copied to private storage and arrive on the child's other devices (2 MB a photo, 3 MB a recording, 150 MB per child). Not yet tried against the real storage or on a tablet: the main data-loss risk is reduced, and gone once that test passes.",
       "<b>Medical device: the biggest regulatory fork.</b> EU law covers software that \"compensates for a disability\". The app is likely a class I medical device unless its purpose and claims are framed otherwise; progress analytics can push it higher. Get a written opinion before marketing (section 5).",
-      "<b>Treat the child's profile as health data.</b> Explicit parental consent, a DPIA, probably a DPO, provider contracts; in France, possibly certified health-data hosting (HDS). The technical privacy design is already strong (section 6).",
-      "<b>Legal documents are missing.</b> No privacy policy or terms in the app yet: required by law and by both stores.",
+      "<b>Treat the child's profile as health data.</b> Explicit parental consent (recorded by the database since 18 November), a DPIA (draft written), probably a DPO, provider contracts; in France, possibly certified health-data hosting (HDS). The technical privacy design is strong (section 6): the children's sentences are sealed in the database and erased after 12 months.",
+      "<b>Legal documents are drafts.</b> The privacy policy, terms, record of processing, DPIA, retention schedule, continuity pledge and accessibility statement are written in docs/legal/ as drafts with placeholders: a lawyer must finish them. Required by law and by both stores.",
       "<b>Billing is the plan's main missing piece.</b> The plan (18 November 2026): App Store and Google Play only; families subscribe monthly or yearly, therapists pay once. To build: the in-app purchases, a server-side entitlement that unlocks every device of the family, \"Restore purchases\" and a purchase screen behind the caregiver code. The stores keep 15% and handle VAT. Write \"communication is never blocked by payment\" into the terms and the code (sections 12, 15).",
-      "<b>Continuity rests on one person.</b> Code and accounts look personal; one person maintains everything with an AI assistant. Move accounts to the company, name a backup developer, keep the good documentation up to date (section 14).",
-      "<b>Accessibility: strong on the web, gaps for AAC access methods.</b> 0 failures in automatic WCAG 2.2 AA scans, but no switch scanning or eye gaze, and no real screen-reader or tablet test yet (section 8).",
+      "<b>Continuity rests on one person.</b> Code and accounts look personal; one person maintains everything with an AI assistant. Written on 18 November: runbooks (docs/runbooks/), the access list (docs/ACCESS-LIST.md) and an architecture and hand-over guide (docs/ARCHITECTURE.md). Still to do: move accounts to the company and name a backup developer (section 14).",
+      "<b>Accessibility: the AAC access methods are built.</b> 0 failures in 232 automatic WCAG 2.2 AA scans; since 18 November, switch scanning, selection by resting the pointer (mouse, head or eye-gaze pointers) and tremor options (Settings → Touch). Not yet tried with real switches, eye-gaze devices, a real screen reader or on a tablet (section 8).",
       "<b>Content needs native validation.</b> The Arabic dialect lists and Arabic menus were written without native reviewers; automatic pictogram translations are flagged \"to review\" (sections 8, 20)."
      ]
     },
@@ -203,7 +207,9 @@
        ["<b>Per active child per month</b>", "", "<b>0.400</b>", "<b>0.400</b>", "<b>0.040</b>", "<b>0.040</b>", "<b>0.040</b>", "<b>0.018</b>", "<b>0.027</b>", "<b>0.007</b>", "<b>0.029</b>", "<b>0.009</b>"],
        ["<b>Minimum per month (the plan: required and growth lines)</b>", "", "<b>35</b>", "<b>35</b>", "<b>35</b>", "<b>35</b>", "<b>277</b>", "<b>60</b>", "<b>1,202</b>", "<b>208</b>", "<b>2,740</b>", "<b>750</b>"],
        ["<b>Minimum per active child</b>", "", "<b>0.350</b>", "<b>0.350</b>", "<b>0.035</b>", "<b>0.035</b>", "<b>0.028</b>", "<b>0.006</b>", "<b>0.024</b>", "<b>0.004</b>", "<b>0.027</b>", "<b>0.008</b>"]
-      ]
+      ],
+      "vpad": 2.2,
+      "valign": "middle"
      }
     },
     {
@@ -225,22 +231,22 @@
        ["Legal pack: privacy policy, terms (families / professionals), consent texts, DPA templates", "P0", "Law", "€4,000–15,000", "€4,000–15,000", "Lawyer; FR / EN / AR"],
        ["DPIA (impact assessment)", "P0", "Law", "€3,000–10,000", "€3,000–10,000", "Almost certainly required (6.9)"],
        ["Medical-device qualification opinion and claims guide", "P0", "Advised", "€3,000–9,000", "€3,000–9,000", "Decides the regulatory route (section 5)"],
-       ["Fixes before real families: admin two-step sign-in, release routine", "P0", "Advised (development)", "€2,000–5,000", "€0", "Hired: 3–8 developer days. Yourself: your sessions"],
+       ["Fixes before real families: admin two-step sign-in, release routine", "P0", "Advised (development)", "Done (was €2,000–5,000)", "€0", "Built on 18 Nov 2026: two-step sign-in, release checklist, checks on every change"],
        ["Native builds, store accounts and listings, device testing", "P1", "Plan: the work (development)", "€8,000–20,000", "US$99 a year + US$25 once; devices €0–3,000", "Hired: 15–30 developer days + €1.5–3k devices. Yourself: devices only if you do not own an iPad / iPhone and an Android device (a used Android tablet is enough); no Mac: builds run in Expo's cloud (free plan at first)"],
        ["In-app billing: subscriptions and the therapists' one-time purchase, server-side entitlement for every family device, Restore purchases, purchase screen behind the caregiver code", "P1", "Plan: the work (development)", "€6,000–14,000", "€0", "Hired: 10–20 developer days. Yourself: your sessions; RevenueCat free until US$2,500 of monthly tracked revenue"],
-       ["Photo and recording sync, secure session storage", "P1", "Advised (development)", "€4,000–10,000", "€0", "Hired: 7–15 developer days"],
+       ["Photo and recording sync, secure session storage", "P1", "Advised (development)", "Done (was €4,000–10,000)", "€0", "Built on 18 Nov 2026; to try on a tablet and against the real storage"],
        ["Penetration test", "P1", "Advised", "€6,000–20,000", "€6,000–20,000", "Server rules, apps, back office"],
        ["Accessibility audit + conformance report", "P1", "Advised", "€5,000–20,000", "€5,000–20,000", "With real screen readers"],
        ["Native-speaker and therapist content review", "P1", "Advised", "€3,000–10,000", "€3,000–10,000", "Dialect lists, Arabic menus, vocabulary"],
        ["Trademark search and filings", "P1", "Advised", "€1,500–5,000", "€1,500–5,000", "EU + core countries over 12 months"],
        ["Insurance, first year", "P1", "Advised", "€1,500–6,000", "€1,500–6,000", "Professional, product, cyber"],
-       ["<b>Total without CE marking</b>", "", "", "<b>€48,000–147,000</b>", "<b>about €28,000–101,000</b>", "<b>Corrects the earlier \"€25k–90k in-house\", which did not add up</b>"]
+       ["<b>Total without CE marking</b>", "", "", "<b>€42,000–132,000</b>", "<b>about €28,000–101,000</b>", "<b>Hired: €48,000–147,000 before the development round of 18 Nov. Corrects the earlier \"€25k–90k in-house\", which did not add up</b>"]
       ],
       "rule_above": {"13": 0.8}
      }
     },
     {
-     "small": "<b>How the in-house cash total is made:</b> required by law €7,000–25,000 (legal pack, DPIA) + the plan's cash about US$125 to €3,100 (Apple US$99, Google Play US$25, test devices €0–3,000) + company €500–3,000 (if you sell as a company) + advised work by outside professionals €20,000–70,000 (medical-device opinion, security test, accessibility audit, content review, trademark, insurance) = <b>about €28,000–101,000</b>. The development rows (€20,000–49,000 if hired) cost your time instead: several weeks of sessions."
+     "small": "<b>How the in-house cash total is made:</b> required by law €7,000–25,000 (legal pack, DPIA) + the plan's cash about US$125 to €3,100 (Apple US$99, Google Play US$25, test devices €0–3,000) + company €500–3,000 (if you sell as a company) + advised work by outside professionals €20,000–70,000 (medical-device opinion, security test, accessibility audit, content review, trademark, insurance) = <b>about €28,000–101,000</b>. The development rows still open (€14,000–34,000 if hired: native builds and in-app billing) cost your time instead: several weeks of sessions. The fixes and the photo sync were built on 18 November 2026."
     },
     {
      "small": "If the app is treated as an EU class I medical device: add €25,000–€80,000 the first year and €10,000–€30,000 a year after. Class IIa (if analytics are used for therapy decisions): €30,000–€100,000 with a notified body, 12–24 months."
@@ -254,13 +260,13 @@
        ["In-app purchases: the families' auto-renewing subscription (monthly, yearly) and the therapists' one-time (non-consumable) purchase", "To build (A5, in-app billing)"],
        ["A \"Restore purchases\" button (Apple requires it)", "To build"],
        ["The purchase screen behind the caregiver code (a child uses the board, so buying needs a parental gate)", "To build; the gate itself exists (the caregiver code)"],
-       ["Outside links behind the parental gate (Apple Kids category, Google Families policy)", "Gap: the app pictograms (YouTube, WhatsApp, Spotify…) open other apps from the board unless the child lock is on"],
+       ["Outside links behind the parental gate (Apple Kids category, Google Families policy)", "Done: on the tablet apps, a link out of the app asks for the caregiver code (18 Nov 2026)"],
        ["Sign in with Apple (required because Google sign-in is offered)", "Prepared in the app; waits for the Apple Developer account"],
-       ["Account deletion inside the app", "Exists (Settings → Account, and the professional workspace). Google also asks for a web link to request deletion: to add"],
-       ["Apple privacy labels, Google Play Data safety form, privacy-policy address", "To do (the privacy policy itself is missing, A5)"],
+       ["Account deletion inside the app", "Exists (Settings → Account, and the professional workspace). Google's web link: page written (public/delete-account/, FR / EN / AR); its e-mail address is a placeholder to fill"],
+       ["Apple privacy labels, Google Play Data safety form, privacy-policy address", "To do (the privacy policy is a draft for the lawyer, docs/legal/)"],
        ["Google Play target-audience declaration; Families policy if children are part of the audience; Apple Kids category optional", "To do. No ads and no third-party tracking in the app: exists"],
        ["Demo access for Apple's review", "The app has a demo mode; give the reviewer a test account as well"],
-       ["Privacy-policy and support pages", "To write; they can live on the existing Cloudflare site"],
+       ["Privacy-policy and support pages", "Support and account-deletion pages written (public/support/, public/delete-account/; addresses to fill); the privacy page waits for the lawyer"],
        ["Organisation developer accounts (D-U-N-S); enrolment in Apple's Small Business Program (15%)", "To do; check the 15% tier for one-time sales in Play Console"]
       ]
      }
@@ -308,9 +314,9 @@
       "widths": [79.4, 300.5, 113.4],
       "header": ["Phase", "What", "Owner"],
       "rows": [
-       ["P0 (4–8 weeks)", "Supabase Pro + off-site backup + restore test · two-step sign-in on Supabase, GitHub, Cloudflare, Google · company and company-owned accounts, IP assignment · privacy policy, terms, consent texts, DPIA draft, provider DPAs · medical-device opinion and claims guide · replace Gmail with an e-mail service under contract · release routine through test builds (TestFlight, Google Play testing tracks) · change the subject of the reset e-mail (its new text was pasted on 18 Nov) (done on 17 Nov: the light 30-second check, \"Forgot the code?\")", "Founder, Tech lead, Lawyer, Regulatory"],
-       ["P1 (2–4 months)", "Required by the plan: in-app billing that never blocks communication (subscriptions, the therapists' purchase, server entitlement, Restore purchases, purchase screen behind the caregiver code) · the store rules of table A5b · native builds, store listings, device tests, beta testers · advised or chosen: photo and recording sync · secure session storage · penetration test · accessibility audit and report · native-speaker reviews · insurance · VAT set-up · trademark · support desk and status page · release checklist", "Founder, Tech lead, Auditors, Clinical lead, Accountant"],
-       ["P2 (first 6 months)", "Switch scanning and eye gaze · OBZ export and board snapshots · bin for deleted items · retention automation · adult-user mode · \"seen\" counters", "Tech lead, Clinical lead"],
+       ["P0 (4–8 weeks)", "Supabase Pro + off-site backup + restore test (script and runbook written 18 Nov) · two-step sign-in on Supabase, GitHub, Cloudflare, Google · company and company-owned accounts, IP assignment · privacy policy, terms, consent texts, DPIA, provider DPAs (drafts written 18 Nov; the lawyer finishes them) · medical-device opinion and claims guide · replace Gmail with an e-mail service under contract · release routine through test builds (TestFlight, Google Play testing tracks; checklist written 18 Nov) · change the subject of the reset e-mail (its new text was pasted on 18 Nov) · run the migrations of 18 Nov and deploy caa-purge (Appendix F) (done on 17 Nov: the light 30-second check, \"Forgot the code?\"; done on 18 Nov: two-step sign-in in the app, required for the back office)", "Founder, Tech lead, Lawyer, Regulatory"],
+       ["P1 (2–4 months)", "Required by the plan: in-app billing that never blocks communication (subscriptions, the therapists' purchase, server entitlement, Restore purchases, purchase screen behind the caregiver code) · the store rules of table A5b · native builds, store listings, device tests, beta testers · advised or chosen: penetration test · accessibility audit and report · native-speaker reviews · insurance · VAT set-up · trademark · support desk and status page (done on 18 Nov: photo and recording sync, secure session storage, release checklist)", "Founder, Tech lead, Auditors, Clinical lead, Accountant"],
+       ["P2 (first 6 months)", "Adult-user mode (done on 18 Nov: switch scanning and selection by resting the pointer · OBZ export and board snapshots · bin for deleted items · retention automation · \"seen\" counters)", "Tech lead, Clinical lead"],
        ["P3 (per market / scale)", "Country go / no-go checklist · local representatives and registrations · regional hosting if required · SOC 2 / ISO 27001 if institutions demand it", "Founder, Lawyer"]
       ]
      }
@@ -323,17 +329,18 @@
       "rows": [
        ["App treated as an unmarked medical device", "Medium", "High", "Written opinion; claims guide; CE class I if needed", "Regulatory"],
        ["Health-data rules (DPIA, HDS hosting in France)", "High", "High", "Lawyer review before real families; hosting decision", "Lawyer"],
-       ["Loss of photos and recordings with a device", "High", "Medium", "Media sync; export; printed boards", "Tech lead"],
+       ["Loss of photos and recordings with a device", "Low (was High)", "Medium", "Photo and recording sync built 18 Nov 2026 (to try on a tablet); export; printed boards", "Tech lead"],
        ["Server data loss (no backups on free plan)", "Low–Medium", "High", "Pro plan, off-site copy, quarterly restore", "Tech lead"],
-       ["Single person maintains everything", "High", "High", "Company accounts, backup developer, runbooks", "Founder"],
+       ["Single person maintains everything", "High", "High", "Company accounts, backup developer; runbooks, access list and hand-over guide written 18 Nov 2026 (partly reduced)", "Founder"],
        ["A release ships with a bug", "Medium", "Medium", "Test builds first (TestFlight, Google Play testing tracks), release checklist, phased store releases", "Tech lead"],
        ["Scale costs from the 30-second refresh", "Removed", "–", "Fixed 17 Nov 2026: only a version number travels", "Tech lead"],
        ["Family locked out by a forgotten caregiver code", "Removed", "–", "Fixed 17 Nov 2026: \"Forgot the code?\" with an e-mailed code", "Tech lead"],
+       ["A server error erased the board copy", "Removed", "–", "Fixed 18 Nov 2026: a server error (500, paused project) is treated as offline; the device stays signed in", "Tech lead"],
        ["AI costs if offered without limits", "Medium", "Medium", "Keep caps; test cheaper model; reserve to paid plans", "Founder"],
        ["Wrong word or dialect spoken", "Medium", "Medium–High", "Native and therapist reviews; recordings win; fast fixes", "Clinical lead"],
        ["Store rejection or suspension (under the plan, all revenue goes through the stores)", "Medium", "High", "Store rules of A5b; company accounts with two admins; installed apps keep working offline (no web fallback)", "Tech lead"],
        ["Therapists' one-time price too low for years of use", "Medium", "Medium", "Price it to cover servers, support and updates (13.5)", "Founder"],
-       ["Breach of children's data", "Low", "Very high", "Two-step sign-in, pen test, incident plan, insurance", "Founder, DPO"],
+       ["Breach of children's data", "Low", "Very high", "Two-step sign-in and fresh proof built 18 Nov 2026; incident and breach plans written; pen test, insurance", "Founder, DPO"],
        ["Too few paying families", "Medium", "High", "Clear paid value; therapists' purchases; lean costs", "Founder"]
       ]
      }
@@ -369,19 +376,21 @@
    "title": "Launch plan: everything still to do",
    "blocks": [
     {
-     "small": "The single list to work from until the app is on both stores, under the plan of 18 November 2026: native apps only (iPhone, iPad, Android), sold in the App Store and Google Play; families subscribe monthly or yearly, therapists pay once. Phases are in the order they must happen; phases 2 and 3 run side by side. <b>Status:</b> Done · Ready = only needs doing · To do. ★ marks the critical path. Costs come from the report's tables (A4, A5 and the sections named), otherwise \"—\"; times from the same tables or the stores' rules, otherwise \"—\". Where a section already covers an item, the line points to it instead of repeating it. <b>Development items</b> show two costs: <b>hired</b> (a developer's price, from table A5) and <b>yourself</b> (built in AI-assisted sessions, as the app so far: €0 in cash, your time instead). The work is required by the plan, not the payment."
+     "small": "The single list to work from until the app is on both stores, under the plan of 18 November 2026: native apps only (iPhone, iPad, Android), sold in the App Store and Google Play; families subscribe monthly or yearly, therapists pay once. Phases are in the order they must happen; phases 2 and 3 run side by side. <b>Status:</b> Done · Done in code (to verify on a device) · Partly done · Draft written (a lawyer finishes it) · Ready = only needs doing · To do · Optional. ★ marks the critical path. Costs come from the report's tables (A4, A5 and the sections named), otherwise \"—\"; times from the same tables or the stores' rules, otherwise \"—\". Where a section already covers an item, the line points to it instead of repeating it. <b>Development items</b> show two costs: <b>hired</b> (a developer's price, from table A5) and <b>yourself</b> (built in AI-assisted sessions, as the app so far: €0 in cash, your time instead). The work is required by the plan, not the payment."
     },
     {"h3": "Already done"},
     {
      "bullets": [
       "Account deletion inside the app (Settings → Account, and the professional workspace).",
-      "Automatic checks: 300 unit tests and 176 database security checks (main branch, 18 November 2026).",
-      "The WCAG 2.2 AA accessibility scan of the app's screens (204 scans, 0 failures, on the web build; devices still to try).",
+      "Automatic checks: 437 unit tests and 318 database security checks; since 18 November they run on GitHub on every change (.github/workflows/checks.yml), with Dependabot (.github/dependabot.yml).",
+      "The WCAG 2.2 AA accessibility scan of the app's screens (232 scans, 0 failures, and a keyboard-only run, on the web build, 18 November 2026; devices still to try).",
       "The demo mode (\"Try it first\") that store reviewers can use.",
       "Encryption declaration for Apple set in app.json (standard encryption only); Android device backups switched off.",
       "Sign in with Apple prepared in the code (waits for the Apple Developer account).",
       "The pictogram credits and licences page; the lock panel that explains Guided Access and screen pinning.",
-      "Fixes of 17–18 November: the light 30-second check for changes; \"Forgot the code?\" with an e-mailed code or the account's password."
+      "Fixes of 17–18 November: the light 30-second check for changes; \"Forgot the code?\" with an e-mailed code or the account's password.",
+      "Development round of 18 November (Appendix F): two-step sign-in (required for the back office) and a fresh proof before what cannot be undone; the session in the Keychain / Keystore; server-side file deletion; the bin and server copies of the board; parental consent recorded; data erased on a schedule; \"Download all my data\"; the children's sentences sealed in the database; dictation on the device; photo and recording sync; switch scanning and selection by resting the pointer; the OBZ export; the core-layout release test; the voice check; links out of the app behind the caregiver code; the iOS permission sentences in three languages; \"seen\" counters, app version and speed figures; a fix for a server error that signed devices out.",
+      "Written on 18 November: runbooks (docs/runbooks/), docs/ACCESS-LIST.md, docs/ARCHITECTURE.md, legal drafts for the lawyer (docs/legal/), the support and account-deletion pages (public/support/, public/delete-account/) and the off-site backup script (scripts/backup-offsite.sh)."
      ]
     },
     {"h2": "Phase 0 · Decisions (owner) · week 1"},
@@ -575,12 +584,12 @@
       {
        "n": "1.10",
        "critical": false,
-       "what": "GitHub: secret scanning, push protection, Dependabot. Google sign-in project: publish its \"Audience\" (still \"Testing\").",
+       "what": "GitHub: secret scanning, push protection, Dependabot. Google sign-in project: publish its \"Audience\" (still \"Testing\"). Done on 18 Nov: dependabot.yml and the checks workflow are committed; secret scanning and push protection are switched on by the owner in GitHub's settings.",
        "who": "Owner",
        "cost": "Free",
        "time": "Minutes",
        "waits": "—",
-       "status": "Ready"
+       "status": "Partly done"
       },
       {
        "n": "1.11",
@@ -605,7 +614,7 @@
      ]
     },
     {
-     "h2": "Phase 2 · App changes before the first store build (you in AI-assisted sessions, or a hired developer) · weeks 2 to 8–14"
+     "h2": "Phase 2 · App changes before the first store build (you in AI-assisted sessions, or a hired developer) · weeks 2 to 7–12"
     },
     {
      "plan": [
@@ -632,12 +641,12 @@
       {
        "n": "2.3",
        "critical": false,
-       "what": "Permission texts (microphone, camera, photos, speech recognition) in English and Arabic (French only today).",
+       "what": "Permission texts (microphone, camera, photos, speech recognition) in French, English and Arabic (locales/, 18 November).",
        "who": "Developer",
        "cost": "—",
        "time": "—",
        "waits": "—",
-       "status": "To do"
+       "status": "Done"
       },
       {
        "n": "2.4",
@@ -672,27 +681,27 @@
       {
        "n": "2.7",
        "critical": false,
-       "what": "Keep the session in the iOS Keychain / Android Keystore (expo-secure-store, \"with the first App Store build\", SECURITY.md §5).",
+       "what": "Keep the session in the iOS Keychain / Android Keystore (expo-secure-store, SECURITY.md §5). Built on 18 Nov; to verify on the first device build.",
        "who": "Developer",
-       "cost": "Hired: part of €4,000–10,000 (A5). Yourself: €0",
-       "time": "Hired: part of 7–15 dev days",
+       "cost": "€0 left (built)",
+       "time": "—",
        "waits": "2.2",
-       "status": "To do"
+       "status": "Done in code"
       },
       {
        "n": "2.8",
        "critical": false,
-       "what": "Crash reports (Sentry or similar; nothing installed today).",
+       "what": "Crash reports: the app's own consent-based problem counters (Back office → Bugs, now with the app version) cover it for now; Sentry or similar stays optional.",
        "who": "Developer",
        "cost": "€0–26 a month (19.12)",
        "time": "—",
        "waits": "2.2",
-       "status": "To do"
+       "status": "Optional"
       },
       {
        "n": "2.9",
        "critical": false,
-       "what": "Speech recognition: a native module; test it on a real build, not Expo Go.",
+       "what": "Speech recognition: a native module; dictation now stays on the device when the language is installed for it (18 Nov). Test it on a real build, not Expo Go.",
        "who": "Developer",
        "cost": "—",
        "time": "—",
@@ -722,22 +731,22 @@
       {
        "n": "2.12",
        "critical": false,
-       "what": "App pictograms (YouTube, WhatsApp…) open other apps from the board unless the child lock is on: put them behind the parental gate for store builds (A5b).",
+       "what": "App pictograms (YouTube, WhatsApp…) that open other apps: on the tablet apps they now ask for the caregiver code (store rule of A5b, 18 Nov).",
        "who": "Developer",
        "cost": "—",
        "time": "—",
        "waits": "0.6",
-       "status": "To do"
+       "status": "Done"
       },
       {
        "n": "2.13",
        "critical": false,
-       "what": "Before real families: two-step sign-in for the back office; the release routine through test builds (A5, A7).",
+       "what": "Before real families: two-step sign-in for the back office (done 18 Nov); the release routine through test builds (checklist docs/runbooks/RELEASE-CHECKLIST.md and the GitHub checks written; first used with the first builds) (A5, A7).",
        "who": "Developer",
-       "cost": "Hired: €2,000–5,000 (A5). Yourself: €0",
-       "time": "Hired: 3–8 dev days",
+       "cost": "€0 left (built)",
+       "time": "—",
        "waits": "—",
-       "status": "To do"
+       "status": "Partly done"
       },
       {
        "n": "2.14",
@@ -762,22 +771,22 @@
       {
        "n": "2.16",
        "critical": false,
-       "what": "Advised: photo and recording sync (2.9, A5).",
+       "what": "Photo and recording sync (2.9, A5): built on 18 Nov (migration 20261118000300_media_sync.sql); try it on a tablet and against the real storage.",
        "who": "Developer",
-       "cost": "Hired: part of €4,000–10,000 (A5). Yourself: €0",
-       "time": "Hired: part of 7–15 dev days",
+       "cost": "€0 left (built)",
+       "time": "—",
        "waits": "—",
-       "status": "To do"
+       "status": "Done"
       },
       {
        "n": "2.17",
        "critical": false,
-       "what": "Other security items of SECURITY.md §5 (robot check on sign-up, re-asking the password before linking a full-access device, server-side file deletion…): see section 7.",
+       "what": "Other security items of SECURITY.md §5: a fresh proof before linking a full-access device or deleting, server-side file deletion and the others are done (18 Nov; section 7). Left: the robot check on sign-up, which needs a Turnstile key and the store builds.",
        "who": "Developer",
        "cost": "—",
        "time": "—",
        "waits": "—",
-       "status": "To do"
+       "status": "Partly done"
       }
      ]
     },
@@ -787,22 +796,22 @@
       {
        "n": "3.1",
        "critical": true,
-       "what": "Privacy policy and terms of use in FR / EN / AR, online on the static pages; they say that phone dictation may send audio to Apple or Google (SECURITY.md §5). Needed before submission.",
+       "what": "Privacy policy and terms of use in FR / EN / AR, online on the static pages; they say that phone dictation may send audio to Apple or Google (SECURITY.md §5). Needed before submission. Drafts written on 18 Nov (docs/legal/): the lawyer finishes them.",
        "who": "Lawyer",
        "cost": "€4,000–15,000 (A5, legal pack)",
        "time": "Within P0 (4–8 weeks, A7)",
        "waits": "0.1, 0.2",
-       "status": "To do"
+       "status": "Draft written"
       },
       {
        "n": "3.2",
        "critical": false,
-       "what": "DPIA, record of processing, data-processing agreements (Supabase, the e-mail service, Anthropic only if the AI is on); a DPO if needed; parental consent wording; COPPA if sold in the US (section 6).",
+       "what": "DPIA, record of processing, data-processing agreements (Supabase, the e-mail service, Anthropic only if the AI is on); a DPO if needed; parental consent wording; COPPA if sold in the US (section 6). Drafts of the DPIA and the record of processing written on 18 Nov; consent is now recorded by the database.",
        "who": "Lawyer, DPO",
        "cost": "DPIA €3,000–10,000 (A5); DPO €2,400–9,600 a year (6.8)",
        "time": "Within P0",
        "waits": "0.6",
-       "status": "To do"
+       "status": "Draft written"
       },
       {
        "n": "3.3",
@@ -912,12 +921,12 @@
       {
        "n": "4.5",
        "critical": false,
-       "what": "Support address, privacy-policy address and the web link to ask for an account's deletion (Google): static pages on Cloudflare's free plan.",
+       "what": "Support address, privacy-policy address and the web link to ask for an account's deletion (Google): the support and account-deletion pages are written (public/support/, public/delete-account/, FR / EN / AR); fill their e-mail addresses; the privacy page waits for 3.1.",
        "who": "Owner, developer",
        "cost": "$0 (A4)",
        "time": "—",
        "waits": "1.8, 3.1",
-       "status": "To do"
+       "status": "Partly done"
       },
       {
        "n": "4.6",
@@ -967,7 +976,7 @@
       {
        "n": "5.3",
        "critical": false,
-       "what": "Before each release: typecheck, unit tests, database checks, accessibility scan (they exist), plus the release checklist of 19.10.",
+       "what": "Before each release: typecheck, unit tests, database checks (they run on GitHub on every change), accessibility scan, plus the release checklist (docs/runbooks/RELEASE-CHECKLIST.md, 19.10).",
        "who": "Developer",
        "cost": "Free",
        "time": "—",
@@ -1044,7 +1053,7 @@
        ["Week 1", "Decisions of phase 0", "Owner", "★"],
        ["Weeks 1–3", "D-U-N-S (1–2 weeks, company only), then the store accounts, agreements, bank and tax details", "Owner, accountant", "★"],
        ["Weeks 1–8", "Legal and content side by side: privacy policy and terms, DPIA, regulatory opinion, vocabulary review (P0 of table A7: 4–8 weeks)", "Lawyer, speech therapists", ""],
-       ["Weeks 2 to 8–14", "App changes: native builds 15–30 days + in-app billing 10–20 days + fixes 3–8 days = 28–58 days of a hired developer full time, about 6–12 weeks (A5). Built yourself in sessions: €0 in cash, and your own pace sets this row", "You or a developer", "★"],
+       ["Weeks 2 to 7–12", "App changes: native builds 15–30 days + in-app billing 10–20 days = 25–50 days of a hired developer full time, about 5–10 weeks (A5; the fixes were built on 18 November). Built yourself in sessions: €0 in cash, and your own pace sets this row", "You or a developer", "★"],
        ["Last weeks of the app work", "Store listings, in-app products, privacy forms", "Owner", "★"],
        ["+2–3 weeks", "Testing on real devices; closed test of 14 days if the Google account is personal", "Owner, testers", "★"],
        ["+about 1 week", "Submission and review (about 1–3 days each), with room for one rejection", "Owner, developer", "★"]
@@ -1056,7 +1065,7 @@
       "style": "info",
       "blocks": [
        {
-        "small": "<b>About 11–18 weeks</b> from the decisions to both stores with one developer working full time on the app (the sum of the rows above, from the report's own figures). If you build it yourself, the app work costs no developer fees; its length depends on your sessions, which the report cannot measure. ★ <b>Critical path:</b> seller decision → D-U-N-S (company) → store accounts, agreements, bank and tax → bundle identifier and the first EAS build → in-app billing with the server entitlement and its database migration → in-app products in both consoles → closed test (14 days for a new personal Google account) → review. The privacy policy (3.1) and the vocabulary review (3.4) must be finished before submission: they join the critical path if they run late. Two developers shorten the app work; the 14-day test and the legal documents then set the pace. Photo sync (2.16), if included, adds 7–15 developer days."
+        "small": "<b>About 10–16 weeks</b> from the decisions to both stores with one developer working full time on the app (the sum of the rows above, from the report's own figures). If you build it yourself, the app work costs no developer fees; its length depends on your sessions, which the report cannot measure. ★ <b>Critical path:</b> seller decision → D-U-N-S (company) → store accounts, agreements, bank and tax → bundle identifier and the first EAS build → in-app billing with the server entitlement and its database migration → in-app products in both consoles → closed test (14 days for a new personal Google account) → review. The privacy policy (3.1) and the vocabulary review (3.4) must be finished before submission: they join the critical path if they run late. Two developers shorten the app work; the 14-day test and the legal documents then set the pace. Photo sync (2.16) was built on 18 November and adds nothing."
        }
       ]
      }
@@ -1085,21 +1094,21 @@
          "p": "What exists today was built in AI-assisted development sessions directed by the owner (the repository's branches are Claude Code sessions). I cannot see what was paid for the AI tool or how many hours the owner spent, so the cash spent so far is: the AI tool, the owner's time, and free plans of Supabase, Cloudflare and Gmail."
         },
         {
-         "p": "To put a value on it: the code base is about 49,000 lines (42,000 lines of app TypeScript, 5,000 of database SQL and server functions, 1,700 of build scripts), 12 database migration files, 300 unit tests, 176 database security checks, an accessibility test suite and a library of 24,128 pictograms. An agency would typically quote 12–24 person-months for this scope, about <b>€120,000–€350,000</b> at EU rates. <b>This is not money to pay: it is what an agency would charge to rebuild what exists.</b> Still to pay before a paid launch (Part A, table A5): <b>€48,000–€147,000 if you hire a developer for the development work</b>, or <b>about €28,000–€101,000 in cash if you build it yourself</b>, as you built the app so far. (This corrects the earlier figure of €25,000–€90,000, which did not add up from the table's rows.) Under the plan (App Store and Google Play only), it splits three ways:"
+         "p": "To put a value on it: the code base is about 49,000 lines (42,000 lines of app TypeScript, 5,000 of database SQL and server functions, 1,700 of build scripts), 12 database migration files, 300 unit tests, 176 database security checks (17 November; after the development round of 18 November: 437 and 318), an accessibility test suite and a library of 24,128 pictograms. An agency would typically quote 12–24 person-months for this scope, about <b>€120,000–€350,000</b> at EU rates. <b>This is not money to pay: it is what an agency would charge to rebuild what exists.</b> Still to pay before a paid launch (Part A, table A5): <b>€42,000–€132,000 if you hire a developer for the development work</b> (€48,000–€147,000 before the development round of 18 November 2026, which built the fixes and the photo sync), or <b>about €28,000–€101,000 in cash if you build it yourself</b>, as you built the app so far. (This corrects the earlier figure of €25,000–€90,000, which did not add up from the table's rows.) Under the plan (App Store and Google Play only), it splits three ways:"
         },
         {
          "bullets": [
           "<b>Required by law</b> (outside professionals, cash either way): the legal documents (privacy notice, terms) and the impact assessment (DPIA): about €7,000–€25,000.",
           "<b>The WORK is required by the plan, not the payment:</b> native builds and store set-up, in-app billing with the server-side entitlement, Sign in with Apple (prepared in the app) and the stores' privacy forms (table A5b). <b>If you hire a developer:</b> €14,000–€34,000 (native builds €8,000–€20,000 and in-app billing €6,000–€14,000, i.e. 25–50 developer days). <b>If you build it yourself:</b> cash only Apple's US$99 a year and Google Play's US$25 once; test devices only if you do not already own an iPad or iPhone and an Android device (a used Android tablet is enough; no Mac is needed, since builds run in Expo's cloud); Expo's free plan at first; RevenueCat free until US$2,500 of monthly tracked revenue. Your time: several weeks of sessions instead of developer days.",
           "<b>Advised</b> (outside professionals, cash either way): audits (security €6,000–€20,000, accessibility €5,000–€20,000), insurance (€1,500–€6,000) and content review (€3,000–€10,000: the French and Arabic words of the icon libraries are still marked \"to review\" in the app).",
-          "The other lines of table A5 follow the choices described there: company set-up and the medical-device opinion and trademark (cash either way); two-step sign-in and staging, photo sync (development work: €0 cash if you build them yourself)."
+          "The other lines of table A5 follow the choices described there: company set-up and the medical-device opinion and trademark (cash either way); staging (development work: €0 cash if you build it yourself). Two-step sign-in and photo sync were built on 18 November 2026."
          ]
         },
         {
          "p": "<b>CE marking is not automatic:</b> EU medical-device rules cover software meant to compensate for a disability, which can include AAC, so it depends on how the app's purpose is described. Ask a regulatory specialist before spending €25,000–€80,000."
         }
        ],
-       "cost": "Launch: €48k–€147k hired, ≈ €28k–€101k cash built yourself (+€25k–€80k with CE marking)",
+       "cost": "Launch: €42k–€132k hired, ≈ €28k–€101k cash built yourself (+€25k–€80k with CE marking)",
        "owner": "Founder",
        "source": "git history; line counts; table A5",
        "when": "P0 – before real families"
@@ -1307,7 +1316,7 @@
     {
      "num": "2",
      "title": "Hosting, storage and infrastructure",
-     "in_short": "The database, sign-in, private files and two small server functions are on Supabase. Under the plan (native apps only, decided 18 November 2026) Cloudflare only serves the privacy and support pages the stores require; the web app is not offered. The child's board lives on each device and works without internet; the server keeps the shared copy. Pictograms ship inside the app, so they cost nothing per user. Photos and recordings stay on the device that made them: that is the main gap.",
+     "in_short": "The database, sign-in, private files and two small server functions are on Supabase. Under the plan (native apps only, decided 18 November 2026) Cloudflare only serves the privacy and support pages the stores require; the web app is not offered. The child's board lives on each device and works without internet; the server keeps the shared copy. Pictograms ship inside the app, so they cost nothing per user. Since 18 November 2026 photos and recordings are also copied to private storage and reach the child's other devices (not yet tried on a tablet).",
      "questions": [
       {
        "n": "2.1",
@@ -1353,18 +1362,18 @@
        "label": "app",
        "answer": [
         {
-         "p": "<b>On the device:</b> the copy of the child's board (so it works offline), photos, recorded voices, the built-in words and the 24,128 pictograms (inside the native app), the follow-up days (120 days, only if the family turned it on), counters waiting to be sent (only with consent), the session (unless \"Keep me logged in\" is unticked)."
+         "p": "<b>On the device:</b> the copy of the child's board (so it works offline), photos, recorded voices, the built-in words and the 24,128 pictograms (inside the native app), the follow-up days (120 days, only if the family turned it on), counters waiting to be sent (only with consent), the session (in the iOS Keychain / Android Keystore since 18 November 2026, unless \"Keep me logged in\" is unticked)."
         },
         {
-         "p": "<b>In the cloud (Supabase):</b> accounts, child profiles (the board as one document plus a version number), team members and rights, invitations, proposals, change history (never what the child said), devices, follow-up days (only with consent), adults' observations, professionals' verification files (the identity document is deleted after the decision), notices, materials, messages to the team, votes, consent-based counters, technical-problem counts, AI call counts, the team's action log."
+         "p": "<b>In the cloud (Supabase):</b> accounts, child profiles (the board as one document plus a version number), team members and rights, invitations, proposals, change history (never what the child said), devices, follow-up days (only with consent), adults' observations, professionals' verification files (the identity document is deleted after the decision), notices, materials, messages to the team, votes, consent-based counters, technical-problem counts, AI call counts, the team's action log. Since 18 November 2026 also: photos and recordings (private storage, 2.9), the parent's consent (who, when, which text), server copies of the board (10 per child) and the bin (deleted profiles, 30 days)."
         },
         {
-         "p": "<b>Nowhere by default:</b> the sentences the child says (only at the highest follow-up level chosen by the family)."
+         "p": "<b>Nowhere by default:</b> the sentences the child says (only at the highest follow-up level chosen by the family; then sealed in the database and erased after 12 months)."
         }
        ],
        "cost": "–",
        "owner": "Tech lead (developer)",
-       "source": "supabase/README.md 'What is where'; src/lib/deviceData.ts",
+       "source": "supabase/README.md 'What is where'; src/lib/deviceData.ts; docs/ARCHITECTURE.md §2",
        "when": "Done"
       },
       {
@@ -1376,7 +1385,7 @@
          "p": "Measured: a new child profile is <b>12 KB</b> (2.7 KB compressed). A well-customised profile is probably 30–150 KB. The change history adds about 0.5–1 KB per change; follow-up days, if turned on, 2–10 KB per day and device."
         },
         {
-         "p": "Estimate: about 0.2 MB at the start, plus 0.2–0.5 MB a year per child. 100,000 children: roughly 20–70 GB of database. Photos and recordings: nothing in the cloud today; if they are synced later, expect 5–30 MB per child."
+         "p": "Estimate: about 0.2 MB at the start, plus 0.2–0.5 MB a year per child. 100,000 children: roughly 20–70 GB of database. Photos and recordings: copied to private storage since 18 November 2026; expect 5–30 MB per child (limit 150 MB, 2.10)."
         }
        ],
        "cost": "≈ 0.2–0.7 MB / child / year",
@@ -1390,10 +1399,10 @@
        "label": "app",
        "answer": [
         {
-         "p": "Yes, slowly. On Supabase Pro the database disk grows by itself (8 GB included, then US$0.125 per GB a month). Storage only becomes a noticeable cost once photos and recordings are synced; even then, 100,000 children × 20 MB = 2 TB costs about US$42 a month."
+         "p": "Yes, slowly. On Supabase Pro the database disk grows by itself (8 GB included, then US$0.125 per GB a month). Storage becomes a noticeable cost with photos and recordings, synced since 18 November 2026; even then, 100,000 children × 20 MB = 2 TB costs about US$42 a month."
         }
        ],
-       "cost": "Negligible before photo sync",
+       "cost": "Small: about US$42 a month at 100,000 children",
        "owner": "Tech lead (developer)",
        "source": "Supabase pricing",
        "when": "P2 – first 6 months after launch"
@@ -1453,18 +1462,18 @@
         {
          "bullets": [
           "<b>Boards, words, settings, schedules</b>: one document per child in the database, copied on each device, synced and merged.",
-          "<b>Photos and recordings</b>: only on the device that made them. A private storage folder for them exists on the server (profile-media) but copying files is not built. A lost tablet loses its photos and recordings; a parent's photo does not appear on the child's tablet.",
+          "<b>Photos and recordings</b>: since 18 November 2026 they are copied to the account's private storage (profile-media) and received by every device of the child's team, a use-only tablet included. The people who may change the board send them. Photos over about 200 KB are shrunk to 1024 px JPEG; recordings are already trimmed of silence (about 30 KB). Settings → Account → Devices and sync shows \"copied to the account\", \"N waiting to be sent\" or \"N still to arrive\". Until a family recording reaches a device, the device's voice says the word. Files of erased profiles and accounts are deleted by the server function caa-purge.",
           "<b>Videos</b>: not supported."
          ]
         },
         {
-         "p": "Recommendation: build media sync before the paid launch (compressed photos about 200 KB, recordings already trimmed of silence, about 30 KB)."
+         "p": "Not yet tried against the real Supabase storage or on a tablet: do it with the first device builds. In the dashboard, the project's upload size limit must be at least 3 MB (50 MB by default)."
         }
        ],
-       "cost": "Media sync: 5–10 developer days",
+       "cost": "€0 left (built)",
        "owner": "Tech lead (developer)",
-       "source": "docs/HOW-IT-WORKS.md 'Not done yet'",
-       "when": "P1 – before paid launch"
+       "source": "supabase/migrations/20261118000300_media_sync.sql",
+       "when": "Done (to try on a tablet)"
       },
       {
        "n": "2.10",
@@ -1472,13 +1481,13 @@
        "label": "app",
        "answer": [
         {
-         "p": "No quota today, except professionals' verification files (20 files of 10 MB at most). When photo sync exists, set a generous fair-use limit per child (for example 500 photos and 1,000 recordings, about 150 MB) so that one account cannot fill the storage."
+         "p": "Since 18 November 2026, a fair-use limit per child: 1,500 files and 150 MB, at most 2 MB a photo and 3 MB a recording, and 1,000 uploads per person a day, so that one account cannot fill the storage. Professionals' verification files: 20 files of 10 MB at most."
         }
        ],
        "cost": "–",
        "owner": "Tech lead (developer)",
-       "source": "supabase/migrations/…_security.sql §10",
-       "when": "P1 – before paid launch"
+       "source": "supabase/migrations/20261118000300_media_sync.sql; …_security.sql §10",
+       "when": "Done"
       },
       {
        "n": "2.11",
@@ -1500,15 +1509,15 @@
        "label": "decision",
        "answer": [
         {
-         "p": "Nothing automatic today, except: invitations expire after 30 days, rate-limit logs after 2 days, consent-based counters after 180 days, identity documents at the decision."
+         "p": "Since 18 November 2026 a nightly job removes old data (6.15) and counts the accounts without a sign-in for 24 months in Back office → Security; it does not delete them. Also: invitations expire after 30 days, rate-limit logs after 2 days, consent-based counters after 180 days, identity documents at the decision."
         },
         {
-         "p": "Proposed rule (to confirm with the lawyer): after 24 months without any sign-in, e-mail a warning, then delete 60 days later, after offering an export; never delete a child's profile without warning; keep invoices 10 years (France). Storage cost is not the reason; the GDPR requires not keeping data longer than needed."
+         "p": "Proposed rule for those accounts (to confirm with the lawyer): e-mail a warning, then delete 60 days later, after offering an export; never delete a child's profile without warning; keep invoices 10 years (France). Storage cost is not the reason; the GDPR requires not keeping data longer than needed."
         }
        ],
-       "cost": "1–2 developer days",
+       "cost": "Counting built; deletion: 1 day once decided",
        "owner": "Privacy lawyer / DPO",
-       "source": "GDPR art. 5(1)(e)",
+       "source": "GDPR art. 5(1)(e); supabase/migrations/20261118000500_privacy.sql",
        "when": "P2 – first 6 months after launch"
       },
       {
@@ -2130,7 +2139,7 @@
     {
      "num": "6",
      "title": "Privacy and data protection",
-     "in_short": "Privacy by design is already strong: data collection is off by default, the family alone decides, the team only sees sums over at least 5 children of 5 families, and nothing the child says is kept unless the family chooses it. What is missing is the legal paperwork (privacy policy, consent text, DPIA, records, contracts with providers) and a few rights features. A child's AAC profile should be treated as health data.",
+     "in_short": "Privacy by design is already strong: data collection is off by default, the family alone decides, the team only sees sums over at least 5 children of 5 families, and nothing the child says is kept unless the family chooses it. Since 18 November 2026 the parent's consent is recorded, data is erased on a schedule, the children's sentences are sealed in the database and families can download all their data. What is missing is the legal paperwork: the privacy policy, consent text, DPIA and records are drafts a lawyer must finish (docs/legal/), and the contracts with providers. A child's AAC profile should be treated as health data.",
      "questions": [
       {
        "n": "6.1",
@@ -2144,7 +2153,7 @@
           "<b>The child</b>: first name (can be a nickname), age, gender (for grammar and voice), languages, Arabic dialect, the board itself (words, folders, schedules, activities that can reveal daily life or health, e.g. \"medicine\"), the caregiver code, settings.",
           "<b>Only if the family turns it on</b>: per day and device, sessions, minutes, touches, places, words used (level 2), sentences (level 3); adults' observations; anonymous usage counters and technical-problem counts (no error message).",
           "<b>Technical</b>: IP addresses in Supabase and Cloudflare logs; session tokens.",
-          "<b>On the device only</b>: photos and recordings."
+          "<b>On the device and, since 18 November 2026, in private storage</b>: photos and recordings; the parent's consent (who, when, which text)."
          ]
         }
        ],
@@ -2239,7 +2248,7 @@
        "label": "expert",
        "answer": [
         {
-         "p": "Steps: (1) data map (this document, 2.3 and 6.1, is a start); (2) record of processing (art. 30); (3) legal basis per purpose; (4) DPIA; (5) privacy policy in FR/EN/AR (none in the app today); (6) consent at sign-up for the child's data; (7) procedures for access, export and deletion requests; (8) contracts with every provider (Supabase, Cloudflare, Google, Anthropic, later RevenueCat) and transfer safeguards; (9) retention schedule; (10) breach procedure; (11) a DPO. The technical side (opt-in, minimisation, row-level security) is already well ahead."
+         "p": "Steps: (1) data map (this document, 2.3 and 6.1, is a start); (2) record of processing (art. 30; draft written on 18 November 2026); (3) legal basis per purpose; (4) DPIA (draft written); (5) privacy policy in FR/EN/AR (a draft in docs/legal/ for the lawyer); (6) consent for the child's data (recorded by the database since 18 November 2026); (7) procedures for access, export and deletion requests (export and deletion built); (8) contracts with every provider (Supabase, Cloudflare, Google, Anthropic, later RevenueCat) and transfer safeguards; (9) retention schedule (draft, applied every night); (10) breach procedure (written: docs/runbooks/DATA-BREACH.md); (11) a DPO. The technical side (opt-in, minimisation, row-level security) is already well ahead."
         }
        ],
        "cost": "€10k–€30k first year",
@@ -2281,15 +2290,18 @@
        "label": "expert",
        "answer": [
         {
-         "p": "Today the parent creates the account and the child's profile; the child never has an account; only the family can turn on follow-up or sharing (the database refuses anyone else); while a professional owns a profile, recording and sharing are locked off until the parents take it over."
+         "p": "Built on 18 November 2026: before a family creates a child's profile, or takes over one a professional prepared, the parent states that they are the child's parent or legal guardian and agree to the processing of the child's data (including health aspects). The database keeps who, when and which version of the text, and refuses to create the profile without it. The wording is a draft for the lawyer."
         },
         {
-         "p": "To add: at sign-up, a statement that the person is the parent or legal guardian and agrees to the processing of the child's data (including health aspects), stored with the date and the text version. In the US under COPPA, \"verifiable\" parental consent (card check, signed form, ID check…) may be needed: lawyer's call."
+         "p": "Already: the parent creates the account and the child's profile; the child never has an account; only the family can turn on follow-up or sharing (the database refuses anyone else); while a professional owns a profile, recording and sharing are locked off until the parents take it over."
+        },
+        {
+         "p": "In the US under COPPA, \"verifiable\" parental consent (card check, signed form, ID check…) may be needed: lawyer's call."
         }
        ],
-       "cost": "1–3 developer days + legal text",
+       "cost": "Built; wording in the legal pack (A5)",
        "owner": "Privacy lawyer / DPO",
-       "source": "supabase/migrations/20261115000000_pro_profiles.sql",
+       "source": "supabase/migrations/20261118000500_privacy.sql",
        "when": "P0 – before real families"
       },
       {
@@ -2315,12 +2327,12 @@
          "p": "By default, no: follow-up is off, the sentence strip is not saved, and the change history never contains what the child said. If the family chooses: level \"use\" (counts only), \"words\" (which words), \"sentences\" (the sentences), stored per day on the server and visible to the parents, team managers and members the parents allowed to \"see the progress data\". Never in the team's figures."
         },
         {
-         "p": "Recommendation: a shorter retention for sentence-level data (e.g. 12 months) and field-level encryption."
+         "p": "Since 18 November 2026 the children's sentences and the adults' observation texts are sealed field by field in the database (pgcrypto, with a key kept in Supabase Vault) and read back only through the functions usage_of and list_observations; sentences are erased after 12 months, the rest of the follow-up after 24 months."
         }
        ],
        "cost": "–",
        "owner": "Tech lead (developer)",
-       "source": "supabase/migrations/20261111000000_usage_data.sql",
+       "source": "supabase/migrations/20261111000000_usage_data.sql; 20261118000500_privacy.sql",
        "when": "Done"
       },
       {
@@ -2344,7 +2356,7 @@
        "label": "app",
        "answer": [
         {
-         "p": "Already built: roles (therapist, teacher, caregiver, family member, other), three levels (use, contribute by proposals, direct editing), individual permissions (see progress data, invite…), end dates, instant removal, professionals only after their certificate is accepted, invitations never give more than their author has, core word positions always need the parents' approval. All enforced in the database and tested by 176 checks. Institutions as such are not modelled yet (section 17)."
+         "p": "Already built: roles (therapist, teacher, caregiver, family member, other), three levels (use, contribute by proposals, direct editing), individual permissions (see progress data, invite…), end dates, instant removal, professionals only after their certificate is accepted, invitations never give more than their author has, core word positions always need the parents' approval. All enforced in the database and tested by 318 checks. Institutions as such are not modelled yet (section 17)."
         }
        ],
        "cost": "–",
@@ -2358,16 +2370,16 @@
        "label": "decision",
        "answer": [
         {
-         "p": "Defined today: follow-up days on the device 120 days; counters 180 days; rate-limit logs 2 days; invitations valid 30 days; identity documents until the decision. Everything else stays until the user deletes it."
+         "p": "Since 18 November 2026, every night (20261118000500_privacy.sql): follow-up days 24 months (the children's sentences 12 months); change history 24 months; notices 12 months; messages to the team 3 years; the team's log 5 years; finished invitations 12 months. Already: follow-up days on the device 120 days; counters 180 days; rate-limit logs 2 days; identity documents until the decision; a deleted child's profile 30 days in the bin. Accounts without a sign-in for 24 months are counted in Back office → Security, not deleted (2.12)."
         },
         {
-         "p": "Proposed schedule (to validate): follow-up days 24 months rolling; change history 24 months; messages to the team 3 years; team action log 5 years; inactive accounts 24 months then deletion with warning; invoices 10 years."
+         "p": "The values are a proposal for the lawyer (docs/legal/RETENTION-SCHEDULE.md); invoices 10 years once billing exists. The nightly job needs pg_cron switched on in Supabase (Database → Extensions)."
         }
        ],
-       "cost": "1–3 developer days",
+       "cost": "Built; lawyer to validate",
        "owner": "Privacy lawyer / DPO",
        "source": "GDPR art. 5(1)(e)",
-       "when": "P1 – before paid launch"
+       "when": "Built; lawyer to confirm (P0)"
       },
       {
        "n": "6.16",
@@ -2375,16 +2387,16 @@
        "label": "app",
        "answer": [
         {
-         "p": "Exists: edit in the app; export the profile as a file (Account → Privacy); export observations and follow-up as CSV; erase recorded follow-up data; delete the child's profile or the whole account after typing a confirmation word (the database deletes every linked row); signing out erases the device copies."
+         "p": "Exists: edit in the app; export the profile as a file or as OBZ (Settings → Account); export observations and follow-up as CSV; erase recorded follow-up data; signing out erases the device copies. Since 18 November 2026: \"Download all my data\", one JSON file with everything the database holds about the person and their children (Settings → Account); deleting the child's profile (kept 30 days in the bin, then erased) or the whole account after a fresh proof; the files of erased accounts and profiles deleted on the server by caa-purge, whatever happens on the device."
         },
         {
-         "p": "Missing: one \"download all my data\" file covering the account, teams and history; guaranteed deletion of stored files on the server (done from the app today, best effort); a published channel (privacy e-mail) and a 1-month answer process."
+         "p": "Missing: a published channel (privacy e-mail: a placeholder in the draft policy) and a 1-month answer process."
         }
        ],
-       "cost": "2–4 developer days",
+       "cost": "Built; the channel is the owner's",
        "owner": "Tech lead (developer)",
-       "source": "supabase/migrations/20261109000000_init.sql (delete_account)",
-       "when": "P1 – before paid launch"
+       "source": "supabase/migrations/20261118000500_privacy.sql (export_my_data); 20261118000100_storage_purge.sql",
+       "when": "Done (channel: P0)"
       },
       {
        "n": "6.17",
@@ -2392,7 +2404,7 @@
        "label": "expert",
        "answer": [
         {
-         "p": "It is not removed one by one: deleted data disappears when the backups expire (7 days on Supabase Pro daily backups; 7–28 days with point-in-time recovery). That is accepted practice if documented: backups are only restored after a disaster, and then the deletions are applied again from a list of deleted IDs. Your own off-site copies follow the same rule (keep 30–90 days at most)."
+         "p": "It is not removed one by one: deleted data disappears when the backups expire (7 days on Supabase Pro daily backups; 7–28 days with point-in-time recovery). That is accepted practice if documented: backups are only restored after a disaster, and then the deletions are applied again from a list of deleted IDs. Your own off-site copies follow the same rule: scripts/backup-offsite.sh keeps 30 to 90 days (60 by default), and docs/runbooks/BACKUP-AND-RESTORE.md (§6) says how deletions stay deleted after a restore."
         }
        ],
        "cost": "–",
@@ -2406,7 +2418,7 @@
        "label": "app",
        "answer": [
         {
-         "p": "Supabase (everything; its subprocessor AWS hosts it); Cloudflare (IP addresses and requests, no stored data); Google (Gmail sends sign-in codes; Google sign-in if used); Apple (Sign in with Apple, stores); Anthropic (only if the AI helper is deployed: topic, photo, drawing, dialect code); the device makers (dictation may send audio to Apple or Google; in Chrome on a computer, the \"Google\" voices are online voices, so the text being spoken is sent to Google). Later, with billing:"
+         "p": "Supabase (everything; its subprocessor AWS hosts it); Cloudflare (IP addresses and requests, no stored data); Google (Gmail sends sign-in codes; Google sign-in if used); Apple (Sign in with Apple, stores); Anthropic (only if the AI helper is deployed: topic, photo, drawing, dialect code); the device makers (dictation may send audio to Apple or Google when the language is not installed on the device; the app says so; in Chrome on a computer, the \"Google\" voices are online voices, so the text being spoken is sent to Google). Later, with billing:"
         },
         {"p": "Apple and Google (purchases) and RevenueCat (purchase records, if used)."}
        ],
@@ -2421,7 +2433,7 @@
        "label": "expert",
        "answer": [
         {
-         "p": "Check each contract. Supabase and Cloudflare act as processors. Anthropic's commercial API terms say API data is not used for training by default (confirm the current terms and retention period). A personal Gmail account is not covered by a business data-processing agreement: switch to Google Workspace or a transactional e-mail service with a DPA. Apple's and Google's speech services follow their own privacy policies: tell families, or prefer on-device dictation and offline voices."
+         "p": "Check each contract. Supabase and Cloudflare act as processors. Anthropic's commercial API terms say API data is not used for training by default (confirm the current terms and retention period). A personal Gmail account is not covered by a business data-processing agreement: switch to Google Workspace or a transactional e-mail service with a DPA. Apple's and Google's speech services follow their own privacy policies: since 18 November 2026 the app uses on-device dictation when the language is installed for it, and otherwise tells families that Apple's or Google's service hears it."
         }
        ],
        "cost": "–",
@@ -2468,20 +2480,23 @@
        "label": "expert",
        "answer": [
         {
-         "p": "GDPR: notify the supervisory authority (CNIL) within 72 hours if there is a risk; inform the families without delay if the risk is high (likely, for children's data); keep an internal register of every incident. Saudi PDPL also has a 72-hour rule; US states and COPPA have their own. Prepare a one-page playbook (detect, contain, assess, notify, inform, fix, review) and message templates in French, English and Arabic."
+         "p": "GDPR: notify the supervisory authority (CNIL) within 72 hours if there is a risk; inform the families without delay if the risk is high (likely, for children's data); keep an internal register of every incident. Saudi PDPL also has a 72-hour rule; US states and COPPA have their own."
+        },
+        {
+         "p": "Written on 18 November 2026: docs/runbooks/DATA-BREACH.md (is it a breach, the clock, assessing the risk, informing families with e-mail and in-app texts in French, English and Arabic, a breach register, countries outside the EU) and docs/runbooks/INCIDENT-RESPONSE.md. A lawyer should check them."
         }
        ],
-       "cost": "€1k–€3k",
+       "cost": "Written; lawyer's check €1k–€3k",
        "owner": "Privacy lawyer / DPO",
        "source": "GDPR art. 33–34",
-       "when": "P0 – before real families"
+       "when": "Done (lawyer to check, P0)"
       }
      ]
     },
     {
      "num": "7",
      "title": "Cybersecurity",
-     "in_short": "The database decides who sees what (row-level security), every known attack is replayed by an automatic test, keys are never in the app, and the website sends strict browser protections. Gaps: no two-step sign-in for the team yet, sessions not in the phone's secure storage, no external penetration test, no written incident plan, and no staging step before changes go live.",
+     "in_short": "The database decides who sees what (row-level security), every known attack is replayed by an automatic test, keys are never in the app, and the website sends strict browser protections. Since 18 November 2026: two-step sign-in (required for the team), a fresh proof before what cannot be undone, the session in the phone's secure storage (to verify on a device), server-side file deletion, sealed sentences, an incident plan and automatic checks on every change. Gaps: no external penetration test, no robot check on sign-up, and no staging step until the store builds exist.",
      "questions": [
       {
        "n": "7.1",
@@ -2506,21 +2521,19 @@
        "label": "estimate",
        "answer": [
         {
-         "p": "Partly. Storage: sessions are kept in the app's storage, not yet in the iOS Keychain / Android Keystore; Android backups are off; device copies are erased at sign-out. Crypto: platform TLS only."
+         "p": "Partly, and closer since 18 November 2026. Storage: the session in the iOS Keychain / Android Keystore (expo-secure-store; to verify on the first device build); Android backups are off; device copies are erased at sign-out. Crypto: platform TLS; sentences and observations sealed in the database."
         },
         {
-         "p": "Authentication: strong server-side checks, 8-character passwords, rate limits; no two-step sign-in. Network: HTTPS only, HSTS on the website, no certificate pinning (acceptable at level 1)."
+         "p": "Authentication: strong server-side checks, 8-character passwords, rate limits, two-step sign-in (authenticator app) offered to everyone and required for the team, a fresh proof before deleting or linking a full-access device. Network: HTTPS only, HSTS on the website, no certificate pinning (acceptable at level 1)."
         },
         {
-         "p": "Platform: links checked by one function (safeLink). Code: dependencies audited. Privacy: strong."
+         "p": "Platform: links checked by one function (safeLink); links out of the app behind the caregiver code on the tablet apps. Code: dependencies audited, Dependabot. Privacy: strong."
         },
-        {
-         "p": "Gaps to close: Keychain/Keystore, two-step sign-in for the team, a mobile test by a professional."
-        }
+        {"p": "Gaps to close: a mobile test by a professional (3.6), the robot check on sign-up (7.9)."}
        ],
-       "cost": "3–6 developer days",
+       "cost": "Pen test (A5)",
        "owner": "Tech lead (developer)",
-       "source": "docs/SECURITY.md §5",
+       "source": "docs/SECURITY.md §5; supabase/migrations/20261118000000_security_2.sql",
        "when": "P1 – before paid launch"
       },
       {
@@ -2532,13 +2545,13 @@
          "p": "In transit: yes, HTTPS everywhere (Supabase, Cloudflare, strict transport security on the website)."
         },
         {
-         "p": "At rest: Supabase encrypts its disks and backups (AES-256, on AWS). Inside the database, sensitive fields (sentences, observations) are not encrypted separately: worth considering. On devices: protected by the system's own encryption on modern iPads and Android tablets; browser storage on a shared computer is not."
+         "p": "At rest: Supabase encrypts its disks and backups (AES-256, on AWS). Since 18 November 2026 the children's sentences (follow-up level \"sentences\") and the adults' observation texts are also sealed field by field in the database (pgcrypto, with a key kept in Supabase Vault) and read back only through the functions usage_of and list_observations. On devices: protected by the system's own encryption on modern iPads and Android tablets, the session in the Keychain / Keystore; browser storage on a shared computer is not."
         }
        ],
-       "cost": "Field encryption: 3–5 days",
+       "cost": "€0 left (built)",
        "owner": "Tech lead (developer)",
-       "source": "Supabase security documentation",
-       "when": "P2 – first 6 months after launch"
+       "source": "supabase/migrations/20261118000500_privacy.sql; Supabase security documentation",
+       "when": "Done"
       },
       {
        "n": "7.4",
@@ -2560,13 +2573,16 @@
        "label": "app",
        "answer": [
         {
-         "p": "Not yet in the app: Supabase supports authenticator-app codes for free, but there is no screen to enrol and the back office does not require it (\"not done yet\" in docs/SECURITY.md). Make it mandatory for the team (one check in is_admin() once enrolment exists: 1–2 days). Today, turn on two-step sign-in on Supabase, GitHub, Cloudflare and the Google accounts: whoever enters the Supabase account sees every child."
+         "p": "Yes, since 18 November 2026: two-step sign-in with an authenticator app is offered to everyone (Settings → Account → My account) and required for the back office: is_admin() needs a session where the code was typed (\"aal2\"). Once a person turns it on, the database shows nothing of the children until the code is typed (20261118000000_security_2.sql). Each team account must turn it on before using the back office."
+        },
+        {
+         "p": "Still the owner's: two-step sign-in on Supabase, GitHub, Cloudflare and the Google accounts (launch plan 1.9): whoever enters the Supabase account sees every child."
         }
        ],
-       "cost": "1–2 developer days",
+       "cost": "€0 left (built)",
        "owner": "Tech lead (developer)",
-       "source": "docs/SECURITY.md §4–5",
-       "when": "P0 – before real families"
+       "source": "docs/SECURITY.md §4–5; supabase/migrations/20261118000000_security_2.sql",
+       "when": "Done (owner's accounts: P0)"
       },
       {
        "n": "7.6",
@@ -2588,12 +2604,12 @@
        "label": "app",
        "answer": [
         {
-         "p": "Back office: a database table (admins) that can only be changed in Supabase's SQL editor; every back-office function checks is_admin(). Developers: whoever has access to GitHub, Cloudflare and Supabase, which today look like the owner's personal accounts. To formalise: company-owned accounts, an access list, a quarterly review and a leaver checklist."
+         "p": "Back office: a database table (admins) that can only be changed in Supabase's SQL editor; every back-office function checks is_admin(), which since 18 November 2026 also needs two-step sign-in. Developers: whoever has access to GitHub, Cloudflare and Supabase, which today look like the owner's personal accounts. Written on 18 November 2026: docs/ACCESS-LIST.md (the list, a quarterly review, what to do the day someone leaves or joins). Still to do: company-owned accounts."
         }
        ],
        "cost": "–",
        "owner": "Founder",
-       "source": "supabase/README.md §8",
+       "source": "supabase/README.md §8; docs/ACCESS-LIST.md",
        "when": "P0 – before real families"
       },
       {
@@ -2616,12 +2632,15 @@
        "label": "app",
        "answer": [
         {
-         "p": "In place: confirmed e-mails, rate limits, 8-character tablet codes with 5 tries, one code at a time, a notice to the family whenever a device is linked, remote removal of a lost device, copies erased at sign-out, \"Keep me logged in\" off for shared computers. To add: two-step sign-in as an option for parents, a robot check on sign-up (Cloudflare Turnstile, free), sessions in secure storage on tablets."
+         "p": "In place: confirmed e-mails, rate limits, 8-character tablet codes with 5 tries, one code at a time, a notice to the family whenever a device is linked, remote removal of a lost device, copies erased at sign-out, \"Keep me logged in\" off for shared computers. Since 18 November 2026: two-step sign-in for anyone who wants it; a fresh proof (the password, an e-mailed code or the authenticator code in the last 10 minutes) before deleting the account or a child's profile, linking a full-access device or downloading all data; the session in secure storage on tablets (to verify on a device)."
+        },
+        {
+         "p": "Not built: a robot check on sign-up (Cloudflare Turnstile, free): it needs a Turnstile key and the store builds."
         }
        ],
-       "cost": "3–5 developer days",
+       "cost": "Robot check: 1–2 developer days",
        "owner": "Tech lead (developer)",
-       "source": "docs/SECURITY.md",
+       "source": "docs/SECURITY.md; supabase/migrations/20261118000000_security_2.sql (fresh_proof)",
        "when": "P1 – before paid launch"
       },
       {
@@ -2630,7 +2649,7 @@
        "label": "app",
        "answer": [
         {
-         "p": "Row-level security on every table: a row is visible only to the profile's owner and its active members. Functions decide rights themselves and ignore any rights or owner sent by the app; professionals act only once verified; removed members lose access at once. 176 automatic checks replay the attacks (stranger, removed member, tablet, professional not verified). Known leftovers: team members can read each other's e-mail and the family code; whether an e-mail has an account can be guessed through invitations (limited to 30 a day)."
+         "p": "Row-level security on every table: a row is visible only to the profile's owner and its active members. Functions decide rights themselves and ignore any rights or owner sent by the app; professionals act only once verified; removed members lose access at once. 318 automatic checks replay the attacks (stranger, removed member, tablet, professional not verified). Closed on 18 November 2026: team members no longer read each other's e-mail nor the family's connection code (only the family and the team's managers do). Known leftover: whether an e-mail has an account can be guessed through invitations (limited to 30 a day)."
         }
        ],
        "cost": "–",
@@ -2644,7 +2663,7 @@
        "label": "app",
        "answer": [
         {
-         "p": "Partly: production Supabase project; a second Supabase project for live tests; a throw-away local database for security tests; the demo uses a fake server on the device. Today the repository's rule publishes every finished change to the website at once. Under the plan (native apps only) that rule changes: builds go to TestFlight and Google Play's testing tracks first, which serve as staging, then to the stores after review; the website keeps only the privacy and support pages."
+         "p": "Partly: production Supabase project; a second Supabase project for live tests; a throw-away local database for security tests; the demo uses a fake server on the device. Today the repository's rule publishes every finished change to the website at once. Under the plan (native apps only) that rule changes: builds go to TestFlight and Google Play's testing tracks first, which serve as staging, then to the stores after review; the website keeps only the privacy and support pages. Since 18 November 2026 every change is checked on GitHub (typecheck, unit tests, database tests: .github/workflows/checks.yml) and a release checklist is written (docs/runbooks/RELEASE-CHECKLIST.md)."
         }
        ],
        "cost": "Free; 1 day set-up",
@@ -2658,7 +2677,7 @@
        "label": "app",
        "answer": [
         {
-         "p": "One full internal review was done in November 2026: every finding was confirmed, fixed and turned into an automatic test. The dependency audit today reports 30 advisories in the production tree, all from three file-matching libraries used by build tools (picomatch, minimatch, glob via Metro and the Expo command line); none runs on families' devices. To set up: GitHub Dependabot and secret scanning (on the to-do list), Supabase's Security Advisor monthly, a quarterly review."
+         "p": "One full internal review was done in November 2026: every finding was confirmed, fixed and turned into an automatic test. The dependency audit today reports 30 advisories in the production tree, all from three file-matching libraries used by build tools (picomatch, minimatch, glob via Metro and the Expo command line); none runs on families' devices. Since 18 November 2026: Dependabot (.github/dependabot.yml) and automatic checks on every change; secret scanning and push protection are switched on by the owner in GitHub's settings. Still to do: Supabase's Security Advisor monthly, a quarterly review."
         }
        ],
        "cost": "Free tools; 1 day / quarter",
@@ -2711,16 +2730,19 @@
       {
        "n": "7.16",
        "q": "What is the incident response procedure in the event of a cyberattack?",
-       "label": "decision",
+       "label": "app",
        "answer": [
         {
-         "p": "None is written yet. Draft: roles (incident lead: founder; technical: developer; legal: lawyer / DPO); severity levels; steps: contain (rotate keys, switch off functions, sign everyone out), keep the logs, assess what data was affected, notify within 72 hours, inform families in three languages, fix, review. Keep emergency contacts (Supabase support, CNIL, insurer). Practise once a year (two-hour table-top exercise)."
+         "p": "Written on 18 November 2026: docs/runbooks/INCIDENT-RESPONSE.md (roles: incident lead the founder, technical the developer, legal the lawyer / DPO; contacts; severity levels; the steps: contain by rotating keys, switching off functions, signing everyone out; keep the evidence; assess what data was affected; notify within 72 hours; inform families; fix; review; an incident record; a yearly table-top exercise) and DATA-BREACH.md (texts for families in French, English and Arabic)."
+        },
+        {
+         "p": "To tell families, the team can now send a message to every family in their own language, for an incident or maintenance (admin_broadcast, from Supabase's SQL editor). Fill in the emergency contacts (Supabase support, CNIL, insurer) and practise once a year (two hours)."
         }
        ],
-       "cost": "€1k–€3k to write",
+       "cost": "Written; a yearly exercise",
        "owner": "Founder",
-       "source": "GDPR art. 33",
-       "when": "P0 – before real families"
+       "source": "GDPR art. 33; docs/runbooks/INCIDENT-RESPONSE.md",
+       "when": "Done (exercise: Ongoing)"
       },
       {
        "n": "7.17",
@@ -2728,7 +2750,7 @@
        "label": "decision",
        "answer": [
         {
-         "p": "Recommended. It pays for investigation, notification, legal defence and business interruption after a breach. About €1,000–€5,000 a year for a small company; insurers will ask about two-step sign-in, backups and updates, which are on the to-do list. Check that the cover includes all countries served."
+         "p": "Recommended. It pays for investigation, notification, legal defence and business interruption after a breach. About €1,000–€5,000 a year for a small company; insurers will ask about two-step sign-in (built on 18 November 2026), backups and updates. Check that the cover includes all countries served."
         }
        ],
        "cost": "€1k–€5k / year",
@@ -2741,7 +2763,7 @@
     {
      "num": "8",
      "title": "Accessibility",
-     "in_short": "The web build of the app passes an automatic WCAG 2.2 AA scan on 57 screens (204 scans, 0 failures), works with a keyboard, and is designed for screen readers. Under the plan only the native apps are offered, so the checks that matter now are on devices. Not done: listening with a real screen reader, any test on a tablet, and the access methods many AAC users rely on: switch scanning and eye gaze. Those are the main accessibility gaps.",
+     "in_short": "The web build of the app passes an automatic WCAG 2.2 AA scan: 232 scans with 0 failures (42 screens at four sizes: computer, phone, narrow 320 px and zoom 200%, plus Arabic and professional screens) and a keyboard-only run. Under the plan only the native apps are offered, so the checks that matter now are on devices. Since 18 November 2026 the app has switch scanning, selection by resting the pointer (mouse, head and eye-gaze pointers) and tremor options. Not done: listening with a real screen reader, any test on a tablet, and trying the new access methods with real switches and eye-gaze devices.",
      "questions": [
       {
        "n": "8.1",
@@ -2805,13 +2827,16 @@
        "label": "app",
        "answer": [
         {
-         "p": "No built-in scanning. The iPad's Switch Control and Android's Switch Access work on any accessible app, so basic use may work, but it is untested and slow on a board of 60–81 cards. AAC-grade scanning (row/column, spoken preview, adjustable timing) is a real feature, important for users with motor impairments and offered by established AAC apps."
+         "p": "Yes, since 18 November 2026 (Settings → Touch, off by default): automatic or step-by-step scanning, row then card or card by card, 0.5–5 s per step, 1–5 turns, a quiet spoken preview. The switch is Space or Enter (a keyboard or a switch interface, in a browser) or the whole screen; scanning never covers the universal bar."
+        },
+        {
+         "p": "Tablets have no in-app key switch: the whole screen, or the system's Switch Control (iPad) / Switch Access (Android). Not yet tried with real switches or on a tablet."
         }
        ],
-       "cost": "15–30 developer days",
+       "cost": "€0 left (built); tests with users",
        "owner": "Tech lead (developer)",
        "source": "docs/ACCESSIBILITY.md §4",
-       "when": "P2 – first 6 months after launch"
+       "when": "Done (to try with real switches)"
       },
       {
        "n": "8.6",
@@ -2819,14 +2844,14 @@
        "label": "app",
        "answer": [
         {
-         "p": "Not built in. iPadOS 18 and later include eye tracking with dwell that works across apps; on Android it depends on external devices. Untested."
+         "p": "Yes, since 18 November 2026: \"Choose by resting the pointer\" (0.5–3 s) for mouse, head and eye-gaze pointers (Settings → Touch). iPadOS 18 and later include eye tracking that already makes taps, so it works with the board as it is; on Android it depends on external devices."
         },
-        {"p": "Plan it together with switch scanning (dwell time, large targets, no accidental activation)."}
+        {"p": "Not yet tried with eye-gaze devices."}
        ],
-       "cost": "Part of the 15–30 days above",
+       "cost": "€0 left (built)",
        "owner": "Tech lead (developer)",
-       "source": "–",
-       "when": "P2 – first 6 months after launch"
+       "source": "Settings → Touch",
+       "when": "Done (to try with devices)"
       },
       {
        "n": "8.7",
@@ -2848,13 +2873,13 @@
        "label": "app",
        "answer": [
         {
-         "p": "Yes, partly: select when the finger lifts, as soon as it touches, or by holding 0.5–2 seconds; a minimum delay between two presses of the same card (off, 1, 2, 3, 5 s); card sizes; larger text and high contrast; fewer animations; 25, 60 or 81 words shown. Missing: a touch area larger than the card, \"first / last touch\" choices for tremor, dwell for mouse and eye gaze."
+         "p": "Yes: select when the finger lifts, as soon as it touches, or by holding 0.5–2 seconds; a minimum delay between two presses of the same card (off, 1, 2, 3, 5 s); card sizes; larger text and high contrast; fewer animations; 25, 60 or 81 words shown. Since 18 November 2026 also, for tremor, \"Where it first lands\" and \"Bigger touch area\", and selection by resting the pointer (0.5–3 s). All off by default."
         }
        ],
-       "cost": "5–8 developer days for the missing ones",
+       "cost": "€0 left (built)",
        "owner": "Tech lead (developer)",
        "source": "src/lib/repeatGuard.ts; Settings → Touch",
-       "when": "P2 – first 6 months after launch"
+       "when": "Done"
       },
       {
        "n": "8.9",
@@ -2879,15 +2904,15 @@
          "bullets": [
           "Cognitive: strong (words revealed progressively without moving, stable positions, simple guide, fewer animations, child lock).",
           "Hearing: the sentence strip shows the text; timers are visual.",
-          "Motor: good for touch (hold to select, repeat delay); missing switch and eye gaze.",
-          "Visual: screen-reader names, contrast, zoom; missing auditory scanning for blind AAC users."
+          "Motor: good for touch (hold to select, repeat delay, where it first lands, bigger touch area); switch scanning and selection by resting the pointer since 18 November 2026, still to try with users.",
+          "Visual: screen-reader names, contrast, zoom; scanning has a quiet spoken preview; to try with blind AAC users and a real screen reader."
          ]
         }
        ],
-       "cost": "See 8.5–8.6",
+       "cost": "Tests with users (8.9)",
        "owner": "Clinical lead (speech-language therapist)",
        "source": "–",
-       "when": "P2 – first 6 months after launch"
+       "when": "P1 – before paid launch"
       },
       {
        "n": "8.11",
@@ -2912,7 +2937,7 @@
          "p": "The in-app guide (30 chapters, three languages) and the set-up help are part of the scanned screens."
         },
         {
-         "p": "Missing: public help pages (with the privacy and support pages), captioned video tutorials, and a check that support e-mails and documents are accessible (EN 301 549 chapter 12)."
+         "p": "Missing: public help pages (a support page was written on 18 November 2026: public/support/), captioned video tutorials, and a check that support e-mails and documents are accessible (EN 301 549 chapter 12)."
         }
        ],
        "cost": "–",
@@ -2955,7 +2980,7 @@
        "label": "decision",
        "answer": [
         {
-         "p": "Yes: an accessibility statement on the static pages (expected in the EU) and a conformance report (VPAT 2.5 \"INT\" edition covers WCAG, Section 508 and EN 301 549) for public and institutional buyers."
+         "p": "Yes: an accessibility statement on the static pages (expected in the EU) and a conformance report (VPAT 2.5 \"INT\" edition covers WCAG, Section 508 and EN 301 549) for public and institutional buyers. A draft statement is written (docs/legal/ACCESSIBILITY-STATEMENT-DRAFT.md, 18 November 2026); the conformance report needs the audit."
         }
        ],
        "cost": "€1k–€5k",
@@ -2969,7 +2994,7 @@
        "label": "app",
        "answer": [
         {
-         "p": "Already: npm run test:a11y (204 scans) and the contrast unit tests; the project rule says to run them after UI changes. Add them to a release checklist, plus a 30-minute screen-reader check per release and a yearly external re-audit."
+         "p": "Already: npm run test:a11y (232 scans and a keyboard-only run, 18 November 2026) and the contrast unit tests; the project rule says to run them after UI changes. Add them to a release checklist, plus a 30-minute screen-reader check per release and a yearly external re-audit."
         }
        ],
        "cost": "€2k–€5k / year",
@@ -2983,7 +3008,7 @@
        "label": "estimate",
        "answer": [
         {
-         "p": "Audit €4,000–€15,000; user testing €3,000–€10,000 per round; conformance report €1,000–€5,000; switch and eye-gaze support 15–30 developer days; yearly upkeep €3,000–€10,000."
+         "p": "Audit €4,000–€15,000; user testing €3,000–€10,000 per round; conformance report €1,000–€5,000; switch and eye-gaze support built on 18 November 2026; yearly upkeep €3,000–€10,000."
         }
        ],
        "cost": "€10k–€30k first year",
@@ -2996,7 +3021,7 @@
     {
      "num": "9",
      "title": "App Store and Google Play distribution",
-     "in_short": "The plan of 18 November 2026 makes the stores the only sales channel: families subscribe monthly or yearly and therapists pay once, through Apple's and Google's in-app purchases. Nothing is on the stores yet: the native apps have never been built (the configuration still names the app \"CAA\" and has no bundle identifier). The store rules that matter most are listed in table A5b: in-app purchases with \"Restore purchases\" and a parental gate, a privacy policy (missing), Sign in with Apple (prepared), account deletion (done), the stores' privacy forms, and careful medical claims.",
+     "in_short": "The plan of 18 November 2026 makes the stores the only sales channel: families subscribe monthly or yearly and therapists pay once, through Apple's and Google's in-app purchases. Nothing is on the stores yet: the native apps have never been built (the configuration still names the app \"CAA\" and has no bundle identifier). The store rules that matter most are listed in table A5b: in-app purchases with \"Restore purchases\" and a parental gate, a privacy policy (a draft for the lawyer), Sign in with Apple (prepared), account deletion (done), the stores' privacy forms, and careful medical claims.",
      "questions": [
       {
        "n": "9.1",
@@ -3004,13 +3029,13 @@
        "label": "app",
        "answer": [
         {
-         "p": "Both: an organisation developer account, a privacy policy URL (missing today), a support URL, age rating, screenshots, a demo account for reviewers, account deletion inside the app (exists), permission texts in each language (today only French in app.json), the final app name (app.json still says \"CAA\") and identifiers (not set)."
+         "p": "Both: an organisation developer account, a privacy policy URL (the policy is a draft for the lawyer), a support URL (page written: public/support/), age rating, screenshots, a demo account for reviewers, account deletion inside the app (exists), permission texts in each language (French, English and Arabic since 18 November 2026: locales/), the final app name (app.json still says \"CAA\") and identifiers (not set)."
         },
         {
          "p": "Apple: privacy \"nutrition\" label and privacy manifest, Sign in with Apple when Google sign-in is offered (prepared), in-app purchase for digital content (3.1.1), stricter review of medical apps (1.4.1)."
         },
         {
-         "p": "Google: Data safety form, target-audience declaration (Families policy if children are part of the audience), health apps declaration, a web link to request account deletion, the current target Android version within a year of its release."
+         "p": "Google: Data safety form, target-audience declaration (Families policy if children are part of the audience), health apps declaration, a web link to request account deletion (page written: public/delete-account/), the current target Android version within a year of its release."
         },
         {
          "p": "Under the plan, also: the in-app purchases themselves (subscriptions and the therapists' one-time purchase), \"Restore purchases\", and the purchase screen behind the caregiver code. The full list, with what exists, is table A5b."
@@ -3100,7 +3125,7 @@
        "label": "app",
        "answer": [
         {
-         "p": "Yes, already: the same account works on iPad, iPhone and Android, and boards sync between them (the web app will not be offered under the plan). Photos and recordings do not sync (yet)."
+         "p": "Yes, already: the same account works on iPad, iPhone and Android, and boards sync between them (the web app will not be offered under the plan). Photos and recordings sync too, since 18 November 2026."
         }
        ],
        "cost": "–",
@@ -3143,7 +3168,7 @@
        "label": "app",
        "answer": [
         {
-         "p": "Apple Kids category (optional; it forbids third-party analytics and advertising and needs a parental gate): an AAC app used by all ages usually stays in Medical or Education. Google Families policy applies if children are part of the target audience. The app has no advertising and no tracker, and the caregiver code acts as a parental gate for purchases (to build). One gap: the app pictograms (YouTube, WhatsApp, Spotify…) open other apps from the child's board unless the child lock is on; under the Kids category or the Families policy, outside links must sit behind a parental gate (table A5b)."
+         "p": "Apple Kids category (optional; it forbids third-party analytics and advertising and needs a parental gate): an AAC app used by all ages usually stays in Medical or Education. Google Families policy applies if children are part of the target audience. The app has no advertising and no tracker, and the caregiver code acts as a parental gate for purchases (to build). The gap is closed since 18 November 2026: on the tablet apps, the app pictograms (YouTube, WhatsApp, Spotify…) that open other apps ask for the caregiver code first, as the Kids category and the Families policy require for outside links (table A5b)."
         }
        ],
        "cost": "–",
@@ -3958,7 +3983,7 @@
        "label": "estimate",
        "answer": [
         {
-         "p": "One-off launch budget €48,000–€147,000 if you hire a developer for the development work, about €28,000–€101,000 in cash if you build it yourself (that cash is mostly outside professionals: lawyer, audits, reviews, insurance) (Part A, table A5); add €25,000–€80,000 for an EU class I medical-device route; plus 6–12 months of running costs as a buffer (13.2)."
+         "p": "One-off launch budget €42,000–€132,000 if you hire a developer for the development work (€48,000–€147,000 before the development round of 18 November 2026), about €28,000–€101,000 in cash if you build it yourself (that cash is mostly outside professionals: lawyer, audits, reviews, insurance) (Part A, table A5); add €25,000–€80,000 for an EU class I medical-device route; plus 6–12 months of running costs as a buffer (13.2)."
         }
        ],
        "cost": "€32k–€250k",
@@ -4187,7 +4212,7 @@
     {
      "num": "14",
      "title": "Maintenance and technical support",
-     "in_short": "Today one person maintains everything, through AI-assisted development sessions, with no contract, no staging step and accounts that look personal. The documentation and automatic tests are good enough for someone else to take over; the gaps are organisational: company-owned accounts, a backup developer, a release process and a maintenance agreement.",
+     "in_short": "Today one person maintains everything, through AI-assisted development sessions, with no contract, no staging step and accounts that look personal. The documentation and automatic tests are good enough for someone else to take over; the gaps are organisational: company-owned accounts, a backup developer and a maintenance agreement. A release checklist, runbooks, an access list and a hand-over guide were written on 18 November 2026.",
      "questions": [
       {
        "n": "14.1",
@@ -4293,7 +4318,7 @@
        "label": "app",
        "answer": [
         {
-         "p": "Existing: type check, 300 unit tests, 176 database checks, the accessibility suite, browser walkthroughs. Missing: tests on real tablets, a staging site, beta testers (TestFlight, Google closed testing), a written release checklist (19.10)."
+         "p": "Existing: type check, 437 unit tests, 318 database checks (run on GitHub on every change since 18 November 2026), the accessibility suite, browser walkthroughs, and a written release checklist (docs/runbooks/RELEASE-CHECKLIST.md, 19.10). Missing: tests on real tablets, beta testers (TestFlight, Google closed testing), which serve as the staging step."
         }
        ],
        "cost": "–",
@@ -4321,13 +4346,13 @@
        "label": "app",
        "answer": [
         {
-         "p": "Well documented for a project of this size: how each feature works and where (docs/HOW-IT-WORKS.md, 35 rounds), security, accessibility, keys and services, pictogram licences, server set-up, project rules and the owner's decisions (CLAUDE.md), comments in the code. Missing: an architecture diagram, runbooks (deploy, restore, incident), an onboarding guide for a new developer."
+         "p": "Well documented for a project of this size: how each feature works and where (docs/HOW-IT-WORKS.md), security, accessibility, keys and services, pictogram licences, server set-up, project rules and the owner's decisions (CLAUDE.md), comments in the code. Written on 18 November 2026: docs/ARCHITECTURE.md (the picture, where each kind of data lives, a code map, a new developer's first day, handing over to another team), docs/runbooks/ (release checklist, backup and restore, incident response, data breach, contingency plans and risk register) and docs/ACCESS-LIST.md (who can reach production)."
         }
        ],
-       "cost": "2–3 days to complete",
+       "cost": "Done",
        "owner": "Tech lead (developer)",
        "source": "docs/",
-       "when": "P1 – before paid launch"
+       "when": "Done"
       },
       {
        "n": "14.11",
@@ -4349,7 +4374,7 @@
        "label": "app",
        "answer": [
         {
-         "p": "Today a high risk: one person plus an AI tool. What already helps: thorough documentation, tests, mainstream technologies, and boards that keep working offline (communication would continue for weeks without maintenance). To do: give a second trusted person access, identify a backup freelancer who knows Expo and Supabase, write runbooks."
+         "p": "Today a high risk: one person plus an AI tool. What already helps: thorough documentation, tests, mainstream technologies, and boards that keep working offline (communication would continue for weeks without maintenance). Written on 18 November 2026: runbooks, the access list and a hand-over guide. To do: give a second trusted person access, identify a backup freelancer who knows Expo and Supabase."
         }
        ],
        "cost": "–",
@@ -4360,15 +4385,15 @@
       {
        "n": "14.13",
        "q": "What procedures are in place to transfer maintenance to another development team?",
-       "label": "decision",
+       "label": "app",
        "answer": [
         {
-         "p": "None written. Checklist: repository and account access, rotating keys, setting up from the README, running every test suite, deploying to staging, a walk-through of architecture and decisions (CLAUDE.md), the list of open issues, 5–10 days of paid overlap."
+         "p": "Written on 18 November 2026: \"Handing over to another team\" in docs/ARCHITECTURE.md, with the access list (docs/ACCESS-LIST.md) for accounts and keys, the first-day set-up, every test suite and the decisions in CLAUDE.md. To agree with the new team: the list of open issues and 5–10 days of paid overlap."
         }
        ],
-       "cost": "5–10 developer days",
+       "cost": "5–10 days of overlap",
        "owner": "Tech lead (developer)",
-       "source": "–",
+       "source": "docs/ARCHITECTURE.md §4–5; docs/ACCESS-LIST.md",
        "when": "P1 – before paid launch"
       },
       {
@@ -4390,7 +4415,7 @@
     {
      "num": "15",
      "title": "Reliability and AAC-specific considerations",
-     "in_short": "The app was designed so that the child can always speak: the board runs on the device, works without internet, and core word positions never move. The weak points are photos and recordings (only on one device), the native apps (never built or tested on devices yet), the lack of whole-board snapshots and of an export format other AAC apps can read, and the absence (so far) of a written promise about payment failures and discontinuation.",
+     "in_short": "The app was designed so that the child can always speak: the board runs on the device, works without internet, and core word positions never move. Since 18 November 2026 photos and recordings are synced, the board has server copies and a bin, a release test guards the core word places, and boards can be exported in the Open Board Format that other AAC apps read. The weak points left: the native apps (never built or tested on devices yet) and the promise about payment failures and discontinuation, now a draft for the lawyer (docs/legal/CONTINUITY-PLEDGE-DRAFT.md).",
      "questions": [
       {
        "n": "15.1",
@@ -4415,7 +4440,7 @@
        "label": "app",
        "answer": [
         {
-         "p": "Sign-in and sign-up, linking a tablet, syncing changes, team features (invitations, proposals, history), sending follow-up data, the back office, AI suggestions and drawing search, professional verification, notices; dictation (usually)."
+         "p": "Sign-in and sign-up, linking a tablet, syncing changes, team features (invitations, proposals, history), sending follow-up data, the back office, AI suggestions and drawing search, professional verification, notices; dictation, unless the language is installed on the device (on-device dictation since 18 November 2026)."
         }
        ],
        "cost": "–",
@@ -4443,13 +4468,13 @@
        "label": "app",
        "answer": [
         {
-         "p": "Yes: speech, pictograms and the board do not depend on Supabase, Cloudflare, Gmail or Anthropic on a native device. One real risk: a device without a voice for the language (e.g. an Android tablet without the Arabic voice installed) cannot speak; the set-up should check that the voice exists and explain how to install it."
+         "p": "Yes: speech, pictograms and the board do not depend on Supabase, Cloudflare, Gmail or Anthropic on a native device. One real risk was a device without a voice for the language (e.g. an Android tablet without the Arabic voice installed). Since 18 November 2026 the set-up and Settings → Voice check that the device has a voice for each language of the board and warn when it does not (src/ui/VoiceCheck.tsx)."
         }
        ],
-       "cost": "1–2 days for a voice check",
+       "cost": "€0 left (built)",
        "owner": "Tech lead (developer)",
-       "source": "src/lib/voices.ts",
-       "when": "P1 – before paid launch"
+       "source": "src/lib/voices.ts; src/ui/VoiceCheck.tsx",
+       "when": "Done"
       },
       {
        "n": "15.5",
@@ -4471,13 +4496,13 @@
        "label": "app",
        "answer": [
         {
-         "p": "Words, boards, settings, schedules and the team are on the server: sign in on the new device, or link a tablet with a code, and everything returns. Photos and recordings made on the lost device are lost (not synced; Android backups are switched off on purpose; an iPad's iCloud backup may hold them). Also possible: re-import an exported profile file; printed boards as a paper backup."
+         "p": "Words, boards, settings, schedules and the team are on the server: sign in on the new device, or link a tablet with a code, and everything returns. Since 18 November 2026 photos and recordings come back too, once they were copied to the account (Settings → Account → Devices and sync shows what is still waiting to be sent); a file never sent from the lost device is lost. Android backups are switched off on purpose. Also possible: put back a server copy of the board (15.9), re-import an exported profile file; printed boards as a paper backup."
         }
        ],
-       "cost": "Media sync 5–10 days",
+       "cost": "€0 left (built)",
        "owner": "Tech lead (developer)",
-       "source": "app.json (allowBackup false)",
-       "when": "P1 – before paid launch"
+       "source": "app.json (allowBackup false); supabase/migrations/20261118000300_media_sync.sql",
+       "when": "Done (to try on a tablet)"
       },
       {
        "n": "15.7",
@@ -4485,7 +4510,7 @@
        "label": "app",
        "answer": [
         {
-         "p": "Yes: through the account (automatic sync), a tablet code, the profile file (export / import), or a sibling's board as a starting point in the set-up. Photos and recordings: not yet."
+         "p": "Yes: through the account (automatic sync), a tablet code, the profile file (export / import), or a sibling's board as a starting point in the set-up. Photos and recordings too, since 18 November 2026; and an OBZ file for other AAC apps (15.11)."
         }
        ],
        "cost": "–",
@@ -4502,13 +4527,13 @@
          "p": "By design and by rule: core cells never move (a project rule), showing more words never moves the others, new built-in folders only go into empty places, activity boards are re-arranged only when a caregiver asks, the \"no holes\" display is display-only and the family can choose \"final places\"."
         },
         {
-         "p": "Add a release test that compares the core layout before and after each update, and tell families about anything visible that changes."
+         "p": "Since 18 November 2026 a release test keeps a fixture of every core word place and fails if one moves, and checks migrate against an old saved profile (src/__tests__/coreLayout.test.ts). Tell families about anything visible that changes."
         }
        ],
-       "cost": "1 day for the layout test",
+       "cost": "€0 left (built)",
        "owner": "Tech lead (developer)",
-       "source": "CLAUDE.md; src/lib/storage.ts (migrate)",
-       "when": "P1 – before paid launch"
+       "source": "CLAUDE.md; src/lib/storage.ts (migrate); src/__tests__/coreLayout.test.ts",
+       "when": "Done"
       },
       {
        "n": "15.9",
@@ -4516,16 +4541,13 @@
        "label": "app",
        "answer": [
         {
-         "p": "Partly: the change history lets the family undo any single change. There is no \"restore the board as it was on 3 March\" and no list of saved versions; server backups are for disasters only."
-        },
-        {
-         "p": "Recommendation: automatic snapshots (weekly and before big changes, keep 10) with one-tap restore."
+         "p": "Yes, since 18 November 2026: the server keeps copies of the board, once a week, before a big change (many words gone at once) and by hand, 10 per child; the family puts one back in one touch, and the board as it is now is kept first, so putting back can itself be undone. The change history still undoes any single change; server backups stay for disasters."
         }
        ],
-       "cost": "3–5 developer days",
+       "cost": "€0 left (built)",
        "owner": "Tech lead (developer)",
-       "source": "src/ui/settings/TeamTab.tsx (history)",
-       "when": "P2 – first 6 months after launch"
+       "source": "supabase/migrations/20261118000200_bin_snapshots.sql",
+       "when": "Done"
       },
       {
        "n": "15.10",
@@ -4533,16 +4555,13 @@
        "label": "app",
        "answer": [
         {
-         "p": "In place: the caregiver code before any editing; the child lock; professionals propose and parents approve; core positions always need approval; confirmation before deleting on the main board; typing a word before deleting a profile or account; \"Undo\" after moving a card; undo from the history."
-        },
-        {
-         "p": "Missing: a bin for deleted words and boards, and a 30-day delay before a deleted child profile is really erased (today it is immediate)."
+         "p": "In place: the caregiver code before any editing; the child lock; professionals propose and parents approve; core positions always need approval; confirmation before deleting on the main board; \"Undo\" after moving a card; undo from the history. Since 18 November 2026: the board's own bin for deleted words and activity boards; a deleted child's profile kept 30 days in the family's bin, then erased; a fresh proof before deleting a profile or the account."
         }
        ],
-       "cost": "3–5 developer days",
+       "cost": "€0 left (built)",
        "owner": "Tech lead (developer)",
-       "source": "–",
-       "when": "P2 – first 6 months after launch"
+       "source": "supabase/migrations/20261118000200_bin_snapshots.sql",
+       "when": "Done"
       },
       {
        "n": "15.11",
@@ -4550,13 +4569,13 @@
        "label": "app",
        "answer": [
         {
-         "p": "Yes: the profile file (the app's own JSON format), printed boards and PDF (A6 / A3, black and white, cut cards), CSV for observations and follow-up. Not yet: the Open Board Format (OBF / OBZ), the open exchange format several AAC apps can import, which would let a family move to another AAC system."
+         "p": "Yes: the profile file (the app's own JSON format), printed boards and PDF (A6 / A3, black and white, cut cards), CSV for observations and follow-up, and since 18 November 2026 the Open Board Format (OBZ), the open exchange format several AAC apps can import, so a family can move to another AAC system (Settings → Account; src/ui/settings/ObzExport.tsx)."
         }
        ],
-       "cost": "OBZ export 5–10 days",
+       "cost": "€0 left (built)",
        "owner": "Tech lead (developer)",
-       "source": "src/lib/printHtml.ts",
-       "when": "P2 – first 6 months after launch"
+       "source": "src/lib/printHtml.ts; src/ui/settings/ObzExport.tsx",
+       "when": "Done"
       },
       {
        "n": "15.12",
@@ -4578,7 +4597,7 @@
        "label": "decision",
        "answer": [
         {
-         "p": "Publish a continuity pledge: at least 12 months' notice; installed apps keep working offline; exports (PDF, profile file, and OBZ once built); refunds of unused prepaid periods; source code in escrow for institutions, or released under an open licence as a last resort."
+         "p": "Publish a continuity pledge: at least 12 months' notice; installed apps keep working offline; exports (PDF, profile file and OBZ); refunds of unused prepaid periods; source code in escrow for institutions, or released under an open licence as a last resort. A draft pledge is written (docs/legal/CONTINUITY-PLEDGE-DRAFT.md, 18 November 2026) for the lawyer."
         }
        ],
        "cost": "Escrow €1k–€3k / year",
@@ -4728,7 +4747,7 @@
        "label": "app",
        "answer": [
         {
-         "p": "In-app notices exist (written in three languages). To add: a status page, a \"what's new\" note in the app, store release notes, and e-mail through a proper e-mail service (today only sign-in codes are e-mailed)."
+         "p": "In-app notices exist (written in three languages). Since 18 November 2026 the team can also send one message to every family, each in their own language, for an incident or maintenance (admin_broadcast, from Supabase's SQL editor; not from the app). To add: a status page, a \"what's new\" note in the app, store release notes, and e-mail through a proper e-mail service (today only sign-in codes are e-mailed)."
         }
        ],
        "cost": "Status page free",
@@ -4955,7 +4974,7 @@
     {
      "num": "18",
      "title": "Product analytics and administrative back office",
-     "in_short": "A back office with seven pages already exists, built on a strict rule: the app should know its features very well and families' lives as little as possible. Figures from children come only from families who agreed, only as sums over at least 5 children of 5 families, never a name, word or sentence. Revenue, subscription, store and cost figures will come once billing and the stores exist.",
+     "in_short": "A back office with seven pages already exists, built on a strict rule: the app should know its features very well and families' lives as little as possible. Figures from children come only from families who agreed, only as sums over at least 5 children of 5 families, never a name, word or sentence. Revenue, subscription, store and cost figures will come once billing and the stores exist. Since 18 November 2026 it also counts which panels were seen, the app version and speed figures, once the families agree again to this longer list.",
      "questions": [
       {
        "n": "18.1",
@@ -5026,19 +5045,17 @@
       {
        "n": "18.6",
        "q": "Can we distinguish between features that are unavailable, undiscovered and intentionally unused?",
-       "label": "estimate",
+       "label": "app",
        "answer": [
         {
-         "p": "Only partly. \"Unavailable\" can be inferred from app version and system, but is not linked to the feature counters. Use counters alone cannot tell \"never found it\" from \"found it and chose not to\"."
+         "p": "Since 18 November 2026 (20261118000400_product_more.sql): \"seen\" counters (the panel or tip was shown) next to the \"used\" ones, inside the same fixed, consent-based lists shared by the app and the database. What is shared grew, so families are asked to agree again (SHARE_TERMS 3): until 5 families have, the Product page shows \"not enough children\"."
         },
-        {
-         "p": "Add \"seen\" counters (the panel or tip was shown) next to \"used\" counters, and an optional one-tap question (\"useful for us / not for us\"), all inside the same fixed, consent-based lists (the database must be updated with the app, as the project rule requires)."
-        }
+        {"p": "Not built: an optional one-tap question (\"useful for us / not for us\")."}
        ],
-       "cost": "2–4 developer days",
+       "cost": "€0 left (built)",
        "owner": "Tech lead (developer)",
-       "source": "CLAUDE.md (counters rule)",
-       "when": "P2 – first 6 months after launch"
+       "source": "CLAUDE.md (counters rule); supabase/migrations/20261118000400_product_more.sql",
+       "when": "Done"
       },
       {
        "n": "18.7",
@@ -5088,13 +5105,13 @@
        "label": "app",
        "answer": [
         {
-         "p": "Problems and devices by system and version: yes. Speed (start-up time, sync time, delay before the voice speaks): not measured; add timing counters in buckets (consent-based, no identifiers)."
+         "p": "Problems and devices by system and version: yes. Since 18 November 2026 also speed: start-up time, sync time and the delay before the voice speaks, in buckets (consent-based, no identifiers), on the back office. The figures show once 5 families have agreed again (18.6)."
         }
        ],
-       "cost": "2–3 developer days",
+       "cost": "€0 left (built)",
        "owner": "Tech lead (developer)",
-       "source": "–",
-       "when": "P2 – first 6 months after launch"
+       "source": "supabase/migrations/20261118000400_product_more.sql",
+       "when": "Done"
       },
       {
        "n": "18.11",
@@ -5133,13 +5150,13 @@
        "label": "app",
        "answer": [
         {
-         "p": "Yes, roughly: adoption trends week by week and the spread of app versions. To compare before / after a version precisely, add the app version to the daily counters. Avoid A/B tests on the child's board: consistency matters more than optimisation in AAC."
+         "p": "Yes: adoption trends week by week and the spread of app versions; since 18 November 2026 the daily counters carry the app version, so a version can be compared before and after. Avoid A/B tests on the child's board: consistency matters more than optimisation in AAC."
         }
        ],
-       "cost": "1 developer day",
+       "cost": "€0 left (built)",
        "owner": "Tech lead (developer)",
-       "source": "–",
-       "when": "P2 – first 6 months after launch"
+       "source": "supabase/migrations/20261118000400_product_more.sql",
+       "when": "Done"
       },
       {
        "n": "18.14",
@@ -5202,7 +5219,7 @@
     {
      "num": "19",
      "title": "Quality assurance and testing",
-     "in_short": "Automatic testing is strong for a young product (unit, database security, accessibility and browser tests). What is missing is everything that needs real devices and real people: native builds on tablets, offline and sync tests on devices, load tests, payment tests, and usability sessions with AAC users, caregivers and therapists.",
+     "in_short": "Automatic testing is strong for a young product (unit, database security, accessibility and browser tests) and, since 18 November 2026, runs on GitHub on every change. What is missing is everything that needs real devices and real people: native builds on tablets, offline and sync tests on devices, load tests, payment tests, and usability sessions with AAC users, caregivers and therapists.",
      "questions": [
       {
        "n": "19.1",
@@ -5210,10 +5227,10 @@
        "label": "app",
        "answer": [
         {
-         "p": "Existing: type check; 300 unit tests (grammar, search, permissions, sync merges, consent, analytics, licences, guide wording, colour contrast); 176 database checks including every attack from the security review; a live end-to-end test on a second Supabase project (13 steps, to run again since the back office was added); 204 accessibility scans of 57 screens; browser walkthroughs."
+         "p": "Existing: type check; 437 unit tests (grammar, search, permissions, sync merges, consent, analytics, licences, guide wording, colour contrast, the core word places, OBZ, the voice check…); 318 database checks including every attack from the security review; a live end-to-end test on a second Supabase project (13 steps, to run again since the back office was added); 232 accessibility scans (42 screens at four sizes, plus Arabic and professional screens) and a keyboard-only run; browser walkthroughs. Since 18 November 2026 the type check, unit tests and database tests run on GitHub on every change (.github/workflows/checks.yml), and a release checklist is written (docs/runbooks/RELEASE-CHECKLIST.md)."
         },
         {
-         "p": "To add: native builds on real tablets, beta testers, offline and sync tests on devices, a load test, usability tests with AAC users, a release checklist."
+         "p": "To add: native builds on real tablets, beta testers, offline and sync tests on devices, a load test, usability tests with AAC users."
         }
        ],
        "cost": "–",
@@ -5339,13 +5356,13 @@
        "label": "decision",
        "answer": [
         {
-         "p": "Proposal: all automatic checks pass; no open critical or major bug; the core layout test shows no moved word; accessibility scan clean; a 30-minute manual check on one iPad, one Android tablet and one phone; an offline check; database changes applied to staging first; release notes and guide updated in three languages; a rollback plan. If it becomes a medical device: a signed change record."
+         "p": "Written as docs/runbooks/RELEASE-CHECKLIST.md on 18 November 2026: all automatic checks pass; no open critical or major bug; the core layout test (now automatic) shows no moved word; accessibility scan clean; a 30-minute manual check on three devices (an iPad, an Android tablet, a phone); an offline check; database changes applied to staging first; texts and guide updated in three languages; the store release. If it becomes a medical device: a signed change record."
         }
        ],
        "cost": "–",
        "owner": "Tech lead (developer)",
-       "source": "–",
-       "when": "P1 – before paid launch"
+       "source": "docs/runbooks/RELEASE-CHECKLIST.md",
+       "when": "Done (used from the first build)"
       },
       {
        "n": "19.11",
@@ -5371,7 +5388,7 @@
        "label": "decision",
        "answer": [
         {
-         "p": "Crash-free sessions (needs crash reporting or extending the app's own counters), technical problems per 1,000 child-days (Bugs page), sync success rate, server uptime (a free uptime monitor), time to fix critical bugs."
+         "p": "Crash-free sessions (the app's own consent-based problem counters, which carry the app version since 18 November 2026; a crash-reporting service such as Sentry stays optional), technical problems per 1,000 child-days (Bugs page), sync success rate, server uptime (a free uptime monitor), time to fix critical bugs."
         }
        ],
        "cost": "€0–€26 / month",
@@ -5398,7 +5415,7 @@
     {
      "num": "20",
      "title": "Legal liability and insurance",
-     "in_short": "The company will owe users a working, conforming and secure service, and from 9 December 2026 EU law treats software as a product for strict liability. No terms of use or privacy policy exist in the app yet. Liability for injury caused by negligence cannot be excluded, so resilience, clear guidance and insurance matter more than disclaimers.",
+     "in_short": "The company will owe users a working, conforming and secure service, and from 9 December 2026 EU law treats software as a product for strict liability. The terms of use and the privacy policy exist only as drafts for the lawyer (docs/legal/, 18 November 2026). Liability for injury caused by negligence cannot be excluded, so resilience, clear guidance and insurance matter more than disclaimers.",
      "questions": [
       {
        "n": "20.1",
@@ -5448,12 +5465,12 @@
        "label": "expert",
        "answer": [
         {
-         "p": "Terms of use (families); terms for professionals (verification, conduct, confidentiality, materials); privacy policy; consent texts (child's data, follow-up, statistics); subscription terms (price, renewal, cancellation, withdrawal); acceptable use; the continuity pledge; the accessibility statement. For a child, the parent accepts. None of these exists in the app yet."
+         "p": "Terms of use (families); terms for professionals (verification, conduct, confidentiality, materials); privacy policy; consent texts (child's data, follow-up, statistics); subscription terms (price, renewal, cancellation, withdrawal); acceptable use; the continuity pledge; the accessibility statement. For a child, the parent accepts. Drafts of the terms, the privacy policy, the continuity pledge and the accessibility statement were written on 18 November 2026 (docs/legal/) for the lawyer; the parent's consent to the child's data is recorded by the database (draft wording). None is final yet."
         }
        ],
        "cost": "€4k–€15k",
        "owner": "Privacy lawyer / DPO",
-       "source": "Search of src/ (no policy or terms found)",
+       "source": "docs/legal/ (drafts, 18 November 2026)",
        "when": "P0 – before real families"
       },
       {
@@ -5558,7 +5575,7 @@
     {
      "num": "21",
      "title": "Business continuity and risk management",
-     "in_short": "Communication itself is resilient (offline boards). The continuity risks are organisational: one person and personal accounts, no backups on the free plan, photos and recordings on single devices, and no written plans. Each has a cheap fix; the table in Part A (A8) lists the main risks with an owner.",
+     "in_short": "Communication itself is resilient (offline boards). The continuity risks are organisational: one person and personal accounts, and no backups on the free plan. Since 18 November 2026 photos and recordings are synced and the plans are written (docs/runbooks/CONTINGENCY.md, with a risk register). Each has a cheap fix; the table in Part A (A8) lists the main risks with an owner.",
      "questions": [
       {
        "n": "21.1",
@@ -5566,13 +5583,13 @@
        "label": "estimate",
        "answer": [
         {
-         "p": "Technical: dependence on Supabase; photos and recordings on one device; no staging step; native apps never built or tested on devices; one developer."
+         "p": "Technical: dependence on Supabase; no staging step; native apps never built or tested on devices; one developer."
         },
         {
          "p": "Financial: too few paying families; all revenue through two stores (fees, policies, suspension); a therapists' one-time price too low for years of use; AI costs if unlimited."
         },
         {
-         "p": "Legal: medical-device status; health-data hosting (HDS); missing legal documents; unvalidated Arabic content."
+         "p": "Legal: medical-device status; health-data hosting (HDS); legal documents still drafts; unvalidated Arabic content."
         },
         {"p": "Operational: dependence on the founder; support load; manual verification of professionals."}
        ],
@@ -5584,16 +5601,16 @@
       {
        "n": "21.2",
        "q": "What contingency plans should be established?",
-       "label": "decision",
+       "label": "app",
        "answer": [
         {
-         "p": "One page each: provider outage (offline boards plus a status message), data loss (backups, restore test, exports), developer unavailable (documentation, backup developer), funding gap (\"keep it alive\" budget), store suspension (installed apps keep working offline; there is no web fallback), regulatory challenge (stop the claims, adjust the intended purpose, start the CE route), breach (incident plan)."
+         "p": "Written on 18 November 2026 (docs/runbooks/CONTINGENCY.md), one part each: a provider is down (offline boards plus a status message), data loss on the server (backups, restore test, exports), the developer is unavailable (documentation, backup developer), money runs out (\"keep it alive\" budget), the app is suspended from a store (installed apps keep working offline; there is no web fallback), a regulator or a lawyer challenges us (stop the claims, adjust the intended purpose, start the CE route), a breach (incident plan), and a risk register."
         }
        ],
-       "cost": "2–3 days to write",
+       "cost": "Written",
        "owner": "Founder",
-       "source": "–",
-       "when": "P1 – before paid launch"
+       "source": "docs/runbooks/CONTINGENCY.md",
+       "when": "Done"
       },
       {
        "n": "21.3",
@@ -5615,12 +5632,12 @@
        "label": "decision",
        "answer": [
         {
-         "p": "Never so far. Every quarter: restore the latest backup into a separate project and check that the app works against it; also after any major database change."
+         "p": "Never so far. The procedure is written (docs/runbooks/BACKUP-AND-RESTORE.md, 18 November 2026): every quarter, restore the latest backup into a separate project and check that the app works against it; also after any major database change. The weekly encrypted off-site copy has its script (scripts/backup-offsite.sh). The first test waits for Supabase Pro."
         }
        ],
        "cost": "½ day / quarter",
        "owner": "Tech lead (developer)",
-       "source": "–",
+       "source": "docs/runbooks/BACKUP-AND-RESTORE.md",
        "when": "P1 – before paid launch"
       },
       {
@@ -5643,7 +5660,7 @@
        "label": "decision",
        "answer": [
         {
-         "p": "Proposal: 24 hours on the server with daily backups (devices usually hold newer boards), minutes with point-in-time recovery. Photos and recordings are today the unprotected part: fix with media sync."
+         "p": "Proposal: 24 hours on the server with daily backups (devices usually hold newer boards), minutes with point-in-time recovery. Photos and recordings are copied to private storage since 18 November 2026, but neither the database backups nor the off-site copy hold these files: decide whether storage needs its own off-site copy (docs/runbooks/BACKUP-AND-RESTORE.md §2)."
         }
        ],
        "cost": "–",
@@ -5671,7 +5688,7 @@
        "label": "app",
        "answer": [
         {
-         "p": "See 14.12: today a high risk, reduced by the documentation and tests; reduce it further with company accounts, a second person with access, a backup developer and runbooks."
+         "p": "See 14.12: today a high risk, reduced by the documentation and tests; reduce it further with company accounts, a second person with access, a backup developer, and the runbooks written on 18 November 2026."
         }
        ],
        "cost": "–",
@@ -5741,12 +5758,12 @@
        "label": "decision",
        "answer": [
         {
-         "p": "A risk register with one owner per risk (founder: business and legal; developer: technical; DPO: privacy; clinical lead: content and claims), reviewed every quarter."
+         "p": "Written on 18 November 2026: the risk register in docs/runbooks/CONTINGENCY.md (§8), one owner per risk (founder: business and legal; developer: technical; DPO: privacy; clinical lead: content and claims), reviewed every quarter."
         }
        ],
        "cost": "–",
        "owner": "Founder",
-       "source": "Table A8",
+       "source": "Table A8; docs/runbooks/CONTINGENCY.md",
        "when": "Ongoing"
       }
      ]
@@ -5754,7 +5771,7 @@
     {
      "num": "22",
      "title": "Pre-launch documentation and responsibilities",
-     "in_short": "Before real families: backups, two-step sign-in, company-owned accounts, a privacy policy, terms, consent texts, a DPIA draft, provider contracts, and a written decision on medical-device status. Before the paid launch (under the plan: App Store and Google Play only): in-app billing, the store rules of table A5b, store apps tested on devices, a penetration test, an accessibility audit, insurance and tax set-up. Everything else can follow progressively. Part A (A5, A7) gives the costs and order.",
+     "in_short": "Before real families: backups, two-step sign-in on the owner's service accounts, company-owned accounts, the privacy policy, terms, consent text and DPIA finished by a lawyer (drafts written on 18 November 2026), provider contracts, and a written decision on medical-device status. Before the paid launch (under the plan: App Store and Google Play only): in-app billing, the store rules of table A5b, store apps tested on devices, a penetration test, an accessibility audit, insurance and tax set-up. Everything else can follow progressively. Part A (A5, A7) gives the costs and order.",
      "questions": [
       {
        "n": "22.1",
@@ -5762,7 +5779,11 @@
        "label": "decision",
        "answer": [
         {
-         "p": "Technical: architecture overview (mostly done), runbooks (deploy, restore, incident), security policy, access list, test plan and release checklist. Financial: budget, pricing, business plan, tax registrations. Legal: terms, privacy policy, consent texts, DPIA, record of processing, provider contracts, retention schedule, breach procedure, medical-device qualification memo (or technical file), accessibility statement and conformance report, IP assignments, trademark filings, insurance."
+         "p": "Technical: written on 18 November 2026: architecture and hand-over (docs/ARCHITECTURE.md), runbooks for release, backup and restore, incidents, data breach and contingency (docs/runbooks/), the access list and the release checklist. Still to write: a security policy and a test plan."
+        },
+        {"p": "Financial: budget, pricing, business plan, tax registrations."},
+        {
+         "p": "Legal: drafts written on 18 November 2026 for the lawyer (docs/legal/): privacy policy, terms, record of processing, DPIA, retention schedule, continuity pledge, accessibility statement. Still to prepare: the consent text's final wording, provider contracts, the medical-device qualification memo (or technical file), the conformance report, IP assignments, trademark filings, insurance."
         }
        ],
        "cost": "See table A5",
@@ -5804,7 +5825,7 @@
        "label": "expert",
        "answer": [
         {
-         "p": "Privacy policy; a storage notice for the static pages (only necessary storage is used, so no consent banner should be needed: confirm); terms for families and for professionals; subscription terms; acceptable use; institutional agreement, DPA and SLA; provider DPAs; IP assignments; contractor agreements (confidentiality, IP); information security policy; incident response; retention schedule; continuity pledge; accessibility statement."
+         "p": "Drafts written on 18 November 2026 (docs/legal/): privacy policy, terms, retention schedule, continuity pledge, accessibility statement; the incident response is in docs/runbooks/. All to prepare or finish: privacy policy; a storage notice for the static pages (only necessary storage is used, so no consent banner should be needed: confirm); terms for families and for professionals; subscription terms; acceptable use; institutional agreement, DPA and SLA; provider DPAs; IP assignments; contractor agreements (confidentiality, IP); information security policy; incident response; retention schedule; continuity pledge; accessibility statement."
         }
        ],
        "cost": "€8k–€25k",
@@ -5832,13 +5853,13 @@
        "label": "decision",
        "answer": [
         {
-         "p": "<b>Before real families (P0):</b> Supabase Pro and backups; two-step sign-in on every admin account; company-owned accounts; privacy policy, terms and consent texts; DPIA draft; provider contracts; medical-device decision and claims wording; a proper e-mail service; a staging step; pasting the updated reset e-mail template. (Done on 17 November 2026: the light 30-second check and \"Forgot the code?\".)"
+         "p": "<b>Before real families (P0):</b> Supabase Pro and backups; two-step sign-in on every admin account (in the app since 18 November 2026; also on Supabase, GitHub, Cloudflare, Google); company-owned accounts; privacy policy, terms and consent texts (drafts written; consent now recorded); DPIA draft; provider contracts; medical-device decision and claims wording; a proper e-mail service; a staging step; pasting the updated reset e-mail template. (Done on 17 November 2026: the light 30-second check and \"Forgot the code?\". Done on 18 November 2026: the development items of Appendix F.)"
         },
         {
-         "p": "<b>Before the paid launch (P1), required by the plan:</b> in-app billing that never blocks communication (subscriptions, the therapists' one-time purchase, the server-side entitlement for every family device, \"Restore purchases\", the purchase screen behind the caregiver code); store accounts, privacy forms and the other rules of table A5b; device tests. <b>Advised or chosen:</b> media sync; penetration test; accessibility audit; insurance; VAT; trademark filing; native-speaker reviews."
+         "p": "<b>Before the paid launch (P1), required by the plan:</b> in-app billing that never blocks communication (subscriptions, the therapists' one-time purchase, the server-side entitlement for every family device, \"Restore purchases\", the purchase screen behind the caregiver code); store accounts, privacy forms and the other rules of table A5b; device tests. <b>Advised or chosen:</b> media sync (built on 18 November 2026); penetration test; accessibility audit; insurance; VAT; trademark filing; native-speaker reviews."
         },
         {
-         "p": "<b>Progressively (P2–P3):</b> switch and eye-gaze access, OBZ export, snapshots, organisation accounts, SOC 2, new countries."
+         "p": "<b>Progressively (P2–P3):</b> adult-user mode, organisation accounts, SOC 2, new countries (switch and eye-gaze access, OBZ export and snapshots were built on 18 November 2026)."
         }
        ],
        "cost": "Table A5",
@@ -5852,10 +5873,10 @@
        "label": "estimate",
        "answer": [
         {
-         "p": "See Part A, table A5 (one-off budget by item and phase) and table A7 (the order of work). As a guide: P0 in 4–8 weeks and €12,500–€42,000 if you hire a developer (€10,500–€37,000 in cash if you build it yourself); P1 in a further 2–4 months and €35,000–€105,000 hired (about €17,000–€64,000 in cash built yourself). Built yourself, the development rows cost your time, the stores' fees and test devices only."
+         "p": "See Part A, table A5 (one-off budget by item and phase) and table A7 (the order of work). As a guide: P0 in 4–8 weeks and €10,500–€37,000 whether you hire a developer or build it yourself (its development fixes were built on 18 November 2026); P1 in a further 2–4 months and €31,000–€95,000 hired (about €17,000–€64,000 in cash built yourself; the photo sync was built on 18 November). Built yourself, the development rows cost your time, the stores' fees and test devices only."
         }
        ],
-       "cost": "€48k–€147k",
+       "cost": "€42k–€132k",
        "owner": "Founder",
        "source": "Tables A5, A7",
        "when": "P0 – before real families"
@@ -5940,18 +5961,19 @@
   {
    "title": "Appendix C · Sources",
    "blocks": [
-    {"h3": "In the application's repository (state of 17 November 2026)"},
+    {"h3": "In the application's repository (state of 18 November 2026, evening)"},
     {
      "bullets": [
       "docs/HOW-IT-WORKS.md: every feature, how it was built, and the honest list of what is not done.",
       "docs/SECURITY.md: the security review, fixes, what is still open, and the points for a lawyer.",
-      "docs/ACCESSIBILITY.md: the WCAG 2.2 AA check (57 screens, 204 scans) and what remains.",
+      "docs/ACCESSIBILITY.md: the WCAG 2.2 AA check (18 November 2026: 232 scans of 42 screens at four sizes, Arabic and professional screens, and a keyboard-only run) and what remains.",
       "docs/API-KEYS.md: every outside service, key and its status.",
       "docs/PICTOGRAM-LICENSES.md and pictograms/libraries.json: licence checks of the ten pictogram libraries.",
       "supabase/README.md, supabase/migrations/*.sql, supabase/tests/*.sql: the database, its rules and their tests.",
       "CLAUDE.md: the project's rules and the owner's decisions (voices, publishing, vocabulary, privacy).",
       "src/state/profileSync.ts, src/ui/Stages.tsx: sync and the 30-second check (a version number only, since 17 November 2026). src/ui/panels/CommPanels.tsx: the caregiver code keypad and \"Forgot the code?\". app.json: app identity and permissions.",
-      "Measurements made for this document: default profile size (12,159 bytes; 2,702 compressed); npm ls and npm audit of the production dependency tree."
+      "Measurements made for this document: default profile size (12,159 bytes; 2,702 compressed); npm ls and npm audit of the production dependency tree.",
+      "Written on 18 November 2026: docs/ARCHITECTURE.md, docs/ACCESS-LIST.md, docs/runbooks/, docs/legal/ (drafts), public/support/ and public/delete-account/, scripts/backup-offsite.sh, .github/; the migrations supabase/migrations/20261118*.sql and the server function supabase/functions/caa-purge (Appendix F)."
      ]
     },
     {"h3": "Public price lists and news (checked November 2026; re-check before committing)"},
@@ -6020,12 +6042,12 @@
       "<b>The child can always speak.</b> The board runs on the tablet, works without internet, and words never move. That is the right foundation.",
       "<b>Servers are cheap.</b> About US$40 a month up to roughly 1,000 active children, then 1–4 US cents per child per month. The real costs are people, compliance, and the AI helper if you switch it on.",
       "<b>One habit drove the server bill as you grow:</b> every open board downloaded the child's whole profile every 30 seconds. <b>Fixed on 17 November 2026</b> (pull request #4): only a version number travels now; servers for 100,000 children fall from about $2,860 to about $875 a month.",
-      "<b>There are no backups today.</b> The free server plan keeps none. Moving to the US$25/month plan before real families use the app gives daily backups.",
-      "<b>Photos and recordings exist only on the device that made them.</b> A lost tablet loses them. This is the main risk of losing a family's data.",
+      "<b>There are no backups today.</b> The free server plan keeps none. Moving to the US$25/month plan before real families use the app gives daily backups. <b>18 November: the off-site backup script and the restore runbook are written; Supabase Pro is still to take.</b>",
+      "<b>Photos and recordings exist only on the device that made them.</b> A lost tablet loses them. This is the main risk of losing a family's data. <b>Synced between the child's devices since 18 November 2026 (to try on a tablet).</b>",
       "<b>The biggest legal question is whether the app is a medical device.</b> EU law covers software that \"compensates for a disability\", so the app is probably a low-risk (class I) medical device unless it is presented differently. Get a written opinion before any marketing.",
-      "<b>Legal documents are missing.</b> The app has no privacy policy or terms of use yet; the law and both app stores require them.",
-      "<b>A child's profile should be treated as health data.</b> That means explicit parental consent, an impact assessment and probably a data protection officer. In France it may also mean using a certified health-data host: a question for your lawyer.",
-      "<b>Everything depends on one person.</b> The code and the service accounts look like personal accounts. They should move to the company, with a backup developer named.",
+      "<b>Legal documents are missing.</b> The app has no privacy policy or terms of use yet; the law and both app stores require them. <b>Drafts written on 18 November 2026 for the lawyer (docs/legal/).</b>",
+      "<b>A child's profile should be treated as health data.</b> That means explicit parental consent, an impact assessment and probably a data protection officer. In France it may also mean using a certified health-data host: a question for your lawyer. <b>The parent's consent is recorded by the database since 18 November 2026.</b>",
+      "<b>Everything depends on one person.</b> The code and the service accounts look like personal accounts. They should move to the company, with a backup developer named. <b>Runbooks, the access list and a hand-over guide were written on 18 November 2026.</b>",
       "<b>There was no \"forgot the caregiver code\" option</b>, so a family that forgot its code was locked out. <b>Fixed on 17 November 2026</b> (pull request #5): see E2."
      ]
     },
@@ -6056,7 +6078,7 @@
     {"h3": "How it was tested"},
     {
      "bullets": [
-      "All 288 automatic tests passed at the time (300 today on the main branch), and the accessibility suite found no problem on any of its 204 screen checks.",
+      "All 288 automatic tests passed at the time (437 on 18 November, evening), and the accessibility suite found no problem on any of its 204 screen checks.",
       "On 18 November, another session extended it (pull request #6): the parent can also prove it with the account's password; Google and Apple accounts use the e-mailed code.",
       "A walk through the whole flow in a browser at computer size, phone size and with Arabic menus: a code was chosen, \"Forgot the code?\" was used, a wrong code was refused, the right one worked, a new code was chosen, and the old code stopped working. No accessibility problem on the new screens.",
       "Both changes are merged into the branch the website publishes from; Cloudflare rebuilds the site by itself (I could not open the live site from my environment to watch it finish)."
@@ -6073,7 +6095,7 @@
       "<b>The stores' fee is a cost of the plan:</b> 15% of each sale without VAT (Apple's Small Business Program, once enrolled; Google Play subscriptions), 30% otherwise. At the report's example prices: €1.25 a month per €9.99 monthly subscription, €10.00 a year per €79.99 yearly one. The therapists' price is not set: the company keeps about 0.70 × that price (France). The stores collect VAT.",
       "<b>The AI helper is optional and switched off today</b> (no AI button shows in the app). If you switch it on, Claude Haiku 5.5 costs about 40 times less than Claude Opus 5.5; test the quality first, Arabic first.",
       "<b>Legal duties:</b> the GDPR documents (privacy notice, terms, records of processing) and very likely an impact assessment (DPIA), because the app holds children's data; a data protection officer may be required if the data counts as health data processed at large scale (an external part-time one is usual). An accountant follows from running a company. Insurance, support and maintenance are advised business needs, not legal duties.",
-      "<b>Answer 1.1 now splits the launch budget three ways:</b> required by law (legal documents and DPIA, about €7,000–€25,000), the WORK required by the plan (native builds, store set-up, in-app billing with the server entitlement, Sign in with Apple, the stores' privacy forms: €14,000–€34,000 only if you hire a developer; built yourself, Apple's US$99 a year, Google Play's US$25 once, test devices if needed, and your time), advised (audits, insurance, content review). The whole launch budget is €48,000–€147,000 hired, or about €28,000–€101,000 in cash built yourself (table A5). The €120,000–€350,000 figure is not money to pay: it is what an agency would charge to rebuild what exists.",
+      "<b>Answer 1.1 now splits the launch budget three ways:</b> required by law (legal documents and DPIA, about €7,000–€25,000), the WORK required by the plan (native builds, store set-up, in-app billing with the server entitlement, Sign in with Apple, the stores' privacy forms: €14,000–€34,000 only if you hire a developer; built yourself, Apple's US$99 a year, Google Play's US$25 once, test devices if needed, and your time), advised (audits, insurance, content review). The whole launch budget is €48,000–€147,000 hired, or about €28,000–€101,000 in cash built yourself (table A5). <b>Since the development round of 18 November: €42,000–€132,000 hired.</b> The €120,000–€350,000 figure is not money to pay: it is what an agency would charge to rebuild what exists.",
       "<b>CE marking is not automatic:</b> it depends on how the app's purpose is described; ask a regulatory specialist before spending €25,000–€80,000.",
       "<b>Native apps only (decided 18 November 2026):</b> the web app is not offered; the privacy and support pages stay online as static pages. The launch plan (the chapter after Part A) lists everything still to do.",
       "<b>Launch plan added (18 November 2026):</b> one list of everything still to do until the app is on both stores, by phase, with who, cost, time, what each item waits for and its status, the owner's decisions and a timeline with the critical path."
@@ -6091,7 +6113,7 @@
      }
     },
     {
-     "p": "Then, in order: the P0 list of table A7 (backups, two-step sign-in, company-owned accounts, privacy policy and terms, DPIA, medical-device opinion, a proper e-mail service, a staging step), and the decisions of A9, which are yours. The suggestion card for the caregiver-code task may still show in your app: you can dismiss it, the work is done."
+     "p": "Then, in order: the P0 list of table A7 (backups, two-step sign-in, company-owned accounts, privacy policy and terms, DPIA, medical-device opinion, a proper e-mail service, a staging step), and the decisions of A9, which are yours. The suggestion card for the caregiver-code task may still show in your app: you can dismiss it, the work is done. <b>Since the evening of 18 November, the steps of Appendix F (F2) come first.</b>"
     },
     {"h2": "E5 · Web pages consulted (November 2026)"},
     {
@@ -6113,6 +6135,95 @@
     },
     {
      "small": "Pull requests of the two fixes: github.com/charbels07/APP/pull/4 and github.com/charbels07/APP/pull/5."
+    },
+    {"h2": "E6 · Finish the development work of the plan (18 November 2026, evening)"},
+    {
+     "p": "<b>Your request:</b> \"Finish everything in the plan that is development work, security and data protection first; billing later.\" The native store builds were not part of it."
+    },
+    {
+     "bullets": [
+      "<b>Security first:</b> two-step sign-in (offered to everyone, required for the back office), a fresh proof before what cannot be undone, team members no longer reading each other's e-mail or the family's code, the session in the Keychain / Keystore, server-side deletion of files, links out of the app behind the caregiver code.",
+      "<b>Data protection:</b> the parent's consent recorded before a profile is created or taken over; data erased on a schedule every night; \"Download all my data\"; the children's sentences and the adults' observations sealed in the database; dictation on the device when it can be.",
+      "<b>Keeping the child's board safe:</b> photo and recording sync; the bin and server copies of the board; a release test for the core word places; a fix for a server error that signed the device out and erased the board copy; a voice check.",
+      "<b>The rest of the plan's development items:</b> switch scanning, selection by resting the pointer and tremor options; the OBZ export; \"seen\" counters, the app version and speed figures (families agree again first); a message to every family for incidents; the iOS permission sentences in three languages.",
+      "<b>Written:</b> runbooks, the access list, the architecture and hand-over guide, legal drafts for the lawyer, the support and account-deletion pages, the off-site backup script, automatic checks on GitHub.",
+      "<b>Not built:</b> billing (later, as you asked), the native store builds (not asked yet), the robot check on sign-up, the adult-user mode, the offline-only mode, search by drawing on tablets, a crash-reporting service. Appendix F gives the details and the steps that are yours."
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Appendix F · Development round of 18 November 2026",
+   "blocks": [
+    {
+     "p": "On 18 November 2026 you asked to build everything in the plan that is development work, security and data protection first, except billing (deferred) and the native store builds (not asked yet). Everything below is in the repository, with its tests. Database changes are migration files: they change nothing until you run them in Supabase."
+    },
+    {"h2": "F1 · What was built"},
+    {
+     "table": {
+      "widths": [215, 178.3, 100],
+      "header": ["Item", "Where", "Plan"],
+      "rows": [
+       ["Two-step sign-in (a code from an authenticator app): offered to everyone, required for the back office (is_admin() needs \"aal2\"); once on, the database shows nothing of the children until the code is typed", "Settings → Account → My account; supabase/migrations/20261118000000_security_2.sql", "2.13 (launch plan); 7.5"],
+       ["A fresh proof before what cannot be undone: deleting the account or a child's profile, linking a full-access device, downloading all data (password, e-mailed code or authenticator code in the last 10 minutes)", "20261118000000_security_2.sql (fresh_proof)", "2.17; 7.9"],
+       ["Team members no longer read each other's e-mail nor the family's connection code", "20261118000000_security_2.sql", "7.10"],
+       ["The session in the iOS Keychain / Android Keystore (to verify on the first device build)", "expo-secure-store", "2.7; 7.2"],
+       ["Server-side file deletion: a purge queue and a server function delete the files of erased accounts, profiles and documents", "20261118000100_storage_purge.sql; supabase/functions/caa-purge", "2.17; 6.16"],
+       ["Bin and copies: a deleted child's profile kept 30 days in the family's bin, then erased; server copies of the board (weekly, before a big change, by hand; 10 per child) put back in one touch; the board's own bin for deleted words and activity boards", "20261118000200_bin_snapshots.sql", "15.9; 15.10; P2 of A7"],
+       ["Photo and recording sync between the child's devices (private storage, fair-use limits; to try on a tablet)", "20261118000300_media_sync.sql; Settings → Account → Devices and sync", "2.16; 2.9; 2.10"],
+       ["\"Seen\" counters, the app version in the daily counters, speed figures (start-up, sync, voice delay); families are asked to agree again (SHARE_TERMS 3)", "20261118000400_product_more.sql; Back office → Product", "18.6; 18.10; 18.13"],
+       ["Parental consent recorded (who, when, which text) before a family creates a child's profile or takes over one; retention every night; \"Download all my data\"; sentences and observations sealed (pgcrypto, key in Supabase Vault)", "20261118000500_privacy.sql; docs/legal/RETENTION-SCHEDULE.md", "6.10; 6.12; 6.15; 6.16; 7.3"],
+       ["Dictation on the device when the language is installed for it; otherwise the app says that Apple's or Google's service hears it", "The app", "2.9 (launch plan); 6.19"],
+       ["Bug fixed: a server error (500, paused project) made the app sign out and erase the child's copy from the device; it is now treated as offline", "The app", "A8"],
+       ["Switch scanning (automatic or step, row then card, spoken preview, keys or the whole screen as switch), selection by resting the pointer (mouse, head, eye gaze), tremor options (where it first lands, bigger touch area)", "Settings → Touch", "8.5; 8.6; 8.8; P2 of A7"],
+       ["OBZ export (Open Board Format) for other AAC apps", "Settings → Account; src/ui/settings/ObzExport.tsx", "15.11"],
+       ["Core-layout release test (a fixture of every core word place; migrate checked against an old profile)", "src/__tests__/coreLayout.test.ts", "15.8"],
+       ["Voice check: the device has a voice for each language of the board", "The set-up; Settings → Voice", "15.4"],
+       ["Links out of the app behind the caregiver code on the tablet apps (store rule)", "The app", "2.12 (launch plan); A5b"],
+       ["iOS permission sentences in French, English and Arabic", "locales/", "2.3 (launch plan)"],
+       ["A message from the team to every family, in their own language, for an incident or maintenance", "admin_broadcast (from Supabase's SQL editor)", "7.16; 16.10"],
+       ["Runbooks (release checklist, backup and restore, incident response, data breach with FR / EN / AR texts, contingency plans and risk register); the access list; the architecture, onboarding and hand-over guide", "docs/runbooks/; docs/ACCESS-LIST.md; docs/ARCHITECTURE.md", "14.10; 14.13; 21.2; 21.13"],
+       ["Legal drafts for the lawyer, with placeholders: privacy policy, terms, record of processing, DPIA, retention schedule, continuity pledge, accessibility statement", "docs/legal/", "3.1; 3.2 (launch plan); 22.4"],
+       ["Store pages: support and account deletion (FR / EN / AR; e-mail addresses to fill)", "public/support/; public/delete-account/", "4.5 (launch plan); A5b"],
+       ["Weekly encrypted off-site copy of the database; Dependabot; typecheck, unit tests and database tests on every change", "scripts/backup-offsite.sh; .github/dependabot.yml; .github/workflows/checks.yml", "1.10; 5.3 (launch plan); 21.4"]
+      ]
+     }
+    },
+    {
+     "small": "Counts after this round: 437 unit tests, 318 database security checks, 232 accessibility scans with 0 failures and a keyboard-only run."
+    },
+    {"h2": "F2 · What you must do now in the dashboards"},
+    {
+     "numbered": [
+      "<b>Supabase → SQL Editor:</b> run the migrations of 18 November 2026 in name order, each once, after the earlier files: 20261118000000_security_2, 20261118000100_storage_purge, 20261118000200_bin_snapshots, 20261118000300_media_sync, 20261118000400_product_more, 20261118000500_privacy. Publishing the app does not run them.",
+      "<b>Supabase → Edge Functions:</b> deploy caa-purge with \"Verify JWT\" off. If team_mail_connect() was never run (it was needed for caa-mail), run it once.",
+      "<b>Supabase → Database → Extensions:</b> turn on pg_cron, or the nightly removal of old data does not run (the privacy migration says so when it is off).",
+      "<b>Supabase → Storage:</b> the project's upload size limit must be at least 3 MB (50 MB by default), for recordings.",
+      "<b>Every team account:</b> turn on two-step sign-in (Settings → Account → My account) before using the back office.",
+      "<b>Placeholders:</b> fill the drafts in docs/legal/ with the lawyer, and the e-mail addresses of the two store pages (public/support/, public/delete-account/).",
+      "<b>GitHub → Settings → Code security:</b> turn on secret scanning and push protection.",
+      "<b>Already yours in the launch plan:</b> two-step sign-in on Supabase, GitHub, Cloudflare and Google (1.9); Supabase Pro (1.11); then the weekly off-site copy (docs/runbooks/BACKUP-AND-RESTORE.md)."
+     ]
+    },
+    {
+     "small": "Families are asked to agree again to the longer list of figures: until 5 families have, Back office → Product shows \"not enough children\"."
+    },
+    {"h2": "F3 · What remains"},
+    {
+     "bullets": [
+      "<b>Billing</b> (in-app purchases, the server entitlement, \"Restore purchases\"): deferred by you (launch plan 2.4).",
+      "<b>Native store builds</b>: not asked yet (2.1, 2.2). Everything marked \"to verify on a device\" waits for them: the session storage, dictation, photo sync on a tablet, switch scanning with real switches, eye-gaze devices, the child lock.",
+      "<b>Robot check on sign-up</b> (CAPTCHA): needs a Cloudflare Turnstile key and the store builds (7.9).",
+      "<b>Adult-user mode</b> (P2 of A7) and an <b>offline-only mode</b>: not built.",
+      "<b>Search by drawing on tablets</b>: not built; it only matters with the AI helper on (launch plan 2.10).",
+      "<b>Crash-reporting service</b>: not added; the app's own consent-based problem counters remain, Sentry stays optional (2.8).",
+      "<b>An off-site copy of the stored files</b> (photos, recordings): to decide (21.6).",
+      "<b>Owner-only steps stay yours</b>: the company and its accounts, D-U-N-S, the lawyer, insurance, the dashboards (phases 0, 1, 3 and 4 of the launch plan)."
+     ]
+    },
+    {"h2": "F4 · Answers updated for this round"},
+    {
+     "small": "Part A: the update box, A2, A3 (points 4, 5, 7, 8, 10, 11), A5, A5b, A7, A8. The launch plan: the statuses, \"Already done\", phase 2's length and the timeline. Part B, the \"In short\" of sections 2, 6, 7, 8, 9, 14, 15, 18, 19, 20, 21 and 22, and the answers 1.1, 2.3, 2.4, 2.5, 2.9, 2.10, 2.12, 6.1, 6.7, 6.10, 6.12, 6.14, 6.15, 6.16, 6.17, 6.18, 6.19, 6.22, 7.2, 7.3, 7.5, 7.7, 7.9, 7.10, 7.11, 7.12, 7.16, 7.17, 8.5, 8.6, 8.8, 8.10, 8.12, 8.15, 8.16, 8.17, 9.1, 9.7, 9.10, 13.1, 14.8, 14.10, 14.12, 14.13, 15.2, 15.4, 15.6, 15.7, 15.8, 15.9, 15.10, 15.11, 15.13, 16.10, 18.6, 18.10, 18.13, 19.1, 19.10, 19.12, 20.4, 21.1, 21.2, 21.4, 21.6, 21.8, 21.13, 22.1, 22.4, 22.6, 22.7. Appendices C and E."
     }
    ]
   }

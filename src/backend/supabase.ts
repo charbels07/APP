@@ -49,6 +49,8 @@ import {
   type AdminRoadmapItem,
   type AdminVerification,
   type FeatureDay,
+  type PushDevice,
+  type RoadmapAudience,
   type RoadmapItem,
   type RoadmapStatus,
   type Feedback,
@@ -1028,11 +1030,19 @@ export class SupabaseBackend implements Backend {
       parents: r.parents ?? 0,
       pros: r.pros ?? 0,
       createdAt: Date.parse(r.created_at),
+      audience: r.audience === 'parent' || r.audience === 'pro' ? r.audience : 'all',
     }));
   }
 
-  async adminRoadmapSave(input: { id?: string; title: Record<UiLang, string>; status: RoadmapStatus }): Promise<void> {
-    await data(this.sb.rpc('admin_roadmap_save', { p_id: input.id ?? null, p_title: input.title, p_status: input.status }));
+  async adminRoadmapSave(input: { id?: string; title: Record<UiLang, string>; status: RoadmapStatus; audience?: RoadmapAudience }): Promise<void> {
+    const base = { p_id: input.id ?? null, p_title: input.title, p_status: input.status };
+    try {
+      await data(this.sb.rpc('admin_roadmap_save', { ...base, p_audience: input.audience ?? null }));
+    } catch (e) {
+      // A server without the audience yet (migration 20261120000000 not run): the idea is for everyone.
+      if (!missingFunction(e)) throw e;
+      await data(this.sb.rpc('admin_roadmap_save', base));
+    }
   }
 
   async isAdmin(): Promise<boolean> {
@@ -1216,6 +1226,33 @@ export class SupabaseBackend implements Backend {
     let q = this.sb.from('notices').update({ read: true }).eq('user_id', await this.uid());
     if (ids) q = q.in('id', ids);
     await data(q);
+  }
+
+  async pushKey(): Promise<string | null> {
+    // A server that cannot send notifications (migration not run, function not deployed) or that
+    // cannot be reached: no key, and the app offers nothing.
+    try {
+      const key = await data<string | null>(this.sb.rpc('push_key'));
+      return typeof key === 'string' && key ? key : null;
+    } catch {
+      return null;
+    }
+  }
+
+  async pushSubscribe(d: PushDevice): Promise<void> {
+    await data(this.sb.rpc('push_subscribe', { p_endpoint: d.endpoint, p_p256dh: d.p256dh, p_auth: d.auth, p_lang: d.lang, p_tz: d.tz }));
+  }
+
+  async pushUnsubscribe(endpoint: string): Promise<void> {
+    await data(this.sb.rpc('push_unsubscribe', { p_endpoint: endpoint }));
+  }
+
+  async boardSeen(profileId: string): Promise<void> {
+    try {
+      await data(this.sb.rpc('board_seen', { p_profile: profileId }));
+    } catch (e) {
+      if (!missingFunction(e)) throw e;
+    }
   }
 
   // ── Library ──

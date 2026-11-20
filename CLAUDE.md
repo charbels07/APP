@@ -267,3 +267,15 @@
   as "unknown" and shows nothing.
 - Figures for the team, list 3: "seen" counters (`useSeen`, `src/ui/Seen.tsx`), speed in five steps (`countSpeed`),
   the app version per day; migration `20261118000400_product_more.sql`; `SHARE_TERMS` is 3 (and `product_terms()`).
+- Notifications outside the app (owner's request, 20 November 2026; `docs/runbooks/NOTIFICATIONS.md`): browser
+  notifications of the web version only (`src/lib/push.web.ts`, worker `public/sw.js`; `push.ts` answers "not here"
+  for the store apps: do not add `expo-notifications` unless asked). Asked once after sign-in (stage `notify`,
+  `NotifyScreen`), switches in the account's `Preferences`; shown only when `api.pushKey()` gives a key: never a
+  sentence about notifications being unavailable. The database decides and words everything (migration
+  `20261120000000_push.sql`): the 12:00 reminder goes to parents whose child's board was not opened today
+  (`board_seen`, said by an open family board every half hour; `push_reminders`), a new idea to its audience
+  (`roadmap.audience`: all / parent / pro, chosen in Back office → Requests; `roadmap_announce`). `caa-push` only
+  delivers, only to the browsers' notification services (`push_endpoint_ok` and `isPushService`: keep both lists the
+  same). Never a child's name, word or sentence in a notification; none to a child's tablet; a new kind of
+  notification is written in SQL (`push_words`, three languages) with its checks in `supabase/tests/push_scenario.sql`.
+  The worker never opens an address found in a message and caches nothing.

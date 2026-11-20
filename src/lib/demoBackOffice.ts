@@ -3,7 +3,7 @@
  * decision, example messages and example figures. Nothing here is a real person or a real number;
  * the back-office page says so while it shows them.
  */
-import type { AdminBugs, AdminOverview, AdminProduct, Feedback, RoadmapStatus, Verification, VerificationDoc, VersionAdoption } from '../backend/types';
+import type { AdminBugs, AdminOverview, AdminProduct, Feedback, RoadmapAudience, RoadmapStatus, Verification, VerificationDoc, VersionAdoption } from '../backend/types';
 import type { UiLang } from '../model/types';
 
 const HOUR = 3600000;
@@ -353,7 +353,7 @@ export function exampleBugs(now: number): AdminBugs {
 /** Ideas to vote for (invented votes), so the demonstration has a list. */
 export function exampleRoadmap(
   now: number,
-): { id: string; title: Record<UiLang, string>; status: RoadmapStatus; createdAt: number; base: { parents: number; pros: number } }[] {
+): { id: string; title: Record<UiLang, string>; status: RoadmapStatus; createdAt: number; audience?: RoadmapAudience; base: { parents: number; pros: number } }[] {
   const idea = (n: number, fr: string, en: string, ar: string, parents: number, pros: number, status: RoadmapStatus = 'open') => ({
     id: `example-idea-${n}`,
     title: { fr, en, ar },

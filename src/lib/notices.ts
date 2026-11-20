@@ -52,6 +52,8 @@ const TEMPLATES: Template[] = [
   // shared materials
   { fr: '{1} a partagé « {2} » avec vous.', en: '{1} shared “{2}” with you.', ar: '{1} شارك «{2}» معك.' },
   { fr: '{1} a partagé « {2} ».', en: '{1} shared “{2}”.', ar: '{1} شارك «{2}».' },
+  // an idea the team puts to the vote ({1}: its title, written by the team)
+  { fr: 'Nouvelle idée soumise au vote : {1}', en: 'A new idea is put to the vote: {1}', ar: 'فكرة جديدة مطروحة للتصويت: {1}' },
   // professional verification ({1}: what the team wrote)
   {
     fr: 'Votre certificat a été accepté : vous pouvez maintenant rejoindre l’équipe d’un enfant.',

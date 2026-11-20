@@ -26,6 +26,9 @@ from the work of the same round (automatic retention, the bin, snapshots, purge)
 | Invitations | `invitations` | Valid **30 days** (refused after) | Rows: with the profile or account `[or by the retention job: to confirm]` | Expiry built; deletion **to confirm** |
 | Codes to link a device | `pairing_codes` | **10 minutes** | Removed when used or when a new one is made | Built |
 | Notices | `notices` | **12 months** | Automatic job | Built *(Nov. 2026)* |
+| Devices that accepted notifications (address at the browser's notification service, its two keys, language, time zone) | `push_subs` | Until turned off, sign-out on that device or account deletion; **12 months** without opening the app | By the person; automatic job (`push_tidy`); removed when the browser withdraws it | Built *(Nov. 2026)* |
+| Notifications waiting or sent | `push_out` | **2 days** | Automatic job (`push_tidy`) | Built *(Nov. 2026)* |
+| When a child's board was last opened (one moment per child) | `profile_seen` | Replaced at each opening | With the profile | Built *(Nov. 2026)* |
 | Messages to the team | `feedback` | **3 years** | Automatic job | Built *(Nov. 2026)* |
 | Votes | `roadmap_votes` | As long as the account | With the account | Built |
 | Team's action log | `admin_log` | **5 years** | Automatic job | Built *(Nov. 2026)* |

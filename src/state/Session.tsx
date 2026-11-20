@@ -26,6 +26,7 @@ import { forgetEverything } from '../lib/deviceData';
 import { keepSignedIn, setKeepSignedIn } from '../lib/keepSignedIn';
 import { CHILD_DATA_CONSENT } from '../lib/consent';
 import { markVisit, sameVisit } from '../lib/visit';
+import { refreshPush, shouldAskPush, turnPushOff } from '../lib/push';
 
 export type Stage =
   | { name: 'loading' }
@@ -42,7 +43,9 @@ export type Stage =
   /** The app's own team: certificates to accept, figures, messages (src/ui/admin). */
   | { name: 'admin' }
   /** Two-step sign-in is on: the authenticator code before anything else (src/ui/TwoStep.tsx). */
-  | { name: 'twoStep'; then?: { profileId?: string; app?: boolean } };
+  | { name: 'twoStep'; then?: { profileId?: string; app?: boolean } }
+  /** "Turn on notifications?", once per account on a device, then where the person was going. */
+  | { name: 'notify'; then?: { profileId?: string; app?: boolean } };
 
 interface DevicePrefs {
   uiLang: UiLang;
@@ -157,6 +160,12 @@ export function SessionProvider({ children, api = backend() }: { children: React
       const sec = a.provider === 'device' ? null : await api.security().catch(() => null);
       setSecurity(sec);
       if (sec?.twoStep && sec.level !== 'aal2') return setStage({ name: 'twoStep', then: opts });
+      // Notifications: asked once at the beginning (never on a child's tablet); a device that
+      // already accepted them says it is still there.
+      if (a.provider !== 'device') {
+        if (await shouldAskPush(api, a.id).catch(() => false)) return setStage({ name: 'notify', then: opts });
+        void refreshPush(api, a.prefs.uiLang ?? deviceRef.current?.uiLang ?? 'fr');
+      }
       // The app's team lands in the back office (a tablet linked with a code is never in the team).
       const admin = a.provider !== 'device' && (sec ? sec.team : await api.isAdmin().catch(() => false));
       setIsAdmin(admin);
@@ -263,6 +272,8 @@ export function SessionProvider({ children, api = backend() }: { children: React
     // Changes not sent yet go first (the session still works); then everything about the
     // children leaves this device with the account, and no open board can write it back.
     await forgetEverything({ beforeSignOut: true, media: opts?.eraseMedia === true });
+    // This device stops receiving this person's notifications.
+    await turnPushOff(api).catch(() => {});
     await api.signOut().catch(() => {});
     saveDevice({ account: undefined, localProfiles: [] });
     setAccount(null);

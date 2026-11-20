@@ -22,6 +22,8 @@ import type {
   AdminRoadmapItem,
   AdminVerification,
   FeatureDay,
+  PushDevice,
+  RoadmapAudience,
   RoadmapItem,
   RoadmapStatus,
   Feedback,
@@ -318,14 +320,27 @@ export interface Backend {
   adminRoadmap(): Promise<AdminRoadmapItem[]>;
   /** Counts for the Security page: accounts without a sign-in for 24 months, profiles in the bin, files waiting to be deleted… */
   adminRetention(): Promise<AdminRetention>;
-  /** Adds an idea to vote for (no `id`) or changes its title or status. */
-  adminRoadmapSave(input: { id?: string; title: Record<UiLang, string>; status: RoadmapStatus }): Promise<void>;
+  /**
+   * Adds an idea to vote for (no `id`) or changes its title, status or audience. A new, open idea
+   * is announced to its audience (a line in the app, a notification where accepted).
+   */
+  adminRoadmapSave(input: { id?: string; title: Record<UiLang, string>; status: RoadmapStatus; audience?: RoadmapAudience }): Promise<void>;
   /** Demonstration only (local backend): signs in as the app's team, with example requests and figures. */
   demoOpenBackOffice?(): Promise<Account>;
 
   // ── Notifications ──
   listNotices(): Promise<Notice[]>;
   markNoticesRead(ids?: string[]): Promise<void>;
+  /**
+   * Notifications outside the app. The key a browser needs to accept them; null when the server
+   * cannot send any (the app then offers nothing).
+   */
+  pushKey(): Promise<string | null>;
+  /** This browser accepts notifications for the signed-in person (said again each time the app opens). */
+  pushSubscribe(device: PushDevice): Promise<void>;
+  pushUnsubscribe(endpoint: string): Promise<void>;
+  /** The child's board is open on a family device: what the 12:00 reminder looks at. Nothing else is kept. */
+  boardSeen(profileId: string): Promise<void>;
 
   // ── Professional library ──
   listResources(): Promise<{ mine: Resource[]; sharedWithMe: Resource[] }>;

@@ -68,6 +68,7 @@ export function TeamTab({ board, onChanged }: { board: BoardCtx; onChanged: () =
         n.filter((x_) => (!x_.profileId || x_.profileId === board.profileId) && (
           x_.kind === 'invitation' || x_.kind === 'request' ? kinds?.invitations !== false
             : x_.kind === 'sync' ? kinds?.sync !== false
+            : x_.kind === 'idea' ? kinds?.ideas !== false
               : kinds?.proposals !== false)),
       );
       setOffline(false);

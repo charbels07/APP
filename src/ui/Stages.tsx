@@ -27,6 +27,7 @@ import { ProHome } from './pro/ProHome';
 import { Root } from './Root';
 import { AuthScreen } from './start/AuthScreen';
 import { InvitationsScreen } from './start/InvitationsScreen';
+import { NotifyScreen } from './start/NotifyScreen';
 import { PairScreen } from './start/PairScreen';
 import { RoleChoice } from './start/RoleChoice';
 import { StartLayout, T } from './start/StartLayout';
@@ -78,6 +79,8 @@ function Current() {
       return <BackOffice />;
     case 'twoStep':
       return <TwoStepScreen then={stage.then} />;
+    case 'notify':
+      return <NotifyScreen then={stage.then} />;
   }
 }
 

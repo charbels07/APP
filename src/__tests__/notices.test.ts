@@ -19,6 +19,7 @@ describe('notices in the language of the menus', () => {
     expect(noticeText('Sarah K. a partagé « Dentiste » avec vous.', 'en')).toBe('Sarah K. shared “Dentiste” with you.');
     expect(noticeText('Sarah propose : Ajouter pizza', 'ar')).toBe('Sarah يقترح: Ajouter pizza');
     expect(noticeText('Votre demande pour Adam a été acceptée.', 'en')).toBe('Your request for Adam was accepted.');
+    expect(noticeText('Nouvelle idée soumise au vote : Calendrier', 'en')).toBe('A new idea is put to the vote: Calendrier');
     expect(noticeText('Vérification : il nous manque une information. Le diplôme est illisible.', 'en')).toBe('Verification: we need one more thing. Le diplôme est illisible.');
   });
   it('a notice written in English or Arabic is read in French too', () => {
@@ -57,10 +58,11 @@ describe('notices in the language of the menus', () => {
       "Votre demande de vérification n'a pas été acceptée. Licence expirée.",
       "Un appareil vient d'être relié (iPad). Si ce n'est pas vous : Réglages → Compte → Appareils → Retirer.",
       'Le profil de Adam a été supprimé par la famille.',
+      'Nouvelle idée soumise au vote : Calendrier',
     ];
     for (const sample of samples) expect(noticeText(sample, 'en')).not.toBe(sample);
     // The fixed parts of those sentences really are in the database files (so this list stays honest).
-    for (const part of ['ont changé.', 'a été retiré.', 'vous invite à rejoindre', 'demande à rejoindre', ' a révisé : ', 'Proposition acceptée : ', ' a partagé « ', 'est maintenant le parent responsable', 'a été supprimé par la famille.']) {
+    for (const part of ['ont changé.', 'a été retiré.', 'vous invite à rejoindre', 'demande à rejoindre', ' a révisé : ', 'Proposition acceptée : ', ' a partagé « ', 'est maintenant le parent responsable', 'a été supprimé par la famille.', 'Nouvelle idée soumise au vote : ']) {
       expect(sql).toContain(part);
     }
     expect(NOTICE_TEMPLATES.every((t) => t.fr && t.en && t.ar)).toBe(true);

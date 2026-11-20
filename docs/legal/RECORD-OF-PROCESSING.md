@@ -25,6 +25,7 @@ Processors used by several purposes (their agreements to sign or check):
 | `[off-site storage provider]` | Encrypted weekly copy of the database | EU `[region]` | `[DPA]` |
 | Apple, Google (stores, sign-in) | Distribution, optional sign-in, subscriptions *(to come)* | — | Their terms *(controller or processor: to qualify)* |
 | Expo (EAS) | Builds the apps; receives no user data | — | — |
+| Google (FCM), Mozilla, Apple, Microsoft (the browsers' notification services) | Carry a notification to the browser that accepted them; the message is encrypted for that browser, they cannot read it | Worldwide | Their terms *(carrier chosen by the person's browser: to qualify)* |
 
 ## Summary
 
@@ -45,6 +46,7 @@ Processors used by several purposes (their agreements to sign or check):
 | 13 | Backups | Everyone | Legitimate interest; legal obligation (security) | 7 days; off-site 30–90 days |
 | 14 | Data rights and consents | Parents, professionals | Legal obligation | Consents `[as long as the profile + proof period]`; deletion list 90 days |
 | 15 | Notices in the app | Account holders | Contract | 12 months |
+| 17 | Notifications outside the app (reminder at 12:00 for parents, new idea to vote on) | Parents, professionals who turned them on | Consent (asked in the app, then by the browser) | Device until turned off or 12 months unused; messages 2 days; last opening of a board: one moment per child |
 | 16 | Subscriptions *(to come)* | Parents, professionals | Contract; legal obligation (accounting) | `[to write]` |
 
 ## 1. Accounts and sign-in

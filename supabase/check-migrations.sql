@@ -28,6 +28,7 @@ from (values
   ('20261118000200_bin_snapshots.sql',      to_regclass('public.profile_snapshots') is not null),
   ('20261118000300_media_sync.sql',         exists (select 1 from fn where schema_name = 'public' and name = 'media_name_ok')),
   ('20261118000400_product_more.sql',       exists (select 1 from fn where schema_name = 'public' and name = 'product_terms')),
-  ('20261118000500_privacy.sql',            to_regclass('public.consents') is not null)
+  ('20261118000500_privacy.sql',            to_regclass('public.consents') is not null),
+  ('20261120000000_push.sql',               to_regclass('public.push_subs') is not null)
 ) as t(file, ok)
 order by file;

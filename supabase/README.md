@@ -358,6 +358,7 @@ sign-in. Someone who lost their phone: Authentication → Users → the person �
 | `storage_purge` | files to delete because what they belonged to was erased (done by `caa-purge`); not reachable from the app |
 | `profile_snapshots` | copies of each child's board (10 at most), read and put back through functions only |
 | `consents` | the parents' consents: who, when, which text version, for which child |
+| `push_subs`, `push_out`, `push_config`, `profile_seen` | notifications outside the app: the devices that accepted them, the queue the function `caa-push` delivers, its signing keys, and when each child's board was last opened (for the 12:00 reminder); none reachable from the app. Turning it on: `docs/runbooks/NOTIFICATIONS.md` |
 | `profiles.deleted_at` | a profile in the family's bin (erased 30 days later) |
 
 Storage buckets: `verification-docs` (diplomas, private to their owner and the app's team) and `profile-media`

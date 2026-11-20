@@ -60,6 +60,7 @@ For children's data that can reveal a disability, see section 6.*
 | **Your agreement** when you create a child's profile (date and version of the text) | To prove the agreement | Legal obligation |
 | **Security records**: recent actions (to refuse someone who repeats an action too often), what our team does in the back office | To protect accounts and children's data | Legitimate interest; legal obligation |
 | **AI helper**, only when it is offered and you use it: the topic you type, the photo or the drawing you send | To suggest words for a new board, or guess what a drawing shows | Contract *(to confirm)* |
+| **Notifications outside the app**, only if you turn them on: your browser's notification address and keys, the language and time zone of the device; for the reminder, the moment your child's board was last opened | To remind a parent at 12:00 when the board was not opened that day, and to tell you about a new idea to vote on | Consent |
 | **Subscription** *(to come: billing is not built yet)* | To manage your subscription (bought through the App Store or Google Play) | Contract |
 
 **What we never collect:** your location, your contacts, advertising identifiers. The app
@@ -106,6 +107,7 @@ shared computer you can also erase the photos and recordings.
 | **Google**, **Apple** | Sign in with Google / Apple, if you choose it | What you agree to share with them (name, e-mail) | `[to confirm]` | Their own terms |
 | **Anthropic** | The AI helper, only when it is offered and you use it | The topic, photo or drawing only | United States | Data processing agreement; standard contractual clauses |
 | **Cloudflare** | Hosting our public pages (support, account deletion, this policy) | Technical data of the visit (IP address) | Worldwide network | Data processing agreement |
+| **Your browser's notification service** (Google, Mozilla, Apple or Microsoft), only if you turn notifications on | Carrying a notification to your device | The message, encrypted for your browser (they cannot read it); never a child's name or words | Worldwide | Their own terms |
 | **Apple App Store**, **Google Play** | Distributing the app; subscriptions *(to come)* | What their stores collect under their own policies | — | Their own terms |
 | **Your device's speech services** | Dictation (section 9) | Your voice, when you dictate | Apple, Google | Their own terms |
 

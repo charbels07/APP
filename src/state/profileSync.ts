@@ -52,6 +52,7 @@ export async function forgetLocal(id: string) {
 
 const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v));
 const PULL_TIMING_EVERY = 5 * 60 * 1000;
+const SEEN_EVERY = 30 * 60 * 1000;
 const isOffline = (e: unknown) => e instanceof BackendError && e.code === 'offline';
 
 export class ProfileSync {
@@ -73,6 +74,8 @@ export class ProfileSync {
   lastSyncedAt?: number;
   /** When a look for changes was last timed (for the app's team). */
   private pullTimedAt = 0;
+  /** When this board last told the server it is open (the 12:00 reminder). */
+  private seenSaidAt = 0;
 
   private constructor(readonly id: string, private api: Backend, copy: LocalCopy, readonly pushDelay: number) {
     this.copy = copy;
@@ -202,6 +205,12 @@ export class ProfileSync {
     try {
       const askedAt = Date.now();
       const r = (await this.api.profileVersion(this.id)) > this.copy.version ? await this.api.getProfile(this.id) : null;
+      // "The board was opened today" (what the parents' 12:00 reminder looks at): said when the
+      // board opens, then every half hour while it stays open. Never blocks the board.
+      if (askedAt - this.seenSaidAt >= SEEN_EVERY) {
+        this.seenSaidAt = askedAt;
+        void this.api.boardSeen(this.id).catch(() => {});
+      }
       // For the app's team (families who agreed): how long the look for changes took, in fixed
       // steps — once every 5 minutes at most (a board looks every 30 s).
       if (askedAt - this.pullTimedAt >= PULL_TIMING_EVERY) {

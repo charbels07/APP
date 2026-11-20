@@ -16,7 +16,11 @@ export type AuthProvider = 'email' | 'phone' | 'google' | 'apple' | 'device';
 
 export interface AccountPrefs {
   uiLang?: UiLang;
-  notifications: { invitations: boolean; proposals: boolean; sync: boolean; billing: boolean };
+  /**
+   * Which news the person wants. `reminder` (parents: the 12:00 reminder when the child's board
+   * was not opened) and `ideas` (a new idea to vote on) are on unless switched off.
+   */
+  notifications: { invitations: boolean; proposals: boolean; sync: boolean; billing: boolean; reminder?: boolean; ideas?: boolean };
   /** Text size of the parent / professional screens (not the child's board). */
   textSize: 'normal' | 'large';
   /** Professional workspace tour already shown. */
@@ -330,6 +334,8 @@ export interface RoadmapItem {
   mine: boolean;
 }
 export type RoadmapStatus = 'open' | 'planned' | 'done' | 'hidden';
+/** Who an idea is asked to: everyone, the parents only, the professionals only. */
+export type RoadmapAudience = 'all' | 'parent' | 'pro';
 export interface AdminRoadmapItem {
   id: string;
   title: Record<UiLang, string>;
@@ -338,6 +344,7 @@ export interface AdminRoadmapItem {
   parents: number;
   pros: number;
   createdAt: number;
+  audience: RoadmapAudience;
 }
 /**
  * Every figure of the back office. Counts only: no name, no word, no sentence.
@@ -426,7 +433,7 @@ export interface AdminOverview {
   };
 }
 
-export type NoticeKind = 'invitation' | 'request' | 'proposal' | 'decision' | 'revision' | 'access' | 'sync' | 'share' | 'verification';
+export type NoticeKind = 'invitation' | 'request' | 'proposal' | 'decision' | 'revision' | 'access' | 'sync' | 'share' | 'verification' | 'idea';
 
 /** An in-app notification. Never contains what the child said. */
 export interface Notice {
@@ -438,6 +445,15 @@ export interface Notice {
   refId?: string;
   createdAt: number;
   read: boolean;
+}
+
+/** A browser that accepted notifications: what `pushManager.subscribe` gives, plus the menus' language and the device's time zone. */
+export interface PushDevice {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  lang: UiLang;
+  tz: string;
 }
 
 export type ResourceKind = 'tla' | 'schedule' | 'firstThen' | 'timer' | 'cards';

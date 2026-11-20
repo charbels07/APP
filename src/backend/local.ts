@@ -32,6 +32,8 @@ import {
   type AdminRoadmapItem,
   type AdminVerification,
   type FeatureDay,
+  type PushDevice,
+  type RoadmapAudience,
   type RoadmapItem,
   type RoadmapStatus,
   type ChildRecord,
@@ -109,7 +111,7 @@ interface DB {
   featureDays?: { profileId: string; data: FeatureDay }[];
   problems?: Record<string, AdminBugs['top'][number]>;
   /** Ideas put to the vote (`base`: invented votes of the demonstration). */
-  roadmap?: { id: string; title: Record<UiLang, string>; status: RoadmapStatus; createdAt: number; base?: { parents: number; pros: number } }[];
+  roadmap?: { id: string; title: Record<UiLang, string>; status: RoadmapStatus; createdAt: number; audience?: RoadmapAudience; base?: { parents: number; pros: number } }[];
   roadmapVotes?: { itemId: string; userId: string; role: string }[];
   /** The example requests of the back-office demonstration were added. */
   backOfficeSeeded?: boolean;
@@ -1403,7 +1405,7 @@ export class LocalBackend implements Backend {
       const me = LocalBackend.need(m);
       const votes = db.roadmapVotes ?? [];
       return LocalBackend.ideas(db)
-        .filter((r) => r.status === 'open' || r.status === 'planned')
+        .filter((r) => (r.status === 'open' || r.status === 'planned') && LocalBackend.askedTo(r, me.role))
         .map((r) => ({
           id: r.id,
           title: clone(r.title),
@@ -1418,7 +1420,7 @@ export class LocalBackend implements Backend {
     await this.tx((db, m) => {
       const me = LocalBackend.need(m);
       if (me.provider === 'device') throw new BackendError('forbidden');
-      const item = LocalBackend.ideas(db).find((r) => r.id === id && (r.status === 'open' || r.status === 'planned'));
+      const item = LocalBackend.ideas(db).find((r) => r.id === id && (r.status === 'open' || r.status === 'planned') && LocalBackend.askedTo(r, me.role));
       if (!item) throw new BackendError('not_found');
       db.roadmapVotes = (db.roadmapVotes ?? []).filter((v) => !(v.itemId === id && v.userId === me.id));
       if (on) db.roadmapVotes.push({ itemId: id, userId: me.id, role: me.role });
@@ -1428,6 +1430,11 @@ export class LocalBackend implements Backend {
   /** The ideas to vote for; the demonstration starts with a few examples. */
   private static ideas(db: DB) {
     return (db.roadmap ??= exampleRoadmap(Date.now()));
+  }
+
+  /** An idea is asked to everyone, or to the parents or the professionals only. */
+  private static askedTo(idea: { audience?: RoadmapAudience }, role: string): boolean {
+    return !idea.audience || idea.audience === 'all' || idea.audience === role;
   }
 
   // ── Figures for the app's team: only what the family agreed to, known names and numbers ──
@@ -1642,13 +1649,13 @@ export class LocalBackend implements Backend {
         .map((r) => {
           const parents = (r.base?.parents ?? 0) + count(r.id, 'parent');
           const pros = (r.base?.pros ?? 0) + count(r.id, 'pro');
-          return { id: r.id, title: clone(r.title), status: r.status, votes: parents + pros, parents, pros, createdAt: r.createdAt };
+          return { id: r.id, title: clone(r.title), status: r.status, votes: parents + pros, parents, pros, createdAt: r.createdAt, audience: r.audience ?? ('all' as const) };
         })
         .sort((a, b) => Number(a.status === 'hidden') - Number(b.status === 'hidden') || b.votes - a.votes || a.createdAt - b.createdAt);
     });
   }
 
-  async adminRoadmapSave(input: { id?: string; title: Record<UiLang, string>; status: RoadmapStatus }): Promise<void> {
+  async adminRoadmapSave(input: { id?: string; title: Record<UiLang, string>; status: RoadmapStatus; audience?: RoadmapAudience }): Promise<void> {
     await this.tx((db, m) => {
       const me = LocalBackend.requireAdmin(db, m);
       const title = { fr: (input.title.fr ?? '').trim().slice(0, 120), en: (input.title.en ?? '').trim().slice(0, 120), ar: (input.title.ar ?? '').trim().slice(0, 120) };
@@ -1656,8 +1663,19 @@ export class LocalBackend implements Backend {
       const list = LocalBackend.ideas(db);
       const had = input.id ? list.find((r) => r.id === input.id) : undefined;
       if (input.id && !had) throw new BackendError('not_found');
-      if (had) Object.assign(had, { title, status: input.status });
-      else list.push({ id: uid('r'), title, status: input.status, createdAt: Date.now() });
+      if (had) Object.assign(had, { title, status: input.status, audience: input.audience ?? had.audience });
+      else {
+        const idea = { id: uid('r'), title, status: input.status, audience: input.audience ?? ('all' as const), createdAt: Date.now() };
+        list.push(idea);
+        // A new, open idea: a line in the app for everyone it is asked to (as the server does).
+        if (idea.status === 'open') {
+          for (const a of Object.values(db.accounts)) {
+            if (a.provider === 'device' || !LocalBackend.askedTo(idea, a.role)) continue;
+            const lang = a.prefs.uiLang;
+            LocalBackend.notify(db, a.id, 'idea', `Nouvelle idée soumise au vote : ${(lang && title[lang]) || title.fr || title.en || title.ar}`, { refId: idea.id });
+          }
+        }
+      }
       LocalBackend.adminNote(db, me, 'roadmap', title.en || title.fr || title.ar, input.status);
     });
   }
@@ -1787,6 +1805,23 @@ export class LocalBackend implements Backend {
     await this.tx((db, m) => {
       const me = LocalBackend.need(m);
       for (const n of db.notices) if (n.userId === me.id && (!ids || ids.includes(n.id))) n.read = true;
+    });
+  }
+
+  /** The demonstration server sends nothing outside the app: no key, so the app offers nothing. */
+  async pushKey(): Promise<string | null> {
+    return null;
+  }
+
+  async pushSubscribe(_device: PushDevice): Promise<void> {
+    throw new BackendError('forbidden');
+  }
+
+  async pushUnsubscribe(_endpoint: string): Promise<void> {}
+
+  async boardSeen(profileId: string): Promise<void> {
+    await this.tx((db, m) => {
+      LocalBackend.requireAccess(db, profileId, LocalBackend.need(m));
     });
   }
 

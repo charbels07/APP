@@ -22,6 +22,7 @@ import type {
   FeatureAdoption,
   FeatureSeen,
   Feedback,
+  RoadmapAudience,
   RoadmapStatus,
   SpeedFigures,
   VersionAdoption,
@@ -222,6 +223,7 @@ export function RequestsView({
   const rtl = useNavRtl();
   const [filter, setFilter] = useState<string>('all');
   const [title, setTitle] = useState<Record<UiLang, string>>({ fr: '', en: '', ar: '' });
+  const [audience, setAudience] = useState<RoadmapAudience>('all');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -234,7 +236,7 @@ export function RequestsView({
   const shown = filter === 'all' ? messages : messages.filter((m) => m.kind === filter);
   const kinds = FEEDBACK_KINDS.filter((k) => byKind[k]);
 
-  const save = async (input: { id?: string; title: Record<UiLang, string>; status: RoadmapStatus }) => {
+  const save = async (input: { id?: string; title: Record<UiLang, string>; status: RoadmapStatus; audience?: RoadmapAudience }) => {
     setBusy(true);
     setError(null);
     try {
@@ -269,7 +271,7 @@ export function RequestsView({
         {ideas.map((i) => (
           <View key={i.id} style={[st.idea, i.status === 'hidden' && { opacity: 0.6 }]}>
             <Text style={[st.featureName, rtl && ss.rtl]}>{i.title[uiLang] || i.title.en || i.title.fr || i.title.ar}</Text>
-            <Text style={[st.small, rtl && ss.rtl]}>{x.ideaVotes(i.votes, i.parents, i.pros)}</Text>
+            <Text style={[st.small, rtl && ss.rtl]}>{`${x.ideaVotes(i.votes, i.parents, i.pros)} · ${x.askedToLine(x.audience[i.audience])}`}</Text>
             <Segmented<RoadmapStatus>
               value={i.status}
               onChange={(status) => void save({ id: i.id, title: i.title, status })}
@@ -281,6 +283,13 @@ export function RequestsView({
         {(['fr', 'en', 'ar'] as UiLang[]).map((l) => (
           <Field key={l} label={x.ideaTitle(UI_LANG_NAMES[l])} value={title[l]} onChangeText={(v) => setTitle({ ...title, [l]: v })} maxLength={120} style={l === 'ar' ? { textAlign: 'right' } : undefined} />
         ))}
+        <Text style={[st.small, rtl && ss.rtl]}>{x.askedTo}</Text>
+        <Segmented<RoadmapAudience>
+          value={audience}
+          onChange={setAudience}
+          options={(['all', 'parent', 'pro'] as RoadmapAudience[]).map((v) => ({ value: v, label: x.audience[v] }))}
+        />
+        <Text style={[st.small, rtl && ss.rtl]}>{x.ideaAnnounce}</Text>
         <ErrorText text={error} />
         <Btn
           small
@@ -288,7 +297,7 @@ export function RequestsView({
           icon="plus"
           label={x.add}
           disabled={busy || !(title.fr.trim() || title.en.trim() || title.ar.trim())}
-          onPress={() => void save({ title, status: 'open' }).then((ok) => ok && setTitle({ fr: '', en: '', ar: '' }))}
+          onPress={() => void save({ title, status: 'open', audience }).then((ok) => ok && setTitle({ fr: '', en: '', ar: '' }))}
           style={{ alignSelf: rtl ? 'flex-end' : 'flex-start' }}
         />
       </ChartCard>

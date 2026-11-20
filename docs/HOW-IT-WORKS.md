@@ -717,9 +717,18 @@ or a lawyer. Database changes are six files dated 2026-11-18 (the owner runs the
   Gmail account (tested: the e-mail arrived in the inbox and its code confirmed the account).
   Gmail limits how many e-mails can be sent per day; a domain and an e-mail service are better
   once many families sign up.
-- **Notifications** are in-app only (no phone push yet). The server writes each one as a sentence;
-  the app shows it in the language of the menus (`src/lib/notices.ts`). A free text inside a notice
-  (the reason typed by our team, a proposal's title) stays as it was typed.
+- **Notifications** inside the app: the server writes each one as a sentence; the app shows it in
+  the language of the menus (`src/lib/notices.ts`). A free text inside a notice (the reason typed
+  by our team, a proposal's title) stays as it was typed.
+- **Notifications outside the app** are browser notifications (web version only; the store apps
+  have none yet). The person is asked once after signing in ("Turn on notifications?") and can
+  change it in the account's preferences. Two things are sent: a reminder at 12:00 (the device's
+  own time) to parents whose child's board was not opened that day, and a new idea put to the vote
+  (to the parents, the professionals or both, as chosen in Back office → Requests). Never a
+  child's name, word or sentence. On iPhone and iPad they only work once Empower was added to the
+  Home Screen (Apple's rule). A board used without internet all morning looks "not opened" to the
+  server: the parent may then get the reminder anyway. Not tried on real phones yet
+  (`docs/runbooks/NOTIFICATIONS.md` says how to turn it on and check it).
 - **A profile created by a professional** can only be handed to a *parent* account, with the code.
   If the parents never connect, the profile stays with the professional (who can delete it).
 - **Communication data on several devices**: each tablet records its own days; the Suivi page adds

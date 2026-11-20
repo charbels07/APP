@@ -8,6 +8,8 @@ import React, { useEffect, useState, useSyncExternalStore } from 'react';
 import { Text, TextInput, View } from 'react-native';
 import type { Device, ProfileSummary } from '../../backend/types';
 import { errorText } from '../../i18n/account';
+import { pushStrings } from '../../i18n/push';
+import { pushIsOn, pushRefused, pushSupport, turnPushOff, turnPushOn } from '../../lib/push';
 import { settingsStrings, type SettingsStrings } from '../../i18n/settings';
 import { UI_LANG_NAMES } from '../../i18n/ui';
 import { exportJson } from '../../lib/platform';
@@ -375,8 +377,36 @@ function Privacy({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
 
 /** `noLang`: on a child's board the menus' language is already in Settings → Board → Languages. */
 export function Preferences({ x, noLang }: { x: SettingsStrings; noLang?: boolean }) {
-  const { uiLang, setUiLang, account, updatePrefs } = useSession();
+  const { api, uiLang, setUiLang, account, updatePrefs } = useSession();
   const n = account?.prefs.notifications ?? { invitations: true, proposals: true, sync: true, billing: true };
+  const t = pushStrings(uiLang);
+  // Notifications outside the app: only where they can work (this browser, and a server that sends).
+  const support = pushSupport();
+  const [canSend, setCanSend] = useState(false);
+  const [on, setOn] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+  useEffect(() => {
+    if (support === 'no' || account?.provider === 'device') return;
+    let alive = true;
+    void Promise.all([api.pushKey().catch(() => null), pushIsOn()]).then(([key, isOn]) => {
+      if (!alive) return;
+      setCanSend(!!key);
+      setOn(isOn);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [api, support, account?.provider]);
+  const setDevice = async (v: boolean) => {
+    setProblem(null);
+    if (!v) {
+      setOn(false);
+      return turnPushOff(api);
+    }
+    const r = await turnPushOn(api, uiLang);
+    setOn(r === 'on');
+    if (r !== 'on') setProblem(r === 'refused' ? t.refused : t.failed);
+  };
   return (
     <Section title={x.prefs}>
       {!noLang && <Note text={x.interfaceLang} />}
@@ -385,6 +415,13 @@ export function Preferences({ x, noLang }: { x: SettingsStrings; noLang?: boolea
       {(['invitations', 'proposals', 'sync'] as const).map((k) => (
         <Toggle key={k} label={x.notif[k]} value={n[k] !== false} onChange={(v) => void updatePrefs({ notifications: { ...n, [k]: v } })} />
       ))}
+      {canSend && support === 'ok' && <Toggle label={t.device} value={on} onChange={(v) => void setDevice(v)} />}
+      {canSend && support === 'ok' && (problem || (!on && pushRefused())) ? <Note text={problem ?? t.refused} /> : null}
+      {canSend && support === 'homeScreen' && <Note text={t.homeScreen} />}
+      {canSend && on && account?.role === 'parent' && (
+        <Toggle label={t.reminder} value={n.reminder !== false} onChange={(v) => void updatePrefs({ notifications: { ...n, reminder: v } })} />
+      )}
+      {canSend && on && <Toggle label={t.ideas} value={n.ideas !== false} onChange={(v) => void updatePrefs({ notifications: { ...n, ideas: v } })} />}
     </Section>
   );
 }

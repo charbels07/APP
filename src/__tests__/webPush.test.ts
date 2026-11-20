@@ -3,6 +3,8 @@
  * own, separate implementation: what the server encrypts, a browser's keys open; what the server
  * signs, its public key verifies.
  */
+import fs from 'fs';
+import path from 'path';
 import { createDecipheriv, createECDH, createPublicKey, hkdfSync, verify, webcrypto } from 'node:crypto';
 import { encryptFor, fromB64u, isPushService, makeVapidKeys, sendPush, toB64u, vapidAuthorization } from '../../supabase/functions/_shared/webPush';
 
@@ -90,4 +92,15 @@ test('the server only posts to the browsers’ notification services', async () 
   } finally {
     globalThis.fetch = realFetch;
   }
+});
+
+test('the function to deploy carries the same code (one file to paste)', () => {
+  const dir = path.join(__dirname, '../../supabase/functions');
+  const shared = fs.readFileSync(path.join(dir, '_shared/webPush.ts'), 'utf8');
+  const fn = fs.readFileSync(path.join(dir, 'caa-push/index.ts'), 'utf8');
+  const tested = shared.slice(shared.indexOf('const text = new TextEncoder();')).replace(/^export /gm, '').trim();
+  const pasted = fn.slice(fn.indexOf('// <webPush>') + '// <webPush>'.length, fn.indexOf('// </webPush>')).trim();
+  expect(pasted).toBe(tested);
+  // Supabase's editor only runs index.ts: no other file of the project may be needed.
+  expect(fn).not.toMatch(/from '\.\.?\//);
 });

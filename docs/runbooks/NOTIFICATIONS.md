@@ -36,8 +36,10 @@
 1. Supabase → SQL Editor: run `supabase/migrations/20261120000000_push.sql` ("Success").
    `supabase/check-migrations.sql` then shows it as done.
 2. Deploy the function **`caa-push`** exactly like `caa-mail` and `caa-purge`
-   (`supabase/README.md` §10–11), with *Verify JWT* turned **off**:
-   `supabase functions deploy caa-push --no-verify-jwt`.
+   (`supabase/README.md` §10–11): Supabase → Edge Functions → Deploy a new function → Via Editor,
+   name it exactly `caa-push`, paste the whole of `supabase/functions/caa-push/index.ts` over the
+   example in `index.ts` (one file, nothing else), deploy, then turn **off** *Verify JWT* in the
+   function's settings. With the command line: `npx supabase functions deploy caa-push --no-verify-jwt`.
    No key to create or paste: the function makes its own pair of keys the first time it runs and
    the database keeps them (the private half sealed). It uses the connection already made for the
    team's e-mails (`team_mail_connect`), and needs `pg_net` and `pg_cron` like them.

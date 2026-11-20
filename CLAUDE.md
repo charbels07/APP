@@ -241,7 +241,8 @@
   their child's data: add it there when a table is created.
 - Dictation runs on the device when the language is installed for it (`installedFor`); otherwise the screen says
   Apple's or Google's service hears it (`t.dictateOnline`). Never hide that line.
-- Database changes since 18 November 2026 come with a scenario in `supabase/tests/` added to `scripts/test-db.sh`;
+- Database changes since 18 November 2026 come with a scenario in `supabase/tests/` added to `scripts/test-db.sh`
+  and a line in `supabase/check-migrations.sql` (what the owner runs to see which files are still to run);
   the app must keep working before the owner runs a migration (`missingFunction` fallbacks in `supabase.ts`).
 - Owner-facing documents: runbooks in `docs/runbooks/`, `docs/ACCESS-LIST.md`, `docs/ARCHITECTURE.md`, legal
   drafts in `docs/legal/` (drafts for a lawyer, never present them as final), store pages in `public/support/`

@@ -85,6 +85,9 @@ cheat.
 Never edit a migration that already ran on the project: add a new file in `supabase/migrations/`
 (named with the date) and run only that new file in the SQL Editor.
 
+**Which files have run?** Paste `supabase/check-migrations.sql` in the SQL Editor and run it: it
+only reads, and says "done" or "TO RUN" for each file. A new migration gets its line there.
+
 ## 6. The AI helper (Photo → activity board, word suggestions)
 
 The app never holds the Anthropic key: a small server function asks Claude for it.

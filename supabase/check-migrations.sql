@@ -30,6 +30,7 @@ from (values
   ('20261118000400_product_more.sql',       exists (select 1 from fn where schema_name = 'public' and name = 'product_terms')),
   ('20261118000500_privacy.sql',            to_regclass('public.consents') is not null),
   ('20261120000000_push.sql',               to_regclass('public.push_subs') is not null),
-  ('20261122000000_gap_batch3.sql',         exists (select 1 from fn where schema_name = 'public' and name = 'manages_team'))
+  ('20261122000000_gap_batch3.sql',         exists (select 1 from fn where schema_name = 'public' and name = 'manages_team')),
+  ('20261122000100_gap_batch4.sql',         exists (select 1 from fn where schema_name = 'public' and name = 'offer_profile'))
 ) as t(file, ok)
 order by file;

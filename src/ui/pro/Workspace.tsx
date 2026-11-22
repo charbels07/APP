@@ -41,6 +41,8 @@ import { ParentsCard } from './ProSettings';
 import { ChildDraftBoard, DemoBoard } from './SandboxBoard';
 import { selected } from '../a11y';
 import { noticeText } from '../../lib/notices';
+import { peopleStrings } from '../../i18n/people';
+import { forgetChild } from '../../lib/deviceData';
 
 const SECTIONS: ProSection[] = ['dashboard', 'users', 'library', 'collab', 'learn', 'account'];
 const SECTION_ICON: Record<ProSection, IconName> = {
@@ -234,6 +236,14 @@ export function Workspace({ verification, onVerify, openUserId }: { verification
         p={p}
         users={users}
         sent={invites.sent.filter((i) => i.status === 'pending')}
+        // A request the family declined: the latest one per child, while she is not on its team.
+        declined={invites.sent.filter(
+          (i) =>
+            i.status === 'declined' &&
+            !users.some((u) => u.id === i.profileId) &&
+            !invites.sent.some((o) => o.profileId === i.profileId && (o.status === 'pending' || (o.status === 'declined' && o.createdAt > i.createdAt))),
+        )}
+        onChanged={load}
         onOpen={setUser}
         onSettings={(u) => setFull({ k: 'child', id: u.id, settings: true })}
         onConnect={() => setConnecting(true)}
@@ -381,10 +391,14 @@ function UsersList({
   onSettings,
   onConnect,
   onCreate,
+  declined,
+  onChanged,
 }: {
   p: ProStrings;
   users: ProfileSummary[];
   sent: Invitation[];
+  declined: Invitation[];
+  onChanged: () => void;
   onOpen: (u: ProfileSummary) => void;
   /** Straight to this child's settings (board, team, follow-up). */
   onSettings: (u: ProfileSummary) => void;
@@ -392,9 +406,11 @@ function UsersList({
   /** Missing while the certificate is not accepted yet. */
   onCreate?: () => void;
 }) {
-  const { uiLang } = useSession();
+  const { uiLang, api, s } = useSession();
   const x = settingsStrings(uiLang);
+  const who = peopleStrings(uiLang);
   const narrow = useWindowDimensions().width < 600;
+  const [asked, setAsked] = useState<{ id: string; ok: boolean; text: string } | null>(null);
   const [filter, setFilter] = useState<'all' | 'active' | 'pending'>('all');
   const [q, setQ] = useState('');
   const match = (name: string) => !q.trim() || name.toLowerCase().includes(q.trim().toLowerCase());
@@ -438,7 +454,38 @@ function UsersList({
         sent
           .filter((i) => match(i.childName))
           .map((i) => <Row key={i.id} icon="mail" muted title={i.childName} sub={`${p.pendingReq} · ${when(i.createdAt, uiLang)}`} />)}
-      {users.length === 0 && sent.length === 0 && <Note text={p.noUsers} />}
+      {filter !== 'active' &&
+        declined
+          .filter((i) => match(i.childName))
+          .map((i) => (
+            <View key={i.id} style={{ gap: 4 }}>
+              <Row
+                icon="x"
+                muted
+                title={i.childName}
+                sub={`${who.declined} · ${when(i.createdAt, uiLang)}`}
+                right={
+                  <Btn
+                    small
+                    icon="refresh"
+                    label={who.askAgain}
+                    onPress={async () => {
+                      setAsked(null);
+                      try {
+                        await api.askAgain(i.id);
+                        setAsked({ id: i.id, ok: true, text: who.askedAgain });
+                        onChanged();
+                      } catch (e) {
+                        setAsked({ id: i.id, ok: false, text: errorText(s, e) });
+                      }
+                    }}
+                  />
+                }
+              />
+              {asked?.id === i.id && <Text style={{ color: asked.ok ? C.success : C.help, fontWeight: '600' }}>{asked.text}</Text>}
+            </View>
+          ))}
+      {users.length === 0 && sent.length === 0 && declined.length === 0 && <Note text={p.noUsers} />}
     </>
   );
 }
@@ -617,11 +664,44 @@ function UserView({
         ))}
       </Section>
       {own && <DeleteChild user={user} onDeleted={onBack} />}
+      {!own && <LeaveChild user={user} onLeft={onBack} />}
     </>
   );
 }
 
 /** A profile created by mistake (or no longer needed) can be deleted while it is still the professional's. */
+/** She leaves a child's team: the board leaves her device; the family can invite her again. */
+function LeaveChild({ user, onLeft }: { user: ProfileSummary; onLeft: () => void }) {
+  const { api, s, uiLang } = useSession();
+  const who = peopleStrings(uiLang);
+  const [confirm, setConfirm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  return (
+    <View style={{ gap: 6 }}>
+      {confirm && <Note text={who.leaveNote(user.name)} />}
+      {error ? <Text style={{ color: C.help, fontWeight: '600' }}>{error}</Text> : null}
+      <Btn
+        small
+        kind="danger"
+        icon="logout"
+        label={confirm ? who.leaveConfirm : who.leave}
+        style={{ alignSelf: 'flex-start' }}
+        onPress={async () => {
+          if (!confirm) return setConfirm(true);
+          setError(null);
+          try {
+            await api.leaveTeam(user.id);
+            await forgetChild(user.id);
+            onLeft();
+          } catch (e) {
+            setError(errorText(s, e));
+          }
+        }}
+      />
+    </View>
+  );
+}
+
 function DeleteChild({ user, onDeleted }: { user: ProfileSummary; onDeleted: () => void }) {
   const { api, s, uiLang } = useSession();
   const x = settingsStrings(uiLang);

@@ -34,6 +34,7 @@ import {
   type Invitation,
   type Membership,
   type Notice,
+  type OwnedProfile,
   type ProfileSummary,
   type Proposal,
   type ProposalStatus,
@@ -189,6 +190,15 @@ async function data<T>(q: PromiseLike<{ data: T | null; error: { message?: strin
 
 /** The database has not received the newest update yet (the app may be published before it). */
 const missingFunction = (e: unknown) => /could not find the function|does not exist|PGRST202/i.test(String((e as { message?: string })?.message ?? e));
+/** A new function the older database does not have, with no older way to do it: "not yet" for the screens. */
+async function newRpc<T>(q: PromiseLike<{ data: T | null; error: { message?: string } | null; status?: number }>): Promise<T> {
+  try {
+    return await data<T>(q);
+  } catch (e) {
+    if (missingFunction(e)) throw new BackendError('not_ready');
+    throw e;
+  }
+}
 
 /**
  * What the app reads of a child's profile (the family's connection code is read through its
@@ -239,6 +249,7 @@ const toMember = (r: Row): Membership => ({
   status: r.status,
   expiresAt: ms(r.expires_at),
   createdAt: ms(r.created_at) ?? 0,
+  waiting: r.waiting === true || undefined,
 });
 const toInvitation = (r: Row): Invitation => ({
   id: r.id,
@@ -601,7 +612,15 @@ export class SupabaseBackend implements Backend {
     if (error) fail(error);
   }
 
-  async changePassword(current: string, next: string): Promise<void> {
+  async changePassword(current: string, next: string, proof: 'password' | 'twoStep' = 'password'): Promise<void> {
+    if (proof === 'twoStep') {
+      // Signing in again with the password would start a session without the second step (the
+      // children's data would be hidden until the code is typed again): the code is the proof.
+      await this.twoStepCode(current);
+      const { error } = await this.sb.auth.updateUser({ password: next });
+      if (error) fail(error);
+      return;
+    }
     const me = await this.me();
     const check = me.email
       ? await this.sb.auth.signInWithPassword({ email: me.email, password: current })
@@ -625,14 +644,43 @@ export class SupabaseBackend implements Backend {
     return this.me();
   }
 
-  async deleteAccount(): Promise<void> {
-    // The person's own documents (diploma, identity) are deleted first: files are not rows,
-    // they would stay behind.
-    const uid = await this.uid();
-    const { data: files } = await this.sb.storage.from('verification-docs').list(uid, { limit: 100 });
-    if (files?.length) await this.sb.storage.from('verification-docs').remove(files.map((f) => `${uid}/${f.name}`));
-    await data(this.sb.rpc('delete_account'));
+  async deleteAccount(erase: string[] = []): Promise<void> {
+    // Nothing is removed before the database agrees (proof, the children named): the person's
+    // own files (diploma, identity) are then deleted by the server's purge queue.
+    try {
+      await data(this.sb.rpc('delete_account', { p_erase: erase }));
+    } catch (e) {
+      if (!missingFunction(e)) throw e;
+      await data(this.sb.rpc('delete_account'));
+    }
     await this.signOut();
+  }
+
+  async ownedProfiles(): Promise<OwnedProfile[]> {
+    try {
+      const rows = await data<Row[]>(this.sb.rpc('my_owned_profiles'));
+      return rows.map((r) => ({
+        id: r.id,
+        name: r.name,
+        inBin: !!r.in_bin,
+        people: r.people ?? [],
+        tablets: r.tablets ?? 0,
+        parents: (r.parents ?? []) as { userId: string; name: string }[],
+        offeredTo: r.offered ?? undefined,
+      }));
+    } catch (e) {
+      if (!missingFunction(e)) throw e;
+      // Older database: the same names from the team lists (nobody can be handed a child there).
+      const uid = await this.uid();
+      const mine = (await this.listProfiles()).filter((p) => p.ownerId === uid);
+      return Promise.all(
+        mine.map(async (p) => {
+          const team = await this.listMembers(p.id).catch(() => [] as Membership[]);
+          const active = team.filter((m) => m.status === 'active');
+          return { id: p.id, name: p.name, inBin: false, people: active.filter((m) => m.role !== 'device').map((m) => m.displayName), tablets: active.filter((m) => m.role === 'device').length, parents: [] };
+        }),
+      );
+    }
   }
 
   // ── Two-step sign-in and fresh proofs ──
@@ -788,6 +836,17 @@ export class SupabaseBackend implements Backend {
     return data<number>(this.sb.rpc('restore_snapshot', { p_snap: snapshotId }));
   }
 
+  async updateChild(id: string, input: { name: string; age?: number | null }): Promise<void> {
+    try {
+      await data(this.sb.rpc('update_child', { p_id: id, p_name: input.name, p_age: input.age ?? null }));
+    } catch (e) {
+      if (!missingFunction(e)) throw e;
+      const name = input.name.trim().replace(/\s+/g, ' ');
+      if (!name || name.length > 60) throw new BackendError('invalid');
+      await data(this.sb.from('profiles').update({ name, age: input.age ?? null }).eq('id', id));
+    }
+  }
+
   async myAccess(profileId: string) {
     const rows = await data<Row[]>(this.sb.rpc('access_of', { p_profile: profileId }));
     const r = rows[0];
@@ -876,6 +935,18 @@ export class SupabaseBackend implements Backend {
 
   async approveRequest(id: string, grant: { level: AccessLevel; perms: PermissionSet }): Promise<void> {
     await data(this.sb.rpc('approve_request', { p_inv: id, p_level: grant.level, p_perms: grant.perms }));
+  }
+
+  async askAgain(id: string): Promise<Invitation> {
+    return toInvitation(await newRpc<Row>(this.sb.rpc('ask_again', { p_inv: id })));
+  }
+
+  async leaveTeam(profileId: string): Promise<void> {
+    await newRpc(this.sb.rpc('leave_team', { p_id: profileId }));
+  }
+
+  async offerProfile(profileId: string, userId: string): Promise<Invitation> {
+    return toInvitation(await newRpc<Row>(this.sb.rpc('offer_profile', { p_id: profileId, p_user: userId })));
   }
 
   // ── Proposals ──

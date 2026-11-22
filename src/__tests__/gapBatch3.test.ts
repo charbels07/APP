@@ -56,7 +56,12 @@ beforeAll(async () => {
   await api.adminDecideVerification(req.userId, 'verified');
   await signUp('parent', 'Eve', 'eve@example.com');
   await signUp('parent', 'Nadia', 'nadia@example.com');
-  await signUp('parent', 'Tina', 'tina@example.com');
+  // Tina is a teacher: since batch 4, a professional account accepted by the app's team.
+  await signUp('pro', 'Tina', 'tina@example.com');
+  await api.saveVerification({ fullName: 'Tina T', country: 'Lebanon', profession: 'teacher', documents: [{ name: 'd.pdf', kind: 'diploma', uploadedAt: 1, ref: 'x' }] });
+  await api.submitVerification();
+  await api.demoOpenBackOffice();
+  await api.adminDecideVerification((await api.adminVerifications()).find((v) => v.email === 'tina@example.com')!.userId, 'verified');
   await signUp('parent', '', 'nameless@example.com');
   await signIn('sarah@clinic.fr');
   adam = (await api.createProfile({ name: 'Adam', age: 6, data: createDefaultProfile() })).id;

@@ -23,11 +23,25 @@ const TEMPLATES: Template[] = [
   { fr: '{1} a refusé l’invitation pour {2}.', en: '{1} declined the invitation for {2}.', ar: '{1} رفض الدعوة الخاصة بـ {2}.' },
   { fr: 'Votre demande pour {1} a été acceptée.', en: 'Your request for {1} was accepted.', ar: 'تم قبول طلبك بخصوص {1}.' },
   { fr: 'Votre demande pour {1} a été refusée.', en: 'Your request for {1} was declined.', ar: 'تم رفض طلبك بخصوص {1}.' },
+  // the parent in charge offers the child to the other parent (offer_profile, batch 4 of the gap review)
+  {
+    fr: '{1} vous propose de devenir le parent responsable du profil de {2}.',
+    en: '{1} asks you to become the parent in charge of {2}’s profile.',
+    ar: '{1} يقترح عليك أن تصبح ولي الأمر المسؤول عن ملف {2}.',
+  },
+  { fr: '{1} a quitté l’équipe de {2}.', en: '{1} left {2}’s team.', ar: '{1} غادر فريق {2}.' },
   // access
+  {
+    fr: 'Votre accès au profil de {1} attend : les thérapeutes et les enseignants ont besoin d’un compte professionnel vérifié par notre équipe.',
+    en: 'Your access to {1}’s profile is waiting: therapists and teachers need a professional account checked by our team.',
+    ar: 'وصولك إلى ملف {1} في الانتظار: يحتاج المعالجون والمعلمون إلى حساب مهني تتحقق منه فرقتنا.',
+  },
   { fr: 'Vos droits sur le profil de {1} ont changé.', en: 'Your rights on {1}’s profile have changed.', ar: 'تغيّرت صلاحياتك على ملف {1}.' },
   { fr: 'Votre accès au profil de {1} a été retiré.', en: 'Your access to {1}’s profile was removed.', ar: 'أُزيل وصولك إلى ملف {1}.' },
   // the family put the child's profile in its bin (delete_profile)
   { fr: 'Le profil de {1} a été supprimé par la famille.', en: '{1}’s profile was deleted by the family.', ar: 'حذفت العائلة ملف {1}.' },
+  // the parent who owned the profile deleted their account (delete_account, batch 4)
+  { fr: 'Le profil de {1} a été effacé : {2} a supprimé son compte.', en: '{1}’s profile was erased: {2} deleted their account.', ar: 'تم مسح ملف {1}: حذف {2} حسابه.' },
   // the parents took over a profile a professional had prepared ({2}: the names of the team, join_profile)
   {
     fr: 'Vous êtes maintenant le parent responsable du profil de {1}. Dans son équipe : {2}. Vous décidez de leurs droits dans Réglages → Équipe.',

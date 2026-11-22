@@ -359,30 +359,80 @@ Seen on the way, not changed (not in this batch):
 
 ## Batch 4 — People and rights (database + screens)
 
-- [ ] **Second parent (Q16):** an "Acts as a parent" switch on a team member, owner only, behind
-  `fresh_proof`. Today `INVITE_ROLES` has no parent and nothing sets `manager` (`TeamTab.tsx` ~39). The
-  switch "Manage devices and rights" (`manageDevices`) is read by no SQL: wire it or remove it.
-  `AccountTab.tsx` ~254 prints the raw word "forbidden": use `errorText`.
-- [ ] **The owner deletes their account (Q17):** today every profile they own is erased at once for the
-  whole team and every tablet (cascade), no bin, no notice. The screen must name who loses the board,
-  offer to hand the child to another parent first (ownership transfer between parents does not exist
-  yet: build it), and only then erase. Also: `deleteAccount` (`supabase.ts` ~568) removes a
-  professional's documents BEFORE the proof is given: remove the client-side deletions (the purge queue
-  does it).
-- [ ] **Leave a team; a new request after a refusal (Q20).** Both are dead ends today.
-- [ ] **Rename a child, change the age (Q21):** owner, Account → Children. No Backend method today.
-- [ ] **Invited professionals must be verified (Q26, Q27):** an invitation with role therapist or teacher
-  needs a verified `pro` account before any access; family, caregiver and other do not. Existing
-  unverified ones lose access until verified. Never touches the child's board or the family's access.
-  A place for "has paid" is prepared (decided by the database, open for now): see Payment below.
-- [ ] `ProHome.tsx` ~19: an offline professional is sent to the verification form
-  (`getVerification().catch(() => null)`).
-- [ ] "Change password" with two-step on probably drops the session to one step [plausible]: prove with
-  the authenticator code for those accounts.
-- [ ] Approving a proposal can apply it twice (`TeamTab.tsx` ~543: no busy state, board changed before
-  the status call succeeds). "Undo" applies `inverse` from the history without `foreignOps`.
-- [ ] Invitations: consent recorded even when the person declines (`InvitationsScreen.tsx` ~38); expired
-  invitations still shown as pending; a load failure shows "no invitations".
+**Done on 22 November 2026.** One database file, `supabase/migrations/20261122000100_gap_batch4.sql`, its
+attacks in `supabase/tests/gap4_scenario.sql` (41 checks, in `scripts/test-db.sh`; line added to
+`supabase/check-migrations.sql`), the same rules in the demo server (`gapBatch4.test.ts`). Checks:
+`npm run typecheck` clean, `npm test` 585 passed, `npm run test:db` 14 scenarios passed (470 checks),
+`npm run test:a11y` no violation (236 scans), and a real-browser run on the demo build (below).
+
+**For the owner: one file to run**, `20261122000100_gap_batch4.sql`, in Supabase → SQL Editor, after this
+version of the app is published (and after the batch 3 file). Until it has run: handing a child over,
+leaving a team and "Ask again" answer "not possible yet"; the "Acts as a parent" switch works but without
+the database's checks (any co-parent could still give it, with no proof: the hole this file closes);
+renaming a child works the older way; deleting an account names the children as now, then erases as
+before. Once it has run, a
+therapist or a teacher on a team with a family's account (or a professional account not accepted yet) can
+no longer open that board: each of them gets a notice, and the family sees "Waiting for a checked
+professional account" beside the name (it can give that person another role). Two earlier test files were
+changed on purpose for that rule: `scenario.sql` (an account deletion now names the profiles it erases) and
+`gap3_scenario.sql` / `gapBatch3.test.ts` (the teacher there is now a professional account).
+
+- [x] **Second parent (Q16).** Done. In Team, on a member, "Acts as a parent" (owner only, fresh proof, a
+  family's account only): role `parent`, every right of the family, the code included. Nobody else gives or
+  takes it, nobody changes their own access, and someone who acts as a parent is changed or removed by the
+  owner only (also through cancelling their invitation). An invitation or a request never carries it; a
+  family no longer invites a "parent" (only a professional handing her profile over does). The switch
+  "Manage devices and rights" is wired and renamed "Manage the child's tablets": the person sees the
+  devices, removes the child's tablets and makes "use only" codes (never a full-access one, never someone's
+  phone). The pairing error prints its sentence (`errorText`).
+- [x] **The owner deletes their account (Q17).** Done. The deletion card names each child the account owns
+  and who loses the board ("Adam · Eve will lose it too · 1 tablet"), offers "Hand it to … first" for each
+  person who acts as a parent, and asks a tick per child to erase; the database refuses
+  (`profiles_left`) while a profile is not ticked, and tells the rest of the team. The hand-over between
+  parents was built (`offer_profile`): the other parent accepts in Account → Children with their consent;
+  the team, the code and the family's choices stay; the former owner stays, acting as a parent. The app no
+  longer deletes a professional's documents before the proof (the purge queue does it after).
+  *Decided on the way:* a profile already in the bin is erased with the account without a tick (it was
+  already deleted and the team told); a professional's own profiles are listed the same way (she hands them
+  to the parents with "Connect the parents").
+- [x] **Leave a team; a new request after a refusal (Q20).** Done. "Leave the team" at the bottom of Team
+  (and on a child's page in the professional workspace): the access ends, the board leaves the device, the
+  family is told. A professional sees her declined request with "Ask again". *Decided on the way:* once a
+  week at the earliest, and no more after three refusals in six months (the family can still invite her).
+- [x] **Rename a child, change the age (Q21).** Done: "Name and age" beside the child in Account →
+  Children (the account that owns the profile); waiting invitations take the new name; the other devices
+  take it at their next look (a new version).
+- [x] **Invited professionals must be verified (Q26, Q27).** Done in the database (`member_cleared`,
+  `cleared_to_join`): a therapist or a teacher needs a professional account accepted by the app's team
+  before any access; family, caregiver and other do not. Those already on a team wait (a notice each; the
+  family sees why); the child's board and the family's access are untouched. Inviting a family's address as
+  therapist or teacher is refused with a sentence; the invitation form says it. "Has paid": `pro_paid`,
+  open for everyone today, the only place to change when payment exists.
+- [x] `ProHome.tsx`: a professional whose verification cannot be read (offline) gets "No connection" and
+  "Try again", never the verification form.
+- [x] "Change password" with two-step on: the authenticator code proves it (no new sign-in, the session
+  keeps its second step); the field asks for that code.
+- [x] Approving a proposal: one decision at a time (buttons busy), and the board changes only once the
+  server recorded the decision. "Undo" goes through `foreignOps` (never a link, the code or the family's
+  choices).
+- [x] Invitations: the consent is recorded only when accepting; invitations older than 30 days are not
+  shown; a load failure says so, with "Try again".
+
+Left open, for the owner to decide:
+- A tablet linked by a co-parent stays linked when that co-parent leaves or is removed (decided with this
+  batch: the tablet is the child's; the family sees it in Devices and can remove it).
+- Someone given another role while "waiting" (a family-type teacher made "caregiver") receives the
+  family's code, as any caregiver: that is the family's choice.
+
+Tried in a real browser (demo build, Chromium, 1180 × 900), 22 checks, no accessibility violation on the
+new screens: the owner turns "Acts as a parent" on for Nadia (then, with an old proof, the switch asks to
+confirm it is her), hands Adam to Nadia; Nadia sees the offer in Account → Children, "Accept" waits for
+the consent, she becomes the owner, renames Adam and sets his age, Eve stays acting as a parent; Nadia's
+account deletion names Adam and who loses the board, offers "Hand it to Eve first", refuses before the
+tick, then erases and tells Eve; a family member leaves the team (the board closes); inviting a family's
+address as a teacher shows the note and the refusal sentence. Not tried in a browser (demo server and
+database tests only): "Ask again", "Manage the child's tablets", the professional's offline start, the
+password change with two-step.
 
 ## Batch 5 — Files and merging
 
@@ -492,7 +542,7 @@ A separate project, after the owner has settled the legal side (company bank acc
 - "The scan never covers the universal bar" → except Help (batch 1).
 - The back-office figures rule → totals for all, use for consenting families of 5+ (batch 3: done).
 - Caregiver code: the first keypad cannot be closed; caregiver mode turns itself off (batch 2: done).
-- Professionals: invited therapists and teachers must be verified (batch 4); the family's code is not sent
+- Professionals: invited therapists and teachers must be verified (batch 4: done); the family's code is not sent
   to them (batch 3: done).
 - Sync: device-only things never travel (batch 1). Media: replaced files kept 30 days (batch 5).
 - Import / export rules (batch 5). Payment rules above (new section).

@@ -329,9 +329,9 @@ select test.expect_error('select count(*) from bo_child_days', 'permission denie
 select test.expect_error('select count(*) from bo_people', 'permission denied for view bo_people');
 select test.ok(true, 'the lists behind the figures are not reachable from the app');
 
--- Deleting an account removes the child's profile it owns.
+-- Deleting an account removes the child's profile it owns (named on the screen first: batch 4).
 select set_config('request.jwt.claim.sub', :'rita', false);
-select delete_account();
+select delete_account(array(select id from profiles where owner_id = :'rita'));
 select set_config('request.jwt.claim.sub', :'sarah', false);
 select test.ok((select count(*) = 0 from profiles), 'owner deleted: profile gone for everyone');
 reset role;

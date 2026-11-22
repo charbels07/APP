@@ -27,6 +27,9 @@ import { C } from '../theme';
 import { Note, ss } from './SettingsScreen';
 import { checked } from '../a11y';
 import { noticeText } from '../../lib/notices';
+import { peopleStrings } from '../../i18n/people';
+import { forgetChild } from '../../lib/deviceData';
+import { useProof } from '../ProveItsYou';
 
 type View_ =
   | { k: 'main' }
@@ -49,6 +52,7 @@ export function TeamTab({ board, onChanged }: { board: BoardCtx; onChanged: () =
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [notices, setNotices] = useState<Notice[]>([]);
   const [offline, setOffline] = useState(false);
+  const who = peopleStrings(uiLang);
 
   const load = useCallback(async () => {
     try {
@@ -97,6 +101,8 @@ export function TeamTab({ board, onChanged }: { board: BoardCtx; onChanged: () =
   const invited = invites.filter((i) => i.direction === 'invite');
   const unread = notices.filter((n) => !n.read);
   const canInvite = board.manager || !!board.access?.perms.invite;
+  // A person on the team (not the owner, not a tablet) can leave it.
+  const canLeave = !!board.access && !board.access.owner && board.access.role !== 'device' && account?.provider !== 'device';
 
   return (
     <>
@@ -159,10 +165,19 @@ export function TeamTab({ board, onChanged }: { board: BoardCtx; onChanged: () =
         {(members ?? []).map((m) => (
           <Row
             key={m.userId}
-            icon="user"
+            icon={m.perms.manager ? 'heart' : 'user'}
+            muted={m.waiting}
             title={m.userId === account?.id ? `${m.displayName} (${x.you})` : m.displayName}
-            sub={`${x.roles[m.role]} · ${x.levels[m.level]}${m.expiresAt ? ` · ${x.until} ${day(m.expiresAt, uiLang)}` : ''}`}
-            onPress={board.manager && m.userId !== account?.id ? () => setView({ k: 'member', m }) : undefined}
+            sub={[
+              m.perms.manager ? who.actsAsParent : x.roles[m.role],
+              x.levels[m.level],
+              m.expiresAt ? `${x.until} ${day(m.expiresAt, uiLang)}` : '',
+              m.waiting ? who.waiting : '',
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+            // Someone who acts as a parent is the owner's to change (the database refuses the others).
+            onPress={board.manager && m.userId !== account?.id && (!m.perms.manager || board.access?.owner) ? () => setView({ k: 'member', m }) : undefined}
           />
         ))}
         {invited.map((i) => (
@@ -180,7 +195,40 @@ export function TeamTab({ board, onChanged }: { board: BoardCtx; onChanged: () =
       {board.manager && <ConnectionCode board={board} x={x} />}
 
       <HistoryList board={board} entries={history} x={x} onChanged={load} />
+
+      {canLeave && <LeaveTeam board={board} />}
     </>
+  );
+}
+
+/** A member leaves the child's team: the board leaves this device, the person goes back to their own start. */
+function LeaveTeam({ board }: { board: BoardCtx }) {
+  const sess = useSession();
+  const who = peopleStrings(sess.uiLang);
+  const [confirm, setConfirm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  return (
+    <Section title={who.leave}>
+      <Note text={who.leaveNote(board.childName)} />
+      <ErrorLine text={error} />
+      <Btn
+        kind="danger"
+        icon="logout"
+        label={confirm ? who.leaveConfirm : who.leave}
+        onPress={async () => {
+          if (!confirm) return setConfirm(true);
+          setError(null);
+          try {
+            await sess.api.leaveTeam(board.profileId);
+            await forgetChild(board.profileId);
+            await sess.updatePrefs({ activeProfileId: undefined });
+            await sess.enter();
+          } catch (e) {
+            setError(errorText(sess.s, e));
+          }
+        }}
+      />
+    </Section>
   );
 }
 
@@ -303,7 +351,7 @@ function ErrorLine({ text }: { text: string | null }) {
 // ── Invite ──
 
 function InviteView({ board, x, onBack, onDone }: { board: BoardCtx; x: SettingsStrings; onBack: () => void; onDone: (inv: Invitation) => void }) {
-  const { api, s } = useSession();
+  const { api, s, uiLang } = useSession();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [v, setV] = useState<{ role: CollaboratorRole; level: AccessLevel; perms: PermissionSet }>({ role: 'therapist', ...preset('therapist') });
@@ -316,6 +364,7 @@ function InviteView({ board, x, onBack, onDone }: { board: BoardCtx; x: Settings
       <Field label={x.inviteName} value={name} onChangeText={setName} />
       <Field label={x.inviteEmail} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" style={{ textAlign: 'left' }} />
       <PermissionEditor x={x} {...v} onChange={setV} />
+      {(v.role === 'therapist' || v.role === 'teacher') && <Note text={peopleStrings(uiLang).proInvite} />}
       <Note text={x.inviteNote} />
       <ErrorLine text={error} />
       <Btn
@@ -401,12 +450,21 @@ function InvitedView({ inv, x, onBack }: { inv: Invitation; x: SettingsStrings; 
 const DAY = 24 * 3600 * 1000;
 
 function MemberView({ board, m, x, onBack }: { board: BoardCtx; m: Membership; x: SettingsStrings; onBack: () => void }) {
-  const { api, s, uiLang } = useSession();
+  const { api, s, uiLang, account } = useSession();
+  const who = peopleStrings(uiLang);
   const [v, setV] = useState({ role: m.role, level: m.level, perms: m.perms });
+  const [parent, setParent] = useState(!!m.perms.manager);
   const [expiry, setExpiry] = useState<number | null>(m.expiresAt ?? null);
   const [confirm, setConfirm] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  // Giving or taking a parent's rights, and handing the child over: the database asks a fresh proof.
+  const proofParent = useProof('makeParent');
+  const proofHand = useProof('handOver');
+  // "Acts as a parent": the parent who owns the profile, for a family's member (never a professional).
+  const ownerParent = !!board.access?.owner && account?.role === 'parent';
+  const canBeParent = ownerParent && m.role !== 'therapist' && m.role !== 'teacher' && m.role !== 'device';
   const choices: { value: string; label: string; at: number | null }[] = [
     { value: 'none', label: x.expiryNone, at: null },
     { value: '1w', label: x.expiry1w, at: Date.now() + 7 * DAY },
@@ -414,46 +472,107 @@ function MemberView({ board, m, x, onBack }: { board: BoardCtx; m: Membership; x
     { value: '3m', label: x.expiry3m, at: Date.now() + 91 * DAY },
   ];
   const [expiryChoice, setExpiryChoice] = useState(expiry ? 'keep' : 'none');
+  const act = async (fn: () => Promise<void>) => {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    setMsg(null);
+    try {
+      await fn();
+    } catch (e) {
+      setError(errorText(s, e));
+    } finally {
+      setBusy(false);
+    }
+  };
   return (
     <>
       <Btn small kind="ghost" icon="chevronLeft" label={x.back} onPress={onBack} style={{ alignSelf: 'flex-start' }} />
       <Header text={`${x.memberTitle} ${m.displayName}`} />
       {m.email ? <Note text={m.email} /> : null}
-      <PermissionEditor x={x} {...v} onChange={setV} />
-      <Note text={`${x.expiry}${expiry ? ` · ${x.until} ${day(expiry, uiLang)}` : ''}`} />
-      <Segmented<string>
-        value={expiryChoice}
-        onChange={(c) => {
-          setExpiryChoice(c);
-          setExpiry(choices.find((o) => o.value === c)?.at ?? null);
-        }}
-        options={choices.map(({ value, label }) => ({ value, label }))}
-      />
+      {m.waiting ? <Note text={who.waitingNote} /> : null}
+      {canBeParent && (
+        <>
+          <Toggle
+            label={who.actsAsParent}
+            value={parent}
+            onChange={(on) =>
+              void act(() =>
+                proofParent.run(async () => {
+                  await api.updateMember(board.profileId, m.userId, { perms: { ...v.perms, manager: on } });
+                  setParent(on);
+                  setV((cur) => ({ ...cur, perms: { ...cur.perms, manager: on }, role: on ? 'parent' : cur.role === 'parent' ? 'family' : cur.role }));
+                  setMsg(x.saved);
+                }),
+              )
+            }
+          />
+          <Note text={who.actsAsParentNote} />
+          {proofParent.gate}
+        </>
+      )}
+      {parent ? (
+        ownerParent && (
+          <View style={ss.card}>
+            <Note text={who.handOverNote(m.displayName)} />
+            <Btn
+              icon="heart"
+              label={who.handOver(board.childName, m.displayName)}
+              disabled={busy}
+              onPress={() =>
+                void act(() =>
+                  proofHand.run(async () => {
+                    await api.offerProfile(board.profileId, m.userId);
+                    setMsg(who.handOverSent(m.displayName));
+                  }),
+                )
+              }
+            />
+            {proofHand.gate}
+          </View>
+        )
+      ) : (
+        <>
+          <PermissionEditor x={x} {...v} onChange={(n) => setV({ ...n, perms: { ...n.perms, manager: false } })} />
+          <Note text={`${x.expiry}${expiry ? ` · ${x.until} ${day(expiry, uiLang)}` : ''}`} />
+          <Segmented<string>
+            value={expiryChoice}
+            onChange={(c) => {
+              setExpiryChoice(c);
+              setExpiry(choices.find((o) => o.value === c)?.at ?? null);
+            }}
+            options={choices.map(({ value, label }) => ({ value, label }))}
+          />
+        </>
+      )}
       <ErrorLine text={error} />
       {msg ? <Text style={{ color: C.success, fontWeight: '600' }}>{msg}</Text> : null}
-      <Btn
-        kind="primary"
-        icon="check"
-        label={x.save}
-        onPress={async () => {
-          setError(null);
-          try {
-            await api.updateMember(board.profileId, m.userId, { ...v, expiresAt: expiry });
-            setMsg(x.saved);
-          } catch (e) {
-            setError(errorText(s, e));
+      {!parent && (
+        <Btn
+          kind="primary"
+          icon="check"
+          label={x.save}
+          disabled={busy}
+          onPress={() =>
+            void act(async () => {
+              await api.updateMember(board.profileId, m.userId, { ...v, expiresAt: expiry });
+              setMsg(x.saved);
+            })
           }
-        }}
-      />
+        />
+      )}
       <Note text={x.revokeNote} />
       <Btn
         kind="danger"
         icon="logout"
         label={confirm ? x.revokeConfirm : x.revoke}
-        onPress={async () => {
+        disabled={busy}
+        onPress={() => {
           if (!confirm) return setConfirm(true);
-          await api.revokeMember(board.profileId, m.userId).catch(() => {});
-          onBack();
+          void act(async () => {
+            await api.revokeMember(board.profileId, m.userId);
+            onBack();
+          });
         }}
       />
     </>
@@ -540,17 +659,23 @@ function ProposalView({ board, p, x, onBack }: { board: BoardCtx; p: Proposal; x
   const preview = useMemo(() => applyOps(app.profile, safe.ops), [app.profile, safe]);
   const items = useMemo(() => describeOps(safe.ops, app.profile, uiLang, app.lang), [safe, app.profile, uiLang, app.lang]);
   const touchesCore = items.some((i) => i.core);
+  const [busy, setBusy] = useState(false);
   const decide = async (status: 'approved' | 'declined' | 'revision') => {
+    // One decision at a time: a second tap would apply the changes twice.
+    if (busy) return;
+    setBusy(true);
     setError(null);
     try {
+      // The decision is recorded first; the board changes only once the server agreed.
+      await api.setProposalStatus(p.id, status, note.trim() || undefined);
       if (status === 'approved') {
         board.sync.reason = x.approvedReason(p.title, p.authorName);
         app.replaceProfile(preview.profile);
       }
-      await api.setProposalStatus(p.id, status, note.trim() || undefined);
       onBack();
     } catch (e) {
       setError(errorText(s, e));
+      setBusy(false);
     }
   };
   return (
@@ -574,10 +699,10 @@ function ProposalView({ board, p, x, onBack }: { board: BoardCtx; p: Proposal; x
         style={{ borderWidth: 1.5, borderColor: C.border, borderRadius: 12, padding: 10, minHeight: 60, fontSize: 16, color: C.text }}
       />
       <ErrorLine text={error} />
-      <Btn kind="success" icon="check" label={x.approveApply} disabled={touchesCore && !coreOk} onPress={() => decide('approved')} />
+      <Btn kind="success" icon="check" label={x.approveApply} disabled={busy || (touchesCore && !coreOk)} onPress={() => decide('approved')} />
       <View style={{ flexDirection: 'row', gap: 8 }}>
-        <Btn icon="pencil" label={x.askRevision} style={{ flex: 1 }} onPress={() => decide('revision')} />
-        <Btn kind="danger" icon="x" label={x.decline} style={{ flex: 1 }} onPress={() => decide('declined')} />
+        <Btn icon="pencil" label={x.askRevision} style={{ flex: 1 }} disabled={busy} onPress={() => decide('revision')} />
+        <Btn kind="danger" icon="x" label={x.decline} style={{ flex: 1 }} disabled={busy} onPress={() => decide('declined')} />
       </View>
     </>
   );
@@ -619,7 +744,8 @@ function HistoryList({ board, entries, x, onChanged }: { board: BoardCtx; entrie
     return items.length > 2 ? `${items[0].text}, ${items[1].text} ${x.more(items.length - 2)}` : items.map((i) => i.text).join(', ');
   };
   const undo = async (e: HistoryEntry) => {
-    const { profile, conflicts } = applyOps(app.profile, e.inverse);
+    // The history is written by the team: undoing never brings back a link, the code or the family's choices.
+    const { profile, conflicts } = applyOps(app.profile, foreignOps(e.inverse).ops);
     board.sync.reason = x.undoReason(summary(e));
     app.replaceProfile(profile);
     setMsg(conflicts.length ? x.undoPartly : null);

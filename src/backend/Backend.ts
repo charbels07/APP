@@ -35,6 +35,7 @@ import type {
   Invitation,
   Membership,
   Notice,
+  OwnedProfile,
   ProfileSummary,
   Proposal,
   ProposalStatus,
@@ -154,9 +155,19 @@ export interface Backend {
    * it is the account's owner (forgotten caregiver code). A tablet linked with a code has none.
    */
   checkPassword(password: string): Promise<void>;
-  changePassword(current: string, next: string): Promise<void>;
+  /**
+   * `proof`: 'password' (default), `current` is the password; 'twoStep', `current` is the code of
+   * the authenticator app (an account with two-step sign-in keeps its second step this way).
+   */
+  changePassword(current: string, next: string, proof?: 'password' | 'twoStep'): Promise<void>;
   updateAccount(patch: { displayName?: string; email?: string; phone?: string; prefs?: Partial<AccountPrefs> }): Promise<Account>;
-  deleteAccount(): Promise<void>;
+  /**
+   * `erase`: the children's profiles this account owns that the person saw named and agreed to
+   * erase. Refused (`profiles_left`) while it owns another one. Needs a fresh proof.
+   */
+  deleteAccount(erase?: string[]): Promise<void>;
+  /** The profiles this account owns, who loses the board with them and who could take them over. */
+  ownedProfiles(): Promise<OwnedProfile[]>;
 
   // ── Two-step sign-in and fresh proofs ──
   /** Team or not, two-step on or not, code typed in this session or not (the database decides). */
@@ -195,6 +206,8 @@ export interface Backend {
   takeSnapshot(profileId: string): Promise<void>;
   /** Puts a copy back (the board as it is now is kept first); returns the new version. */
   restoreSnapshot(snapshotId: string): Promise<number>;
+  /** A child's name and age: the account that owns the profile. */
+  updateChild(id: string, input: { name: string; age?: number | null }): Promise<void>;
   /** This account's access to a profile. */
   myAccess(profileId: string): Promise<{ owner: boolean; role: CollaboratorRole | 'owner'; level: AccessLevel; perms: PermissionSet } | null>;
 
@@ -220,6 +233,15 @@ export interface Backend {
   requestConnection(code: string, input: { role: CollaboratorRole; level: AccessLevel; perms: PermissionSet; message?: string }): Promise<Invitation>;
   /** Family approves a professional's request, possibly with other permissions. */
   approveRequest(id: string, grant: { level: AccessLevel; perms: PermissionSet }): Promise<void>;
+  /** A request the family declined: asked once more (a week later at the earliest; `ask_later`, `refused_often`). */
+  askAgain(id: string): Promise<Invitation>;
+  /** This person leaves the child's team (not the owner, not a tablet). */
+  leaveTeam(profileId: string): Promise<void>;
+  /**
+   * The parent in charge offers the profile to someone who acts as a parent on the team (an
+   * invitation with the role "parent" they accept, with their consent). Needs a fresh proof.
+   */
+  offerProfile(profileId: string, userId: string): Promise<Invitation>;
 
   // ── Proposals ──
   listProposals(filter: { profileId: string } | { mine: true }): Promise<Proposal[]>;

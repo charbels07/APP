@@ -102,6 +102,27 @@ export interface Membership {
   /** Access ends automatically after this date (optional). */
   expiresAt?: number;
   createdAt: number;
+  /**
+   * On the team, but cannot open the board yet: a therapist or a teacher needs a professional
+   * account checked by the app's team (the database decides).
+   */
+  waiting?: boolean;
+}
+
+/** A child's profile this account owns, as the account's deletion names it. */
+export interface OwnedProfile {
+  id: string;
+  name: string;
+  /** In the family's bin (erased with the account anyway). */
+  inBin: boolean;
+  /** Who else is on the team (they lose the board). */
+  people: string[];
+  /** Tablets linked to the child's board. */
+  tablets: number;
+  /** Those who act as a parent: the child can be handed to one of them first. */
+  parents: { userId: string; name: string }[];
+  /** The person the child was offered to, while they have not answered. */
+  offeredTo?: string;
 }
 
 /**

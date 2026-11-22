@@ -74,6 +74,7 @@ const isZip = (b: Uint8Array) => b.length > 4 && b[0] === 0x50 && b[1] === 0x4b;
 export function readBoardFile(bytes: Uint8Array): ReadBoard {
   let json: unknown;
   const media = new Map<string, Uint8Array>();
+  let total = 0;
   if (isZip(bytes)) {
     const files = unzipStore(bytes);
     const board = files.get('board.json');
@@ -81,7 +82,8 @@ export function readBoardFile(bytes: Uint8Array): ReadBoard {
     json = JSON.parse(new TextDecoder().decode(board));
     for (const [path, data] of files) {
       const name = path.startsWith('media/') ? path.slice('media/'.length) : '';
-      if (isSyncable(name)) media.set(name, data);
+      // Only pictures and sounds with the app's names, of a sensible size (10 MB each, 300 MB in all).
+      if (isSyncable(name) && data.length <= 10 * 1024 * 1024 && (total += data.length) <= 300 * 1024 * 1024) media.set(name, data);
     }
   } else json = JSON.parse(new TextDecoder().decode(bytes));
   const env = json as { format?: unknown; profile?: unknown } | null;

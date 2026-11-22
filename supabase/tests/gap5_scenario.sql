@@ -105,7 +105,32 @@ select test.expect_error(format('select test.upload(%L, ''1762000000014_cc33cc.j
   'new row violates row-level security policy for table "objects"');
 select test.ok(true, 'a professional whose acceptance was withdrawn cannot send');
 
--- 4. Nothing here for someone not signed in.
+-- 4. Found by an independent review: "Undo" does not depend on the app writing its history, and
+--    someone who may only propose cannot fill the child's space.
+reset role;
+update profiles set data = '{"settings":{},"overrides":{"pomme":{"symbol":{"kind":"media","name":"1762000000008_dd44dd.jpg"}}}}' where id = :'adam';
+-- (the file kept in part 2, sent 40 days ago)
+update storage.objects set created_at = now() - interval '40 days' where name = :'adam' || '/1762000000001_aa11aa.jpg';
+delete from history where profile_id = :'adam';
+set role authenticated;
+select test.as_person(:'eve');
+select test.ok((select '1762000000001_aa11aa.jpg' = any(media_in_use(:'adam'))),
+  'a picture replaced today is still in use, even with no history written by the app');
+delete from storage.objects where name = :'adam' || '/1762000000001_aa11aa.jpg';
+select test.ok((select count(*) = 1 from storage.objects where name = :'adam' || '/1762000000001_aa11aa.jpg'),
+  'so the family''s device cannot remove it (an old file, replaced today)');
+reset role;
+update verifications set status = 'verified' where user_id = :'sarah';
+insert into storage.objects (bucket_id, name, owner, metadata)
+select 'profile-media', :'adam' || '/' || (1762000003000 + g)::text || '_ee55ee.jpg', :'sarah', '{"size": 1000, "mimetype": "image/jpeg"}'
+  from generate_series(1, 99) g;
+set role authenticated;
+select test.as_person(:'sarah');
+select test.ok((select not can_send_media(:'adam')), 'someone who may only propose sends 100 files a month at most for one child');
+select test.as_person(:'eve');
+select test.ok((select can_send_media(:'adam')), 'the family still sends');
+
+-- 5. Nothing here for someone not signed in.
 set role anon;
 select test.expect_error(format('select media_in_use(%L)', :'adam'), 'permission denied for function media_in_use');
 select test.expect_error(format('select can_send_media(%L)', :'adam'), 'permission denied for function can_send_media');

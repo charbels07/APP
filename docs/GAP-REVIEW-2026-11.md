@@ -447,9 +447,9 @@ password change with two-step.
 ## Batch 5 — Files and merging
 
 **Done on 22 November 2026.** One database file, `supabase/migrations/20261122000200_gap_batch5.sql`, its
-attacks in `supabase/tests/gap5_scenario.sql` (11 checks, in `scripts/test-db.sh`; line added to
+attacks in `supabase/tests/gap5_scenario.sql` (15 checks, in `scripts/test-db.sh`; line added to
 `supabase/check-migrations.sql`), the same rules in the demo server (`gapBatch5.test.ts`, `mediaSync.test.ts`).
-Checks: `npm run typecheck` clean, `npm test` 607 passed, `npm run test:db` 15 scenarios passed (485 checks),
+Checks: `npm run typecheck` clean, `npm test` 612 passed, `npm run test:db` 15 scenarios passed (489 checks),
 `npm run test:a11y` no violation (236 scans), and a real-browser run on the demo build (below).
 
 **For the owner: one file to run**, `20261122000200_gap_batch5.sql`, in Supabase → SQL Editor, after this version
@@ -468,13 +468,15 @@ removes there is now 31 days old).
   who may change the board or propose words or materials. *More than the text:* the database refused files
   from a member who may only propose (a therapist is "propose" by default), so the family accepted a word whose
   photo never arrived: `can_send_media` lets her send (level 2 with "propose words" or "create materials"); a
-  use-only tablet, someone removed and a professional whose acceptance was withdrawn still send nothing.
+  use-only tablet, someone removed and a professional whose acceptance was withdrawn still send nothing; someone
+  who may only propose sends 100 files and 20 MB per child in 30 days at most.
 - [x] **Replaced pictures and recordings are kept 30 days (Q38).** Done. Nothing is deleted at once any more:
   the word editor, the recorder, deleting a child's profile and "Reset" put the old files on the device's
   "erase later" list (`src/lib/mediaKeep.ts`), erased when a board opens, 30 days later, and only if no copy of
   a board kept on the device uses them (a brother's board made from this one keeps them). In the account a
   file leaves only through the sweep of a manager's device: sent more than 30 days ago and not used by the
-  profile, its earlier versions, the last 30 days of its history or a waiting proposal (`media_in_use`); the
+  profile, its earlier versions, the last 30 days of its history, the names a save stopped using in the last
+  30 days (`media_dropped`, written by the database itself) or a waiting proposal (`media_in_use`); the
   storage rule checks the same thing again (`media_may_go`), so an older app cannot remove it earlier.
 - [x] **Settings "Save" writes the whole stale draft.** Done with batch 2 (`src/lib/settingsPatch.ts`).
 - [x] **Merging (Q39).** Done in `src/lib/merge.ts` (used when someone else saved first): a move, a swap, or a
@@ -521,6 +523,23 @@ board from another caregiver" shows the same-family sentence, reads the file, an
 and pictures, no code (its family is asked to choose one), no demonstrations and no bin. Not tried in a browser
 (unit and demo-server tests only): merging two devices' changes, a professional's draft sending its photo, the
 30-day sweep, a full device.
+
+An independent review of the change found eight faults in its first version, all corrected before it went
+live (each with its test): a merge could lose a word moved into a folder whose shape changed, or put a word on
+the board twice when both devices moved (or deleted) the same word; a deleted activity board against a change
+of it was left unlisted; a picture or a link could be merged half ours, half theirs (they are one thing now:
+only names and recordings merge language by language); when the two-step state could not be read, an empty
+list of children erased the device's copies (the clean-up now waits for a list it can trust, never an empty
+one); a child's copy leaving the device erased received photos a brother's board kept here still used; the
+30-day protection rested on the app's own history row (now `media_dropped`, written by the database); someone
+who may only propose could fill the child's space for 30 days (capped). Also from that review: a file still
+used by a copy kept aside stays on the "erase later" list until nothing uses it; files made here that someone
+else's change stopped using are erased after 30 days too; an imported file's photos are checked for size.
+
+Left open, for the owner to decide:
+- A parent cannot remove a photo uploaded by mistake (for example one showing another child) from the account
+  before 30 days: the word no longer shows it, but the file stays in the child's space until the sweep. Say if
+  the family should be able to remove such a file at once.
 
 Left for the owner's hand-test list (batch 6): on a tablet, export a board with photos and recordings, share the
 file, and import it on another tablet in a new account; replace a photo, then "Undo" on another device the next

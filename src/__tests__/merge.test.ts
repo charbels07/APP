@@ -157,4 +157,68 @@ describe('merging two versions of the board', () => {
     expect(r.profile.customConcepts.c_x).toBeUndefined();
     expect(r.dropped.length).toBe(1);
   });
+
+  // Found by an independent review of the first version.
+  it('both moved the same word, to two places: it stays in one place only', () => {
+    const empties = base.boards[folder].cells.map((c, i) => (c ? -1 : i)).filter((i) => i >= 0);
+    const ours = copy(base);
+    ours.boards[folder].cells[empties[0]] = ours.boards[folder].cells[a];
+    ours.boards[folder].cells[a] = null;
+    const theirs = copy(base);
+    theirs.boards[folder].cells[empties[1]] = theirs.boards[folder].cells[a];
+    theirs.boards[folder].cells[a] = null;
+    const r = mergeOps(theirs, diffProfiles(base, ours));
+    expect(count(words(r.profile), wordA)).toBe(count(words(base), wordA));
+    expect(r.dropped.length).toBe(2);
+  });
+
+  it('both deleted the same word: one entry in the bin', () => {
+    const ours = copy(base);
+    removeCells(ours, folder, [a]);
+    const theirs = copy(base);
+    removeCells(theirs, folder, [a]);
+    const r = mergeOps(theirs, diffProfiles(base, ours));
+    expect(r.profile.bin?.length).toBe(1);
+  });
+
+  it('a word moved into a board whose shape changed, against a change of that board: the word is not lost', () => {
+    const other = Object.keys(base.boards).find((id) => id !== folder && id !== 'core' && base.boards[id].kind !== 'tla')!;
+    const ours = copy(base);
+    const b = ours.boards[other];
+    ours.boards[other] = { ...b, rows: b.rows + 1, cells: [...b.cells, ...Array(b.cols).fill(null)] };
+    ours.boards[other].cells[b.cells.length] = ours.boards[folder].cells[a];
+    ours.boards[folder].cells[a] = null;
+    const theirs = copy(base);
+    const free = theirs.boards[other].cells.findIndex((c) => !c);
+    theirs.boards[other].cells[free] = { concept: 'c_new' };
+    const r = mergeOps(theirs, diffProfiles(base, ours));
+    expect(count(words(r.profile), wordA)).toBe(count(words(base), wordA));
+  });
+
+  it('a deleted activity board against a change of it: it stays listed (with their change)', () => {
+    const tla = base.tlaOrder[0];
+    const ours = copy(base);
+    binBoard(ours, tla);
+    ours.tlaOrder = ours.tlaOrder.filter((x) => x !== tla);
+    delete ours.boards[tla];
+    const theirs = copy(base);
+    const c = theirs.boards[tla].cells.findIndex((x) => !x);
+    theirs.boards[tla].cells[c] = { concept: 'zzz' };
+    const r = mergeOps(theirs, diffProfiles(base, ours));
+    expect(r.profile.boards[tla]?.cells[c]?.concept).toBe('zzz');
+    expect(r.profile.tlaOrder).toContain(tla);
+    expect(r.profile.bin?.length ?? 0).toBe(0);
+  });
+
+  it('a picture or a link is one thing: never half ours, half theirs', () => {
+    const b0 = copy(base);
+    b0.overrides[wordA] = { symbol: { kind: 'media', name: '1762000000001_aa11aa.jpg' }, app: { url: 'https://a.example', triggers: ['a'] } };
+    const ours = copy(b0);
+    ours.overrides[wordA] = { symbol: { kind: 'picto', key: 'lib/x' }, app: { url: 'https://b.example', triggers: ['b'] } };
+    const theirs = copy(b0);
+    theirs.overrides[wordA] = { symbol: { kind: 'media', name: '1762000000002_aa11aa.jpg' }, app: { url: 'https://a.example', triggers: ['c'] } };
+    const r = mergeOps(theirs, diffProfiles(b0, ours));
+    expect(r.profile.overrides[wordA]).toEqual(theirs.overrides[wordA]);
+    expect(r.dropped.length).toBe(1);
+  });
 });

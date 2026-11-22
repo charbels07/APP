@@ -232,7 +232,9 @@ export function SessionProvider({ children, api = backend() }: { children: React
         const list = await api.listProfiles();
         // Copies of children this account no longer opens (removed elsewhere, another account's
         // left here) leave the device, with their photos; never one with changes not sent.
-        void forgetOthers(list.map((p) => p.id))
+        // Only when the list can be trusted: the two-step state is known (an account whose code is
+        // missing sees no child) and the list is not empty (an empty answer is never a reason to erase).
+        if ((a.provider === 'device' || sec) && list.length) void forgetOthers(list.map((p) => p.id))
           .then((gone) => {
             const d = deviceRef.current;
             if (gone.length && d?.localProfiles?.some((id) => gone.includes(id))) saveDevice({ localProfiles: d.localProfiles.filter((id) => !gone.includes(id)) });

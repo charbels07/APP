@@ -22,6 +22,7 @@ import { isForgotten } from '../lib/deviceData';
 import { written } from '../lib/deviceFull';
 import { deleteMedia, hasMedia, saveMediaFrom } from '../lib/media';
 import { mediaArrived } from '../lib/mediaArrivals';
+import { eraseLater } from '../lib/mediaKeep';
 import {
   afterList,
   afterRemoval,
@@ -164,6 +165,11 @@ export class MediaSync {
 
   /** The profile as it is now: opened, or changed by someone else. */
   see(profile: unknown) {
+    // Files made here that someone else's change stopped using: erased in 30 days if nothing uses them then.
+    if (this.profile !== null && this.profile !== profile) {
+      const received = new Set(this.book.received);
+      void eraseLater(removedNames(this.profile, profile).filter((n) => !received.has(n))).catch(() => {});
+    }
     this.profile = profile;
     const { book, eraseHere } = prune(this.book, this.used());
     this.book = book;

@@ -122,6 +122,8 @@ interface DB {
   consents?: { userId: string; version: number; profileId?: string; at: number }[];
   /** Copies of the boards (weekly, before a big change, by hand, before putting one back): 10 per child. */
   snapshots?: (Snapshot & { profileId: string; data: Profile })[];
+  /** Names a save stopped using, and when (as `media_dropped`). */
+  mediaDropped?: Record<string, Record<string, number>>;
   /**
    * A child's photos and recordings "in the account": only their names and sizes (the files
    * already live on this device; the demonstration follows the real server's rules).
@@ -837,6 +839,9 @@ export class LocalBackend implements Backend {
       // The family stops sharing: what was counted for the team is erased at once.
       if (was.shareStats === 'anonymous' && now.shareStats !== 'anonymous') db.featureDays = (db.featureDays ?? []).filter((f) => f.profileId !== p.id);
       LocalBackend.snapshotBefore(db, p, data, me.id);
+      // The names this save stopped using (the database's `media_dropped`): kept 30 days.
+      const still = new Set(mediaNamesIn(data));
+      for (const n of mediaNamesIn(p.data)) if (!still.has(n)) ((db.mediaDropped ??= {})[p.id] ??= {})[n] = Date.now();
       Object.assign(p, { data: clone(data), version: p.version + 1, updatedAt: Date.now(), updatedBy: me.id });
       return { ok: true, version: p.version };
     });
@@ -1778,7 +1783,8 @@ export class LocalBackend implements Backend {
     for (const x of db.snapshots ?? []) if (x.profileId === profileId) texts.push(x.data);
     for (const h of db.history) if (h.profileId === profileId && h.createdAt > since) texts.push(h.ops, h.inverse);
     for (const p of db.proposals) if (p.profileId === profileId && (p.status === 'pending' || p.status === 'revision')) texts.push(p.ops);
-    return new Set(texts.flatMap((t) => mediaNamesIn(t)));
+    const dropped = Object.entries(db.mediaDropped?.[profileId] ?? {}).filter(([, at]) => at > since).map(([n]) => n);
+    return new Set([...texts.flatMap((t) => mediaNamesIn(t)), ...dropped]);
   }
 
   async mediaInUse(profileId: string): Promise<string[] | null> {

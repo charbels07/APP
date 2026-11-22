@@ -25,8 +25,9 @@ describe('a photo or a recording no board uses stays 30 days', () => {
     expect(dueLater(list, KEEP_MEDIA - 1, new Set()).erase).toEqual([]);
     const r = dueLater(list, KEEP_MEDIA, new Set([VOICE]));
     expect(r.erase).toEqual([PHOTO]);
-    // Used again (an undo): it leaves the list.
-    expect(r.list).toEqual({});
+    // Still used (an undo): it stays on the list, erased once nothing uses it.
+    expect(r.list).toEqual({ [VOICE]: KEEP_MEDIA });
+    expect(dueLater(r.list, KEEP_MEDIA, new Set()).erase).toEqual([VOICE]);
     expect(readLater('{"x":1,"' + PHOTO + '":"no"}')).toEqual({});
   });
 
@@ -38,7 +39,7 @@ describe('a photo or a recording no board uses stays 30 days', () => {
     expect(await sweepLater(10 * DAY)).toEqual([]);
     expect(await sweepLater(31 * DAY)).toEqual([PHOTO]);
     expect(erased).toEqual([PHOTO]);
-    expect(JSON.parse((await AsyncStorage.getItem(LATER_KEY))!)).toEqual({});
+    expect(Object.keys(JSON.parse((await AsyncStorage.getItem(LATER_KEY))!))).toEqual([VOICE]);
   });
 });
 
@@ -53,6 +54,16 @@ describe('copies of children the account can no longer open', () => {
       ['caa.child.mine.bad', 'x'],
     ]);
     expect(await forgetOthers(['mine'])).toEqual(['removed']);
+    // A file received for a child that leaves, still used by a board kept here, stays.
+    erased.length = 0;
+    await AsyncStorage.multiSet([
+      ['caa.child.sister', JSON.stringify({ dirty: false, data: { overrides: { a: { symbol: { kind: 'media', name: PHOTO } } } } })],
+      ['caa.media.gone2', JSON.stringify({ received: [PHOTO, VOICE] })],
+      ['caa.child.gone2', '{"dirty":false}'],
+    ]);
+    await forgetOthers(['mine', 'sister']);
+    expect(erased).toEqual([VOICE]);
+    await AsyncStorage.multiRemove(['caa.child.sister']);
     expect([...(await AsyncStorage.getAllKeys())].sort()).toEqual(['caa.child.mine', 'caa.child.mine.bad', 'caa.child.unsent']);
   });
 });

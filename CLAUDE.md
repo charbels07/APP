@@ -133,12 +133,13 @@
   photo or a recording at once when it is replaced or removed. On the device it goes through `eraseLater`
   (`src/lib/mediaKeep.ts`, swept at board opening, never while a copy kept here uses it); in the account it leaves
   only through the sweep of `afterList`, sent 30 days ago and absent from `media_in_use` (the profile, its earlier
-  versions, 30 days of history, waiting proposals), which the storage rule checks again. A database without
+  versions, 30 days of history, the names a save stopped using in 30 days: `media_dropped`, waiting proposals),
+  which the storage rule checks again. Someone who may only propose sends 100 files / 20 MB per child a month. A database without
   `media_in_use` means nothing is removed. A picture chosen from the app's library is kept as its key
   (`pictoRef`: `{ kind: 'picto', key }`), never copied into the media store.
 - Merging (`src/lib/merge.ts`, used by `take`; gap review Q39): what belongs together (a move, a swap, a deletion
-  and its bin entry) is kept or dropped whole; a word is merged part by part (picture, recording and name per
-  language); `tlaOrder` merges as a list; demonstrations and the bin by id (`['demo', id]`, `['bin', id]` ops).
+  and its bin entry) is kept or dropped whole; a word is merged part by part (picture and link whole, recording and name per
+  language); a group partly there already is dropped too; `tlaOrder` merges as a list; demonstrations and the bin by id (`['demo', id]`, `['bin', id]` ops).
   The board names what was not kept (`conflictNotKept`). Core cells never move in a merge.
 - A device that cannot write (full storage) says it in one line above the board (`DeviceFullNotice`,
   `src/lib/deviceFull.ts`): storage writes go through `written(kind, …)`, never a bare `.catch(() => {})`.

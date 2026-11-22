@@ -24,6 +24,7 @@ export interface Merged {
   dropped: Op[];
 }
 
+const PER_LANGUAGE = new Set(['labels', 'audio']);
 const clone = <T,>(v: T): T => (v === undefined ? v : (JSON.parse(JSON.stringify(v)) as T));
 const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 
@@ -46,7 +47,12 @@ function wordsOf(op: Op, side: 'before' | 'after'): string[] {
     if (v.kind === 'cell' && typeof cell?.concept === 'string') return [cell.concept];
     if (v.kind === 'board' && typeof board?.id === 'string') return [`board:${board.id}`];
   }
-  if (op.path[0] === 'board') return [`board:${op.path[1]}`];
+  if (op.path[0] === 'board') {
+    // The board itself and every word on it: a word moved into or out of a board whose shape
+    // changed is tied to that change.
+    const cells = Array.isArray(v.cells) ? (v.cells as ({ concept?: unknown } | null)[]) : [];
+    return [`board:${op.path[1]}`, ...cells.flatMap((c) => (c && typeof c.concept === 'string' ? [c.concept] : []))];
+  }
   return [];
 }
 
@@ -93,7 +99,8 @@ function mergeParts(base: Record<string, unknown>, ours: Record<string, unknown>
       else value[k] = clone(ours[k]);
       continue;
     }
-    if (depth > 0 && isObj(base[k] ?? {}) && isObj(ours[k]) && isObj(theirs[k])) {
+    // Only a word's names and recordings are merged language by language: a picture or a link is one thing.
+    if (depth > 0 && PER_LANGUAGE.has(k) && isObj(base[k] ?? {}) && isObj(ours[k]) && isObj(theirs[k])) {
       const inner = mergeParts((base[k] ?? {}) as Record<string, unknown>, ours[k] as Record<string, unknown>, theirs[k] as Record<string, unknown>, depth - 1);
       value[k] = inner.value;
       lost.push(...inner.lost.map((x) => `${k}.${x}`));
@@ -105,11 +112,14 @@ function mergeParts(base: Record<string, unknown>, ours: Record<string, unknown>
 }
 
 /** The list of activity boards: what we added and removed, on top of their list. */
-function mergeList(base: string[], ours: string[], theirs: string[]): string[] {
+function mergeList(base: string[], ours: string[], theirs: string[], exists: (id: string) => boolean): string[] {
   const b = new Set(base);
+  // A board we took off the list but that is still there (our deletion did not apply) stays listed;
+  // a board we added is listed only if it exists.
+  ours = ours.filter((x) => b.has(x) || exists(x));
   const o = new Set(ours);
   const t = new Set(theirs);
-  const weRemoved = new Set(base.filter((x) => !o.has(x)));
+  const weRemoved = new Set(base.filter((x) => !o.has(x) && !exists(x)));
   const theyRemoved = new Set(base.filter((x) => !t.has(x)));
   const common = (list: string[]) => list.filter((x) => b.has(x) && o.has(x) && t.has(x));
   const weReordered = !same(common(base), common(ours));
@@ -118,6 +128,7 @@ function mergeList(base: string[], ours: string[], theirs: string[]): string[] {
   if (weReordered && !theyReordered) {
     // Our order, with what they added kept where it was (at the end of the list if alone).
     out = ours.filter((x) => !theyRemoved.has(x));
+    for (const x of base) if (!o.has(x) && !weRemoved.has(x) && t.has(x) && !out.includes(x)) out.push(x);
     theirs.forEach((x, i) => {
       if (b.has(x) || out.includes(x)) return;
       const before = theirs.slice(0, i).reverse().find((y) => out.includes(y));
@@ -144,9 +155,12 @@ export function mergeOps(theirs: Profile, ours: Op[]): Merged {
   const order = ours.filter((op) => op.path[0] === 'tlaOrder');
   const rest = ours.filter((op) => !tied.includes(op) && !words.includes(op) && !order.includes(op));
 
-  // 1. Cells, boards and the bin: what belongs together goes together, or not at all.
+  // 1. Cells, boards and the bin: what belongs together goes together, or not at all. A group
+  //    that is partly there already (the other side moved or deleted the same word elsewhere)
+  //    collides too: applying the rest would put the word twice or bin it twice.
   for (const group of groups(tied)) {
-    if (group.some((op) => fits(p, op) === 'taken')) {
+    const states = group.map((op) => fits(p, op));
+    if (states.includes('taken') || (group.length > 1 && states.includes('done') && states.includes('free'))) {
       dropped.push(...group);
       continue;
     }
@@ -181,7 +195,7 @@ export function mergeOps(theirs: Profile, ours: Op[]): Merged {
   for (const op of order) {
     const base = Array.isArray(op.before) ? (op.before as string[]) : [];
     const want = Array.isArray(op.after) ? (op.after as string[]) : [];
-    const next = mergeList(base, want, Array.isArray(p.tlaOrder) ? p.tlaOrder : []);
+    const next = mergeList(base, want, Array.isArray(p.tlaOrder) ? p.tlaOrder : [], (id) => !!p.boards?.[id]);
     if (!same(next, p.tlaOrder)) setAt(p, ['tlaOrder'], next);
     applied.push(op);
   }

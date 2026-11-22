@@ -30,15 +30,15 @@ export function addLater(list: Later, names: string[], now: number): Later {
 }
 
 /**
- * What may be erased now: waited long enough and used by no profile kept here. A name used again
- * (an undo) leaves the list: it is added again if it stops being used once more.
+ * What may be erased now: waited long enough and used by no profile kept here. A name still used
+ * (an undo, a copy kept aside) stays on the list: it goes once nothing uses it any more.
  */
 export function dueLater(list: Later, now: number, used: Set<string>): { erase: string[]; list: Later } {
   const keep: Later = {};
   const erase: string[] = [];
   for (const [name, at] of Object.entries(list)) {
-    if (used.has(name) || !NAME.test(name) || typeof at !== 'number' || !Number.isFinite(at)) continue;
-    if (at <= now) erase.push(name);
+    if (!NAME.test(name) || typeof at !== 'number' || !Number.isFinite(at)) continue;
+    if (at <= now && !used.has(name)) erase.push(name);
     else keep[name] = at;
   }
   return { erase, list: keep };

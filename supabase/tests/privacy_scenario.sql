@@ -116,8 +116,9 @@ select test.expect_error('select note_sealed from observations', 'permission den
 select test.expect_error('select key from private.field_keys', 'permission denied for schema private');
 select test.expect_error('update observations set note_sealed = ''x''', 'permission denied for table observations');
 select set_config('request.jwt.claim.sub', :'eve', false);
-select test.ok((select count(*) = 0 from list_observations((select v::uuid from test.ids where k = 'adam'))) and
-               (select count(*) = 0 from usage_of((select v::uuid from test.ids where k = 'adam'), current_date - 30)), 'someone else reads nothing');
+select test.expect_error(format('select count(*) from list_observations(%L)', (select v from test.ids where k = 'adam')), 'forbidden');
+select test.expect_error(format('select count(*) from usage_of(%L, current_date - 30)', (select v from test.ids where k = 'adam')), 'forbidden');
+select test.ok(true, 'someone else reads nothing, and is told so');
 select set_config('request.jwt.claim.sub', :'zoe', false);
 select set_config('request.jwt.claims', '{"role":"authenticated","aal":"aal2"}', false);
 

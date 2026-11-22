@@ -8,7 +8,9 @@
  *  - Bugs: technical problems, counted by the app or written by people;
  *  - Content: what ships with the app (pictograms, words, languages, guide);
  *  - Security: what the families agreed to share, and the history of what the team did here.
- * What comes from the children is only ever a sum over families who agreed, from 5 children up.
+ * What comes from the children, and everything about how the app is used, is only ever a sum
+ * over families who agreed, from 5 children of 5 families up (a group of 1 to 4 arrives as
+ * `null` and is written "fewer than 5", never as a number).
  * The server refuses every request of this page to anybody else: hiding the page is not the lock.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -205,7 +207,7 @@ function BackOfficePages() {
           ) : (
             overview && (
               <>
-                <SecurityView a={a} o={overview} agreed={product?.agreed ?? 0} log={<History a={a} list={log} />} />
+                <SecurityView a={a} o={overview} agreed={product ? product.agreed : 0} log={<History a={a} list={log} />} />
                 <RetentionCard />
               </>
             )
@@ -412,16 +414,19 @@ function Numbers({ a, p, o }: { a: AdminStrings; p: ProStrings; o: AdminOverview
   const weekLabel = (w: string) => day(Date.parse(w), uiLang);
   const unknown = (k: string) => (k === '?' ? a.unknown : k);
   const recording = Object.entries(f.collection).reduce((n, [k, v]) => (k === 'off' ? n : n + v), 0);
-  const steps: BarItem[] = [
-    { key: 'parents', label: a.steps.parents, value: f.parents },
-    { key: 'withChild', label: a.steps.withChild, value: f.withChild },
-    { key: 'withTablet', label: a.steps.withTablet, value: f.withTablet },
-    { key: 'used30', label: a.steps.used30, value: f.used30 },
-    { key: 'used7', label: a.steps.used7, value: f.used7 },
-    { key: 'withTeam', label: a.steps.withTeam, value: f.withTeam },
-    { key: 'recording', label: a.steps.recording, value: recording },
-    { key: 'sharing', label: a.steps.sharing, value: f.sharing },
-  ].map((i) => ({ ...i, valueText: `${LTR}${compact(i.value)} · ${pct(i.value, f.parents)} %` }));
+  // (a step about use counts the families who share their statistics; 1 to 4 of them is "fewer than 5")
+  const steps: BarItem[] = (
+    [
+      { key: 'parents', label: a.steps.parents, value: f.parents },
+      { key: 'withChild', label: a.steps.withChild, value: f.withChild },
+      { key: 'withTablet', label: a.steps.withTablet, value: f.withTablet },
+      { key: 'used30', label: a.steps.used30, value: f.used30 },
+      { key: 'used7', label: a.steps.used7, value: f.used7 },
+      { key: 'withTeam', label: a.steps.withTeam, value: f.withTeam },
+      { key: 'recording', label: a.steps.recording, value: recording },
+      { key: 'sharing', label: a.steps.sharing, value: f.sharing },
+    ] as { key: string; label: string; value: number | null }[]
+  ).map((i) => ({ ...i, value: i.value ?? 0, valueText: i.value === null ? a.fewer : `${LTR}${compact(i.value)} · ${pct(i.value, f.parents)} %` }));
   return (
     <>
       {/* Columns are narrow on a phone: the same figures can be read as tables. */}
@@ -432,7 +437,7 @@ function Numbers({ a, p, o }: { a: AdminStrings; p: ProStrings; o: AdminOverview
         <StatTile label={a.families} value={compact(f.parents)} sub={a.plusWeek(o.accounts.new7)} />
         <StatTile label={a.children} value={compact(f.children)} />
         <StatTile label={a.prosAccepted} value={compact(o.pros.status.verified ?? 0)} sub={a.waitingNow(o.pros.status.pending ?? 0)} />
-        <StatTile label={a.devicesWeek} value={compact(o.devices.seen7)} sub={a.ofTotal(o.devices.total)} />
+        <StatTile label={a.devicesWeek} value={o.devices.seen7 === null ? a.fewer : compact(o.devices.seen7)} sub={a.amongSharing} />
       </StatGrid>
 
       <ChartCard title={a.signups} note={a.signupsNote}>
@@ -445,7 +450,8 @@ function Numbers({ a, p, o }: { a: AdminStrings; p: ProStrings; o: AdminOverview
         <BarList items={steps} max={Math.max(1, f.parents)} labelWidth="50%" />
       </ChartCard>
 
-      <ChartCard title={a.devices} note={o.devices.waiting > 0 ? a.waitingSync(o.devices.waiting) : undefined}>
+      <ChartCard title={a.devices} note={o.devices.waiting ? a.waitingSync(o.devices.waiting) : undefined}>
+        <Note text={a.devicesNote} />
         <Text style={st.sub}>{a.system}</Text>
         <BarList items={bars(o.devices.platforms, (k) => ({ ios: 'iPad / iPhone', android: 'Android', web: 'Web' })[k] ?? unknown(k))} />
         <Text style={st.sub}>{a.versions}</Text>
@@ -471,7 +477,7 @@ function Numbers({ a, p, o }: { a: AdminStrings; p: ProStrings; o: AdminOverview
         <BarList items={bars(o.pros.countries, (k) => k)} />
       </ChartCard>
 
-      <ChartCard title={a.teamwork} note={a.teamLines(o.teamwork.shares, o.teamwork.observations, o.teamwork.changes30)}>
+      <ChartCard title={a.teamwork} note={a.teamLines(o.teamwork.shares, o.teamwork.observations, o.teamwork.changes30 === null ? a.fewer : String(o.teamwork.changes30))}>
         <Text style={st.sub}>{a.teamMembers}</Text>
         <BarList items={bars(o.teamwork.members, (k) => x.roles[k as keyof typeof x.roles] ?? k)} />
         <Text style={st.sub}>{a.invitations}</Text>
@@ -521,7 +527,7 @@ function Usage({ a, o }: { a: AdminStrings; o: AdminOverview }) {
         .filter((k) => setup.choices?.[k])
         .map((k) => {
           const on = setup.choices![k].true ?? 0;
-          return { key: k, label: a.switchNames[k], value: on, valueText: `${pct(on, setup.children)} %` };
+          return { key: k, label: a.switchNames[k], value: on, valueText: `${pct(on, setup.children ?? 0)} %` };
         }),
     [a, setup],
   );
@@ -541,7 +547,7 @@ function Usage({ a, o }: { a: AdminStrings; o: AdminOverview }) {
       ) : (
         <>
           <StatGrid>
-            <StatTile label={a.childrenSharing} value={compact(u.children)} sub={a.period(u.days)} />
+            <StatTile label={a.childrenSharing} value={compact(u.children ?? 0)} sub={a.period(u.days)} />
             <StatTile label={a.minutesDay} value={String(u.minutes ?? 0)} />
             <StatTile label={a.touchesDay} value={String(u.selections ?? 0)} />
             <StatTile label={a.sentencesDay} value={String(u.utterances ?? 0)} />
@@ -596,7 +602,7 @@ function Usage({ a, o }: { a: AdminStrings; o: AdminOverview }) {
         </>
       )}
       {setup.choices ? (
-        <ChartCard title={a.setup} note={a.setupNote(setup.children)}>
+        <ChartCard title={a.setup} note={a.setupNote(setup.children ?? 0)}>
           {Object.keys(a.choices)
             .filter((k) => setup.choices![k])
             .map((k) => (
@@ -608,7 +614,7 @@ function Usage({ a, o }: { a: AdminStrings; o: AdminOverview }) {
           {switches.length > 0 && (
             <View style={{ gap: 6 }}>
               <Text style={st.sub}>{a.switches}</Text>
-              <BarList items={switches} max={Math.max(1, setup.children)} />
+              <BarList items={switches} max={Math.max(1, setup.children ?? 0)} />
             </View>
           )}
           {setup.averages && (

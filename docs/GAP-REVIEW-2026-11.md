@@ -238,65 +238,124 @@ Left for the owner's hand-test list (batch 6): on an Android tablet and an iPad,
 photo for a word, pick one from the library, record a word (first time: the microphone question), share a
 PDF, print — caregiver mode must still be on afterwards; then press Home and come back — it must be off.
 
-## Batch 3 — Database holes (one or more migration files + scenarios)
+## Batch 3 — Database holes (one migration file + its scenario)
 
-- [ ] **Recording and sharing can be turned on while a professional owns the profile, with no parent
-  consent.** [ran, twice] `save_profile` (`20261115000000_pro_profiles.sql` ~110) only blocks "caller is
-  the owner and is a pro". She makes a full pairing code, redeems it from an anonymous session, and that
-  session saves `dataCollection` / `shareStats` / `shareTerms`; `save_usage_day` and `save_feature_day`
-  then store days; `consents` stays empty. Fix: refuse any change of those three when
-  `is_pro(owner_id)`, whoever calls (also `guard_share_terms`); the two save functions refuse when the
-  owner is a pro.
-- [ ] **Hand-over cleans the team (Q15).** [ran, twice] `join_profile` only demotes the pro's own row.
-  At hand-over: delete the profile's `pairing_codes`; cancel every pending invitation; revoke members
-  with role `device`; set manager / changeAccess / invite / manageDevices / viewData to false on every
-  remaining member; notice to the new owner listing who is on the team (three languages in
-  `src/lib/notices.ts`).
-- [ ] **Someone removed can come back.** [ran by reviewer] One shared "remove" routine for
-  `revoke_member` and `cancel_invitation`: cancel pending invitations from and to that person, delete
-  pairing codes they created. `respond_invitation`: refuse one's own invitation; keep `expires_at` on
-  re-join; limit `p_role` for non-managers; refuse tablets (`is_tablet()`) in `accept_invitation_code`
-  and `respond_invitation`.
-- [ ] **A full-access tablet is allowed only what its screen shows (Q18).** Today it is a full parent in
-  the database (removes the other parent, changes rights, erases follow-up) [ran by reviewer]. Keep:
-  board, board settings, the code, devices and "use" codes. Refuse: removing members, changing rights,
-  approving requests, erasing follow-up, the family code.
-- [ ] **The family's code is not sent to professionals (Q19).** Today `settings.pin` travels in
-  `profiles.data` to every member and is in "Export profile". The server must stop sending it to members
-  whose role is professional; parents, family members and the child's tablets keep it. The app must cope
-  with a profile that has no code in it (her own code, `useOwnCode`).
-- [ ] **A professional whose acceptance was withdrawn still downloads the children she created.**
-  [ran by reviewer] `export_my_data` (`20261120000000_push.sql` ~437): add `pro_cleared(me)`. Also: a
-  removed therapist's export still holds what the child said (~460).
-- [ ] **Two-step does not cover the professionals' document folder.** [ran by reviewer] Add
-  `and public.mfa_ok()` to the own read / upload / delete rules of `verification-docs`.
-- [ ] **Weekly team e-mail** [ran by reviewer]: `team_week_figures` tests 5 children, not 5 families, and
-  prints the exact number under 5.
-- [ ] **Figures (Q23).** Plain totals (profiles, with tablet, with team) stay for all families. Everything
-  about use (used in 7 / 30 days, edited in 30 days, "boards used this week", sub-groups) follows
-  "consenting families only, at least 5 children of 5 families"; groups of 1–4 are never a number
-  (`admin_product` "children": 3, `admin_overview`). Correct the privacy draft and the `CLAUDE.md` line.
-- [ ] **A member can overwrite a tablet's follow-up day.** [ran by reviewer] `save_usage_day` must
-  require `devices.user_id = auth.uid()` (or manager); strip `deviceId` in `clean_usage`.
-- [ ] `usage_of` / `list_observations` return nothing instead of `forbidden` to someone without
-  "see the progress data": the screen then shows empty charts (raise `forbidden`). Observations: show
-  edit / delete only to the author or a manager; mirror the rule in `LocalBackend`. Remove `profile_id`
-  from the observations update grant (a note can be moved to another child) and from the app's update
-  row (`supabase.ts` ~1195: refused today until the privacy migration is run).
-- [ ] `my_name()` and `join_profile` fall back to the whole e-mail address as display name: use "—".
-- [ ] `register_device`: count only "not revoked", add `rate_limit`; do not overwrite the name and kind
-  of an existing row (`Stages.tsx` ~200 renames every linked tablet "iPad").
-- [ ] Ceilings: count limit on `resources`; size limit on `accounts.prefs` and `display_name`;
-  `rate_limit` in `add_history` and `update_proposal`. `resources.profile_id` can be set to any profile.
-- [ ] Free text about a child not sealed: `observations.context / partner / result` (CLAUDE.md rule).
-- [ ] `save_feature_day` uses `is_admin()` where `is_team()` is meant; `report_problems` has no
-  professional / team test.
-- [ ] `usageTracker.ts` ~252 stops at the first refused day and retries it for ever: drop a day refused
-  with `invalid`, continue.
-- [ ] Retention: `feature_days`, `error_counts`, `rate_log`, `ai_calls` are only cleaned by chance; put
-  them in `retention_daily`. Pending invitations past their 30 days are never deleted.
+**Done on 22 November 2026.** One database file, `supabase/migrations/20261122000000_gap_batch3.sql`,
+its attacks in `supabase/tests/gap3_scenario.sql` (in `scripts/test-db.sh`; line added to
+`supabase/check-migrations.sql`), the same rules in the demo server (`gapBatch3.test.ts`). Checks:
+`npm run typecheck` clean, `npm test` 574 passed, `npm run test:db` 13 scenarios passed (429 checks),
+`npm run test:a11y` no violation (236 scans), and a real-browser run on the demo build (below). What was done differently
+from the text, or decided on the way, is written under each item.
+
+**For the owner: one file to run**, `20261122000000_gap_batch3.sql`, in Supabase → SQL Editor, AFTER this
+version of the app is published (the app reads a profile through a new function and falls back to the old
+way until the file has run; the file then closes the old way, so a page still open on the older version
+shows the board from the device until it is reloaded). The file also erases the follow-up days and counters
+that were stored for profiles still owned by a professional, and turns their switches off.
+
+- [x] **Recording and sharing can be turned on while a professional owns the profile, with no parent
+  consent.** Done. While `is_pro(owner_id)`: `save_profile` and `guard_share_terms` refuse any change of the
+  three (whoever calls), a trigger keeps them off however the row is written, `shares_product` is false,
+  `save_usage_day` and `save_feature_day` refuse.
+- [x] **Hand-over cleans the team (Q15).** Done in `join_profile`: pairing codes deleted, every waiting
+  invitation and request cancelled, `device` members revoked (their devices marked removed), manager /
+  changeAccess / invite / manageDevices / viewData false on everyone left, and a notice to the new owner
+  naming the team (three languages in `src/lib/notices.ts`). The guide says it to the professional.
+- [x] **Someone removed can come back.** Done. One routine, `remove_from_team`, for `revoke_member`,
+  `cancel_invitation` (of an accepted invitation) and `revoke_device` (a tablet): the access ends with the
+  waiting invitations from and to the person and the tablet codes they made. `respond_invitation` refuses
+  one's own invitation; `expires_at` is kept on re-join; a member who may invite cannot invite a "parent"
+  (owner only) nor a "device"; a request cannot ask for "parent" or "device"; tablets are refused in
+  `accept_invitation_code` and `respond_invitation`.
+  *Decided on the way:* "keep `expires_at`" applies to an invitation that was already waiting when the
+  access ended; an invitation written after the end date is a new decision and starts without one
+  (otherwise a family that invites someone again would see them join with no access). The invitation by
+  which the parents took a profile over cannot be "cancelled" to remove them.
+- [x] **A full-access tablet is allowed only what its screen shows (Q18).** Done: the team is run by the
+  family signed in as itself (`manages_team`). Kept for the tablet: the board, its settings, the code,
+  the devices, "use" codes. Refused: removing members, changing rights, approving or declining requests,
+  inviting, cancelling or re-sending invitations, the family code, full-access codes, erasing the
+  follow-up. *More than the text, same principle (its screens have no Team and no Progress page):* it no
+  longer reads the follow-up or the observations, the invitations (with their codes) or the team's e-mail
+  addresses; it cannot change the recording and sharing choices; among the devices it removes other
+  tablets only (removing a parent's phone locked that parent out of the device).
+- [x] **The family's code is not sent to professionals (Q19).** Done. A profile's content is read through
+  `read_profile`, which leaves `settings.pin` out for a professional; the `data` column can no longer be
+  read from the table; `save_profile` ignores the code a professional sends and its "too late" answer has
+  none; her "Download all my data" has none. *Who is "professional":* a `pro` account, and a member whose
+  role is therapist or teacher even with a family-type account (until batch 4 makes them `pro` accounts):
+  on the family's board she is now asked her own code (`useOwnCode(true)` in `BoardStage`), as in a
+  professional's workspace. Caregivers, family members, "other" and the child's tablets keep the code.
+  Export from a professional's device therefore has no family code (the export itself: batch 5).
+- [x] **A professional whose acceptance was withdrawn still downloads the children she created.** Done
+  (`pro_cleared(me)`); and an observation is in a person's file only for a profile she owns or while she may
+  still read that child's follow-up.
+- [x] **Two-step does not cover the professionals' document folder.** Done (read, upload, delete).
+- [x] **Weekly team e-mail.** Done: 5 families (which are always at least 5 children), no number below.
+- [x] **Figures (Q23).** Done. Totals for all families: accounts, profiles, with tablet, with team, devices
+  linked, team roles, invitations, proposals, materials. Among consenting families only, from 5 children of
+  5 families, never 1–4 as a number (`shown_n` answers `null`, the screens write "fewer than 5"): used in
+  7 / 30 days, edited in 30 days, "boards used this week", how many share (`sharing`, `agreed`, "children":
+  3), and every sub-group. *Decided on the way (say if it is too strict):* the devices seen in 7 / 30 days,
+  the devices waiting to send, their systems and app versions, and "board changes this month" are figures
+  about use too: same rule. The privacy draft, the record of processing and `CLAUDE.md` say it.
+- [x] **A member can overwrite a tablet's follow-up day.** Done: the device must be the caller's (or the
+  family taking a device over); the device's name and the day kept inside the row are the server's. Same
+  for the feature counters.
+- [x] `usage_of` / `list_observations` raise `forbidden`. Observations: edit / delete shown to the author
+  or a manager only (and refused otherwise by the database and the demo server); `profile_id` out of the
+  update grant and of the app's update row.
+- [x] `my_name()` and `join_profile`: "—" instead of an e-mail address or a phone number (the demo server too).
+- [x] `register_device`: counts "not revoked", 300 a day, keeps the name and kind of an existing device.
+- [x] Ceilings: 500 materials per person; preferences 20 KB, name cut at 80 characters; `add_history` 2000
+  a day, `update_proposal` 60 a day; a material is tied to a child of one's own teams only.
+- [x] Free text about a child sealed: `observations.context / partner / result` (existing rows sealed by the file).
+- [x] `save_feature_day`: `is_team()`; `report_problems` refuses a professional and the app's team.
+- [x] `usageTracker.ts`: a day refused with `invalid` (or `too_large`) leaves the list, the next ones are sent.
+- [x] Retention: `feature_days`, `error_counts` (180 days), `rate_log` (2 days), `ai_calls` (30 days) in
+  `retention_daily`. *Decided on the way:* an invitation nobody answered is erased 60 days after it was
+  written (30 valid, 30 more during which the family can send it again); `RETENTION-SCHEDULE.md` says so.
 - [ ] AI ceiling (`count_ai_call` adds to the shared budget before the per-account limit): **waits**
   until the owner turns the AI on (Q33).
+
+An independent review of the database file found ten faults in its first version. Corrected before it went
+live: a full-access tablet could make a parent's phone "its own" by registering under its device name, then
+write over its follow-up day or remove it (a device another account used now passes to a person, never to
+or from a tablet); a full-access code typed from a person's account made that person a manager (a tablet's
+code now only works on a tablet's own sign-in); one product table still showed a group of 5 children of one
+family; a professional who may invite could invite a "family member" account that receives the code (she
+invites therapists and teachers only); a professional given the manager right could link a tablet that
+receives the code, change her own role, or save the settings as something that is not a list of settings
+and so wipe the code (all three refused); a damaged `settings` made the profile unreadable for professionals.
+Also from that review: a member signed in on a phone another account had used could no longer send follow-up
+(the device now passes to them).
+
+Left open, for the owner to decide:
+- A tablet linked by a co-parent stays linked when that co-parent is removed from the team (the tablet is
+  the child's: unlinking it would take the board away). The family sees it under Account → Devices and can
+  remove it. To decide with batch 4.
+- An app that was not updated cannot open a board for the first time, nor create a profile, once the file
+  has run. Today the web version is the only one published: run the file after this version is live.
+- Counted for all families although they can be small numbers: team members by role, invitations,
+  proposals, materials, shares, observations written, AI users. Say if any of these should follow the
+  "5 families" rule too.
+
+Tried in a real browser (demo build, Chromium, 1180 × 900): 17 checks. A parent invites a
+teacher by e-mail; the teacher signs up with a family-type account and accepts: her board opens with
+nothing over it, the copy on her device holds no family code, "Caregiver" asks her to choose her own code
+with its explanation, the family's code is a wrong code for her, her settings never show it; back on the
+family's side her code is a wrong code, the family's code works and the teacher is on the team. Back
+office (demonstration figures): "Devices waiting to send" reads "fewer than 5", the use figures say they
+count the families who share, no page shows "null". Not tried in a browser (demo server and database tests
+only): the hand-over notice, a full-access tablet's refusals, the observation rules.
+
+Seen on the way, not changed (not in this batch):
+- A pairing code typed while signed in with a personal account (not on a fresh tablet) makes that account
+  a "device" member; an existing member keeps their role and takes the code's rights. Full-access codes
+  need the family's fresh proof, so it is the family's own act; worth a look with batch 4 (rights).
+- Any co-manager can still give the "manager" right to someone else (`update_member`): batch 4 ("Acts as a
+  parent", owner only).
+- `deleteAccount` in the app still removes a professional's documents before the proof (batch 4).
 
 ## Batch 4 — People and rights (database + screens)
 
@@ -431,10 +490,10 @@ A separate project, after the owner has settled the legal side (company bank acc
 
 - "With a child's voice, 'Create a new word' requires a recording…" → optional (batch 6).
 - "The scan never covers the universal bar" → except Help (batch 1).
-- The back-office figures rule → totals for all, use for consenting families of 5+ (batch 3).
+- The back-office figures rule → totals for all, use for consenting families of 5+ (batch 3: done).
 - Caregiver code: the first keypad cannot be closed; caregiver mode turns itself off (batch 2: done).
-- Professionals: invited therapists and teachers must be verified; the family's code is not sent to them
-  (batches 3–4).
+- Professionals: invited therapists and teachers must be verified (batch 4); the family's code is not sent
+  to them (batch 3: done).
 - Sync: device-only things never travel (batch 1). Media: replaced files kept 30 days (batch 5).
 - Import / export rules (batch 5). Payment rules above (new section).
 - Publishing rule mentions the web app as "live": say "for chosen testers" (batch 6).

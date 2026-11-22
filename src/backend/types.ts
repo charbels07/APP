@@ -288,13 +288,19 @@ export interface SpeedFigures {
 }
 
 /** Product figures of the back office: sums over at least `minimum` children of as many families. */
+/**
+ * A figure about how the app is used: counted among the families who share figures only, and
+ * given from 5 children of 5 families. `null`: between 1 and 4 (never shown as a number).
+ */
+export type Shown = number | null;
+
 export interface AdminProduct {
   at: string;
   example?: boolean;
   /** Families who agreed to share the feature counters. */
-  agreed: number;
+  agreed: Shown;
   /** Children whose devices sent something in the last `days` days. */
-  children: number;
+  children: Shown;
   minimum: number;
   enough: boolean;
   days: number;
@@ -305,7 +311,7 @@ export interface AdminProduct {
   byVersion?: VersionAdoption[];
   /** Waiting times of the last 30 days (a kind met by fewer than 5 children of 5 families is left out). */
   speed?: SpeedFigures[];
-  children30?: number;
+  children30?: Shown;
   /** Sums of the last 30 days (a sum is missing when fewer than `minimum` children took part). */
   tasks?: Counts;
   forms?: Counts;
@@ -371,14 +377,16 @@ export interface AdminOverview {
     children: number;
     withTablet: number;
     withTeam: number;
-    used7: number;
-    used30: number;
-    edited30: number;
+    /** Boards used or edited lately: among the families who share figures (as everything about use). */
+    used7: Shown;
+    used30: Shown;
+    edited30: Shown;
     /** What the families let the app record: off / usage / vocabulary / language. */
     collection: Counts;
-    sharing: number;
+    sharing: Shown;
   };
-  devices: { total: number; seen7: number; seen30: number; waiting: number; platforms: Counts; versions: Counts };
+  /** `total`: every linked device. The rest: the devices of the families who share figures. */
+  devices: { total: number; seen7: Shown; seen30: Shown; waiting: Shown; platforms: Counts; versions: Counts };
   pros: {
     accounts: number;
     status: Counts;
@@ -397,13 +405,13 @@ export interface AdminOverview {
     materials: Counts;
     shares: number;
     observations: number;
-    changes30: number;
+    changes30: Shown;
   };
   ai: { calls30: number; users30: number; mostPerPersonDay: number; days: { day: string; calls: number; users: number }[] };
   feedback: { new: number; total: number; kinds: Counts };
   usage: {
-    sharing: number;
-    children: number;
+    sharing: Shown;
+    children: Shown;
     minimum: number;
     enough: boolean;
     days: number;
@@ -422,11 +430,11 @@ export interface AdminOverview {
     places?: Counts;
     hours?: number[];
     platforms?: Counts;
-    weeks?: { week: string; children: number; minutes: number | null; selections: number | null }[];
+    weeks?: { week: string; children: Shown; minutes: number | null; selections: number | null }[];
     ages?: { band: string; children: number; minutes: number; selections: number; longer: number | null }[];
   };
   setup: {
-    children: number;
+    children: Shown;
     minimum: number;
     choices?: Record<string, Counts>;
     averages?: { activityBoards: number; ownWords: number; changedWords: number; schedules: number; demonstrations: number };

@@ -101,8 +101,12 @@
 - Back office (`src/ui/admin/`, stage `admin`): only accounts in the database table `admins`; every
   `admin_*` function checks `is_admin()` (never rely on hiding the page). A `pro` account works on a
   child's profile only once its verification is `verified` (triggers + `access_of`; the demo server
-  mirrors this in `LocalBackend.cleared`). Figures from children's profiles or usage: consenting
-  families only (`shareStats = 'anonymous'`), never under 5 children, never a name, word or sentence.
+  mirrors this in `LocalBackend.cleared`). Figures (owner's decision, November 2026): plain totals (accounts,
+  profiles, linked devices, teams) are for all families; everything about use (used or edited lately, devices
+  seen, what they run, changes made, every sub-group) and everything from children's profiles is counted among
+  consenting families only (`shareStats = 'anonymous'`) and shown from 5 children of 5 families. A group of 1
+  to 4 is never a number: the database answers `null` (`shown_n`; type `Shown`), the screen writes "fewer than
+  5" (`a.fewer`). Never a name, word or sentence. Same rule in the weekly e-mail (`team_week_figures`).
 - Accessibility (WCAG 2.2 AA, `docs/ACCESSIBILITY.md`): react-native-web ignores `accessibilityState`,
   so give states with the helpers of `src/ui/a11y.ts` (`{...checked(on)}`, `selected`, `pressed`, `expanded`,
   `spoken(lang)`); a labelled `Pressable` always has a role; overlays go through `Panel` (dialog, focus,
@@ -167,9 +171,30 @@
   `src/state/ownCode.ts`, kept in her account's `prefs.pin`, chosen the first time with `t.pinWhyPro`),
   never the family's, which she neither sees nor changes (`AppProvider ownCode`). Always pass `ownCode`
   there, whatever the family lets her do ("use" only included): without it the family's code is the one
-  compared and shown (`showsCodeField`). Only the accounts of
+  compared and shown (`showsCodeField`). The family's code is not sent to a professional at all (migration
+  `20261122000000_gap_batch3.sql`, `sees_code`): a `pro` account, and a therapist or teacher on the team even
+  with a family-type account (`useOwnCode(true)` in `BoardStage`), receive the profile without
+  `settings.pin`, and whatever code they send is ignored. The app must cope with a profile that has no code
+  (`familyCodeUnset`); never read `settings.pin` as if it were always there. Only the accounts of
   the app's own team are never asked a code, on any board they open (`freeEdit={sess.isAdmin}`: the
   owner's decision, November 2026). Never use `freeEdit` for anyone else, a professional included.
+- Who does what on a team is decided by the database (migration `20261122000000_gap_batch3.sql`, attacks in
+  `supabase/tests/gap3_scenario.sql`; the demo server mirrors each rule: `runsTeam`, `seesCode`,
+  `removeFromTeam` in `LocalBackend`). A profile's content is read through `read_profile` (the `data` column is
+  no longer selectable: never `select('data')` on `profiles`). The team is run by the family signed in as
+  itself (`manages_team`): a tablet linked with full access keeps the board, its settings, the devices and
+  "use only" codes, nothing about the team, the follow-up, the family code or the recording and sharing
+  choices. A new function about members, invitations, rights or follow-up tests `manages_team`, not
+  `is_manager`. Leaving a team goes through `remove_from_team` (invitations from or to the person and the
+  codes they made end with the access). When the parents take a professional's profile over (`join_profile`)
+  the team is cleaned (codes, waiting invitations, linked tablets, family rights) and they are told who is on
+  it. While a professional owns a profile nothing is recorded or shared, whoever asks. A day of follow-up or
+  of counters is saved by the device it belongs to (`devices.user_id`). Free text about a child in an
+  observation (utterance, note, context, partner, result) is sealed; an observation is changed by its author
+  or the family. A person's name never falls back to an e-mail address (`my_name`, `memberName`: "—"). A
+  tablet's code is redeemed by a tablet's own sign-in only; a device row passes between people, never to or
+  from a tablet (`register_device`); someone who does not receive the code invites therapists and teachers
+  only and links no tablet on a family's profile.
 - Notices are stored as sentences by the server: a new notice gets its three versions in
   `src/lib/notices.ts` (shown with `noticeText`), with a line in `src/__tests__/notices.test.ts`.
 - Professionals' materials: no separate "create" page and no title field; the library creates

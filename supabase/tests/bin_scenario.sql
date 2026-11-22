@@ -23,15 +23,15 @@ set role authenticated;
 
 -- 1. Snapshots: once a week, and before a big change.
 select set_config('request.jwt.claim.sub', :'rita', false);
-select save_profile(:'adam', jsonb_set((select data from profiles), '{settings,pin}', '"4822"'), 1);
+select save_profile(:'adam', jsonb_set((select data from read_profile(:'adam')), '{settings,pin}', '"4822"'), 1);
 reset role;
 select test.ok((select count(*) = 1 and min(reason) = 'weekly' and min(version) = 1 from profile_snapshots), 'the first change of the week keeps the board as it was');
 set role authenticated;
-select save_profile(:'adam', jsonb_set((select data from profiles), '{settings,lang}', '"fr"'), 2);
+select save_profile(:'adam', jsonb_set((select data from read_profile(:'adam')), '{settings,lang}', '"fr"'), 2);
 reset role;
 select test.ok((select count(*) = 1 from profile_snapshots), 'a small change the same week keeps nothing more');
 set role authenticated;
-select save_profile(:'adam', (select data from profiles) #- '{boards,food}', 3);
+select save_profile(:'adam', (select data from read_profile(:'adam')) #- '{boards,food}', 3);
 reset role;
 select test.ok((select count(*) = 2 from profile_snapshots where reason = 'big_change' or reason = 'weekly'), 'an activity board gone: the board is kept before the change');
 select test.ok((select word_count(data) = 10 from profile_snapshots where reason = 'big_change'), 'that copy still has the board that was removed');
@@ -56,7 +56,7 @@ reset role;
 select id as snap from profile_snapshots where reason = 'big_change' \gset
 set role authenticated;
 select test.ok((select restore_snapshot(:'snap') = 5), 'a manager puts a copy back: it becomes a new version');
-select test.ok((select data -> 'boards' ? 'food' and data -> 'settings' ->> 'pin' = '4822' from profiles),
+select test.ok((select data -> 'boards' ? 'food' and data -> 'settings' ->> 'pin' = '4822' from read_profile(:'adam')),
   'the removed board is back; the caregiver code chosen since stays');
 reset role;
 select test.ok((select count(*) = 1 from profile_snapshots where reason = 'before_restore' and not (data -> 'boards' ? 'food')),

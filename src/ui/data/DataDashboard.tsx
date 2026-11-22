@@ -127,7 +127,7 @@ export function DataDashboard({ profileId, childName, profile, manager, onConsen
           await load();
         }}
         onDelete={
-          draft.id
+          draft.id && (manager || obs.find((o) => o.id === draft.id)?.createdBy === account?.id)
             ? async () => {
                 await api.deleteObservation(draft.id!);
                 setDraft(null);
@@ -241,7 +241,17 @@ export function DataDashboard({ profileId, childName, profile, manager, onConsen
       {!days ? (
         <Note text={x.loading} />
       ) : section === 'observations' ? (
-        <Observations x={x} obs={obs} canObserve={canObserve} onEdit={(o) => setDraft(o)} onNew={() => setDraft({ at: Date.now() })} reload={load} childName={childName} />
+        <Observations
+          x={x}
+          obs={obs}
+          canObserve={canObserve}
+          // An observation is changed or deleted by who wrote it, or by the family (the database's rule).
+          canChange={(o) => manager || o.createdBy === account?.id}
+          onEdit={(o) => setDraft(o)}
+          onNew={() => setDraft({ at: Date.now() })}
+          reload={load}
+          childName={childName}
+        />
       ) : !anyData && level === 'off' ? (
         <View style={ss.card}>
           <Text style={[ss.title, rtl && RIGHT]}>{x.offTitle}</Text>
@@ -679,6 +689,7 @@ function Observations({
   x,
   obs,
   canObserve,
+  canChange,
   onEdit,
   onNew,
   reload,
@@ -687,6 +698,7 @@ function Observations({
   x: DataStrings;
   obs: Observation[];
   canObserve: boolean;
+  canChange: (o: Observation) => boolean;
   onEdit: (o: Observation) => void;
   onNew: () => void;
   reload: () => Promise<void>;
@@ -699,6 +711,8 @@ function Observations({
   const [ctx, setCtx] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const chosen = obs.filter((o) => sel.has(o.id));
+  /** Among the chosen ones, those this person may change or delete (her own; all of them for the family). */
+  const changeable = chosen.filter(canChange);
   const toggle = (id: string) => {
     const n = new Set(sel);
     if (n.has(id)) n.delete(id);
@@ -747,6 +761,7 @@ function Observations({
           </View>
           {sel.size > 0 && (
             <>
+              {changeable.length > 0 && (
               <View style={[{ flexDirection: 'row', gap: 8, alignItems: 'flex-end' }, rtl && { flexDirection: 'row-reverse' }]}>
                 <View style={{ flex: 1 }}>
                   <Field label={x.setContext} value={ctx} onChangeText={setCtx} placeholder={x.context} />
@@ -756,7 +771,7 @@ function Observations({
                   label={x.setContextApply}
                   disabled={!ctx.trim()}
                   onPress={async () => {
-                    for (const o of chosen) {
+                    for (const o of changeable) {
                       const { createdBy: _c, authorName: _a, createdAt: _t, ...rest } = o;
                       await api.saveObservation({ ...rest, context: ctx.trim() }).catch(() => {});
                     }
@@ -765,20 +780,21 @@ function Observations({
                   }}
                 />
               </View>
+              )}
               <View style={[{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }, rtl && { flexDirection: 'row-reverse' }]}>
                 <Btn small icon="download" label={x.exportSelected} onPress={() => void exportSel()} />
-                <Btn small kind="danger" icon="trash" label={x.deleteSelected} onPress={() => setConfirmDelete(true)} />
+                {changeable.length > 0 && <Btn small kind="danger" icon="trash" label={x.deleteSelected} onPress={() => setConfirmDelete(true)} />}
               </View>
-              {confirmDelete && (
+              {confirmDelete && changeable.length > 0 && (
                 <View style={st.confirm}>
-                  <Text style={[ss.title, rtl && RIGHT]}>{x.deleteConfirm(sel.size)}</Text>
+                  <Text style={[ss.title, rtl && RIGHT]}>{x.deleteConfirm(changeable.length)}</Text>
                   <View style={[{ flexDirection: 'row', gap: 8 }, rtl && { flexDirection: 'row-reverse' }]}>
                     <Btn
                       small
                       kind="danger"
                       label={x.confirm}
                       onPress={async () => {
-                        for (const o of chosen) await api.deleteObservation(o.id).catch(() => {});
+                        for (const o of changeable) await api.deleteObservation(o.id).catch(() => {});
                         setSel(new Set());
                         setConfirmDelete(false);
                         await reload();
@@ -795,6 +811,7 @@ function Observations({
       {obs.length ? (
         obs.map((o) => {
           const on = sel.has(o.id);
+          const editable = canObserve && canChange(o);
           const sub = [
             when(o.at, uiLang),
             o.function ? x.functions[o.function] : null,
@@ -809,15 +826,18 @@ function Observations({
           return (
             <Pressable
               key={o.id}
-              onPress={() => (selecting ? toggle(o.id) : canObserve && onEdit(o))}
+              onPress={() => (selecting ? toggle(o.id) : editable && onEdit(o))}
+              disabled={!selecting && !editable}
               style={[ss.row, rtl && ss.rowRev, on && { borderColor: C.accent, backgroundColor: C.accentSoft }]}
-              accessibilityRole={selecting ? 'checkbox' : 'button'}
+              accessibilityRole={selecting ? 'checkbox' : editable ? 'button' : 'text'}
               {...(selecting ? checked(on) : null)}
             >
               {selecting ? (
                 <View style={[st.box, on && st.boxOn]}>{on && <Icon name="check" size={16} color="#fff" strokeWidth={3} />}</View>
-              ) : (
+              ) : editable ? (
                 <Icon name="pencil" size={20} color={C.textMuted} />
+              ) : (
+                <View style={{ width: 20 }} />
               )}
               <View style={{ flex: 1 }}>
                 <Text style={[ss.title, rtl && RIGHT]}>{o.utterance ? `« ${o.utterance} »` : o.function ? x.functions[o.function] : '—'}</Text>

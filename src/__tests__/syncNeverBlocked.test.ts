@@ -341,7 +341,8 @@ describe('any other refused save', () => {
     expect(sync.copy.data.settings.dataCollection).toBe(before.dataCollection);
     expect(redrawn).toBeGreaterThan(0);
     const server = (await api.getProfile(child)).data.settings;
-    expect(server.pin).toBe(before.pin);
+    // (the family's code is not sent to a professional: what she reads has none)
+    expect(server.pin).toBeUndefined();
     expect(server.dataCollection).toBe(before.dataCollection);
     expect(server.modelPace).toBe(1.7);
   });

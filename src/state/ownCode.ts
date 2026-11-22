@@ -9,9 +9,14 @@ import { useMemo } from 'react';
 import type { OwnCode } from './AppState';
 import { useSession } from './Session';
 
-export function useOwnCode(): OwnCode | undefined {
+/**
+ * `onTeamAsPro`: this person is a therapist or a teacher on the child's team with a family-type
+ * account. The family's code is not sent to her either (the database leaves it out): she
+ * chooses her own, like a professional's account.
+ */
+export function useOwnCode(onTeamAsPro = false): OwnCode | undefined {
   const { account, isAdmin, updatePrefs } = useSession();
-  const pro = account?.role === 'pro' && !isAdmin;
+  const pro = (account?.role === 'pro' || onTeamAsPro) && !isAdmin;
   const value = account?.prefs.pin;
   return useMemo(() => (pro ? { value, save: (code: string) => void updatePrefs({ pin: code }) } : undefined), [pro, value, updatePrefs]);
 }

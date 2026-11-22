@@ -116,6 +116,29 @@ Found by the review of 21–22 November, corrected in the app (no database chang
 Tried in a real browser on the demonstration build (a family's board, a linked "use only" tablet, a
 professional with "use" access, a board already in use without a code). Not tried on a tablet: see the hand-test list of the gap review.
 
+### Added later: holes in the database's rules (gap review, batch 3, 22 November 2026)
+
+Found by the same review; each is closed in the database (`20261122000000_gap_batch3.sql`) and
+replayed as its attack by `supabase/tests/gap3_scenario.sql`:
+
+| Problem | Fix |
+|---|---|
+| While a professional owned a profile, a tablet she linked with full access could turn recording and sharing on: days were stored with no parent's consent. | While a professional owns a profile nobody turns them on and nothing is stored, whoever asks. What had been stored for such profiles is erased by the file. |
+| When the parents took a profile over, the tablets the professional had linked, her waiting codes and invitations, and the rights she had given stayed. | The hand-over ends them: codes, waiting invitations and requests, linked tablets; nobody keeps a right that is the family's; the parents get a notice naming who is on the team. |
+| Someone removed from a team came back with an invitation that was still waiting (written for them, or by them), or with a tablet code they had made. | One way out for everybody (`remove_from_team`): those invitations and codes end with the access. Nobody answers their own invitation; an access with an end date is not made longer by an invitation that already waited; a tablet cannot accept an invitation; a request cannot ask to be a parent or a tablet. |
+| A tablet linked with full access was a full parent for the database: it could remove the other parent, change rights, approve requests, read the team's addresses, erase the follow-up, renew the family's connection code. | The team is run by the family signed in as itself (`manages_team`). Such a tablet keeps what its screens show: the board, its settings, the devices (it removes other tablets only) and "use only" codes. |
+| The family's caregiver code travelled inside the profile to every team member, professionals included. | The profile is read through `read_profile`, which leaves the code out for a professional (a "pro" account, a therapist or teacher on the team); the content can no longer be read from the table directly; a code she sends is ignored. She is asked her own code. |
+| A professional whose acceptance was withdrawn still downloaded the profiles she had created; a removed member's download still held what the child said. | "Download all my data" gives a professional's profiles only while her acceptance stands, and an observation only while the person may still read that child's follow-up. |
+| Two-step sign-in did not cover a professional's own documents. | Reading, adding and deleting them need the code typed, like everything else. |
+| Figures: the weekly e-mail tested 5 children, not 5 families, and wrote the exact number below 5; "boards used", "devices seen" and the like were counted over all families; "3 children share" was shown as a number. | Plain totals (accounts, profiles, linked devices, teams) for all families. Everything about use: consenting families only, from 5 children of 5 families; a group of 1 to 4 is never a number (the screens write "fewer than 5"). |
+| A team member could save a day of follow-up under the child's tablet's name, replacing the tablet's day. | A day is saved by the device it belongs to; the device's name inside the day is the server's. |
+| Reading the follow-up without the right gave "nothing" (empty charts) instead of "no"; an observation could be moved to another child, or changed by any member who sees the follow-up; three of its free texts were not sealed. | "forbidden" is said; an observation stays with its child and is changed by its author or the family; the situation, the partner and the result are sealed like the child's words and the note. |
+| A person without a name was shown to the team by their e-mail address. | "—". |
+| A tablet's code typed from a person's account made that person a manager; a tablet could take over a parent's device row; a professional who may invite could invite an account that receives the code. | A tablet's code works on a tablet's own sign-in only; a device passes between people, never to or from a tablet; a professional invites therapists and teachers only and links no tablet on a family's profile. |
+| Missing ceilings: materials per person, the size of an account's preferences and name, changes written to the history, revisions of a proposal, devices saying "I am here". A material could be tied to any child's profile. Old counters were cleaned only now and then; unanswered invitations never. | Ceilings added; a material is tied to a child of one's own teams; the nightly job cleans the counters and erases an unanswered invitation after 60 days. |
+
+Not changed: the daily ceiling of the AI helper waits until the AI is turned on.
+
 ### Added later: "Keep me logged in" (November 2026)
 
 On the log-in and sign-up forms. Ticked (the default, right for the family's own tablet or
@@ -233,6 +256,15 @@ What these need on the server is in §4 ("After the update of 18 November 2026")
 
 ## 4. What only you can do
 
+### After the update of 22 November 2026 (5 minutes)
+
+Once the new version of the app is published, run `20261122000000_gap_batch3.sql` in Supabase →
+SQL Editor ("Success"). `supabase/check-migrations.sql` says which files are still to run. Until
+it runs the app works as before, with the holes listed in §3 (batch 3) still open. Run it after
+the app is published, not before: an app that was not updated reads the profile the old way,
+which this file closes (a page left open on the old version shows the board from the device
+until it is reloaded).
+
 ### After the update of 18 November 2026 (about 20 minutes)
 
 1. **Run the new database files**, in this order, in Supabase → SQL Editor (each answers "Success"):
@@ -300,8 +332,8 @@ Names move a little between versions of the dashboard; look for the nearest word
 
 | Command | What it proves |
 |---|---|
-| `npm run test:db` | 318 checks on a throw-away database: the normal story, then **every attack of this review, which must fail**, then the hand-over of a profile created by a professional, the e-mails to the team, the figures for the team, the problems and the votes, then the second round: two-step sign-in, fresh proofs, hidden addresses, the purge queue, the bin and the copies, consent, retention, sealed sentences, the full export, and photos and recordings. The same runs on GitHub at every change (`.github/workflows/checks.yml`). |
-| `npm test` | 437 tests; `security.test.ts` covers links, other people's changes, what stays on the device, the print page, the website protections. |
+| `npm run test:db` | 429 checks on a throw-away database: the normal story, then **every attack of this review, which must fail**, then the hand-over of a profile created by a professional, the e-mails to the team, the figures for the team, the problems and the votes, then the second round: two-step sign-in, fresh proofs, hidden addresses, the purge queue, the bin and the copies, consent, retention, sealed sentences, the full export, photos and recordings, notifications, and the holes of the gap review (batch 3). The same runs on GitHub at every change (`.github/workflows/checks.yml`). |
+| `npm test` | 574 tests; `security.test.ts` covers links, other people's changes, what stays on the device, the print page, the website protections. |
 | `npm audit` | Known flaws in libraries. Today: none in what ships to families (4 medium ones in build tools only). |
 | `npm run test:a11y` | The screens still pass the accessibility scan after these changes. |
 

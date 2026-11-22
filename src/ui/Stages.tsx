@@ -13,6 +13,7 @@ import type { Profile } from '../model/types';
 import { AppProvider, useApp } from '../state/AppState';
 import { BoardContext, useBoard, type MyAccess } from '../state/BoardContext';
 import { MediaSync } from '../state/mediaSync';
+import { useOwnCode } from '../state/ownCode';
 import { ProfileSync } from '../state/profileSync';
 import { ProductCounter } from '../state/productCounters';
 import { UsageTracker } from '../state/usageTracker';
@@ -127,6 +128,8 @@ function BoardStage({ profileId }: { profileId: string }) {
   const [media, setMedia] = useState<MediaSync | null>(null);
   const accessRef = useRef<MyAccess | null>(null);
   accessRef.current = access;
+  // A therapist or a teacher on the team: the family's caregiver code is not sent to her, her own is asked.
+  const ownCode = useOwnCode(!!access && !access.owner && (access.role === 'therapist' || access.role === 'teacher'));
   // Feature counters for the app's team: the family's own devices and the child's tablets only
   // (not a professional's account, not the team's test accounts), and only if the family agreed.
   const product = useRef<ProductCounter | null>(null);
@@ -346,6 +349,8 @@ function BoardStage({ profileId }: { profileId: string }) {
           // The accounts of the app's own team are never asked the caregiver code (the owner's
           // choice): caregiver mode, the settings and the lock open at once for them.
           freeEdit={sess.isAdmin}
+          // A therapist or a teacher on the team does not receive the family's code: her own is asked.
+          ownCode={ownCode}
         >
           <Root />
           <OpenGuideOnStart />

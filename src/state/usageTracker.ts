@@ -9,7 +9,7 @@
  * consent allows.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { Backend } from '../backend/Backend';
+import { BackendError, type Backend } from '../backend/Backend';
 import type { UsageDay, UsageSession } from '../backend/types';
 import { limitToConsent, LEVEL_RANK, type CollectLevel } from '../lib/usageConsent';
 import { isForgotten } from '../lib/deviceData';
@@ -274,8 +274,14 @@ export class UsageTracker {
       try {
         await this.api.saveUsageDay(this.profileId, kept);
         if (d !== dayOf(this.now())) this.store.pending = this.store.pending.filter((x) => x !== d);
-      } catch {
-        return; // offline or refused: tried again later
+      } catch (e) {
+        // A day the server will never take (too old, too big): it leaves the list, and the
+        // days after it are sent. It used to be tried again for ever, in front of all the others.
+        if (e instanceof BackendError && (e.code === 'invalid' || e.code === 'too_large')) {
+          this.store.pending = this.store.pending.filter((x) => x !== d);
+          continue;
+        }
+        break; // offline or refused for now: tried again later
       }
     }
     await this.writeLocal();

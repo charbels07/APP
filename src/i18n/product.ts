@@ -84,11 +84,11 @@ const fr = {
     guide: 'Guide',
     lock: 'Verrouillage enfant',
   } as Record<string, string>,
-  notEnough: (n: number, min: number) =>
-    `${n} enfant(s) envoie(nt) ces chiffres pour le moment. Ils apparaissent à partir de ${min} enfants de ${min} familles, pour que personne ne puisse être reconnu.`,
-  agreed: (n: number) => `${n} famille(s) ont accepté de partager ces chiffres.`,
+  notEnough: (n: number | null, min: number) =>
+    `${n === 0 ? 'Aucun enfant n’envoie ces chiffres' : `Les enfants de moins de ${min} familles envoient ces chiffres`} pour le moment. Ils apparaissent à partir de ${min} enfants de ${min} familles, pour que personne ne puisse être reconnu.`,
+  agreed: (n: number | null) => (n === null ? 'Moins de 5 familles ont accepté de partager ces chiffres.' : `${n} famille(s) ont accepté de partager ces chiffres.`),
   decide: 'À regarder pour décider',
-  decideNote: (n: number) => `Les 30 derniers jours, ${n} enfants. Un chiffre manque quand moins de 5 enfants sont concernés.`,
+  decideNote: (n: number | null) => `Les 30 derniers jours, ${n ?? 'moins de 5'} enfants. Un chiffre manque quand moins de 5 enfants de 5 familles sont concernés.`,
   indicator: 'Ce qu’on voit',
   figure: 'Chiffre',
   meaning: 'Ce que ça peut vouloir dire',
@@ -242,8 +242,8 @@ const fr = {
 
   // ── Security ──
   consentTitle: 'Ce que les familles ont choisi',
-  sharingLine: (share: number, agreed: number, total: number) =>
-    `Sur ${total} profils d’enfants : ${share} partagent des chiffres anonymes, dont ${agreed} avec la liste actuelle (fonctions vues et utilisées, version, rapidité, problèmes techniques).`,
+  sharingLine: (share: number | null, agreed: number | null, total: number) =>
+    `Sur ${total} profils d’enfants : ${share ?? 'moins de 5'} partagent des chiffres anonymes, dont ${agreed ?? 'moins de 5'} avec la liste actuelle (fonctions vues et utilisées, version, rapidité, problèmes techniques).`,
   rulesTitle: 'Ce que l’équipe ne reçoit jamais',
   rules: [
     'Le nom d’un enfant, sa date de naissance exacte, son diagnostic.',
@@ -340,10 +340,11 @@ const en: Dict = {
     guide: 'Guide',
     lock: 'Child lock',
   },
-  notEnough: (n, min) => `${n} child(ren) send these figures for now. They appear from ${min} children of ${min} families up, so that nobody can be recognised.`,
-  agreed: (n) => `${n} family(ies) agreed to share these figures.`,
+  notEnough: (n, min) =>
+    `${n === 0 ? 'No child sends these figures' : `The children of fewer than ${min} families send these figures`} for now. They appear from ${min} children of ${min} families up, so that nobody can be recognised.`,
+  agreed: (n) => (n === null ? 'Fewer than 5 families agreed to share these figures.' : `${n} family(ies) agreed to share these figures.`),
   decide: 'What to look at to decide',
-  decideNote: (n) => `The last 30 days, ${n} children. A figure is missing when fewer than 5 children are concerned.`,
+  decideNote: (n) => `The last 30 days, ${n ?? 'fewer than 5'} children. A figure is missing when fewer than 5 children of 5 families are concerned.`,
   indicator: 'What we see',
   figure: 'Figure',
   meaning: 'What it may mean',
@@ -494,7 +495,7 @@ const en: Dict = {
 
   consentTitle: 'What the families chose',
   sharingLine: (share, agreed, total) =>
-    `Of ${total} children’s profiles: ${share} share anonymous figures, ${agreed} of them with today’s list (features seen and used, version, speed, technical problems).`,
+    `Of ${total} children’s profiles: ${share ?? 'fewer than 5'} share anonymous figures, ${agreed ?? 'fewer than 5'} of them with today’s list (features seen and used, version, speed, technical problems).`,
   rulesTitle: 'What the team never receives',
   rules: [
     'A child’s name, exact date of birth, diagnosis.',
@@ -589,10 +590,11 @@ const ar: Dict = {
     guide: 'الدليل',
     lock: 'قفل الطفل',
   },
-  notEnough: (n, min) => `${n} طفل يرسل هذه الأرقام حالياً. تظهر ابتداءً من ${min} أطفال من ${min} عائلات، حتى لا يُعرف أحد.`,
-  agreed: (n) => `${n} عائلة وافقت على مشاركة هذه الأرقام.`,
+  notEnough: (n, min) =>
+    `${n === 0 ? 'لا طفل يرسل هذه الأرقام حالياً' : `أطفال أقل من ${min} عائلات يرسلون هذه الأرقام حالياً`}. تظهر ابتداءً من ${min} أطفال من ${min} عائلات، حتى لا يُعرف أحد.`,
+  agreed: (n) => (n === null ? 'أقل من 5 عائلات وافقت على مشاركة هذه الأرقام.' : `${n} عائلة وافقت على مشاركة هذه الأرقام.`),
   decide: 'ما يُنظر إليه لاتخاذ القرار',
-  decideNote: (n) => `آخر 30 يوماً، ${n} طفلاً. يغيب الرقم عندما يخصّ أقل من 5 أطفال.`,
+  decideNote: (n) => `آخر 30 يوماً، ${n ?? 'أقل من 5'} طفلاً. يغيب الرقم عندما يخصّ أقل من 5 أطفال من 5 عائلات.`,
   indicator: 'ما نراه',
   figure: 'الرقم',
   meaning: 'ما قد يعنيه',
@@ -743,7 +745,7 @@ const ar: Dict = {
 
   consentTitle: 'ما اختارته العائلات',
   sharingLine: (share, agreed, total) =>
-    `من ${total} ملف طفل: ${share} يشاركون أرقاماً مجهولة الهوية، منهم ${agreed} بالقائمة الحالية (الوظائف التي ظهرت والتي استُعملت، النسخة، السرعة، المشاكل التقنية).`,
+    `من ${total} ملف طفل: ${share ?? 'أقل من 5'} يشاركون أرقاماً مجهولة الهوية، منهم ${agreed ?? 'أقل من 5'} بالقائمة الحالية (الوظائف التي ظهرت والتي استُعملت، النسخة، السرعة، المشاكل التقنية).`,
   rulesTitle: 'ما لا يتلقّاه الفريق أبداً',
   rules: [
     'اسم الطفل، تاريخ ميلاده الدقيق، تشخيصه.',

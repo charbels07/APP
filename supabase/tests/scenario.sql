@@ -200,8 +200,8 @@ select test.ok((select title = 'Dentiste' from resources), 'view-only share cann
 select set_config('request.jwt.claim.sub', :'rita', false);
 select test.expect_error(format('select save_usage_day(%L, ''ipad'', current_date - 3, ''{"selections":3}'')', (select v from test.ids where k = 'adam')), 'forbidden');
 select test.expect_error('update profiles set data = jsonb_set(data, ''{settings,dataCollection}'', ''"usage"'')', 'permission denied for table profiles');
-select test.ok((select (save_profile(id, jsonb_set(data, '{settings,dataCollection}', '"usage"'), version)) ->> 'ok' = 'true' from profiles
-                 where id = (select v::uuid from test.ids where k = 'adam')), 'the family turns recording on (through the app''s save, not by writing the row)');
+select test.ok((select (save_profile(id, jsonb_set(data, '{settings,dataCollection}', '"usage"'), version)) ->> 'ok' = 'true'
+                  from read_profile((select v::uuid from test.ids where k = 'adam'))), 'the family turns recording on (through the app''s save, not by writing the row)');
 select register_device((select v::uuid from test.ids where k = 'adam'), 'ipad', 'iPad', 'companion', 'ios');
 select save_usage_day((select v::uuid from test.ids where k = 'adam'), 'ipad', current_date - 3,
   '{"selections":3,"concepts":{"want":2},"samples":[{"t":1}],"stats":{"distinctConcepts":1}}');
@@ -260,18 +260,26 @@ select test.ok((select count(*) = 1 from profiles), 'accepted again: her access 
 -- Figures: counts for everybody; what comes from the children only with consent, and from 5 children up.
 select set_config('request.jwt.claim.sub', :'zoe', false);
 select test.ok((select (o -> 'accounts' ->> 'parents')::int = 3 and (o -> 'accounts' ->> 'pros')::int = 2
-                   and (o -> 'families' ->> 'children')::int = 1 and (o -> 'devices' -> 'versions' ->> '1.2.0')::int = 1
+                   and (o -> 'families' ->> 'children')::int = 1 and (o -> 'devices' ->> 'total')::int = 2
                    and (o -> 'pros' -> 'status' ->> 'verified')::int = 2 and (o -> 'ai' ->> 'calls30')::int = 3
                   from admin_overview() o), 'the back office counts accounts, children, tablets and certificates (tablets are not people)');
+select test.ok((select o -> 'devices' -> 'versions' = '{}'::jsonb and o -> 'devices' -> 'platforms' = '{}'::jsonb
+                   and (o -> 'devices' ->> 'seen7')::int = 0 and (o -> 'families' ->> 'used7')::int = 0 and (o -> 'families' ->> 'edited30')::int = 0
+                  from admin_overview() o), 'which boards are used and what the devices run: nothing from a family that does not share figures');
 reset role;
 update profiles set data = jsonb_set(data, '{settings,shareStats}', '"anonymous"');
 insert into usage_days (profile_id, device_id, day, data) select id, 'ipad', current_date - 1,
   '{"platform":"ios · iPad","sessions":[{"activeMs":600000}],"selections":40,"utterances":10,"stats":{"distinctConcepts":12,"len1":6,"len2":3,"len3plus":1},"modes":{"core":30,"folder":10},"hours":[0,0,0,0,0,0,0,0,5,35]}'
   from profiles;
 set role authenticated;
-select test.ok((select (o -> 'usage' ->> 'children')::int = 1 and not (o -> 'usage' ->> 'enough')::boolean
+select test.ok((select not (o -> 'usage' ->> 'enough')::boolean
                    and not (o -> 'usage') ? 'minutes' and not (o -> 'setup') ? 'choices'
                   from admin_overview() o), 'figures about fewer than 5 children are never shown');
+select test.ok((select o -> 'usage' -> 'children' = 'null' and o -> 'usage' -> 'sharing' = 'null' and o -> 'setup' -> 'children' = 'null'
+                   and o -> 'families' -> 'sharing' = 'null' and o -> 'families' -> 'used7' = 'null' and o -> 'families' -> 'edited30' = 'null'
+                   and o -> 'devices' -> 'seen7' = 'null' and o -> 'devices' -> 'versions' = '{}'::jsonb
+                   and (o -> 'devices' ->> 'total')::int = 2 and (o -> 'families' ->> 'children')::int = 1
+                  from admin_overview() o), 'a group of 1 to 4 is never a number, not even "how many share"; the plain totals stay');
 reset role;
 insert into profiles (owner_id, name, age, data)
 select :'eve', 'Enfant ' || g, 5, '{"settings":{"shareStats":"anonymous","lang":"ar","arabic":"sa","langs":["ar","en"]},"tlaOrder":["a","b"]}'
@@ -283,8 +291,8 @@ insert into usage_days (profile_id, device_id, day, data) select id, 'ipad', cur
 insert into profiles (owner_id, name, age, data) values (:'eve', 'Secret', 9, '{"settings":{"dataCollection":"usage"}}');
 insert into usage_days (profile_id, device_id, day, data) select id, 'ipad', current_date - 1, '{"sessions":[{"activeMs":6000000}],"selections":4000}' from profiles where name = 'Secret';
 set role authenticated;
-select test.ok((select (o -> 'usage' ->> 'children')::int = 5 and not (o -> 'usage' ->> 'enough')::boolean
-                   and not (o -> 'usage') ? 'minutes' and not (o -> 'setup') ? 'choices'
+select test.ok((select o -> 'usage' -> 'children' = 'null' and not (o -> 'usage' ->> 'enough')::boolean
+                   and not (o -> 'usage') ? 'minutes' and not (o -> 'setup') ? 'choices' and o -> 'families' -> 'sharing' = 'null'
                   from admin_overview() o), '5 children of only 2 families are not enough either');
 -- Four more families, one child each: 9 children of 6 families.
 reset role;
@@ -314,7 +322,7 @@ select test.ok((select not (o -> 'setup' -> 'choices' -> 'arabic') ? 'lb' and no
                    and o::text not like '%Beyrouth%'
                   from admin_overview() o), 'a choice, a platform or a setting shared by fewer than 5 children is left out');
 select test.ok((select bool_and(w ->> 'minutes' is null) from admin_overview() o, jsonb_array_elements(o -> 'usage' -> 'weeks') w
-                 where (w ->> 'children')::int < 5), 'a week with fewer than 5 children shows no average');
+                 where w -> 'children' = 'null' or (w ->> 'children')::int < 5), 'a week with fewer than 5 children shows no average');
 select test.ok((select o::text not like '%Adam%' and o::text not like '%Enfant%' and o::text not like '%pizza%' from admin_overview() o),
   'no name and no word in the figures');
 select test.expect_error('select count(*) from bo_child_days', 'permission denied for view bo_child_days');

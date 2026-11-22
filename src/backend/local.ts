@@ -97,7 +97,7 @@ interface DB {
   proposals: Proposal[];
   history: HistoryEntry[];
   devices: Device[];
-  pairings: { code: string; profileId: string; access: 'full' | 'use'; expiresAt: number }[];
+  pairings: { code: string; profileId: string; access: 'full' | 'use'; expiresAt: number; createdBy?: string }[];
   verifications: Record<string, Verification>;
   notices: Notice[];
   resources: Resource[];
@@ -196,7 +196,12 @@ async function sha256(text: string): Promise<string> {
   return Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, text);
 }
 
-const memberName = (a?: Account) => a?.displayName || a?.email || a?.phone || '—';
+/** A person's name for the others (never their e-mail address or phone number: as my_name in the database). */
+const memberName = (a?: Account) => a?.displayName?.trim() || '—';
+/** The roles a person can have on a team ("parent" is written by the owner only, "device" never: a tablet joins with its code). */
+const TEAM_ROLES: CollaboratorRole[] = ['therapist', 'teacher', 'caregiver', 'family', 'other'];
+/** The family's own rights: nobody keeps them when the parents take a profile over. */
+const NO_FAMILY_RIGHTS = { manager: false, changeAccess: false, invite: false, manageDevices: false, viewData: false };
 
 export class LocalBackend implements Backend {
   readonly kind = 'local' as const;
@@ -298,6 +303,52 @@ export class LocalBackend implements Backend {
     const a = LocalBackend.access(db, profileId, me.id);
     if (!a) throw new BackendError('forbidden');
     return a;
+  }
+  /**
+   * Who runs the child's team: the family (owner, a co-parent who manages), signed in as itself.
+   * Never a tablet linked with a code, even with full access (as manages_team in the database).
+   */
+  private static runsTeam(db: DB, profileId: string, me: StoredAccount): boolean {
+    const a = LocalBackend.access(db, profileId, me.id);
+    return !!a && me.provider !== 'device' && (a.owner || (!!a.perms.manager && a.role !== 'device'));
+  }
+  private static requireTeam(db: DB, profileId: string, me: StoredAccount) {
+    if (!LocalBackend.runsTeam(db, profileId, me)) throw new BackendError('forbidden');
+  }
+  /**
+   * Who receives the family's caregiver code with the profile: the parents, the family's members
+   * and the child's tablets. Not a professional (a "pro" account, a therapist or a teacher on
+   * the team): she has her own code (as sees_code in the database).
+   */
+  private static seesCode(db: DB, profileId: string, me: StoredAccount): boolean {
+    if (me.role === 'pro') return false;
+    if (db.profiles[profileId]?.ownerId === me.id) return true;
+    const a = LocalBackend.access(db, profileId, me.id);
+    return !!a && a.role !== 'therapist' && a.role !== 'teacher';
+  }
+  private static withoutCode(data: Profile): Profile {
+    const out = clone(data);
+    if (out.settings) delete (out.settings as { pin?: string }).pin;
+    return out;
+  }
+  /**
+   * One way out of a team: the access ends, and so does what the person could use to come back
+   * (invitations written by or for them that still wait, codes they made for a tablet).
+   */
+  private static removeFromTeam(db: DB, profileId: string, userId: string) {
+    const x = db.members.find((y) => y.profileId === profileId && y.userId === userId);
+    if (x) x.status = 'revoked';
+    const mail = db.accounts[userId]?.email;
+    for (const inv of db.invitations) {
+      if (inv.profileId !== profileId || inv.status !== 'pending') continue;
+      if (inv.fromUserId === userId || inv.toUserId === userId || (inv.direction === 'invite' && !!mail && inv.email === mail)) inv.status = 'cancelled';
+    }
+    db.pairings = db.pairings.filter((c) => !(c.profileId === profileId && c.createdBy === userId));
+  }
+  /** A day of follow-up or of counters comes from the device it belongs to (or from the family, taking a device over). */
+  private static requireOwnDevice(db: DB, profileId: string, deviceId: string, me: StoredAccount) {
+    const d = db.devices.find((x) => x.profileId === profileId && x.id === deviceId && !x.revoked);
+    if (!d || !(d.userId === me.id || LocalBackend.runsTeam(db, profileId, me))) throw new BackendError('forbidden');
   }
   private static findAccount(db: DB, t: { email?: string; phone?: string }) {
     const email = normEmail(t.email);
@@ -621,22 +672,26 @@ export class LocalBackend implements Backend {
     return this.tx((db, m) => {
       const me = LocalBackend.need(m);
       if (me.provider === 'device') throw new BackendError('forbidden');
-      const mine = new Set(Object.values(db.profiles).filter((p) => p.ownerId === me.id).map((p) => p.id));
+      // A professional's profiles are hers to download only while her acceptance stands.
+      const mine = new Set(Object.values(db.profiles).filter((p) => p.ownerId === me.id && LocalBackend.cleared(db, me.id)).map((p) => p.id));
+      // The family's code is never in a professional's file.
+      const board = (d: Profile) => (me.role === 'pro' ? LocalBackend.withoutCode(d) : d);
       const of = <T extends { profileId?: string }>(list: T[] | undefined) => (list ?? []).filter((x) => x.profileId && mine.has(x.profileId));
       return clone({
         exportedAt: new Date().toISOString(),
         format: 'empower-communication/export-1',
         account: LocalBackend.public(me),
         consents: (db.consents ?? []).filter((c) => c.userId === me.id),
-        children: Object.values(db.profiles).filter((p) => mine.has(p.id)),
+        children: Object.values(db.profiles).filter((p) => mine.has(p.id)).map((p) => ({ ...p, data: board(p.data) })),
         teams: db.members.filter((x) => mine.has(x.profileId) || x.userId === me.id),
         invitations: db.invitations.filter((i) => mine.has(i.profileId) || i.fromUserId === me.id || i.toUserId === me.id),
         proposals: db.proposals.filter((x) => mine.has(x.profileId) || x.authorId === me.id),
         history: of(db.history),
         devices: db.devices.filter((d) => mine.has(d.profileId) || d.userId === me.id),
         followUpDays: (db.usage ?? []).filter((u) => mine.has(u.profileId)).map((u) => u.data),
-        observations: (db.observations ?? []).filter((o) => mine.has(o.profileId) || o.createdBy === me.id),
-        boardCopies: of(db.snapshots),
+        // What she wrote about a child, with the child's words: only while she may still read that child's follow-up.
+        observations: (db.observations ?? []).filter((o) => mine.has(o.profileId) || (o.createdBy === me.id && LocalBackend.canViewData(db, o.profileId, me))),
+        boardCopies: of(db.snapshots).map((x) => ({ ...x, data: board(x.data) })),
         notices: db.notices.filter((n) => n.userId === me.id),
         verification: db.verifications[me.id] ?? null,
         materials: db.resources.filter((r) => r.ownerId === me.id),
@@ -648,9 +703,11 @@ export class LocalBackend implements Backend {
 
   async getProfile(id: string): Promise<ChildRecord> {
     return this.tx((db, m) => {
-      LocalBackend.requireAccess(db, id, LocalBackend.need(m));
+      const me = LocalBackend.need(m);
+      LocalBackend.requireAccess(db, id, me);
       const { connectionCode: _c, ...rec } = db.profiles[id];
-      return clone(rec);
+      // The family's caregiver code is not sent to a professional.
+      return LocalBackend.seesCode(db, id, me) ? clone(rec) : { ...clone(rec), data: LocalBackend.withoutCode(rec.data) };
     });
   }
 
@@ -661,18 +718,26 @@ export class LocalBackend implements Backend {
     });
   }
 
-  async saveProfile(id: string, data: Profile, baseVersion: number): Promise<SaveResult> {
+  async saveProfile(id: string, sent: Profile, baseVersion: number): Promise<SaveResult> {
     return this.tx((db, m) => {
       const me = LocalBackend.need(m);
       const a = LocalBackend.requireAccess(db, id, me);
       const p = db.profiles[id];
       const manager = a.owner || a.perms.manager;
       if (!manager && a.level < 3) throw new BackendError('forbidden');
+      const blind = !LocalBackend.seesCode(db, id, me);
       // Core-vocabulary positions change only through an approved proposal.
-      if (!manager && JSON.stringify(data.boards.core) !== JSON.stringify(p.data.boards.core)) throw new BackendError('core_protected');
+      if (!manager && JSON.stringify(sent.boards.core) !== JSON.stringify(p.data.boards.core)) throw new BackendError('core_protected');
       if (p.version !== baseVersion) {
         const { connectionCode: _c, ...rec } = p;
-        return { ok: false, conflict: clone(rec) };
+        return { ok: false, conflict: blind ? { ...clone(rec), data: LocalBackend.withoutCode(rec.data) } : clone(rec) };
+      }
+      // A professional does not hold the family's code: whatever she sends, the family's stays.
+      if (!sent || typeof sent.settings !== 'object' || sent.settings === null || Array.isArray(sent.settings)) throw new BackendError('invalid');
+      const data = clone(sent);
+      if (blind && data.settings) {
+        if (p.data.settings.pin !== undefined) data.settings.pin = p.data.settings.pin;
+        else delete (data.settings as { pin?: string }).pin;
       }
       // What is recorded, what is shared and the caregiver code are the family's own decisions.
       const was = p.data.settings;
@@ -681,9 +746,10 @@ export class LocalBackend implements Backend {
         (now.dataCollection ?? 'off') !== (was.dataCollection ?? 'off') ||
         (now.shareStats ?? 'none') !== (was.shareStats ?? 'none') ||
         (now.shareTerms ?? 0) !== (was.shareTerms ?? 0);
-      if (!manager && (consentChanged || now.pin !== was.pin)) throw new BackendError('consent_protected');
-      // A professional who created the profile edits everything except these two choices.
-      if (a.owner && me.role === 'pro' && consentChanged) throw new BackendError('consent_protected');
+      if (!manager && (consentChanged || (now.pin ?? '1234') !== (was.pin ?? '1234'))) throw new BackendError('consent_protected');
+      // Recording and sharing: the family, signed in as itself. Not while a professional owns the
+      // profile (whoever asks: the parents have not agreed yet), not from a linked tablet.
+      if (consentChanged && (db.accounts[p.ownerId]?.role === 'pro' || me.provider === 'device' || a.role === 'device')) throw new BackendError('consent_protected');
       // The family stops sharing: what was counted for the team is erased at once.
       if (was.shareStats === 'anonymous' && now.shareStats !== 'anonymous') db.featureDays = (db.featureDays ?? []).filter((f) => f.profileId !== p.id);
       LocalBackend.snapshotBefore(db, p, data, me.id);
@@ -821,16 +887,18 @@ export class LocalBackend implements Backend {
       const me = LocalBackend.need(m);
       LocalBackend.requireAccess(db, profileId, me);
       // The addresses only for the family, the team's managers and each person their own (as list_members).
-      const manager = LocalBackend.managers(db, profileId).includes(me.id);
+      const manager = LocalBackend.runsTeam(db, profileId, me);
       return clone(db.members.filter((x) => x.profileId === profileId)).map((x) => (manager || x.userId === me.id ? x : { ...x, email: undefined }));
     });
   }
 
   async updateMember(profileId: string, userId: string, patch: { level?: AccessLevel; perms?: PermissionSet; role?: CollaboratorRole; expiresAt?: number | null }): Promise<void> {
     await this.tx((db, m) => {
-      LocalBackend.requireManager(db, profileId, LocalBackend.need(m));
+      LocalBackend.requireTeam(db, profileId, LocalBackend.need(m));
       const x = db.members.find((y) => y.profileId === profileId && y.userId === userId);
       if (!x) throw new BackendError('not_found');
+      // A person does not become a tablet, a tablet does not become a person.
+      if (patch.role && patch.role !== x.role && (x.role === 'device' || userId === LocalBackend.need(m).id || !(patch.role === 'parent' || TEAM_ROLES.includes(patch.role)))) throw new BackendError('invalid');
       if (patch.level) x.level = patch.level;
       if (patch.perms) x.perms = patch.perms;
       if (patch.role) x.role = patch.role;
@@ -841,9 +909,9 @@ export class LocalBackend implements Backend {
 
   async revokeMember(profileId: string, userId: string): Promise<void> {
     await this.tx((db, m) => {
-      LocalBackend.requireManager(db, profileId, LocalBackend.need(m));
-      const x = db.members.find((y) => y.profileId === profileId && y.userId === userId);
-      if (x) x.status = 'revoked';
+      LocalBackend.requireTeam(db, profileId, LocalBackend.need(m));
+      if (!db.members.some((y) => y.profileId === profileId && y.userId === userId)) throw new BackendError('not_found');
+      LocalBackend.removeFromTeam(db, profileId, userId);
       LocalBackend.notify(db, userId, 'access', `Votre accès au profil de ${db.profiles[profileId].name} a été retiré.`, { profileId });
     });
   }
@@ -852,7 +920,13 @@ export class LocalBackend implements Backend {
     return this.tx((db, m) => {
       const me = LocalBackend.need(m);
       const a = LocalBackend.requireAccess(db, profileId, me);
+      if (me.provider === 'device' || a.role === 'device') throw new BackendError('forbidden');
       if (!(a.owner || a.perms.invite || a.perms.manager)) throw new BackendError('forbidden');
+      // Someone who does not receive the family's code invites colleagues only.
+      if (!a.owner && !LocalBackend.seesCode(db, profileId, me) && input.role !== 'therapist' && input.role !== 'teacher') throw new BackendError('forbidden');
+      // "parent" is written by the owner only (how a professional hands a profile to the parents).
+      if (!(input.role === 'parent' || TEAM_ROLES.includes(input.role))) throw new BackendError('invalid');
+      if (input.role === 'parent' && !a.owner) throw new BackendError('forbidden');
       // Someone who may only invite gives at most what they hold, and never the family's own rights.
       const boss = a.owner || a.perms.manager;
       const level = boss ? input.level : (Math.min(input.level, a.level) as AccessLevel);
@@ -914,6 +988,8 @@ export class LocalBackend implements Backend {
     // A professional joins a child's team only once the app's team accepted the certificate.
     if (!LocalBackend.cleared(db, userId)) throw new BackendError('pro_not_verified');
     const acc = db.accounts[userId];
+    // A tablet joins with a code made for it, never with an invitation.
+    if (inv.role === 'device') throw new BackendError('forbidden');
     // A parent accepts the "parent" invitation written by the professional who created the
     // profile: the parent becomes the owner, the professional stays on the team (same as the real server).
     const p = db.profiles[inv.profileId];
@@ -938,9 +1014,46 @@ export class LocalBackend implements Backend {
           createdAt: Date.now(),
         });
       }
-      for (const other of db.invitations) if (other.profileId === p.id && other.fromUserId === was.id && other.status === 'pending' && other.id !== inv.id) other.status = 'cancelled';
+      // The family starts with a team it knows: what the professional had set up as owner stops
+      // here (codes to link a tablet, invitations and requests still waiting, the tablets she
+      // linked), and nobody keeps a right that is the family's.
+      db.pairings = db.pairings.filter((c) => c.profileId !== p.id);
+      for (const other of db.invitations) if (other.profileId === p.id && other.status === 'pending' && other.id !== inv.id) other.status = 'cancelled';
+      for (const x of db.members) {
+        if (x.profileId !== p.id) continue;
+        if (x.role === 'device') {
+          x.status = 'revoked';
+          for (const d of db.devices) if (d.profileId === p.id && d.userId === x.userId) d.revoked = true;
+        }
+        x.perms = { ...x.perms, ...NO_FAMILY_RIGHTS };
+      }
       inv.status = 'accepted';
       inv.toUserId = userId;
+      // The parents are told who is on the team they now run.
+      const team = db.members
+        .filter((x) => x.profileId === p.id && x.status === 'active')
+        .sort((x, y) => x.createdAt - y.createdAt)
+        .map((x) => x.displayName)
+        .join(', ');
+      const mine = acc?.prefs?.uiLang ?? 'fr';
+      const child = inv.childName;
+      LocalBackend.notify(
+        db,
+        userId,
+        'access',
+        team
+          ? mine === 'en'
+            ? `You are now the parent in charge of ${child}'s profile. On the team: ${team}. You decide their rights in Settings → Team.`
+            : mine === 'ar'
+              ? `أنت الآن ولي الأمر المسؤول عن ملف ${child}. في الفريق: ${team}. تحدّد صلاحياتهم من الإعدادات ← الفريق.`
+              : `Vous êtes maintenant le parent responsable du profil de ${child}. Dans son équipe : ${team}. Vous décidez de leurs droits dans Réglages → Équipe.`
+          : mine === 'en'
+            ? `You are now the parent in charge of ${child}'s profile. Nobody else is on the team.`
+            : mine === 'ar'
+              ? `أنت الآن ولي الأمر المسؤول عن ملف ${child}. لا أحد غيرك في الفريق.`
+              : `Vous êtes maintenant le parent responsable du profil de ${child}. Personne d’autre n’est dans son équipe.`,
+        { profileId: p.id },
+      );
       const lang = was.prefs?.uiLang ?? 'fr';
       const who = memberName(acc);
       LocalBackend.notify(
@@ -956,7 +1069,11 @@ export class LocalBackend implements Backend {
       );
       return;
     }
-    db.members = db.members.filter((x) => !(x.profileId === inv.profileId && x.userId === userId));
+    // An access with an end date keeps it: answering an invitation that was already waiting is
+    // not a way to stay longer. An invitation written after the access ended is a new one.
+    const had = db.members.find((x) => x.profileId === inv.profileId && x.userId === userId);
+    const expiresAt = had?.status === 'active' && had.expiresAt && had.expiresAt > inv.createdAt ? had.expiresAt : undefined;
+    db.members = db.members.filter((x) => x !== had);
     db.members.push({
       profileId: inv.profileId,
       userId,
@@ -966,7 +1083,8 @@ export class LocalBackend implements Backend {
       level: grant?.level ?? inv.level,
       perms: grant?.perms ?? inv.perms,
       status: 'active',
-      createdAt: Date.now(),
+      expiresAt,
+      createdAt: had?.createdAt ?? Date.now(),
     });
     inv.status = 'accepted';
   }
@@ -974,16 +1092,20 @@ export class LocalBackend implements Backend {
   async respondInvitation(id: string, accept: boolean): Promise<void> {
     await this.tx((db, m) => {
       const me = LocalBackend.need(m);
+      // A person joins a team; a child's tablet is linked with its own kind of code.
+      if (me.provider === 'device') throw new BackendError('forbidden');
       const inv = db.invitations.find((i) => i.id === id && i.status === 'pending');
       if (!inv) throw new BackendError('not_found');
       if (inv.direction === 'request') {
-        LocalBackend.requireManager(db, inv.profileId, me);
+        LocalBackend.requireTeam(db, inv.profileId, me);
         // The family accepts a request through approveRequest (where it chooses the rights).
         if (accept) throw new BackendError('forbidden');
         inv.status = 'declined';
         LocalBackend.notify(db, inv.fromUserId, 'access', accept ? `Votre demande pour ${inv.childName} a été acceptée.` : `Votre demande pour ${inv.childName} a été refusée.`, { profileId: inv.profileId });
         return;
       }
+      // Nobody answers an invitation they wrote themselves.
+      if (inv.fromUserId === me.id) throw new BackendError('forbidden');
       if (!(inv.toUserId === me.id || (me.email && inv.email === me.email))) throw new BackendError('forbidden');
       if (accept) LocalBackend.join(db, inv, me.id);
       else inv.status = 'declined';
@@ -994,6 +1116,7 @@ export class LocalBackend implements Backend {
   async acceptInvitationCode(code: string): Promise<Invitation> {
     return this.tx((db, m) => {
       const me = LocalBackend.need(m);
+      if (me.provider === 'device') throw new BackendError('forbidden');
       const inv = db.invitations.find((i) => i.direction === 'invite' && i.status === 'pending' && i.code === code.toUpperCase().replace(/[^A-Z0-9]/g, ''));
       if (!inv) throw new BackendError('code_invalid');
       // Nobody accepts an invitation they wrote themselves.
@@ -1009,10 +1132,16 @@ export class LocalBackend implements Backend {
       const me = LocalBackend.need(m);
       const inv = db.invitations.find((i) => i.id === id);
       if (!inv) throw new BackendError('not_found');
-      if (inv.fromUserId !== me.id) LocalBackend.requireManager(db, inv.profileId, me);
+      if (me.provider === 'device') throw new BackendError('forbidden');
+      if (!(inv.fromUserId === me.id && inv.status === 'pending')) LocalBackend.requireTeam(db, inv.profileId, me);
       if (inv.status === 'accepted') {
-        const x = db.members.find((y) => y.profileId === inv.profileId && y.userId === inv.toUserId);
-        if (x) x.status = 'revoked';
+        const joined = inv.direction === 'request' ? inv.fromUserId : inv.toUserId;
+        // The invitation by which the parents took the profile over is not a way to remove them.
+        if (joined && db.profiles[inv.profileId]?.ownerId === joined) throw new BackendError('forbidden');
+        if (joined && db.members.some((y) => y.profileId === inv.profileId && y.userId === joined && y.status === 'active')) {
+          LocalBackend.removeFromTeam(db, inv.profileId, joined);
+          LocalBackend.notify(db, joined, 'access', `Votre accès au profil de ${inv.childName} a été retiré.`, { profileId: inv.profileId });
+        }
       }
       inv.status = 'cancelled';
     });
@@ -1021,9 +1150,9 @@ export class LocalBackend implements Backend {
   async resendInvitation(id: string): Promise<Invitation> {
     return this.tx((db, m) => {
       const me = LocalBackend.need(m);
-      const inv = db.invitations.find((i) => i.id === id);
+      const inv = db.invitations.find((i) => i.id === id && i.status === 'pending');
       if (!inv) throw new BackendError('not_found');
-      LocalBackend.requireManager(db, inv.profileId, me);
+      LocalBackend.requireTeam(db, inv.profileId, me);
       inv.createdAt = Date.now();
       LocalBackend.notify(db, inv.toUserId, 'invitation', `Rappel : ${inv.fromName} vous invite à rejoindre l’équipe de ${inv.childName}.`, { refId: inv.id });
       return clone(inv);
@@ -1032,7 +1161,7 @@ export class LocalBackend implements Backend {
 
   async connectionCode(profileId: string, renew = false): Promise<string> {
     return this.tx((db, m) => {
-      LocalBackend.requireManager(db, profileId, LocalBackend.need(m));
+      LocalBackend.requireTeam(db, profileId, LocalBackend.need(m));
       const p = db.profiles[profileId];
       if (!p.connectionCode || renew) p.connectionCode = friendlyCode();
       return p.connectionCode;
@@ -1042,6 +1171,8 @@ export class LocalBackend implements Backend {
   async requestConnection(code: string, input: { role: CollaboratorRole; level: AccessLevel; perms: PermissionSet; message?: string }): Promise<Invitation> {
     return this.tx((db, m) => {
       const me = LocalBackend.need(m);
+      // A request asks to join as a member of the team: never as a parent or a tablet.
+      if (!TEAM_ROLES.includes(input.role)) throw new BackendError('invalid');
       const p = Object.values(db.profiles).find((x) => x.connectionCode && x.connectionCode === code.trim().toUpperCase());
       if (!p) throw new BackendError('code_invalid');
       if (LocalBackend.access(db, p.id, me.id)) throw new BackendError('already_member');
@@ -1075,8 +1206,9 @@ export class LocalBackend implements Backend {
       const me = LocalBackend.need(m);
       const inv = db.invitations.find((i) => i.id === id && i.direction === 'request' && i.status === 'pending');
       if (!inv) throw new BackendError('not_found');
-      LocalBackend.requireManager(db, inv.profileId, me);
-      // Approving a request never makes the person a parent, whatever was sent.
+      LocalBackend.requireTeam(db, inv.profileId, me);
+      // Approving a request never makes the person a parent or a tablet, whatever was sent.
+      if (!TEAM_ROLES.includes(inv.role)) inv.role = 'other';
       LocalBackend.join(db, inv, inv.fromUserId, { level: grant.level, perms: { ...grant.perms, manager: false } });
       LocalBackend.notify(db, inv.fromUserId, 'access', `Votre demande pour ${inv.childName} a été acceptée.`, { profileId: inv.profileId });
     });
@@ -1210,7 +1342,13 @@ export class LocalBackend implements Backend {
       if (!d) {
         d = { ...input, profileId, userId: me.id, pendingChanges: 0, revoked: false, createdAt: Date.now() };
         db.devices.push(d);
-      } else Object.assign(d, { name: input.name, kind: input.kind, platform: input.platform, appVersion: input.appVersion });
+      } else {
+        // Its name and kind stay as they were given. A device another account used passes to the
+        // person signing in on it; a child's tablet is never taken over, and a tablet takes none.
+        const tablet = (id: string) => db.members.some((x) => x.profileId === profileId && x.userId === id && x.role === 'device');
+        const takes = d.userId === me.id || LocalBackend.runsTeam(db, profileId, me) || (me.provider !== 'device' && !tablet(d.userId) && !tablet(me.id));
+        Object.assign(d, { platform: input.platform, appVersion: input.appVersion, ...(takes ? { userId: me.id } : {}) });
+      }
       return clone(d);
     });
   }
@@ -1228,24 +1366,32 @@ export class LocalBackend implements Backend {
 
   async revokeDevice(profileId: string, deviceId: string): Promise<void> {
     await this.tx((db, m) => {
-      LocalBackend.requireManager(db, profileId, LocalBackend.need(m));
+      const me = LocalBackend.need(m);
+      LocalBackend.requireManager(db, profileId, me);
       const d = db.devices.find((x) => x.id === deviceId && x.profileId === profileId);
       if (!d) throw new BackendError('not_found');
+      const tablet = db.members.some((x) => x.profileId === profileId && x.userId === d.userId && x.role === 'device');
+      // A linked tablet only removes other tablets, never a person's own phone or computer.
+      if (!tablet && !LocalBackend.runsTeam(db, profileId, me)) throw new BackendError('forbidden');
       d.revoked = true;
-      // A device linked with a pairing code has its own access: it ends too.
-      const member = db.members.find((x) => x.profileId === profileId && x.userId === d.userId && x.role === 'device');
-      if (member) member.status = 'revoked';
+      // A device linked with a pairing code has its own access: it ends too, with the codes it made.
+      if (tablet) LocalBackend.removeFromTeam(db, profileId, d.userId);
     });
   }
 
   async createPairingCode(profileId: string, access: 'full' | 'use'): Promise<{ code: string; expiresAt: number }> {
     if (access === 'full') await this.requireProof();
     return this.tx((db, m) => {
-      LocalBackend.requireManager(db, profileId, LocalBackend.need(m));
+      const me = LocalBackend.need(m);
+      LocalBackend.requireManager(db, profileId, me);
+      // A full-access code is made by the family, signed in as itself; a tablet makes "use only" codes.
+      if (access === 'full') LocalBackend.requireTeam(db, profileId, me);
+      // A tablet receives the family's code: a professional on the family's team links none.
+      if (!LocalBackend.seesCode(db, profileId, me) && db.profiles[profileId].ownerId !== me.id) throw new BackendError('forbidden');
       const code = friendlyCode();
       const expiresAt = Date.now() + CODE_TTL;
-      db.pairings = db.pairings.filter((p) => p.expiresAt > Date.now() && p.profileId !== profileId);
-      db.pairings.push({ code, profileId, access, expiresAt });
+      db.pairings = db.pairings.filter((p) => p.expiresAt > Date.now() && !(p.profileId === profileId && (p.createdBy ?? me.id) === me.id));
+      db.pairings.push({ code, profileId, access, expiresAt, createdBy: me.id });
       return { code, expiresAt };
     });
   }
@@ -1255,6 +1401,8 @@ export class LocalBackend implements Backend {
       const typed = code.toUpperCase().replace(/[^A-Z0-9]/g, '');
       const pairing = db.pairings.find((p) => p.code === typed && p.expiresAt > Date.now());
       if (!pairing) throw new BackendError('code_invalid');
+      // A tablet's code is typed on the tablet, not from a person's account.
+      if (m && m.provider !== 'device') throw new BackendError('forbidden');
       db.pairings = db.pairings.filter((p) => p !== pairing);
       // The new device gets its own account, limited to this child's profile.
       const acc: StoredAccount = m ?? {
@@ -1443,8 +1591,9 @@ export class LocalBackend implements Backend {
     await this.tx((db, m) => {
       const me = LocalBackend.need(m);
       LocalBackend.requireAccess(db, profileId, me);
-      if (!sharesProduct(db.profiles[profileId].data.settings)) throw new BackendError('forbidden');
+      if (!sharesProduct(db.profiles[profileId].data.settings) || db.accounts[db.profiles[profileId].ownerId]?.role === 'pro') throw new BackendError('forbidden');
       if (me.role === 'pro' || (db.admins ?? []).includes(me.id)) throw new BackendError('forbidden');
+      LocalBackend.requireOwnDevice(db, profileId, day.deviceId, me);
       const counts: FeatureDay['counts'] = {};
       for (const k of COUNTERS) {
         const v = (day.counts as Record<string, unknown>)[k];
@@ -1463,7 +1612,9 @@ export class LocalBackend implements Backend {
     await this.tx((db, m) => {
       const me = LocalBackend.need(m);
       LocalBackend.requireAccess(db, profileId, me);
-      if (!sharesProduct(db.profiles[profileId].data.settings)) throw new BackendError('forbidden');
+      if (!sharesProduct(db.profiles[profileId].data.settings) || db.accounts[db.profiles[profileId].ownerId]?.role === 'pro') throw new BackendError('forbidden');
+      // A professional's or the team's own use is not counted.
+      if (me.role === 'pro' || (db.admins ?? []).includes(me.id)) throw new BackendError('forbidden');
       const today = new Date().toISOString().slice(0, 10);
       for (const it of items.slice(0, 40)) {
         if (!PROBLEM_KINDS.includes(it.kind)) continue;
@@ -1718,13 +1869,17 @@ export class LocalBackend implements Backend {
   /** People who may see a child's data: the family, and those given "see the progress data". */
   private static canViewData(db: DB, profileId: string, me: StoredAccount): boolean {
     const a = LocalBackend.access(db, profileId, me.id);
-    return !!a && (a.owner || !!a.perms.manager || !!a.perms.viewData);
+    // (the follow-up is read on the adults' own devices: a linked tablet has no such page)
+    return !!a && me.provider !== 'device' && a.role !== 'device' && (a.owner || !!a.perms.manager || !!a.perms.viewData);
   }
 
   async saveUsageDay(profileId: string, data: UsageDay): Promise<void> {
     await this.tx((db, m) => {
       const me = LocalBackend.need(m);
       LocalBackend.requireAccess(db, profileId, me);
+      // Nothing is recorded while a professional owns the profile: the parents have not agreed yet.
+      if (db.accounts[db.profiles[profileId].ownerId]?.role === 'pro') throw new BackendError('forbidden');
+      LocalBackend.requireOwnDevice(db, profileId, data.deviceId, me);
       const level = (db.profiles[profileId]?.data.settings as { dataCollection?: UsageDay['level'] | 'off' }).dataCollection ?? 'off';
       const kept = limitToConsent(data, level);
       if (!kept) throw new BackendError('forbidden');
@@ -1742,7 +1897,7 @@ export class LocalBackend implements Backend {
 
   async deleteUsage(profileId: string): Promise<void> {
     await this.tx((db, m) => {
-      LocalBackend.requireManager(db, profileId, LocalBackend.need(m));
+      LocalBackend.requireTeam(db, profileId, LocalBackend.need(m));
       db.usage = (db.usage ?? []).filter((u) => u.profileId !== profileId);
     });
   }
@@ -1760,6 +1915,8 @@ export class LocalBackend implements Backend {
       if (me.provider === 'device' || !LocalBackend.canViewData(db, o.profileId, me)) throw new BackendError('forbidden');
       db.observations ??= [];
       const old = o.id ? db.observations.find((x) => x.id === o.id && x.profileId === o.profileId) : undefined;
+      // An observation is changed by who wrote it, or by the family.
+      if (old && old.createdBy !== me.id && !LocalBackend.runsTeam(db, o.profileId, me)) throw new BackendError('forbidden');
       const next: Observation = {
         ...(old ?? { createdBy: me.id, authorName: memberName(me), createdAt: Date.now() }),
         ...clone(o),
@@ -1777,6 +1934,7 @@ export class LocalBackend implements Backend {
       const o = (db.observations ?? []).find((x) => x.id === id);
       if (!o) return;
       if (!LocalBackend.canViewData(db, o.profileId, me)) throw new BackendError('forbidden');
+      if (o.createdBy !== me.id && !LocalBackend.runsTeam(db, o.profileId, me)) throw new BackendError('forbidden');
       db.observations = (db.observations ?? []).filter((x) => x.id !== id);
     });
   }
@@ -1845,6 +2003,7 @@ export class LocalBackend implements Backend {
       if (existing && existing.ownerId !== me.id && !existing.shares.some((s) => s.userId === me.id && s.mode === 'edit'))
         throw new BackendError('forbidden');
       if (r.profileId) LocalBackend.requireAccess(db, r.profileId, me);
+      if (!existing && db.resources.filter((x) => x.ownerId === me.id).length >= 500) throw new BackendError('too_many');
       const next: Resource = {
         ...clone(r),
         ownerId: existing?.ownerId ?? me.id,

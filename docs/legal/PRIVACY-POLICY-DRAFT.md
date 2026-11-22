@@ -27,7 +27,9 @@ We are the **controller** of the data described here: we decide why and how it i
 - **You decide** what the app records about how your child communicates. It is off by default.
 - We never sell data, never show advertising, never use your data to profile you for marketing.
 - The child's sentences are only kept if you choose the level "Use, words and sentences".
-- Our team only sees anonymous figures, only if you agree, and never for fewer than 5 children.
+- Our team sees plain totals (how many accounts, children's profiles, linked devices and teams
+  exist). Figures about how the app is used are only counted among the families who agree, and
+  never for fewer than 5 children of 5 families.
 - You can download all your data and delete your account in the app at any time.
 
 ## 3. Whose data
@@ -160,8 +162,10 @@ The full schedule is in `[link to the retention schedule]`.
   Keychain, Android Keystore).
 - Deleting an account or a child's profile, linking a full-access device, or downloading all
   data asks for a fresh proof (your password, or a code sent to your e-mail).
-- Our team's figures need at least 5 children of 5 families; our team never sees a name, a word
-  or a sentence of a child.
+- Our team's figures about use are counted among consenting families only and need at least 5
+  children of 5 families (a smaller group is never shown as a number); plain totals (accounts,
+  profiles, linked devices, teams) count every family. Our team never sees a name, a word or a
+  sentence of a child.
 - Backups are encrypted when kept outside our server provider.
 
 ## 12. Your rights, and how to use them in the app

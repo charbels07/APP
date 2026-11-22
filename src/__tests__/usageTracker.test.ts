@@ -25,6 +25,8 @@ beforeAll(async () => {
   const sent = await api.signUp({ role: 'parent', displayName: 'Rita', email: 'rita@example.com', password: 'secret123' });
   await api.verifyCode({ email: 'rita@example.com' }, sent.demoCode!);
   profileId = (await api.createProfile({ name: 'Adam', data: createDefaultProfile() })).id;
+  // A day is saved by the device it belongs to: the board registers its device when it opens.
+  await api.registerDevice(profileId, { id: 'ipad', name: 'iPad', kind: 'companion', platform: 'ios' });
 });
 
 describe('communication data, with the family consent', () => {

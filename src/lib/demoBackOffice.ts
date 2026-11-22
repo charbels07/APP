@@ -120,7 +120,8 @@ export function exampleOverview(now: number): AdminOverview {
       total: 463,
       seen7: 287,
       seen30: 371,
-      waiting: 9,
+      // (a group of 1 to 4 families is never a number: this is how it arrives, and the screen writes "fewer than 5")
+      waiting: null,
       platforms: { ios: 318, android: 121, web: 24 },
       versions: { '1.2.0': 301, '1.1.0': 118, '1.0.0': 44 },
     },

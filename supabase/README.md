@@ -332,6 +332,17 @@ code with an authenticator app, type the first code. From then on the code is as
 sign-in. Someone who lost their phone: Authentication → Users → the person → remove the factor
 (after checking it is them by another way).
 
+## 12. Holes in the rules found by the gap review (22 November 2026)
+
+One database file, `20261122000000_gap_batch3.sql`, and nothing else to set up. Run it in the SQL
+Editor **after** the matching version of the app is published (the app reads a child's profile
+through a new function, `read_profile`, and falls back to the old way while the file has not
+run; the file then closes the old way). What it closes is listed in `docs/SECURITY.md` §3
+("batch 3"); `npm run test:db` replays each attack (`supabase/tests/gap3_scenario.sql`).
+
+The file also erases what had been recorded for profiles still owned by a professional (follow-up
+days and counters stored before the parents agreed) and turns those switches off.
+
 ## What is where
 
 | Table | Contents |
@@ -351,7 +362,7 @@ sign-in. Someone who lost their phone: Authentication → Users → the person �
 | `notices` | in-app notifications |
 | `resources`, `resource_shares` | professionals' libraries and what they share |
 | `usage_days` | communication data, one row per child, device and day (only what the family allowed) |
-| `observations` | adults' notes on communication moments (function, context, partner, autonomy, result) |
+| `observations` | adults' notes on communication moments (function, context, partner, autonomy, result); the free texts are sealed |
 | `research_usage` (view) | anonymous daily numbers for the app's team, consenting families only |
 | `ai_calls` | how many AI requests each account made today (daily limit) |
 | `team_mail`, `team_mail_config` | the e-mails written for the app's team and where the sending function is; not reachable from the app |

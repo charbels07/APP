@@ -30,7 +30,8 @@ with created as (
     '{"boards":{"core":{"cells":[{"concept":"i"}]},"food":{"cells":[null]}},"settings":{"dataCollection":"language","shareStats":"anonymous","pin":"1234"}}')
   returning id)
 insert into test.ids select 'adam', id::text from created;
-select test.ok((select data -> 'settings' ->> 'dataCollection' = 'off' and data -> 'settings' ->> 'shareStats' = 'none' from profiles),
+select test.ok((select data -> 'settings' ->> 'dataCollection' = 'off' and data -> 'settings' ->> 'shareStats' = 'none'
+                  from read_profile((select v::uuid from test.ids where k = 'adam'))),
   'a profile created by a professional starts with recording and sharing off');
 select test.ok((select count(*) = 1 from list_profiles() where access = 'owner'), 'the professional sees the profile she created');
 
@@ -71,15 +72,20 @@ select test.ok((select not owner and role = 'therapist' and level = 3 and not (p
 select test.ok((select count(*) = 1 from notices where kind = 'access' and text like 'Eve is now the parent in charge of Adam%'), 'she is told, in her menu language');
 select test.expect_error(format('select save_profile(%L, %L, 3)', (select v from test.ids where k = 'adam'),
   '{"boards":{"core":{"cells":[{"concept":"want"}]},"food":{"cells":[{"concept":"pizza"}]}},"settings":{"dataCollection":"usage","shareStats":"none","pin":"1234"}}'), 'consent_protected');
-select test.expect_error(format('select save_profile(%L, %L, 3)', (select v from test.ids where k = 'adam'),
-  '{"boards":{"core":{"cells":[{"concept":"want"}]},"food":{"cells":[{"concept":"pizza"}]}},"settings":{"dataCollection":"off","shareStats":"none","pin":"4821"}}'), 'consent_protected');
+-- The family's code is not hers: whatever she sends, the family's stays (and she does not receive it: gap3_scenario.sql).
+select test.ok((select (save_profile((select v::uuid from test.ids where k = 'adam'),
+  '{"boards":{"core":{"cells":[{"concept":"want"}]},"food":{"cells":[{"concept":"pizza"}]}},"settings":{"dataCollection":"off","shareStats":"none","pin":"4821"}}', 3)) ->> 'ok' = 'true'),
+  'she still edits the board');
+reset role;
+select test.ok((select data -> 'settings' ->> 'pin' = '1234' and version = 4 from profiles), 'a code sent by the professional changes nothing: the code is the family''s');
+set role authenticated;
 delete from profiles;
 select test.ok((select count(*) = 1 from profiles), 'she can no longer delete the profile: it is the family''s');
 
 -- 6. The family now decides what is recorded.
 select set_config('request.jwt.claim.sub', :'eve', false);
 select test.ok((select (save_profile((select v::uuid from test.ids where k = 'adam'),
-  '{"boards":{"core":{"cells":[{"concept":"want"}]},"food":{"cells":[{"concept":"pizza"}]}},"settings":{"dataCollection":"usage","shareStats":"none","pin":"7306"}}', 3)) ->> 'ok' = 'true'),
+  '{"boards":{"core":{"cells":[{"concept":"want"}]},"food":{"cells":[{"concept":"pizza"}]}},"settings":{"dataCollection":"usage","shareStats":"none","pin":"7306"}}', 4)) ->> 'ok' = 'true'),
   'after the hand-over, recording and the caregiver code are the family''s choices');
 
 -- 7. A professional who is no longer accepted loses the profiles she created too (until accepted again).

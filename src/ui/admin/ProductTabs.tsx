@@ -141,7 +141,7 @@ export function ProductView({ o, product }: { o: AdminOverview; product: AdminPr
         </View>
       ) : (
         <>
-          <ChartCard title={x.adoption} note={x.adoptionNote(product.children, product.days)}>
+          <ChartCard title={x.adoption} note={x.adoptionNote(product.children ?? 0, product.days)}>
             <AdoptionLegend labels={x.groups} />
             <View style={{ gap: 14, marginTop: 4 }}>
               {(product.features ?? [])
@@ -189,7 +189,7 @@ export function ProductView({ o, product }: { o: AdminOverview; product: AdminPr
           )}
 
           {rows.length > 0 && (
-            <ChartCard title={x.decide} note={x.decideNote(product.children30 ?? product.children)}>
+            <ChartCard title={x.decide} note={x.decideNote(product.children30 === undefined ? product.children : product.children30)}>
               <DataTable head={[x.indicator, x.figure, x.meaning]} rows={rows} />
             </ChartCard>
           )}
@@ -424,7 +424,7 @@ export function BugsView({
       <StatGrid>
         <StatTile label={x.problems30} value={compact(bugs.total)} />
         <StatTile label={x.written} value={compact(written.filter((m) => m.status === 'new').length)} sub={a.ofTotal(written.length)} />
-        <StatTile label={x.waitingSync} value={compact(o.devices.waiting)} sub={a.ofTotal(o.devices.total)} />
+        <StatTile label={x.waitingSync} value={o.devices.waiting === null ? a.fewer : compact(o.devices.waiting)} sub={a.amongSharing} />
       </StatGrid>
       <View style={ss.card}>
         <Note text={x.bugsWho} />
@@ -529,7 +529,7 @@ export function ContentView() {
 
 // ───────────────────────── Security ─────────────────────────
 
-export function SecurityView({ a, o, agreed, log }: { a: AdminStrings; o: AdminOverview; agreed: number; log: React.ReactNode }) {
+export function SecurityView({ a, o, agreed, log }: { a: AdminStrings; o: AdminOverview; agreed: number | null; log: React.ReactNode }) {
   const { uiLang } = useSession();
   const x = productStrings(uiLang);
   const d = dataStrings(uiLang);

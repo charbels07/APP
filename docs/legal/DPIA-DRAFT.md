@@ -79,7 +79,7 @@ Scale (CNIL): severity and likelihood each **negligible, limited, significant, m
 | Devices | Codes to link a tablet: 8 characters, one at a time, 10 minutes, 5 wrong tries then a pause; the family is told each time a device is linked; a tablet linked with a code cannot create anything new |
 | Professionals | Verified before joining a team; rights given by the family; cannot change their account type; lose access if no longer verified; recording and sharing forced off while they own a profile; they never see the family's caregiver code |
 | Team members | No longer see each other's e-mail or the family's connection code (family and managers only) |
-| The app's team | List unreadable from the app; every `admin_` function checks `is_admin()`; every decision and document opened is logged; figures need 5 children of 5 families |
+| The app's team | List unreadable from the app; every `admin_` function checks `is_admin()`; every decision and document opened is logged; figures about use need 5 children of 5 families among those who agreed (never a number below) |
 | Data from others | Links, imported boards, proposals and shared materials cleaned before use (`src/lib/safety.ts`); links never travel with shared content |
 | Files | Private buckets; size and type limits; identity documents deleted at the decision; server-side purge after deletion |
 | Device | Sign-out erases the children's data from the device; Android device backups excluded (`allowBackup: false`) |

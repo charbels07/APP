@@ -190,7 +190,11 @@ async function data<T>(q: PromiseLike<{ data: T | null; error: { message?: strin
 /** The database has not received the newest update yet (the app may be published before it). */
 const missingFunction = (e: unknown) => /could not find the function|does not exist|PGRST202/i.test(String((e as { message?: string })?.message ?? e));
 
-/** What the app reads of a child's profile (the family's connection code is read through its function). */
+/**
+ * What the app reads of a child's profile (the family's connection code is read through its
+ * function). Only for a database that has no `read_profile` yet: once it has, the content is
+ * read through that function, which leaves the family's caregiver code out for a professional.
+ */
 const PROFILE_COLS = 'id, owner_id, name, age, intake, data, version, updated_at, updated_by';
 
 /** The QR code Supabase gives is an SVG "data:" address: its text. */
@@ -319,10 +323,10 @@ const toObservation = (r: Row): Observation => ({
   sampleT: r.sample_t ?? undefined,
   utterance: r.utterance || undefined,
   function: r.function ?? undefined,
-  context: r.context ?? undefined,
-  partner: r.partner ?? undefined,
+  context: r.context || undefined,
+  partner: r.partner || undefined,
   autonomy: r.autonomy ?? undefined,
-  result: r.result ?? undefined,
+  result: r.result || undefined,
   note: r.note || undefined,
   createdBy: r.created_by ?? '',
   authorName: r.author_name ?? '',
@@ -700,9 +704,10 @@ export class SupabaseBackend implements Backend {
     // The parent's consent is kept by the database first; the profile is refused without it.
     if (input.consent) await this.giveConsent(input.consent);
     const r = await data<Row>(
-      this.sb.from('profiles').insert({ owner_id: uid, name: input.name.trim(), age: input.age ?? null, intake: input.intake ?? null, data: input.data }).select(PROFILE_COLS).single(),
+      this.sb.from('profiles').insert({ owner_id: uid, name: input.name.trim(), age: input.age ?? null, intake: input.intake ?? null, data: input.data }).select('id').single(),
     );
-    return toProfileRec(r);
+    // Read back as the database kept it (it decides some settings of a new profile).
+    return this.getProfile(r.id);
   }
 
   async giveConsent(version: number): Promise<void> {
@@ -718,7 +723,13 @@ export class SupabaseBackend implements Backend {
   }
 
   async getProfile(id: string): Promise<ChildRecord> {
-    const r = await data<Row | null>(this.sb.from('profiles').select(PROFILE_COLS).eq('id', id).maybeSingle());
+    let r: Row | null | undefined;
+    try {
+      r = (await data<Row[] | null>(this.sb.rpc('read_profile', { p_id: id })))?.[0];
+    } catch (e) {
+      if (!missingFunction(e)) throw e;
+      r = await data<Row | null>(this.sb.from('profiles').select(PROFILE_COLS).eq('id', id).maybeSingle());
+    }
     if (!r) throw new BackendError('forbidden');
     return toProfileRec(r);
   }
@@ -1248,24 +1259,26 @@ export class SupabaseBackend implements Backend {
   async saveObservation(o: Omit<Observation, 'id' | 'createdBy' | 'authorName' | 'createdAt'> & { id?: string }): Promise<Observation> {
     const me = await this.me();
     const row: Row = {
-      profile_id: o.profileId,
       at: new Date(o.at).toISOString(),
       sample_t: o.sampleT ?? null,
-      // '' clears a text (the database seals the texts and keeps them when a column is left out).
+      // '' clears a text (the database seals the free texts and keeps them when a column is left out).
       utterance: o.utterance ?? '',
       function: o.function ?? null,
-      context: o.context ?? null,
-      partner: o.partner ?? null,
+      context: o.context ?? '',
+      partner: o.partner ?? '',
       autonomy: o.autonomy ?? null,
-      result: o.result ?? null,
+      result: o.result ?? '',
       note: o.note ?? '',
       updated_at: new Date().toISOString(),
     };
+    // An observation stays with its child: the profile is written once, when it is created.
     const saved = o.id
       ? await data<Row>(this.sb.from('observations').update(row).eq('id', o.id).select(OBSERVATION_COLS).single())
-      : await data<Row>(this.sb.from('observations').insert({ ...row, created_by: me.id, author_name: me.displayName }).select(OBSERVATION_COLS).single());
+      : await data<Row>(
+          this.sb.from('observations').insert({ ...row, profile_id: o.profileId, created_by: me.id, author_name: me.displayName }).select(OBSERVATION_COLS).single(),
+        );
     // The database gives the sealed texts back empty: they are the ones just written.
-    return toObservation({ ...saved, utterance: o.utterance, note: o.note });
+    return toObservation({ ...saved, utterance: o.utterance, note: o.note, context: o.context, partner: o.partner, result: o.result });
   }
 
   async deleteObservation(id: string): Promise<void> {

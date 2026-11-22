@@ -151,7 +151,7 @@ Processors used by several purposes (their agreements to sign or check):
 | People | Children of families who agreed |
 | Data | Numbers computed from the follow-up and settings (views `research_usage`, `bo_child_days`) |
 | Retention | Not stored apart: computed from purposes 4 and 2 |
-| Security | Consenting families only; at least 5 children of 5 families; no name, word or sentence |
+| Security | Consenting families only; at least 5 children of 5 families (a group of 1 to 4 is never given as a number, in the back office and in the weekly e-mail); no name, word or sentence. Plain totals (accounts, profiles, linked devices, teams) count every family |
 
 ## 10. AI helper (when switched on)
 

@@ -23,7 +23,7 @@ from the work of the same round (automatic retention, the bin, snapshots, purge)
 | All the follow-up of a child | `usage_days` | — | "Erase the recorded data" (Progress page), at any time | Built |
 | Observations | `observations` | As long as the profile `[to decide: same 24 months?]` | With the profile | **To decide** |
 | Change history | `history` | **24 months** | Automatic job | Built *(Nov. 2026)* |
-| Invitations | `invitations` | Valid **30 days** (refused after) | Rows: with the profile or account `[or by the retention job: to confirm]` | Expiry built; deletion **to confirm** |
+| Invitations | `invitations` | Valid **30 days** (refused after). Not answered: erased **60 days** after it was written (it can be sent again meanwhile). Answered or cancelled: **12 months** | Automatic job (`retention_daily`); also with the profile or account | Built *(Nov. 2026)* |
 | Codes to link a device | `pairing_codes` | **10 minutes** | Removed when used or when a new one is made | Built |
 | Notices | `notices` | **12 months** | Automatic job | Built *(Nov. 2026)* |
 | Devices that accepted notifications (address at the browser's notification service, its two keys, language, time zone) | `push_subs` | Until turned off, sign-out on that device or account deletion; **12 months** without opening the app | By the person; automatic job (`push_tidy`); removed when the browser withdraws it | Built *(Nov. 2026)* |
@@ -32,10 +32,10 @@ from the work of the same round (automatic retention, the bin, snapshots, purge)
 | Messages to the team | `feedback` | **3 years** | Automatic job | Built *(Nov. 2026)* |
 | Votes | `roadmap_votes` | As long as the account | With the account | Built |
 | Team's action log | `admin_log` | **5 years** | Automatic job | Built *(Nov. 2026)* |
-| Feature counters | `feature_days` | **180 days**; erased at once when the family stops sharing | Automatic (`save_feature_day`, trigger `forget_product`) | Built |
-| Technical problems (linked to nobody) | `error_counts` | **180 days** | Automatic | Built |
-| Recent actions (to refuse repeats) | `rate_log` | **2 days** | Automatic (`rate_limit`) | Built |
-| AI calls per day | `ai_calls` | **30 days** | Automatic (`count_ai_call`) | Built |
+| Feature counters | `feature_days` | **180 days**; erased at once when the family stops sharing | Automatic job (`retention_daily`), trigger `forget_product` | Built |
+| Technical problems (linked to nobody) | `error_counts` | **180 days** | Automatic job (`retention_daily`) | Built |
+| Recent actions (to refuse repeats) | `rate_log` | **2 days** | Automatic job (`retention_daily`) | Built |
+| AI calls per day | `ai_calls` | **30 days** | Automatic job (`retention_daily`) | Built |
 | E-mails written for the team | `team_mail` | **90 days** | Weekly job `team-mail-tidy` | Built |
 | Details of the scheduled jobs | `cron.job_run_details` | **14 days** | Same job | Built |
 | Identity documents of professionals | `verification-docs`, `verifications` | Until the decision (accepted or refused) | Deleted at the decision | Built |

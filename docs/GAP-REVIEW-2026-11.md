@@ -360,9 +360,9 @@ Seen on the way, not changed (not in this batch):
 ## Batch 4 — People and rights (database + screens)
 
 **Done on 22 November 2026.** One database file, `supabase/migrations/20261122000100_gap_batch4.sql`, its
-attacks in `supabase/tests/gap4_scenario.sql` (41 checks, in `scripts/test-db.sh`; line added to
+attacks in `supabase/tests/gap4_scenario.sql` (45 checks, in `scripts/test-db.sh`; line added to
 `supabase/check-migrations.sql`), the same rules in the demo server (`gapBatch4.test.ts`). Checks:
-`npm run typecheck` clean, `npm test` 585 passed, `npm run test:db` 14 scenarios passed (470 checks),
+`npm run typecheck` clean, `npm test` 585 passed, `npm run test:db` 14 scenarios passed (474 checks),
 `npm run test:a11y` no violation (236 scans), and a real-browser run on the demo build (below).
 
 **For the owner: one file to run**, `20261122000100_gap_batch4.sql`, in Supabase → SQL Editor, after this
@@ -383,8 +383,7 @@ changed on purpose for that rule: `scenario.sql` (an account deletion now names 
   owner only (also through cancelling their invitation). An invitation or a request never carries it; a
   family no longer invites a "parent" (only a professional handing her profile over does). The switch
   "Manage devices and rights" is wired and renamed "Manage the child's tablets": the person sees the
-  devices, removes the child's tablets and makes "use only" codes (never a full-access one, never someone's
-  phone). The pairing error prints its sentence (`errorText`).
+  devices and removes the child's tablets (never someone's phone); linking a tablet stays the family's. The pairing error prints its sentence (`errorText`).
 - [x] **The owner deletes their account (Q17).** Done. The deletion card names each child the account owns
   and who loses the board ("Adam · Eve will lose it too · 1 tablet"), offers "Hand it to … first" for each
   person who acts as a parent, and asks a tick per child to erase; the database refuses
@@ -398,7 +397,7 @@ changed on purpose for that rule: `scenario.sql` (an account deletion now names 
 - [x] **Leave a team; a new request after a refusal (Q20).** Done. "Leave the team" at the bottom of Team
   (and on a child's page in the professional workspace): the access ends, the board leaves the device, the
   family is told. A professional sees her declined request with "Ask again". *Decided on the way:* once a
-  week at the earliest, and no more after three refusals in six months (the family can still invite her).
+  week at the earliest, and no more after three requests in six months (the family can still invite her).
 - [x] **Rename a child, change the age (Q21).** Done: "Name and age" beside the child in Account →
   Children (the account that owns the profile); waiting invitations take the new name; the other devices
   take it at their next look (a new version).
@@ -424,6 +423,17 @@ leaves or is removed (the tablet is the child's; the family sees it in Devices a
 Left open, for the owner to decide:
 - Someone given another role while "waiting" (a family-type teacher made "caregiver") receives the
   family's code, as any caregiver: that is the family's choice.
+
+An independent review of the database file found three holes in its first version, closed before it went
+live (attacks added to the scenario): another co-parent could take a profile offered to someone else (he
+can read the offer's code); a "parent" invitation a family had left waiting from an earlier version made
+its taker the owner (such invitations are now cancelled by the file); a request left waiting could be
+approved over someone who acts as a parent. Also corrected from that review: a member who manages devices
+could link a tablet that outlived her removal (linking stays the family's); "Ask again" could be repeated
+for ever by cancelling one's own requests (every request counts); a co-parent could remove the owner's own
+phone (a person's device: that person or the owner); an offer stayed alive after its person stopped acting
+as a parent; taking a profile did not need the two-step code; old rows that held the family's rights
+without being a parent (a professional, another role) lose them.
 
 Tried in a real browser (demo build, Chromium, 1180 × 900), 22 checks, no accessibility violation on the
 new screens: the owner turns "Acts as a parent" on for Nadia (then, with an old proof, the switch asks to

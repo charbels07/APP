@@ -422,7 +422,7 @@ function SyncSection({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
             }
           />
         ))}
-      {canManage && account?.provider !== 'device' && (
+      {board.manager && account?.provider !== 'device' && (
         <View style={{ gap: 8 }}>
           <Note text={x.linkDevice} />
           <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>

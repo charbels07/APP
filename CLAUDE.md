@@ -205,7 +205,8 @@
   owner hands the child to that parent with `offer_profile` (accepted in Account → Children, with that parent's
   consent; the team, the code and the family's choices stay; the former owner stays, acting as a parent).
   `manageDevices` ("Manage the child's tablets", `manages_devices`): sees the devices, removes the child's
-  tablets, makes "use only" codes. Deleting an account names the children it owns and who loses their board
+  tablets; it links none (a tablet linked by a member would outlive the member's access). A person's own device
+  is removed by that person or the owner. Only the person an offer was made to can take the profile. Deleting an account names the children it owns and who loses their board
   (`ownedProfiles`), offers the hand-over, and erases only what was ticked (`delete_account(p_erase)`,
   `profiles_left`); the team is told; the app deletes no file itself (the purge queue does). Therapists and
   teachers on a team are professional accounts accepted by the app's team (`member_cleared`; "has paid" waits

@@ -179,6 +179,11 @@ begin
     role = new_role,
     expires_at = case when now_parent then null when p_set_expiry then p_expires else expires_at end
   where profile_id = p_id and user_id = p_user;
+  -- No longer a parent: an offer of the profile made to them ends.
+  if was_parent and not now_parent then
+    update invitations set status = 'cancelled'
+     where profile_id = p_id and status = 'pending' and direction = 'invite' and role = 'parent' and to_user_id = p_user;
+  end if;
   perform notify(p_user, 'access', 'Vos droits sur le profil de ' || (select name from profiles where id = p_id) || ' ont changé.', p_id);
 end $$;
 
@@ -278,7 +283,9 @@ end $$;
 
 -- ───────────────────────── 2. "Manage devices" ─────────────────────────
 
--- The family (and a full-access tablet), or a member the family let manage the devices.
+-- The family (and a full-access tablet), or a member the family let manage the devices: that
+-- member sees the devices and removes the child's tablets; linking one (a code) stays the family's,
+-- so nothing linked can outlive the member's own access.
 create function public.manages_devices(p_profile uuid) returns boolean
 language sql stable security definer set search_path = public as $$
   select public.is_manager(p_profile)
@@ -292,8 +299,9 @@ drop policy "read devices" on public.devices;
 create policy "read devices" on public.devices for select to authenticated
   using (public.manages_devices(profile_id) or user_id = auth.uid());
 
--- Removing a device: the family removes any; a tablet or a member who manages the devices
--- removes the child's tablets only, never a person's own phone or computer.
+-- Removing a device: a tablet or a member who manages the devices removes the child's tablets
+-- only. A person's own phone or computer: that person, or the parent who owns the profile (a
+-- co-parent does not push another parent out of their device).
 create or replace function public.revoke_device(p_id uuid, p_dev text) returns void
 language plpgsql security definer set search_path = public as $$
 declare
@@ -304,31 +312,11 @@ begin
   select * into d from devices where profile_id = p_id and id = p_dev;
   if not found then raise exception 'not_found'; end if;
   tablet := exists (select 1 from members where profile_id = p_id and user_id = d.user_id and role = 'device');
-  if not manages_team(p_id) and not tablet then raise exception 'forbidden'; end if;
+  if not tablet and not (manages_team(p_id) and (d.user_id = auth.uid() or owns_as_parent(p_id))) then raise exception 'forbidden'; end if;
   update devices set revoked = true where profile_id = p_id and id = p_dev;
   if tablet then perform remove_from_team(p_id, d.user_id); end if;
 end $$;
 
--- A "use only" code: also a member who manages the devices (and receives the family's code,
--- which a tablet receives too). A full-access code: the family signed in as itself.
-create or replace function public.create_pairing_code(p_id uuid, p_access text)
-returns table (code text, expires_at timestamptz)
-language plpgsql security definer set search_path = public as $$
-declare
-  c text := strong_code(8);
-begin
-  if not manages_devices(p_id) then raise exception 'forbidden'; end if;
-  if p_access not in ('full', 'use') then raise exception 'invalid'; end if;
-  if p_access = 'full' and not manages_team(p_id) then raise exception 'forbidden'; end if;
-  if not sees_code(p_id) and not exists (select 1 from profiles where id = p_id and owner_id = auth.uid()) then raise exception 'forbidden'; end if;
-  if p_access = 'full' and not fresh_proof() then raise exception 'proof_needed'; end if;
-  perform rate_limit('pairing_code', 20, interval '1 hour');
-  delete from pairing_codes
-   where pairing_codes.expires_at < now() or (pairing_codes.profile_id = p_id and pairing_codes.created_by = auth.uid());
-  insert into pairing_codes (code, profile_id, access, expires_at, created_by)
-  values (c, p_id, p_access, now() + interval '10 minutes', auth.uid());
-  return query select c, now() + interval '10 minutes';
-end $$;
 
 -- ───────────────────────── 3. Handing the child to the other parent ─────────────────────────
 
@@ -375,7 +363,8 @@ declare
 begin
   select owner_id into was from profiles where id = inv.profile_id and deleted_at is null for update;
   if not found or inv.direction <> 'invite' or inv.role <> 'parent' or inv.from_user_id <> was or is_pro(was) then return false; end if;
-  if p_user = was or not is_family_person(p_user)
+  -- Only the parent it was offered to (another co-parent can read its code), with their two-step done.
+  if p_user = was or inv.to_user_id is distinct from p_user or not is_family_person(p_user) or not mfa_ok()
      or not exists (select 1 from members where profile_id = inv.profile_id and user_id = p_user and status = 'active'
                                           and coalesce(perms -> 'manager' = 'true'::jsonb, false)) then
     raise exception 'forbidden';
@@ -411,7 +400,16 @@ begin
                                   and is_family_person(p_user) and p_user <> inv.from_user_id) then
     raise exception 'forbidden';
   end if;
+  -- Someone who acts as a parent is changed by the owner only: no invitation or request left
+  -- waiting rewrites their place.
+  if exists (select 1 from members where profile_id = inv.profile_id and user_id = p_user and status = 'active'
+                                   and role <> 'device' and coalesce(perms -> 'manager' = 'true'::jsonb, false)) then
+    raise exception 'already_member';
+  end if;
   perform join_profile_b3(inv, p_user, p_level, clean_perms(p_perms) || '{"manager":false}'::jsonb);
+  -- In: their other requests for this child end (one could be approved later with other rights).
+  update invitations set status = 'cancelled'
+   where profile_id = inv.profile_id and status = 'pending' and direction = 'request' and from_user_id = p_user and id <> inv.id;
 end $$;
 revoke execute on function public.join_profile(invitations, uuid, int, jsonb) from public, anon, authenticated;
 revoke execute on function public.join_profile_b3(invitations, uuid, int, jsonb) from public, anon, authenticated;
@@ -454,7 +452,8 @@ begin
   if is_tablet() then raise exception 'forbidden'; end if;
   if not mfa_ok() then raise exception 'two_step_needed'; end if;
   if not fresh_proof() then raise exception 'proof_needed'; end if;
-  if exists (select 1 from profiles where owner_id = auth.uid() and deleted_at is null and not (id = any (coalesce(p_erase, '{}')))) then
+  if exists (select 1 from profiles where owner_id = auth.uid() and deleted_at is null
+                                    and not coalesce(id = any (array_remove(coalesce(p_erase, '{}'), null)), false)) then
     raise exception 'profiles_left';
   end if;
   who := my_name();
@@ -502,7 +501,8 @@ revoke execute on function public.leave_team(uuid) from public, anon;
 grant execute on function public.leave_team(uuid) to authenticated;
 
 -- A professional whose request was declined can ask once more, a week later at the earliest;
--- after three refusals in six months, no more (the family can still invite her).
+-- after three requests in six months (whatever became of them), no more: the family can still
+-- invite her.
 create function public.ask_again(p_inv uuid) returns invitations
 language plpgsql security definer set search_path = public as $$
 declare
@@ -520,7 +520,7 @@ begin
     raise exception 'ask_later';
   end if;
   if (select count(*) from invitations where direction = 'request' and profile_id = old.profile_id and from_user_id = auth.uid()
-                                         and status = 'declined' and created_at > now() - interval '180 days') >= 3 then
+                                         and created_at > now() - interval '180 days') >= 3 then
     raise exception 'refused_often';
   end if;
   if old.role in ('therapist', 'teacher') and not is_pro(auth.uid()) then raise exception 'pro_account_needed'; end if;
@@ -594,3 +594,23 @@ begin
 end $$;
 revoke execute on function public.update_child(uuid, text, int) from public, anon;
 grant execute on function public.update_child(uuid, text, int) to authenticated;
+
+-- ───────────────────────── 7. What earlier versions left behind ─────────────────────────
+
+-- A family's "parent" invitations still waiting: a family no longer invites a parent (the switch
+-- does it), and such an invitation must not become a way to own the profile.
+update public.invitations i set status = 'cancelled'
+  from public.profiles p
+ where p.id = i.profile_id and i.status = 'pending' and i.direction = 'invite' and i.role = 'parent'
+   and not public.is_pro(p.owner_id);
+
+-- The family's rights held by someone who is not a parent of the family (a professional, another
+-- role, a person without a family's account) end; a tablet keeps what its code gave it. (The
+-- joining check is paused for this correction: it removes rights, it never gives access.)
+alter table public.members disable trigger cleared_to_join;
+update public.members m
+   set perms = m.perms || '{"manager":false,"changeAccess":false,"invite":false,"manageDevices":false}'::jsonb,
+       role = case when m.role = 'parent' then 'family' else m.role end
+ where coalesce(m.perms -> 'manager' = 'true'::jsonb, false) and m.role <> 'device'
+   and not (m.role = 'parent' and public.is_family_person(m.user_id));
+alter table public.members enable trigger cleared_to_join;

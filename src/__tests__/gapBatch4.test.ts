@@ -92,7 +92,7 @@ describe('"Acts as a parent"', () => {
 });
 
 describe('"Manage devices"', () => {
-  it('sees the devices, removes the child’s tablets, makes "use only" codes; never a full-access code or a parent’s phone', async () => {
+  it('sees the devices and removes the child’s tablets; links none, and never removes a parent’s phone', async () => {
     await signIn('eve@example.com');
     await api.registerDevice(adam, { id: 'evephone', name: 'iPhone', kind: 'companion', platform: 'ios' });
     const { code } = await api.createPairingCode(adam, 'use');
@@ -100,12 +100,14 @@ describe('"Manage devices"', () => {
     await api.redeemPairingCode(code, { id: 'tab1', name: 'Tablette', platform: 'android' });
     await signIn('tina@example.com');
     expect((await api.listDevices(adam)).map((d) => d.id).sort()).toEqual(['evephone', 'tab1']);
-    expect((await api.createPairingCode(adam, 'use')).code).toHaveLength(8);
+    await expectCode(api.createPairingCode(adam, 'use'), 'forbidden');
     await expectCode(api.createPairingCode(adam, 'full'), 'forbidden');
     await expectCode(api.revokeDevice(adam, 'evephone'), 'forbidden');
     await api.revokeDevice(adam, 'tab1');
     await signIn('sarah@clinic.fr');
     expect(await api.listDevices(adam)).toEqual([]);
+    await signIn('nadia@example.com');
+    await expectCode(api.revokeDevice(adam, 'evephone'), 'forbidden');
   });
 });
 
@@ -196,8 +198,21 @@ describe('handing the child to the other parent', () => {
     await expectCode(api.offerProfile(adam, nadia), 'proof_needed');
     await signIn('eve@example.com');
     await expectCode(api.offerProfile(adam, await idOf(adam, 'Rita')), 'invalid');
+    // Another co-parent can read the offer, not take it.
+    const tina = await api.invite(adam, { email: 'tina@example.com', name: 'Tina', role: 'family', ...preset('family') });
+    await signIn('tina@example.com');
+    await api.respondInvitation(tina.id, true);
+    await signIn('eve@example.com');
+    const tinaId = await idOf(adam, 'Tina');
+    await api.updateMember(adam, tinaId, { perms: { ...preset('family').perms, manager: true } });
     const offer = await api.offerProfile(adam, nadia);
-    expect((await api.ownedProfiles())[0]).toMatchObject({ name: 'Adam Junior', offeredTo: nadia, parents: [{ userId: nadia, name: 'Nadia' }] });
+    await signIn('tina@example.com');
+    await api.giveConsent(CHILD_DATA_CONSENT);
+    await expectCode(api.acceptInvitationCode(offer.code), 'forbidden');
+    await signIn('eve@example.com');
+    const owned = (await api.ownedProfiles())[0];
+    expect(owned).toMatchObject({ name: 'Adam Junior', offeredTo: nadia });
+    expect(owned.parents).toEqual(expect.arrayContaining([{ userId: nadia, name: 'Nadia' }, { userId: tinaId, name: 'Tina' }]));
     await signIn('nadia@example.com');
     await expectCode(api.respondInvitation(offer.id, true), 'consent_needed');
     await api.giveConsent(CHILD_DATA_CONSENT);

@@ -7,6 +7,7 @@
 \set rita   '00000000-0000-0000-0000-0000000004a4'
 \set sarah  '00000000-0000-0000-0000-0000000004a5'
 \set marc   '00000000-0000-0000-0000-0000000004a6'
+\set carl   '00000000-0000-0000-0000-0000000004a7'
 \set tab1   '00000000-0000-0000-0000-0000000004b1'
 
 truncate test.ids;
@@ -17,7 +18,8 @@ insert into auth.users (id, email, email_confirmed_at, raw_user_meta_data) value
   (:'tina', 'tina@example.com', now(), '{"role":"parent","display_name":"Tina"}'),
   (:'rita', 'rita@example.com', now(), '{"role":"parent","display_name":"Rita"}'),
   (:'sarah', 'sarah@clinic.fr', now(), '{"role":"pro","display_name":"Sarah"}'),
-  (:'marc', 'marc@school.lb', now(), '{"role":"pro","display_name":"Marc"}');
+  (:'marc', 'marc@school.lb', now(), '{"role":"pro","display_name":"Marc"}'),
+  (:'carl', 'carl@example.com', now(), '{"role":"parent","display_name":"Carl"}');
 insert into auth.users (id, is_anonymous) values (:'tab1', true);
 insert into verifications (user_id, full_name, country, profession, status) values
   (:'sarah', 'Sarah K', 'France', 'slp', 'verified'), (:'marc', 'Marc H', 'Lebanon', 'teacher', 'pending');
@@ -101,10 +103,10 @@ select test.as_tablet(:'tab1');
 select redeem_pairing_code((select v from test.ids where k = 'use1'), 'tab1dev', 'Tablette', 'android');
 select test.as_person(:'tina');
 select test.ok((select count(*) = 2 from devices where profile_id = :'adam'), 'with "manage devices", she sees the child''s devices');
-select test.ok((select count(*) = 1 from create_pairing_code(:'adam', 'use')), 'she makes a "use only" code');
+select test.expect_error(format('select create_pairing_code(%L, ''use'')', :'adam'), 'forbidden');
 select test.expect_error(format('select create_pairing_code(%L, ''full'')', :'adam'), 'forbidden');
 select test.expect_error(format('select revoke_device(%L, ''evephone'')', :'adam'), 'forbidden');
-select test.ok(true, 'no full-access code, and never a parent''s own phone');
+select test.ok(true, 'no code at all (a tablet she linked would outlive her access), and never a parent''s own phone');
 select revoke_device(:'adam', 'tab1dev');
 reset role;
 select test.ok((select revoked from devices where profile_id = :'adam' and id = 'tab1dev')
@@ -112,6 +114,9 @@ select test.ok((select revoked from devices where profile_id = :'adam' and id = 
 set role authenticated;
 select test.as_person(:'sarah');
 select test.ok((select count(*) = 0 from devices where profile_id = :'adam'), 'without that right, no device is shown');
+select test.as_person(:'nadia');
+select test.expect_error(format('select revoke_device(%L, ''evephone'')', :'adam'), 'forbidden');
+select test.ok(true, 'a co-parent does not remove the owner''s own phone');
 
 -- ───────── 3. Professionals on a team are verified professional accounts ─────────
 select test.as_person(:'eve');
@@ -160,6 +165,16 @@ select test.expect_error(format('select update_child(%L, ''Bob'', 3)', :'adam'),
 select test.ok(true, 'a member or a tablet does not rename the child');
 
 -- ───────── 5. Asking again after a refusal; leaving a team ─────────
+-- A request Nadia left waiting before she joined cannot be approved over her place as a parent.
+select test.as_person(:'eve');
+reset role;
+insert into invitations (direction, profile_id, child_name, from_user_id, from_name, code, role, level, perms, status)
+values ('request', :'adam', 'Adam', :'nadia', 'Nadia', 'OLDNADIA', 'family', 1, '{}', 'pending');
+set role authenticated;
+select test.as_person(:'eve');
+select test.expect_error(format('select approve_request((select id from invitations where code = ''OLDNADIA''), 1, ''{}'')'), 'already_member');
+select test.ok((select role = 'parent' and perms -> 'manager' = 'true'::jsonb from members where profile_id = :'adam' and user_id = :'nadia'),
+  'a request left waiting does not rewrite someone who acts as a parent');
 select test.as_person(:'eve');
 select revoke_member(:'adam', :'sarah');
 select test.as_person(:'sarah');
@@ -182,7 +197,14 @@ values ('request', :'adam', 'Adam', :'sarah', 'OLDREQ01', 'therapist', 1, 'decli
 set role authenticated;
 select test.as_person(:'sarah');
 select test.expect_error(format('select ask_again(%L)', (select v from test.ids where k = 'req')), 'refused_often');
-select test.ok(true, 'after three refusals in six months, no more requests');
+select test.ok(true, 'after three requests in six months, no more');
+reset role;
+-- Cancelling her own new requests does not reset the count.
+update invitations set status = 'cancelled' where code = 'OLDREQ01';
+set role authenticated;
+select test.as_person(:'sarah');
+select test.expect_error(format('select ask_again(%L)', (select v from test.ids where k = 'req')), 'refused_often');
+select test.ok(true, 'a request she cancelled herself still counts');
 select test.as_person(:'tina');
 select leave_team(:'adam');
 select test.ok((select count(*) = 0 from read_profile(:'adam')), 'she leaves the team: the board is no longer hers to open');
@@ -201,9 +223,25 @@ select test.expect_error(format('select offer_profile(%L, %L)', :'adam', :'nadia
 select test.as_person(:'eve');
 select test.expect_error(format('select offer_profile(%L, %L)', :'adam', :'rita'), 'invalid');
 select test.ok(true, 'only someone who acts as a parent can be offered the child');
+-- Carl, another family member, is made a parent too: he can read the offer's code, not use it.
+insert into test.ids select 'carlinv', (invite(:'adam', 'carl@example.com', 'Carl', 'family', 1, '{}')).id::text;
+select test.as_person(:'carl');
+select respond_invitation((select v::uuid from test.ids where k = 'carlinv'), true);
+select test.as_person(:'eve');
+select update_member(:'adam', :'carl', 1, '{"manager":true}', null, null, false);
 insert into test.ids select 'offer', (offer_profile(:'adam', :'nadia')).id::text;
+select test.as_app(:'carl');
+select give_consent('child_data', 1);
+select test.expect_error(format('select accept_invitation_code(%L)', (select code from invitations where id = (select v::uuid from test.ids where k = 'offer'))), 'forbidden');
+select test.ok(true, 'another co-parent cannot take a profile offered to someone else');
+-- An offer ends when its person is no longer a parent.
+select test.as_person(:'eve');
+insert into test.ids select 'offer2', (offer_profile(:'adam', :'carl')).id::text;
+select update_member(:'adam', :'carl', 1, '{"manager":false}', 'family', null, false);
+select test.ok((select status = 'cancelled' from invitations where id = (select v::uuid from test.ids where k = 'offer2')), 'switched off, the offer made to him ends');
+insert into test.ids select 'offer', (offer_profile(:'adam', :'nadia')).id::text on conflict (k) do update set v = excluded.v;
 select test.as_app(:'nadia');
-select test.ok((select count(*) = 1 from notices where user_id = :'nadia' and text like 'Eve vous propose de devenir le parent responsable%'), 'the other parent is asked');
+select test.ok((select count(*) >= 1 from notices where user_id = :'nadia' and text like 'Eve vous propose de devenir le parent responsable%'), 'the other parent is asked');
 select test.expect_error(format('select respond_invitation(%L, true)', (select v from test.ids where k = 'offer')), 'consent_needed');
 select give_consent('child_data', 1);
 select respond_invitation((select v::uuid from test.ids where k = 'offer'), true);
@@ -224,6 +262,7 @@ select test.as_person(:'nadia');
 select test.ok((select name = 'Adam Junior' and not in_bin and 'Eve' = any (people) and parents -> 0 ->> 'name' = 'Eve' from my_owned_profiles()),
   'the screen can name the child, who loses the board and who could take it');
 select test.expect_error('select delete_account()', 'profiles_left');
+select test.expect_error('select delete_account(array[null]::uuid[])', 'profiles_left');
 select test.ok(true, 'an account that owns a child''s profile is not deleted without naming it');
 select test.as_stale(:'nadia');
 select test.expect_error(format('select delete_account(array[%L]::uuid[])', :'adam'), 'proof_needed');

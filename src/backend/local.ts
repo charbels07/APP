@@ -305,7 +305,7 @@ export class LocalBackend implements Backend {
   private static actsAsParent(x: { role: CollaboratorRole; perms: PermissionSet; status: string } | undefined): boolean {
     return !!x && x.status === 'active' && x.role !== 'device' && !!x.perms.manager;
   }
-  /** The family (and a full-access tablet), or a member the family let manage the devices (manages_devices). */
+  /** The family (and a full-access tablet), or a member the family let manage the devices (manages_devices): sees the devices, removes the child's tablets; links none. */
   private static managesDevices(db: DB, profileId: string, me: StoredAccount): boolean {
     const a = LocalBackend.access(db, profileId, me.id);
     if (!a) return false;
@@ -1025,6 +1025,9 @@ export class LocalBackend implements Backend {
       }
       if (role !== x.role) LocalBackend.checkJoin(db, userId, role);
       Object.assign(x, { role, level, perms });
+      // No longer a parent: an offer of the profile made to them ends.
+      if (was && !now)
+        for (const i of db.invitations) if (i.profileId === profileId && i.status === 'pending' && i.direction === 'invite' && i.role === 'parent' && i.toUserId === userId) i.status = 'cancelled';
       if (now) x.expiresAt = undefined;
       else if (patch.expiresAt !== undefined) x.expiresAt = patch.expiresAt ?? undefined;
       LocalBackend.notify(db, userId, 'access', `Vos droits sur le profil de ${db.profiles[profileId].name} ont changé.`, { profileId });
@@ -1126,6 +1129,11 @@ export class LocalBackend implements Backend {
     const owner = db.profiles[inv.profileId] ? db.accounts[db.profiles[inv.profileId].ownerId] : undefined;
     if (inv.role === 'parent' && !(owner?.role === 'pro' && owner.id === inv.fromUserId && LocalBackend.familyPerson(db, userId) && userId !== owner.id)) throw new BackendError('forbidden');
     if (inv.role !== 'parent') LocalBackend.checkJoin(db, userId, inv.role);
+    // Someone who acts as a parent is changed by the owner only: no invitation or request left waiting rewrites their place.
+    if (LocalBackend.actsAsParent(db.members.find((x) => x.profileId === inv.profileId && x.userId === userId))) throw new BackendError('already_member');
+    // In: their other requests for this child end (one could be approved later with other rights).
+    for (const o of db.invitations)
+      if (o !== inv && o.profileId === inv.profileId && o.status === 'pending' && o.direction === 'request' && o.fromUserId === userId) o.status = 'cancelled';
     // A parent accepts the "parent" invitation written by the professional who created the
     // profile: the parent becomes the owner, the professional stays on the team (same as the real server).
     const p = db.profiles[inv.profileId];
@@ -1234,7 +1242,8 @@ export class LocalBackend implements Backend {
     const p = db.profiles[inv.profileId];
     if (!p || p.deletedAt || inv.direction !== 'invite' || inv.role !== 'parent' || inv.fromUserId !== p.ownerId || db.accounts[p.ownerId]?.role === 'pro') return false;
     const me = db.members.find((x) => x.profileId === p.id && x.userId === userId);
-    if (userId === p.ownerId || !LocalBackend.familyPerson(db, userId) || !LocalBackend.actsAsParent(me)) throw new BackendError('forbidden');
+    // Only the parent it was offered to (another co-parent can read its code).
+    if (userId === p.ownerId || inv.toUserId !== userId || !LocalBackend.familyPerson(db, userId) || !LocalBackend.actsAsParent(me)) throw new BackendError('forbidden');
     // The parent's consent first (as consent_on_takeover).
     const c = (db.consents ?? []).find((x) => x.userId === userId && !x.profileId && Date.now() - x.at < 24 * 3600 * 1000);
     if (!c) throw new BackendError('consent_needed');
@@ -1412,9 +1421,9 @@ export class LocalBackend implements Backend {
       if (!old || !p || p.deletedAt) throw new BackendError('not_found');
       if (LocalBackend.access(db, p.id, me.id)) throw new BackendError('already_member');
       const mine = db.invitations.filter((i) => i.direction === 'request' && i.profileId === p.id && i.fromUserId === me.id);
-      // A week after the last one at the earliest; after three refusals in six months, no more.
+      // A week after the last one at the earliest; after three requests in six months, no more.
       if (mine.some((i) => i.status === 'pending' || Date.now() - i.createdAt < 7 * DAY_MS)) throw new BackendError('ask_later');
-      if (mine.filter((i) => i.status === 'declined' && Date.now() - i.createdAt < 180 * DAY_MS).length >= 3) throw new BackendError('refused_often');
+      if (mine.filter((i) => Date.now() - i.createdAt < 180 * DAY_MS).length >= 3) throw new BackendError('refused_often');
       if ((old.role === 'therapist' || old.role === 'teacher') && me.role !== 'pro') throw new BackendError('pro_account_needed');
       if (!LocalBackend.cleared(db, me.id)) throw new BackendError('pro_not_verified');
       const inv: Invitation = {
@@ -1653,7 +1662,8 @@ export class LocalBackend implements Backend {
       if (!d) throw new BackendError('not_found');
       const tablet = db.members.some((x) => x.profileId === profileId && x.userId === d.userId && x.role === 'device');
       // A linked tablet only removes other tablets, never a person's own phone or computer.
-      if (!tablet && !LocalBackend.runsTeam(db, profileId, me)) throw new BackendError('forbidden');
+      // A person's own phone or computer: that person, or the parent who owns the profile.
+      if (!tablet && !(LocalBackend.runsTeam(db, profileId, me) && (d.userId === me.id || LocalBackend.ownsSignedIn(db, profileId, me)))) throw new BackendError('forbidden');
       d.revoked = true;
       // A device linked with a pairing code has its own access: it ends too, with the codes it made.
       if (tablet) LocalBackend.removeFromTeam(db, profileId, d.userId);
@@ -1664,7 +1674,8 @@ export class LocalBackend implements Backend {
     if (access === 'full') await this.requireProof();
     return this.tx((db, m) => {
       const me = LocalBackend.need(m);
-      if (!LocalBackend.managesDevices(db, profileId, me)) throw new BackendError('forbidden');
+      // Linking stays the family's (a tablet linked by a member could outlive the member's access).
+      LocalBackend.requireManager(db, profileId, me);
       // A full-access code is made by the family, signed in as itself; a tablet makes "use only" codes.
       if (access === 'full') LocalBackend.requireTeam(db, profileId, me);
       // A tablet receives the family's code: a professional on the family's team links none.

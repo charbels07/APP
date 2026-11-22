@@ -172,8 +172,9 @@
   never the family's, which she neither sees nor changes (`AppProvider ownCode`). Always pass `ownCode`
   there, whatever the family lets her do ("use" only included): without it the family's code is the one
   compared and shown (`showsCodeField`). The family's code is not sent to a professional at all (migration
-  `20261122000000_gap_batch3.sql`, `sees_code`): a `pro` account, and a therapist or teacher on the team even
-  with a family-type account (`useOwnCode(true)` in `BoardStage`), receive the profile without
+  `20261122000000_gap_batch3.sql`, `sees_code`): a `pro` account, and a therapist or teacher on the team
+  (`useOwnCode(true)` in `BoardStage`; a family-type account in that role is only an older row, whose access
+  waits since batch 4), receive the profile without
   `settings.pin`, and whatever code they send is ignored. The app must cope with a profile that has no code
   (`familyCodeUnset`); never read `settings.pin` as if it were always there. Only the accounts of
   the app's own team are never asked a code, on any board they open (`freeEdit={sess.isAdmin}`: the
@@ -195,6 +196,25 @@
   tablet's code is redeemed by a tablet's own sign-in only; a device row passes between people, never to or
   from a tablet (`register_device`); someone who does not receive the code invites therapists and teachers
   only and links no tablet on a family's profile.
+- People and rights (owner's decisions, November 2026; migration `20261122000100_gap_batch4.sql`, attacks in
+  `supabase/tests/gap4_scenario.sql`, demo server in `gapBatch4.test.ts`): a second parent is a team member the
+  owner switches to "Acts as a parent" (`perms.manager`, role `parent`) in Team, after a fresh proof
+  (`useProof('makeParent')`), for a family's account only; nobody else gives or takes it, nobody changes their
+  own access, and someone who acts as a parent is changed or removed by the owner only. An invitation or a
+  request never carries `manager`; "parent" is invited only by a professional handing her profile over. The
+  owner hands the child to that parent with `offer_profile` (accepted in Account → Children, with that parent's
+  consent; the team, the code and the family's choices stay; the former owner stays, acting as a parent).
+  `manageDevices` ("Manage the child's tablets", `manages_devices`): sees the devices, removes the child's
+  tablets; it links none (a tablet linked by a member would outlive the member's access). A person's own device
+  is removed by that person or the owner. Only the person an offer was made to can take the profile. Deleting an account names the children it owns and who loses their board
+  (`ownedProfiles`), offers the hand-over, and erases only what was ticked (`delete_account(p_erase)`,
+  `profiles_left`); the team is told; the app deletes no file itself (the purge queue does). Therapists and
+  teachers on a team are professional accounts accepted by the app's team (`member_cleared`; "has paid" waits
+  in `pro_paid`, open for all today); others wait (`Membership.waiting`) and the family may give another role.
+  A member leaves with `leave_team` (then `forgetChild`); a declined professional may `ask_again` (a week later,
+  not after three refusals in six months). The child's name and age: `update_child` (owner). A tablet linked by
+  a co-parent stays linked when that co-parent leaves or is removed (owner's decision, 22 November 2026: it is
+  the child's; the family removes it in Devices).
 - Notices are stored as sentences by the server: a new notice gets its three versions in
   `src/lib/notices.ts` (shown with `noticeText`), with a line in `src/__tests__/notices.test.ts`.
 - Professionals' materials: no separate "create" page and no title field; the library creates

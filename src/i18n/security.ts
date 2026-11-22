@@ -5,7 +5,7 @@
 import type { UiLang } from '../model/types';
 
 /** What the person is about to do, said before the proof is asked. */
-export type ProofReason = 'deleteAccount' | 'deleteProfile' | 'linkFull' | 'exportAll' | 'restore';
+export type ProofReason = 'deleteAccount' | 'deleteProfile' | 'linkFull' | 'exportAll' | 'restore' | 'makeParent' | 'handOver';
 
 const fr = {
   retTitle: 'Conservation et protections',
@@ -54,6 +54,8 @@ const fr = {
     linkFull: 'Avant de relier un appareil avec accès complet',
     exportAll: 'Avant de télécharger toutes vos données',
     restore: 'Avant de remettre le tableau comme il était',
+    makeParent: 'Avant de donner ou de retirer les droits d’un parent',
+    handOver: 'Avant de confier l’enfant à l’autre parent',
   } as Record<ProofReason, string>,
   proofIntroPw: '{why}, confirmez que c’est vous : le mot de passe du compte, ou un code envoyé à {to}.',
   proofIntro: '{why}, confirmez que c’est vous : un code va être envoyé à {to}.',
@@ -115,6 +117,8 @@ const en: Dict = {
     linkFull: 'Before linking a device with full access',
     exportAll: 'Before downloading all your data',
     restore: 'Before putting the board back as it was',
+    makeParent: 'Before giving or taking a parent’s rights',
+    handOver: 'Before handing the child to the other parent',
   },
   proofIntroPw: '{why}, confirm it is you: the account’s password, or a code sent to {to}.',
   proofIntro: '{why}, confirm it is you: a code will be sent to {to}.',
@@ -174,6 +178,8 @@ const ar: Dict = {
     linkFull: 'قبل ربط جهاز بوصول كامل',
     exportAll: 'قبل تنزيل كل بياناتك',
     restore: 'قبل إعادة اللوحة كما كانت',
+    makeParent: 'قبل منح صلاحيات وليّ الأمر أو سحبها',
+    handOver: 'قبل تسليم الطفل إلى وليّ الأمر الآخر',
   },
   proofIntroPw: '{why}، أكّد أنك أنت: كلمة مرور الحساب، أو رمز يُرسل إلى {to}.',
   proofIntro: '{why}، أكّد أنك أنت: سيُرسل رمز إلى {to}.',

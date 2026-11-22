@@ -49,7 +49,7 @@ const fr = {
     proposeVocabulary: 'Proposer du vocabulaire',
     changeAccess: 'Changer la voix et l’accès',
     invite: 'Inviter d’autres personnes',
-    manageDevices: 'Gérer les appareils et les droits',
+    manageDevices: 'Gérer les tablettes de l’enfant',
     viewData: 'Voir le suivi (données de communication)',
   } as Record<Perm, string>,
 
@@ -251,7 +251,7 @@ const en: Dict = {
     proposeVocabulary: 'Suggest vocabulary',
     changeAccess: 'Change voice and access',
     invite: 'Invite other people',
-    manageDevices: 'Manage devices and permissions',
+    manageDevices: 'Manage the child’s tablets',
     viewData: 'See the progress data (communication data)',
   },
 
@@ -450,7 +450,7 @@ const ar: Dict = {
     proposeVocabulary: 'اقتراح مفردات',
     changeAccess: 'تغيير الصوت وطريقة الاختيار',
     invite: 'دعوة أشخاص آخرين',
-    manageDevices: 'إدارة الأجهزة والصلاحيات',
+    manageDevices: 'إدارة أجهزة الطفل اللوحية',
     viewData: 'رؤية المتابعة (بيانات التواصل)',
   },
 

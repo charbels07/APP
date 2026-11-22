@@ -72,10 +72,15 @@ describe('notices in the language of the menus', () => {
       // the parents take over a profile a professional prepared (join_profile, batch 3 of the gap review)
       "Vous êtes maintenant le parent responsable du profil de Adam. Dans son équipe : Marc, Sarah K. Vous décidez de leurs droits dans Réglages → Équipe.",
       "Vous êtes maintenant le parent responsable du profil de Adam. Personne d'autre n'est dans son équipe.",
+      // batch 4: a hand-over between parents, leaving a team, an account deleted, a professional's access waiting
+      'Eve vous propose de devenir le parent responsable du profil de Adam.',
+      "Tina a quitté l'équipe de Adam.",
+      'Le profil de Adam a été effacé : Nadia a supprimé son compte.',
+      "Votre accès au profil de Adam attend : les thérapeutes et les enseignants ont besoin d'un compte professionnel vérifié par notre équipe.",
     ];
     for (const sample of samples) expect(noticeText(sample, 'en')).not.toBe(sample);
     // The fixed parts of those sentences really are in the database files (so this list stays honest).
-    for (const part of ['ont changé.', 'a été retiré.', 'vous invite à rejoindre', 'demande à rejoindre', ' a révisé : ', 'Proposition acceptée : ', ' a partagé « ', 'est maintenant le parent responsable', 'Vous êtes maintenant le parent responsable', 'Dans son équipe : ', 'a été supprimé par la famille.', 'Nouvelle idée soumise au vote : ']) {
+    for (const part of ['ont changé.', 'a été retiré.', 'vous invite à rejoindre', 'demande à rejoindre', ' a révisé : ', 'Proposition acceptée : ', ' a partagé « ', 'est maintenant le parent responsable', 'Vous êtes maintenant le parent responsable', 'Dans son équipe : ', 'a été supprimé par la famille.', 'Nouvelle idée soumise au vote : ', ' vous propose de devenir le parent responsable du profil de ', " a quitté l''équipe de ", ' a été effacé : ', ' a supprimé son compte.', " attend : les thérapeutes et les enseignants ont besoin d''un compte professionnel vérifié par notre équipe."]) {
       expect(sql).toContain(part);
     }
     expect(NOTICE_TEMPLATES.every((t) => t.fr && t.en && t.ar)).toBe(true);

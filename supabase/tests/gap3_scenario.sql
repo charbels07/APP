@@ -20,12 +20,14 @@ insert into auth.users (id, email, email_confirmed_at, raw_user_meta_data) value
   (:'marc', 'marc@school.lb', now(), '{"role":"pro","display_name":"Marc"}'),
   (:'eve', 'eve@example.com', now(), '{"role":"parent","display_name":"Eve"}'),
   (:'nadia', 'nadia@example.com', now(), '{"role":"parent","display_name":"Nadia"}'),
-  (:'tina', 'tina@example.com', now(), '{"role":"parent","display_name":"Tina"}'),
+  -- (a teacher: since batch 4, a professional account accepted by the app's team)
+  (:'tina', 'tina@example.com', now(), '{"role":"pro","display_name":"Tina"}'),
   (:'noname', 'nameless@example.com', now(), '{"role":"parent"}'),
   (:'rita', 'rita@example.com', now(), '{"role":"parent","display_name":"Rita"}');
 insert into auth.users (id, is_anonymous) values (:'tab1', true), (:'tab2', true);
 insert into verifications (user_id, full_name, country, profession, status) values
-  (:'sarah', 'Sarah K', 'France', 'slp', 'verified'), (:'marc', 'Marc H', 'Lebanon', 'teacher', 'verified');
+  (:'sarah', 'Sarah K', 'France', 'slp', 'verified'), (:'marc', 'Marc H', 'Lebanon', 'teacher', 'verified'),
+  (:'tina', 'Tina T', 'Lebanon', 'teacher', 'verified');
 insert into admins (user_id) values (:'rita');
 grant usage on schema test to anon;
 

@@ -139,6 +139,30 @@ replayed as its attack by `supabase/tests/gap3_scenario.sql`:
 
 Not changed: the daily ceiling of the AI helper waits until the AI is turned on.
 
+### Added later: people and rights (gap review, batch 4, 22 November 2026)
+
+Closed in the database (`20261122000100_gap_batch4.sql`), replayed as attacks by
+`supabase/tests/gap4_scenario.sql`, mirrored by the demo server (`gapBatch4.test.ts`):
+
+| Problem | Fix |
+|---|---|
+| Any co-manager could give the family's rights ("manager") to anyone, and change their own access; nothing in the app set it, so a second parent did not exist. | "Acts as a parent" is the owner's switch only (`update_member`), after a fresh proof, for a family's account only; nobody changes their own access; someone who acts as a parent is changed or removed by the owner only (also through `cancel_invitation`). An invitation never carries it. |
+| "Manage devices and rights" was read by no rule. | Wired (`manages_devices`): the person sees the child's devices and removes the child's tablets; linking a tablet stays the family's (a tablet she linked would outlive her access). A person's own phone is removed by that person or the owner, never by a co-parent. |
+| Deleting the owner's account erased every child's profile it owned at once, for the whole team, with no word. | `delete_account(p_erase)` refuses (`profiles_left`) while the account owns a profile the person did not see named and agree to erase; the screen offers to hand the child to the other parent first (`offer_profile`, accepted with that parent's consent); the rest of the team is told. The person's files are deleted by the purge queue, after the proof (no longer by the app before it). |
+| A therapist or a teacher could be on a team with a family's account, or with a professional account not yet accepted. | Both roles need a professional account accepted by the app's team (`member_cleared`, `cleared_to_join`); those already on a team wait (the family sees it, and may give another role); a family's address is refused when invited as such. A place for "has paid" is ready (`pro_paid`, open for everyone today). |
+| Nobody could leave a team; a professional refused once could not ask again (no way back from the refusal). | `leave_team`; `ask_again` (a week after the refusal at the earliest, no more after three refusals in six months). |
+| The child's name and age could not be changed from the app. | `update_child`: the account that owns the profile, signed in as itself; the waiting invitations show the new name. |
+
+An independent review of the first version found three holes, closed before it went live: another
+co-parent could take a profile offered to someone else (he can read the offer's code); a "parent"
+invitation left waiting from an earlier version made its taker the owner; a request left waiting could be
+approved over someone who acts as a parent, changing their place. Also corrected: a member who manages
+devices could link a tablet that outlived her removal (she links none now); "Ask again" could be repeated
+for ever by cancelling one's own requests (every request counts now); a co-parent could remove the owner's
+own phone; an offer stayed alive after its person stopped acting as a parent; taking a profile did not
+need the two-step code; old rows holding the family's rights without being a parent are corrected by the
+file.
+
 ### Added later: "Keep me logged in" (November 2026)
 
 On the log-in and sign-up forms. Ticked (the default, right for the family's own tablet or

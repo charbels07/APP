@@ -224,7 +224,9 @@ describe('demo server: a parent and a therapist working together', () => {
   it('password reset never reveals whether an account exists, and deleting an account cleans up', async () => {
     expect((await api.requestPasswordReset({ email: 'nobody@nowhere.com' })).demoCode).toMatch(/^\d{6}$/);
     await api.signIn({ email: 'rita@example.com', password: 'secret123' });
-    await api.deleteAccount();
+    // The children's profiles the account owns are named first, then agreed to (batch 4).
+    await expectCode(api.deleteAccount(), 'profiles_left');
+    await api.deleteAccount((await api.ownedProfiles()).map((p) => p.id));
     await api.signIn({ email: 'sarah@clinic.fr', password: 'therapy123' });
     expect(await api.listProfiles()).toEqual([]);
   });

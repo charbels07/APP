@@ -130,6 +130,12 @@ const fr = {
     consent_needed: 'Votre accord est nécessaire avant de garder le profil de l’enfant.',
     proof_needed: 'Confirmez d’abord que c’est vous.',
     two_step_needed: 'Tapez d’abord le code de votre application d’authentification.',
+    pro_account_needed: 'Un thérapeute ou un enseignant rejoint l’équipe d’un enfant avec un compte professionnel vérifié par notre équipe, pas avec un compte famille.',
+    profiles_left: 'Votre compte garde encore le profil d’un enfant : confiez-le d’abord, ou cochez-le pour l’effacer.',
+    ask_later: 'Votre demande a été refusée il y a moins d’une semaine : vous pourrez la refaire plus tard.',
+    refused_often: 'La famille a refusé plusieurs fois : elle peut encore vous inviter elle-même.',
+    not_ready: 'Ce n’est pas encore possible : le serveur attend une mise à jour. Réessayez plus tard.',
+    invalid: 'Ce n’est pas possible ici.',
   } as Record<string, string>,
 };
 
@@ -261,6 +267,12 @@ const en: Dict = {
     consent_needed: 'Your agreement is needed before the child’s profile can be kept.',
     proof_needed: 'First confirm it is you.',
     two_step_needed: 'First type the code from your authenticator app.',
+    pro_account_needed: 'A therapist or a teacher joins a child’s team with a professional account checked by our team, not with a family account.',
+    profiles_left: 'Your account still holds a child’s profile: hand it over first, or tick it to erase it.',
+    ask_later: 'Your request was declined less than a week ago: you can ask again later.',
+    refused_often: 'The family declined several times: they can still invite you themselves.',
+    not_ready: 'Not possible yet: the server is waiting for an update. Try again later.',
+    invalid: 'That is not possible here.',
   },
 };
 
@@ -385,6 +397,12 @@ const ar: Dict = {
     consent_needed: 'موافقتك ضرورية قبل حفظ ملف الطفل.',
     proof_needed: 'أكّد أولًا أنك أنت.',
     two_step_needed: 'اكتب أولًا رمز تطبيق المصادقة.',
+    pro_account_needed: 'ينضم المعالج أو المعلم إلى فريق الطفل بحساب مهني تتحقق منه فرقتنا، لا بحساب عائلة.',
+    profiles_left: 'ما زال حسابك يحتفظ بملف طفل: سلّمه أولًا، أو حدّده لمسحه.',
+    ask_later: 'رُفض طلبك منذ أقل من أسبوع: يمكنك إعادة الطلب لاحقًا.',
+    refused_often: 'رفضت العائلة عدة مرات: لا يزال بإمكانها دعوتك بنفسها.',
+    not_ready: 'غير ممكن بعد: الخادم بانتظار تحديث. حاول لاحقًا.',
+    invalid: 'هذا غير ممكن هنا.',
   },
 };
 

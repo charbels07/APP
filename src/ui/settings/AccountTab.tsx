@@ -6,7 +6,10 @@
 import Constants from 'expo-constants';
 import React, { useEffect, useState, useSyncExternalStore } from 'react';
 import { Text, TextInput, View } from 'react-native';
-import type { Device, ProfileSummary } from '../../backend/types';
+import type { Device, Invitation, OwnedProfile, ProfileSummary } from '../../backend/types';
+import { peopleStrings } from '../../i18n/people';
+import { CHILD_DATA_CONSENT } from '../../lib/consent';
+import { ConsentBox } from '../ConsentBox';
 import { errorText } from '../../i18n/account';
 import { pushStrings } from '../../i18n/push';
 import { pushIsOn, pushRefused, pushSupport, turnPushOff, turnPushOn } from '../../lib/push';
@@ -80,6 +83,10 @@ export function MyAccount({ x }: { x: SettingsStrings }) {
   const [next, setNext] = useState('');
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const hasPassword = account?.provider === 'email' || account?.provider === 'phone';
+  // With two-step sign-in on, the authenticator code proves it: signing in again with the password
+  // would start a session without the second step (the children's data hidden until the code).
+  const twoStep = !!sess.security?.twoStep;
+  const who = peopleStrings(sess.uiLang);
   return (
     <Section title={x.myAccount}>
       <Field label={x.displayName} value={name} onChangeText={setName} />
@@ -102,7 +109,20 @@ export function MyAccount({ x }: { x: SettingsStrings }) {
       {hasPassword && (
         <>
           <Note text={x.changePassword} />
-          <TextInput value={cur} onChangeText={setCur} secureTextEntry placeholder={x.currentPassword} placeholderTextColor={C.placeholder} style={input} accessibilityLabel={x.currentPassword} />
+          {twoStep ? (
+            <TextInput
+              value={cur}
+              onChangeText={setCur}
+              keyboardType="number-pad"
+              autoComplete="one-time-code"
+              placeholder={who.twoStepCode}
+              placeholderTextColor={C.placeholder}
+              style={input}
+              accessibilityLabel={who.twoStepCode}
+            />
+          ) : (
+            <TextInput value={cur} onChangeText={setCur} secureTextEntry placeholder={x.currentPassword} placeholderTextColor={C.placeholder} style={input} accessibilityLabel={x.currentPassword} />
+          )}
           <TextInput value={next} onChangeText={setNext} secureTextEntry placeholder={x.newPassword} placeholderTextColor={C.placeholder} style={input} accessibilityLabel={x.newPassword} />
           <Btn
             small
@@ -111,7 +131,7 @@ export function MyAccount({ x }: { x: SettingsStrings }) {
             disabled={!cur || next.length < 8}
             onPress={async () => {
               try {
-                await api.changePassword(cur, next);
+                await api.changePassword(cur, next, twoStep ? 'twoStep' : 'password');
                 setCur('');
                 setNext('');
                 setMsg({ ok: true, text: x.passwordChanged });
@@ -144,28 +164,195 @@ const input = { borderWidth: 1.5, borderColor: C.inputBorder, borderRadius: 12, 
 
 function Children({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
   const sess = useSession();
+  const who = peopleStrings(sess.uiLang);
   const [list, setList] = useState<ProfileSummary[]>([]);
-  useEffect(() => {
+  const [editing, setEditing] = useState<string | null>(null);
+  // The other parent offered this account a child's profile ("Acts as a parent" → hand over).
+  const [offers, setOffers] = useState<Invitation[]>([]);
+  const load = () => {
     sess.api.listProfiles().then(setList).catch(() => {});
-  }, [sess.api]);
+    sess.api
+      .myInvitations()
+      .then((r) => setOffers(r.received.filter((i) => i.status === 'pending' && i.role === 'parent' && Date.now() - i.createdAt < 30 * 86_400_000)))
+      .catch(() => {});
+  };
+  useEffect(load, [sess.api]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <Section title={x.children}>
-      {list.map((p) => (
-        <Row
-          key={p.id}
-          icon={p.access === 'owner' ? 'heart' : 'user'}
-          title={p.name}
-          sub={p.id === board.profileId ? x.openNow : p.access === 'owner' ? x.ownerRole : x.roles[p.access]}
-          onPress={p.id === board.profileId ? undefined : () => sess.openProfile(p.id)}
-        />
+      {offers.map((i) => (
+        <Offer key={i.id} inv={i} onDone={load} />
       ))}
+      {list.map((p) =>
+        editing === p.id ? (
+          <ChildEdit
+            key={p.id}
+            child={p}
+            onDone={(changed) => {
+              setEditing(null);
+              if (changed) {
+                load();
+                if (p.id === board.profileId) void board.sync.pull();
+              }
+            }}
+          />
+        ) : (
+          <Row
+            key={p.id}
+            icon={p.access === 'owner' ? 'heart' : 'user'}
+            title={p.age ? `${p.name} · ${p.age}` : p.name}
+            sub={p.id === board.profileId ? x.openNow : p.access === 'owner' ? x.ownerRole : x.roles[p.access]}
+            onPress={p.id === board.profileId ? undefined : () => sess.openProfile(p.id)}
+            right={p.access === 'owner' && sess.account?.provider !== 'device' ? <Btn small icon="pencil" label={who.nameAge} onPress={() => setEditing(p.id)} /> : undefined}
+          />
+        ),
+      )}
       {sess.account?.role === 'parent' && <Btn small icon="plus" label={x.addChild} onPress={() => sess.go({ name: 'onboarding', back: { name: 'board', profileId: board.profileId } })} />}
     </Section>
   );
 }
 
+/** A child's first name and age, changed by the account that owns the profile. */
+function ChildEdit({ child, onDone }: { child: ProfileSummary; onDone: (changed: boolean) => void }) {
+  const sess = useSession();
+  const who = peopleStrings(sess.uiLang);
+  const [name, setName] = useState(child.name);
+  const [age, setAge] = useState(child.age ? String(child.age) : '');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const n = Number(age);
+  const ageOk = age.trim() === '' || (/^\d{1,2}$/.test(age.trim()) && n <= 30);
+  return (
+    <View style={ss.card}>
+      <Field label={who.childName} value={name} onChangeText={setName} maxLength={60} />
+      <Field label={who.childAge} value={age} onChangeText={(t) => setAge(t.replace(/[^0-9]/g, ''))} keyboardType="number-pad" maxLength={2} />
+      <Msg text={error} />
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <Btn small label={settingsStrings(sess.uiLang).back} onPress={() => onDone(false)} />
+        <Btn
+          small
+          kind="primary"
+          icon="check"
+          label={settingsStrings(sess.uiLang).save}
+          disabled={busy || !name.trim() || !ageOk}
+          onPress={async () => {
+            setBusy(true);
+            setError(null);
+            try {
+              await sess.api.updateChild(child.id, { name: name.trim(), age: age.trim() ? n : null });
+              onDone(true);
+            } catch (e) {
+              setError(errorText(sess.s, e));
+              setBusy(false);
+            }
+          }}
+        />
+      </View>
+    </View>
+  );
+}
+
+/** The other parent asks this account to become the parent in charge: accepted with the parent's consent. */
+function Offer({ inv, onDone }: { inv: Invitation; onDone: () => void }) {
+  const sess = useSession();
+  const who = peopleStrings(sess.uiLang);
+  const [consent, setConsent] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const answer = async (accept: boolean) => {
+    setBusy(true);
+    setError(null);
+    try {
+      // The consent is recorded only when the person accepts.
+      if (accept) await sess.api.giveConsent(CHILD_DATA_CONSENT);
+      await sess.api.respondInvitation(inv.id, accept);
+      onDone();
+    } catch (e) {
+      setError(errorText(sess.s, e));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <View style={ss.card}>
+      <Text style={ss.title}>{who.offer(inv.fromName, inv.childName)}</Text>
+      <ConsentBox value={consent} onChange={setConsent} lang={sess.uiLang} />
+      <Msg text={error} />
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <Btn small label={who.offerDecline} disabled={busy} onPress={() => void answer(false)} />
+        <Btn small kind="primary" icon="check" label={who.offerAccept} disabled={busy || !consent} onPress={() => void answer(true)} />
+      </View>
+    </View>
+  );
+}
+
+/**
+ * Before an account is deleted: the children whose profile it owns, who loses the board with
+ * them, the other parent it can be handed to first, and a tick per child to agree to erase it.
+ */
+function useOwnedChildren(open: boolean) {
+  const sess = useSession();
+  const who = peopleStrings(sess.uiLang);
+  const [list, setList] = useState<OwnedProfile[] | null>(null);
+  const [erase, setErase] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const proof = useProof('handOver');
+  const load = () => {
+    sess.api
+      .ownedProfiles()
+      .then(setList)
+      .catch(() => setList(null));
+  };
+  useEffect(() => {
+    if (open) load();
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  const live = (list ?? []).filter((p) => !p.inBin);
+  const ready = list !== null && live.every((p) => erase.includes(p.id));
+  const view =
+    list && list.length ? (
+      <View style={{ gap: 6 }}>
+        <Note text={who.deleteWho} />
+        {list.map((p) => (
+          <View key={p.id} style={{ gap: 6 }}>
+            <Row icon="heart" title={who.profileLine(p.inBin ? who.inBin(p.name) : p.name, p.people, p.tablets)} />
+            {!p.inBin &&
+              (p.offeredTo ? (
+                <Note text={who.offered(p.parents.find((q) => q.userId === p.offeredTo)?.name ?? '—')} />
+              ) : (
+                p.parents.map((q) => (
+                  <Btn
+                    key={q.userId}
+                    small
+                    icon="heart"
+                    label={who.handFirst(q.name)}
+                    onPress={async () => {
+                      setError(null);
+                      try {
+                        await proof.run(async () => {
+                          await sess.api.offerProfile(p.id, q.userId);
+                          load();
+                        });
+                      } catch (e) {
+                        setError(errorText(sess.s, e));
+                      }
+                    }}
+                  />
+                ))
+              ))}
+            {!p.inBin && (
+              <Toggle label={who.eraseTick(p.name)} value={erase.includes(p.id)} onChange={(v) => setErase((cur) => (v ? [...cur, p.id] : cur.filter((y) => y !== p.id)))} />
+            )}
+          </View>
+        ))}
+        {sess.account?.role === 'parent' && live.some((p) => !p.parents.length) && <Note text={who.noParent} />}
+        <Msg text={error} />
+        {proof.gate}
+      </View>
+    ) : null;
+  return { view, ready, ids: (list ?? []).map((p) => p.id) };
+}
+
 function SyncSection({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
-  const { api, uiLang, deviceId, account } = useSession();
+  const { api, uiLang, deviceId, account, s } = useSession();
   const state = useSyncExternalStore(
     (cb) => board.sync.subscribe(cb),
     () => board.sync.state,
@@ -235,7 +422,7 @@ function SyncSection({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
             }
           />
         ))}
-      {canManage && account?.provider !== 'device' && (
+      {board.manager && account?.provider !== 'device' && (
         <View style={{ gap: 8 }}>
           <Note text={x.linkDevice} />
           <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
@@ -251,7 +438,7 @@ function SyncSection({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
                   try {
                     await proof.run(async () => setPair(await api.createPairingCode(board.profileId, a)));
                   } catch (e) {
-                    setError(String((e as Error).message));
+                    setError(errorText(s, e));
                   }
                 }}
               />
@@ -314,6 +501,7 @@ function Privacy({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
   const expected = typing === 'profile' ? board.childName.trim() : x.deleteWord;
   const proofProfile = useProof('deleteProfile');
   const proofAccount = useProof('deleteAccount');
+  const owned = useOwnedChildren(typing === 'account');
   return (
     <Section title={x.privacy}>
       {x.privacyPoints.map((p) => (
@@ -326,6 +514,7 @@ function Privacy({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
       <Btn small kind="danger" icon="trash" label={x.deleteAccount} onPress={() => setTyping('account')} />
       {typing && (
         <View style={ss.card}>
+          {typing === 'account' && owned.view}
           <Note text={typing === 'profile' ? backupStrings(sess.uiLang).deleteProfileNote : x.deleteAccountNote} />
           <TextInput value={word} onChangeText={setWord} autoCapitalize="none" style={input} accessibilityLabel={expected} placeholder={expected} placeholderTextColor={C.placeholder} />
           <Msg text={error} />
@@ -343,7 +532,7 @@ function Privacy({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
               kind="danger"
               icon="trash"
               label={typing === 'profile' ? backupStrings(sess.uiLang).deleteToBin : x.deleteForever}
-              disabled={word.trim().toLocaleLowerCase() !== expected.toLocaleLowerCase()}
+              disabled={word.trim().toLocaleLowerCase() !== expected.toLocaleLowerCase() || (typing === 'account' && !owned.ready)}
               onPress={async () => {
                 setError(null);
                 try {
@@ -357,7 +546,7 @@ function Privacy({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
                     });
                   } else {
                     await proofAccount.run(async () => {
-                      await api.deleteAccount();
+                      await api.deleteAccount(owned.ids);
                       await sess.signOut({ eraseMedia: true });
                     });
                   }
@@ -443,11 +632,13 @@ export function DeleteAccount({ x }: { x: SettingsStrings }) {
   const [word, setWord] = useState('');
   const [error, setError] = useState<string | null>(null);
   const proof = useProof('deleteAccount');
+  const owned = useOwnedChildren(open);
   return (
     <View style={{ gap: 8 }}>
       <Btn small kind="danger" icon="trash" label={x.deleteAccount} onPress={() => setOpen(true)} />
       {open && (
         <View style={ss.card}>
+          {owned.view}
           <Note text={x.deleteAccountNote} />
           <TextInput value={word} onChangeText={setWord} autoCapitalize="none" style={input} accessibilityLabel={x.deleteWord} placeholder={x.deleteWord} placeholderTextColor={C.placeholder} />
           <Msg text={error} />
@@ -456,11 +647,11 @@ export function DeleteAccount({ x }: { x: SettingsStrings }) {
             kind="danger"
             icon="trash"
             label={x.deleteForever}
-            disabled={word.trim().toLocaleLowerCase() !== x.deleteWord.toLocaleLowerCase()}
+            disabled={word.trim().toLocaleLowerCase() !== x.deleteWord.toLocaleLowerCase() || !owned.ready}
             onPress={async () => {
               try {
                 await proof.run(async () => {
-                  await sess.api.deleteAccount();
+                  await sess.api.deleteAccount(owned.ids);
                   await sess.signOut({ eraseMedia: true });
                 });
               } catch (e) {

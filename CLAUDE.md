@@ -212,7 +212,8 @@
   in `pro_paid`, open for all today); others wait (`Membership.waiting`) and the family may give another role.
   A member leaves with `leave_team` (then `forgetChild`); a declined professional may `ask_again` (a week later,
   not after three refusals in six months). The child's name and age: `update_child` (owner). A tablet linked by
-  a co-parent stays linked when that co-parent leaves (it is the child's; the family removes it in Devices).
+  a co-parent stays linked when that co-parent leaves or is removed (owner's decision, 22 November 2026: it is
+  the child's; the family removes it in Devices).
 - Notices are stored as sentences by the server: a new notice gets its three versions in
   `src/lib/notices.ts` (shown with `noticeText`), with a line in `src/__tests__/notices.test.ts`.
 - Professionals' materials: no separate "create" page and no title field; the library creates

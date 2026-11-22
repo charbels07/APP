@@ -418,9 +418,10 @@ changed on purpose for that rule: `scenario.sql` (an account deletion now names 
 - [x] Invitations: the consent is recorded only when accepting; invitations older than 30 days are not
   shown; a load failure says so, with "Try again".
 
+Decided by the owner (22 November 2026): a tablet linked by a co-parent stays linked when that co-parent
+leaves or is removed (the tablet is the child's; the family sees it in Devices and can remove it).
+
 Left open, for the owner to decide:
-- A tablet linked by a co-parent stays linked when that co-parent leaves or is removed (decided with this
-  batch: the tablet is the child's; the family sees it in Devices and can remove it).
 - Someone given another role while "waiting" (a family-type teacher made "caregiver") receives the
   family's code, as any caregiver: that is the family's choice.
 

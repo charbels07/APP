@@ -5,6 +5,7 @@
 import fs from 'fs';
 import path from 'path';
 import { linkNeedsCode } from '../lib/appLinks';
+import { opensAlone } from '../lib/caregiverCode';
 import { strings } from '../i18n/ui';
 
 const src = (file: string) => fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
@@ -37,7 +38,7 @@ describe('the board asks for it', () => {
   });
 
   it('the keypad opens the link after the right code, without turning caregiver mode on', () => {
-    expect(app).toMatch(/opensAlone = [^;]*'openLink'/);
+    expect(opensAlone({ kind: 'openLink' })).toBe(true);
     const pin = src('ui/panels/CommPanels.tsx');
     const open = pin.slice(pin.indexOf('const open = () => {'), pin.indexOf('const again ='));
     expect(open.indexOf("then?.kind === 'openLink'")).toBeGreaterThan(-1);

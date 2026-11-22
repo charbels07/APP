@@ -13,7 +13,7 @@ import { StyleSheet, Text, TextInput, View } from 'react-native';
 import type { Invitation, Proposal } from '../../backend/types';
 import { dataStrings } from '../../i18n/data';
 import { settingsStrings } from '../../i18n/settings';
-import { useApp } from '../../state/AppState';
+import { useApp, useBack } from '../../state/AppState';
 import { useBoard, useProBoard } from '../../state/BoardContext';
 import { useSession } from '../../state/Session';
 import { Btn, Panel, Segmented, useNavRtl } from '../common';
@@ -32,6 +32,8 @@ type Tab = 'board' | 'team' | 'data' | 'account';
 export function SettingsScreen() {
   const app = useApp();
   const board = useBoard();
+  // Opened from another panel (the guide's "Try it"): "Back" returns there.
+  const back = useBack();
   // A professional looking at a child's board from the workspace (a draft, no sync engine).
   const pro = useProBoard();
   const { uiLang, account, api, s, go } = useSession();
@@ -82,6 +84,7 @@ export function SettingsScreen() {
     <Panel
       title={app.t.settings}
       onClose={() => go2(() => app.setOverlay(null))}
+      onBack={back ? () => go2(back) : undefined}
       tone="edit"
       maxWidth={820}
       footer={

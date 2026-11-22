@@ -80,6 +80,8 @@ const results = [];
         await btn('Continue').click(); await p.waitForTimeout(300);
       }
       await btn('Finish').click(); await p.getByText('The caregiver code protects', { exact: false }).first().waitFor();
+      // The first keypad of a family's board: no cross, Escape does nothing; Help stays reachable on the bar.
+      await scan('16a-pin-first'); await p.keyboard.press('Escape'); await p.waitForTimeout(300); await p.getByText('The caregiver code protects', { exact: false }).first().waitFor();
       await digits('2580'); await p.waitForTimeout(200); await digits('2580'); await p.waitForTimeout(1000); await p.keyboard.press('Escape'); await p.waitForTimeout(400);
       await btn(L.caregiver).click(); await btn('Forgot the code?').click(); await p.getByLabel('Account password').waitFor(); await scan('16b-pin-forgot');
       await btn('Send the code').click(); await p.getByLabel('Code received').waitFor(); await scan('16c-pin-forgot-code');

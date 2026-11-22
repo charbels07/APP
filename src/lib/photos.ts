@@ -2,6 +2,7 @@ import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { Platform } from 'react-native';
 import { saveMedia } from './media';
+import { outside } from './outside';
 
 /** What the device lets the app see of the person's pictures. */
 export type LibraryAccess = 'all' | 'selected' | 'none' | 'notAsked' | 'chosenOnly';
@@ -15,7 +16,8 @@ export type LibraryAccess = 'all' | 'selected' | 'none' | 'notAsked' | 'chosenOn
 export async function libraryAccess(ask = false): Promise<LibraryAccess> {
   if (Platform.OS === 'web') return 'chosenOnly';
   try {
-    const p = ask ? await ImagePicker.requestMediaLibraryPermissionsAsync() : await ImagePicker.getMediaLibraryPermissionsAsync();
+    // The system's question covers the app for a moment (`outside`: caregiver mode stays open).
+    const p = ask ? await outside(() => ImagePicker.requestMediaLibraryPermissionsAsync()) : await ImagePicker.getMediaLibraryPermissionsAsync();
     if (p.granted) return p.accessPrivileges === 'limited' ? 'selected' : 'all';
     return p.status === 'undetermined' ? 'notAsked' : 'none';
   } catch {
@@ -29,7 +31,7 @@ export async function libraryAccess(ask = false): Promise<LibraryAccess> {
  */
 export async function pickPhoto(source: 'library' | 'camera'): Promise<string | undefined> {
   if (source === 'camera') {
-    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    const perm = await outside(() => ImagePicker.requestCameraPermissionsAsync());
     if (!perm.granted) return undefined;
   } else if ((await libraryAccess(true)) === 'none') {
     // The person said no (now or earlier): nothing is opened. They can change it in the device's settings.
@@ -41,8 +43,8 @@ export async function pickPhoto(source: 'library' | 'camera'): Promise<string | 
     aspect: [1, 1],
     quality: 0.85,
   };
-  const res =
-    source === 'camera' ? await ImagePicker.launchCameraAsync(options) : await ImagePicker.launchImageLibraryAsync(options);
+  // The camera or the photo library is another screen (another app on Android): not "leaving the app".
+  const res = await outside(() => (source === 'camera' ? ImagePicker.launchCameraAsync(options) : ImagePicker.launchImageLibraryAsync(options)));
   if (res.canceled || !res.assets?.length) return undefined;
   let uri = res.assets[0].uri;
   try {

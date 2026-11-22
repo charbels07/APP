@@ -35,6 +35,7 @@ import { StartLayout, T } from './start/StartLayout';
 import { Welcome } from './start/Welcome';
 import { C, radius } from './theme';
 import { pendingSaves } from '../lib/deviceData';
+import { familyCodeUnset, mustChooseFirst } from '../lib/caregiverCode';
 
 export function Stages() {
   const { stage } = useSession();
@@ -200,6 +201,8 @@ function BoardStage({ profileId }: { profileId: string }) {
           m.see(sy.copy.data);
           setMedia(m);
         });
+        // This person's rights (who may choose the caregiver code, among others). Asked again
+        // until they are known: `askAccess` below.
         void api.myAccess(profileId).then((a) => alive && setAccess(a)).catch(() => {});
         // This device appears in "Devices and sync"; a removed device is signed out.
         void api
@@ -250,12 +253,32 @@ function BoardStage({ profileId }: { profileId: string }) {
 
   // Someone else's changes: looked for every 30 s and when the app comes back to the front. Only the
   // version number travels each time (`pull`); the whole profile only when someone saved a newer one.
+  // The rights did not arrive (no internet when the board opened): asked again after a few
+  // seconds, with each look at the server and when the app comes back to the front. Without
+  // them nobody may choose the caregiver code, and the first keypad waits.
+  const askAccess = useCallback(() => {
+    if (accessRef.current) return;
+    void api
+      .myAccess(profileId)
+      .then((a) => setAccess((cur) => cur ?? a))
+      .catch(() => {});
+  }, [api, profileId]);
+  useEffect(() => {
+    if (!sync || access) return;
+    const ids = [4000, 12000].map((ms) => setTimeout(askAccess, ms));
+    return () => ids.forEach(clearTimeout);
+  }, [sync, access, askAccess]);
+
   useEffect(() => {
     if (!sync) return;
-    const id = setInterval(() => void sync.pull(), 30000);
+    const id = setInterval(() => {
+      void sync.pull();
+      askAccess();
+    }, 30000);
     const sub = RNAppState.addEventListener('change', (st) => {
       if (st === 'active') {
         void sync.pull();
+        askAccess();
         media?.soon();
       } else {
         void sync.flush();
@@ -267,7 +290,7 @@ function BoardStage({ profileId }: { profileId: string }) {
       clearInterval(id);
       sub.remove();
     };
-  }, [sync, tracker, media]);
+  }, [sync, tracker, media, askAccess]);
 
   // The board is on screen: for the app's team (families who agreed), how long the app took to open.
   useEffect(() => {
@@ -367,28 +390,37 @@ function OpenGuideOnStart() {
   const latest = useRef(app);
   latest.current = app;
   const started = useRef(false);
-  const start = (chooseFirst: boolean) => {
+  const device = sess.account?.provider === 'device';
+  const start = () => {
     const now = latest.current;
     if (started.current || !now.profile.guide?.openOnStart) return;
     // A tablet linked with a code is the child's: the guide of a set-up never opens there.
-    if (sess.account?.provider === 'device') return;
+    if (device) return;
     started.current = true;
     now.update((d) => void (d.guide = { ...d.guide, openOnStart: false }));
-    now.setOverlay(chooseFirst ? { kind: 'pin', then: { kind: 'guide' } } : { kind: 'guide' });
+    now.setOverlay({ kind: 'guide' });
   };
   // The family first chooses its caregiver code, with an explanation of what it is; the guide
-  // opens after. Otherwise the keypad appeared in the middle of the guide, at the first "Try it"
-  // that needs caregiver mode, with nothing to say why. Who may choose the code is only known
-  // once the rights of this person have arrived, a moment after the board opens.
+  // opens after (the keypad of `Root`, which cannot be closed, opens it: `PinPanel first`).
+  // Otherwise the keypad appeared in the middle of the guide, at the first "Try it" that needs
+  // caregiver mode, with nothing to say why. Who may choose the code is only known once the
+  // rights of this person have arrived, a moment after the board opens.
   const access = board?.access;
   const manager = !!board?.manager;
   useEffect(() => {
-    if (access) start(manager && latest.current.profile.settings.pin === '1234');
+    if (!access) return;
+    const p = latest.current;
+    if (mustChooseFirst({ family: true, manager, own: !!p.ownCode, team: p.freeEdit, device, fresh: !!p.profile.guide?.openOnStart, pin: p.profile.settings.pin })) return;
+    start();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [access, manager]);
-  // Without internet the rights never arrive: the guide then opens on its own.
+  // Without internet the rights do not arrive. A board that already has its code opens the guide
+  // on its own; one without a code waits for the rights (they are asked again), so that the
+  // first keypad is never skipped.
   useEffect(() => {
-    const id = setTimeout(() => start(false), 4000);
+    const id = setTimeout(() => {
+      if (!familyCodeUnset(latest.current.profile.settings.pin)) start();
+    }, 4000);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

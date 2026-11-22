@@ -8,6 +8,7 @@ import {
 import React, { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { deleteMedia } from '../../lib/media';
+import { outside } from '../../lib/outside';
 import { countFeature, reportProblem } from '../../lib/product';
 import { saveRecording } from '../../lib/recordingTrim';
 import type { Level } from '../../lib/trimSilence';
@@ -40,7 +41,8 @@ export function Recorder({ media, onChange }: { media?: string; onChange: (name:
   const start = async () => {
     setError(null);
     try {
-      const perm = await requestRecordingPermissionsAsync();
+      // The system's question about the microphone covers the app for a moment.
+      const perm = await outside(() => requestRecordingPermissionsAsync());
       if (!perm.granted) {
         setError(t.noMic);
         return;

@@ -13,7 +13,7 @@ import { errorText } from '../../i18n/account';
 import { proStrings } from '../../i18n/pro';
 import { settingsStrings } from '../../i18n/settings';
 import { describeOps } from '../../lib/describeOps';
-import { canPrepareChanges, classifyOps } from '../../lib/permissions';
+import { classifyOps } from '../../lib/permissions';
 import { applyOps, diffProfiles, invertOps, type Op } from '../../lib/profileDiff';
 import { migrate } from '../../lib/storage';
 import type { Profile } from '../../model/types';
@@ -92,12 +92,16 @@ export function MaterialBoard({
   onSave: (p: Profile) => Promise<void>;
   onClose: () => void;
 }) {
-  const { uiLang, setUiLang } = useSession();
+  const { uiLang, setUiLang, isAdmin } = useSession();
+  const ownCode = useOwnCode();
   const p = proStrings(uiLang);
   const latest = useRef(initial);
   const [msg, setMsg] = useState<string | null>(null);
   return (
-    <AppProvider initial={initial} onChange={(x) => (latest.current = x)} uiLang={uiLang} setUiLang={setUiLang}>
+    // The material opens ready to be changed and stays so (her workspace around it is not behind
+    // a code); if she leaves caregiver mode herself, the way back in asks her own code, as on
+    // every board she opens.
+    <AppProvider initial={initial} onChange={(x) => (latest.current = x)} uiLang={uiLang} setUiLang={setUiLang} freeEdit={isAdmin} ownCode={ownCode} staysOpen>
       <Root
         banner={
           <Banner icon="sparkles" text={msg ?? p.editorBanner}>
@@ -247,8 +251,10 @@ export function ChildDraftBoard({
   );
   return (
     <>
-      {/* The family's code is the family's. A professional who may prepare changes is asked her own
-          code (a child is often in front of her device); only the app's team is never asked one. */}
+      {/* The family's code is the family's: a professional is always asked her own code, whatever
+          the family lets her do (a child is often in front of her device). With "use" only, the
+          family's code would otherwise be the one compared, and it is in the profile she received.
+          Only the app's team is never asked one. */}
       <ProBoardContext.Provider value={{ profileId, childName: base.name, access }}>
         <AppProvider
           key={key}
@@ -256,15 +262,12 @@ export function ChildDraftBoard({
           onChange={setDraft}
           uiLang={uiLang}
           setUiLang={setUiLang}
-          freeEdit={sess.isAdmin && canPrepareChanges(access)}
-          ownCode={canPrepareChanges(access) ? ownCode : undefined}
+          freeEdit={sess.isAdmin}
+          ownCode={ownCode}
         >
           <Root banner={banner} />
-          {/* "Settings" beside a user's name: through the professional's code, like the button of the bar
-              (someone who may only use the board reads the settings without the adults' tools). */}
-          {toSettings && (
-            <StartAt overlay={canPrepareChanges(access) ? { kind: 'pin', then: { kind: 'settings' } } : { kind: 'settings' }} onStarted={() => setToSettings(false)} />
-          )}
+          {/* "Settings" beside a user's name: through the professional's code, like the button of the bar. */}
+          {toSettings && <StartAt overlay={{ kind: 'pin', then: { kind: 'settings' } }} onStarted={() => setToSettings(false)} />}
         </AppProvider>
       </ProBoardContext.Provider>
       {sending && (

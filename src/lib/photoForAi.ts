@@ -5,6 +5,7 @@
  */
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
+import { outside } from './outside';
 
 export interface AiPhoto {
   /** For the preview on screen. */
@@ -18,11 +19,11 @@ const WIDTH = 1280;
 
 export async function pickPhotoForAi(source: 'library' | 'camera'): Promise<AiPhoto | null> {
   if (source === 'camera') {
-    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    const perm = await outside(() => ImagePicker.requestCameraPermissionsAsync());
     if (!perm.granted) return null;
   }
   const options: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 0.9 };
-  const res = source === 'camera' ? await ImagePicker.launchCameraAsync(options) : await ImagePicker.launchImageLibraryAsync(options);
+  const res = await outside(() => (source === 'camera' ? ImagePicker.launchCameraAsync(options) : ImagePicker.launchImageLibraryAsync(options)));
   if (res.canceled || !res.assets?.length) return null;
   const asset = res.assets[0];
   const ctx = ImageManipulator.manipulate(asset.uri);

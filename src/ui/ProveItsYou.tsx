@@ -10,6 +10,7 @@ import { BackendError } from '../backend/Backend';
 import { securityStrings, type ProofReason } from '../i18n/security';
 import { codeFrom } from '../lib/codeInput';
 import { proofWays, type ForgotWays } from '../lib/forgotCode';
+import { waitsElsewhere } from '../lib/outside';
 import { useSessionMaybe } from '../state/Session';
 import { Btn, useNavRtl } from './common';
 import { PasswordField } from './start/AuthScreen';
@@ -55,6 +56,8 @@ export function ProveItsYou({ ways, twoStep, texts, onProved }: { ways: ForgotWa
     const id = setInterval(read, 10_000);
     return () => clearInterval(id);
   }, [api, twoStep]);
+  // The code is in the person's mailbox or authenticator app: going to read it does not close this screen.
+  useEffect(() => waitsElsewhere(), []);
   const rtlText = rtl ? styles.rtl : null;
   if (!api || !ways) return <Text style={[styles.text, rtlText]}>{texts.noWay}</Text>;
   const contact = ways.contact;

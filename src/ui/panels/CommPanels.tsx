@@ -8,7 +8,8 @@ import { typedChips } from '../../lib/typedWords';
 import type { Lang, UiLang } from '../../model/types';
 import { UI_LANG_NAMES } from '../../i18n/ui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { opensAlone, useApp } from '../../state/AppState';
+import { opensAlone, useApp, useBack } from '../../state/AppState';
+import { codeAccepted, codeOf, keypadStart, mayChooseCode, pinPause, pinTooEasy, provesBeforeChoosing } from '../../lib/caregiverCode';
 import { useBoard } from '../../state/BoardContext';
 import { Btn, Panel, Section, useNavRtl } from '../common';
 import { usePictoLibrary } from '../PictoPicker';
@@ -178,9 +179,10 @@ export function HelpPanel() {
   const app = useApp();
   const { t, profile, lang } = app;
   const [showInfo, setShowInfo] = useState(false);
+  const back = useBack();
   const { help } = profile;
   return (
-    <Panel title={`${t.helpTitle} — ${help.message[lang]}`} onClose={() => app.setOverlay(null)} tone="help">
+    <Panel title={`${t.helpTitle} — ${help.message[lang]}`} onClose={() => app.setOverlay(null)} onBack={back} tone="help">
       <View style={styles.helpGrid}>
         {help.options.map((id) => (
           <Pressable
@@ -220,8 +222,9 @@ export function LangPanel() {
   const app = useApp();
   const { t, profile } = app;
   const st = profile.settings;
+  const back = useBack();
   return (
-    <Panel title={t.language} onClose={() => app.setOverlay(null)} maxWidth={560}>
+    <Panel title={t.language} onClose={() => app.setOverlay(null)} onBack={back} maxWidth={560}>
       <Section title={t.wordsLang}>
         <Text style={styles.muted}>{t.wordsLangNote}</Text>
         {/* The child's languages first; the others stay reachable below. */}
@@ -279,38 +282,45 @@ function LangChoice({ label, active, onPress, compact }: { label: string; active
   );
 }
 
-/** After 5 wrong codes: a pause of 30 s, then 1, 2 and 5 minutes for each further wrong code. */
+/** Wrong codes are counted on this device (the pauses: `pinPause`). */
 const PIN_LOCK = 'caa.pinlock';
-export const pinPause = (fails: number) => (fails < 5 ? 0 : [30, 60, 120, 300][Math.min(fails - 5, 3)] * 1000);
-/** 1234, 0000, 1111…: refused when the family chooses its code. */
-export const pinTooEasy = (code: string) => code === '1234' || /^(\d)\1{3}$/.test(code);
+export { pinPause, pinTooEasy };
 
 /**
  * Caregiver mode is protected so the user can't modify the board by accident (NAV-04).
  * The first time, the person simply chooses a code (typed twice) and then uses it each time;
- * there is no code to know beforehand. Wrong codes are counted on this device.
+ * there is no code to know beforehand, and while none is chosen no code opens anything
+ * (src/lib/caregiverCode.ts). Wrong codes are counted on this device.
  * "Forgot the code?": the account's password, or a code sent to the account's e-mail (or phone),
  * proves it is the family (or, for her own code, the professional); then a new code is chosen.
  * A linked tablet has neither: it is done from a parent's device (src/lib/forgotCode.ts).
+ *
+ * `first`: a family's board with no code yet, opened by a parent. The keypad is there by itself
+ * and cannot be closed (the bar, and Help on it, stay reachable); once the code is chosen the
+ * board is simply there, or the guide on the first opening of a new board.
  */
-export function PinPanel() {
+export function PinPanel({ first = false }: { first?: boolean }) {
   const app = useApp();
   const board = useBoard();
+  const cameFrom = useBack();
   const { t, profile } = app;
   const [code, setCode] = useState('');
   const [msg, setMsg] = useState<string | null>(null);
   // On a professional's board the code is her own (kept with her account), never the family's.
   const own = app.ownCode;
-  const pin = own ? own.value ?? '' : profile.settings.pin;
-  // "1234" is only the value a new profile starts with: it means "not chosen yet".
-  const unset = own ? !/^\d{4}$/.test(pin) : pin === '1234';
+  const { pin, unset } = codeOf(own, profile.settings.pin);
   // In a child's profile the family chooses the code (the preview has no account: anyone trying it does).
-  const canChoose = !!own || !board || board.manager;
-  const [step, setStep] = useState<'enter' | 'choose' | 'repeat' | 'forgot'>(unset && canChoose ? 'choose' : 'enter');
   // Forgotten code: who may choose a new one, and where the check code is sent.
   const sess = useSessionMaybe();
   const acc = sess?.account;
-  const ways = forgotCodeWays({ account: acc, manager: !!board?.manager, ownCode: !!own });
+  const canChoose = mayChooseCode({ own: !!own, family: !!board, manager: !!board?.manager, device: acc?.provider === 'device' });
+  const [asked, setStep] = useState<'enter' | 'choose' | 'repeat' | 'forgot'>('enter');
+  // Nothing chosen yet: who may choose does it now; anyone else is told where it is chosen. On a
+  // family's board already in use, the account first proves who is choosing (not the child).
+  const proofFirst = provesBeforeChoosing({ family: !!board, own: !!own, team: app.freeEdit, first });
+  const step = asked === 'enter' ? keypadStart({ unset, canChoose, proofFirst }) : asked;
+  // A board that is not saved yet (the set-up's trial) is the signed-in person's own.
+  const ways = forgotCodeWays({ account: acc, manager: board ? board.manager : true, ownCode: !!own });
   // The account was confirmed: the new code is chosen without the old one.
   const [proved, setProved] = useState(false);
   const [chosen, setChosen] = useState('');
@@ -333,39 +343,44 @@ export function PinPanel() {
     setNow(Date.now());
     void AsyncStorage.setItem(PIN_LOCK, JSON.stringify(l)).catch(() => {});
   };
-  // What comes after the right code. "guide": the first opening of a new board, where the family
-  // chooses its code before reading the guide.
+  // What comes after the right code.
   const then = app.overlay?.kind === 'pin' ? app.overlay.then : undefined;
-  const beforeGuide = then?.kind === 'guide';
+  // The first opening of a new board: the guide opens once the code is chosen.
+  const beforeGuide = first ? !!profile.guide?.openOnStart : then?.kind === 'guide';
   // Another app or a web page is about to open from the board (a parental gate: `linkNeedsCode`).
   const leaving = then?.kind === 'openLink' ? then : undefined;
   const rtl = useNavRtl();
   const open = () => {
+    // Chosen at the board's opening: the board stays as the child uses it.
+    if (first) return beforeGuide ? app.setOverlay({ kind: 'guide' }) : undefined;
     if (then?.kind === 'openLink') {
       app.setOverlay(null);
       void openAppUrl(then.url);
       return;
     }
-    // The settings, the child lock and the guide open on their own: the board stays as the child uses it.
+    if (then?.kind === 'recordDemo') return app.startRecording();
+    // The settings, the child lock, the guide, a new word for the timer open on their own: the board stays as the child uses it.
     if (then && opensAlone(then)) return app.setOverlay(then);
     app.setEditMode(true);
     if (then) app.setOverlay(then);
   };
-  const again = (text: string) => {
+  const again = (text: string | null) => {
     setMsg(text);
     setTimeout(() => setCode(''), 400);
   };
   const press = (d: string) => {
-    if (waiting) return;
+    if (waiting || step === 'notChosen' || step === 'prove') return;
     const next = (code + d).slice(0, 4);
     setMsg(null);
     setCode(next);
     if (next.length < 4) return;
     if (step === 'enter') {
-      if (next !== pin) {
+      if (!codeAccepted(next, { pin, unset })) {
         const fails = lock.fails + 1;
-        saveLock({ fails, until: Date.now() + pinPause(fails) });
-        return again(t.pinWrong);
+        const pause = pinPause(fails);
+        saveLock({ fails, until: Date.now() + pause });
+        // During a pause the countdown is what the person must read, not "Wrong code".
+        return again(pause ? null : t.pinWrong);
       }
       if (lock.fails) saveLock({ fails: 0, until: 0 });
       open();
@@ -383,6 +398,9 @@ export function PinPanel() {
       else
         app.update((p) => {
           p.settings.pin = next;
+          // The guide of a new board was waiting for the code: it opens now (the first keypad), or
+          // is offered by the welcome card (the code was chosen from the bar instead).
+          if (p.guide?.openOnStart) p.guide = { ...p.guide, openOnStart: false };
         });
       open();
     }
@@ -390,8 +408,9 @@ export function PinPanel() {
   const startForgot = () => {
     setCode('');
     setMsg(null);
-    // The preview has no account: forgetting there simply means choosing again.
-    if (!own && !board) return setStep('choose');
+    // The try-it preview has no account and saves nothing: forgetting there simply means choosing
+    // again. Everywhere else the account proves who is asking.
+    if (app.preview) return setStep('choose');
     setStep('forgot');
   };
   // It is the account's owner: the count of wrong codes starts again, and a new code is chosen.
@@ -401,30 +420,27 @@ export function PinPanel() {
     setStep('choose');
   };
   const rtlText = rtl ? ({ textAlign: 'right', writingDirection: 'rtl' } as const) : null;
-  const hint =
-    msg ??
-    (waiting
-      ? t.pinLocked.replace('{n}', String(wait))
-      : step === 'choose'
-        ? proved
-          ? t.pinForgotOk
-          : t.pinChoose
-        : step === 'repeat'
-          ? t.pinRepeat
-          : unset
-            ? t.pinNotChosen
-            : t.pinHint);
-  const error = !!msg;
+  const hint = waiting
+    ? t.pinLocked.replace('{n}', String(wait))
+    : msg ?? (step === 'choose' ? (proved ? t.pinForgotOk : t.pinChoose) : step === 'repeat' ? t.pinRepeat : t.pinHint);
+  const error = !!msg && !waiting;
+  const close = () => app.setOverlay(null);
   return (
     <Panel
       title={step === 'forgot' ? t.pinForgotTitle : step === 'enter' && !leaving ? t.pinTitle : t.pinChooseTitle}
-      // Closed without choosing, on the first opening: the guide still opens (the code is asked later).
-      onClose={() => app.setOverlay(beforeGuide ? { kind: 'guide' } : null)}
-      onBack={step === 'forgot' ? () => setStep('enter') : undefined}
+      // The first choice of a family's code cannot be put off: no cross, no Escape.
+      onClose={first ? undefined : close}
+      onBack={step === 'forgot' && !unset ? () => setStep('enter') : first ? undefined : cameFrom}
       maxWidth={step === 'enter' ? 380 : 440}
       tone="edit"
     >
-      {step === 'forgot' && (
+      {step === 'prove' && (
+        // No code yet on a board already in use: what the code is, then who is choosing it.
+        <View style={styles.pinWhy}>
+          <Text style={[styles.pinWhyText, rtlText]}>{t.pinWhy[0]}</Text>
+        </View>
+      )}
+      {(step === 'forgot' || step === 'prove') && (
         <ProveItsYou
           ways={sess ? ways : null}
           twoStep={!!sess?.security?.twoStep}
@@ -448,6 +464,13 @@ export function PinPanel() {
           }}
         />
       )}
+      {step === 'notChosen' && (
+        // No code exists yet and this person does not choose it: no keypad, since no code would be right.
+        <>
+          <Text style={[styles.pinWhyText, rtlText]}>{t.pinNotChosen}</Text>
+          <Btn kind="primary" icon="check" label={t.close} onPress={close} />
+        </>
+      )}
       {(step === 'choose' || step === 'repeat') && (
         // Choosing a code: what it is and what it protects, before the digits.
         <View style={styles.pinWhy}>
@@ -459,7 +482,7 @@ export function PinPanel() {
           {beforeGuide && <Text style={[styles.pinWhyText, { fontWeight: '700' }, rtl && { textAlign: 'right', writingDirection: 'rtl' }]}>{t.pinThenGuide}</Text>}
         </View>
       )}
-      {step !== 'forgot' && (
+      {step !== 'forgot' && step !== 'prove' && step !== 'notChosen' && (
         <>
           {leaving && (
             <Text style={[styles.pinWhyText, { fontWeight: '700' }, rtlText]}>{t.pinOpensApp.replace('{name}', leaving.name)}</Text>
@@ -469,7 +492,7 @@ export function PinPanel() {
               styles.muted,
               { textAlign: 'center' },
               (error || waiting) && { color: C.help, fontWeight: '700' },
-              proved && step === 'choose' && !error && { color: C.success, fontWeight: '700' },
+              proved && step === 'choose' && !error && !waiting && { color: C.success, fontWeight: '700' },
             ]}
             accessibilityLiveRegion="polite"
           >
@@ -497,7 +520,7 @@ export function PinPanel() {
               ),
             )}
           </View>
-          {step === 'enter' && !unset && (
+          {step === 'enter' && (
             <Pressable onPress={startForgot} accessibilityRole="button" accessibilityLabel={t.pinForgot} style={styles.forgotLink}>
               <Text style={styles.forgotText}>{t.pinForgot}</Text>
             </Pressable>

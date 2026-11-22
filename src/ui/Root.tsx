@@ -6,6 +6,9 @@ import { QUICK_ZONE } from '../data/defaults';
 import { IN_EMBEDDED_PAGE } from '../lib/appLinks';
 import { isRtl, label, symbolOf } from '../lib/lexicon';
 import { useApp } from '../state/AppState';
+import { useBoard } from '../state/BoardContext';
+import { useSessionMaybe } from '../state/Session';
+import { mustChooseFirst } from '../lib/caregiverCode';
 import { Btn } from './common';
 import { Icon } from './Icon';
 import { CaregiverOverlay } from './panels/CaregiverPanels';
@@ -45,6 +48,25 @@ export function Root({ banner }: { banner?: React.ReactNode } = {}) {
   const [credits, setCredits] = useState<CreditsPage | null>(null);
   const overlayKind = overlay?.kind;
   useEffect(() => setCredits(null), [overlayKind]);
+  // A family's board opened for the first time after its set-up, by a parent, with no caregiver code
+  // yet: the keypad comes by itself and stays until the code is chosen. Any panel opened from the bar
+  // (Help above all) shows instead, and the keypad is back when it closes; a demonstration plays on
+  // the board. At any later opening the board is never covered: the child may be the one opening it.
+  const board = useBoard();
+  const sess = useSessionMaybe();
+  const chooseFirst =
+    mustChooseFirst({
+      family: !!board,
+      manager: !!board?.manager,
+      own: !!app.ownCode,
+      team: app.freeEdit,
+      device: sess?.account?.provider === 'device',
+      fresh: !!profile.guide?.openOnStart,
+      pin: profile.settings.pin,
+    }) &&
+    !overlay &&
+    !app.playing &&
+    !app.recording;
 
   const content = (
     <View style={styles.content} role="main">
@@ -61,8 +83,9 @@ export function Root({ banner }: { banner?: React.ReactNode } = {}) {
       {overlay?.kind === 'wordBin' && <WordBinPanel />}
       {overlay?.kind === 'settings' && <SettingsScreen />}
       {overlay?.kind === 'peek' && <FolderPeek folder={overlay.folder} />}
-      {!banner && !overlay && !profile.guide?.seen && !editMode && !app.playing && !app.recording && <WelcomeCard />}
+      {!banner && !overlay && !chooseFirst && !profile.guide?.seen && !editMode && !app.playing && !app.recording && <WelcomeCard />}
       <CaregiverOverlay />
+      {chooseFirst && <PinPanel first />}
       {credits && <PictoCreditsPanel {...credits} onClose={() => setCredits(null)} />}
     </View>
   );
@@ -132,14 +155,22 @@ export function Root({ banner }: { banner?: React.ReactNode } = {}) {
       <TimerCard />
       {content}
       {/* Switch scanning (Settings → Touch): over the sentence and the board, never over the bar. */}
-      <Scanner />
+      <Scanner paused={chooseFirst} />
     </View>
   );
 
   return (
     <AccessProvider>
       <CreditsHost.Provider value={setCredits}>
-        <SafeAreaView style={styles.root} edges={['top', 'bottom', 'left', 'right']}>
+        <SafeAreaView
+          style={styles.root}
+          edges={['top', 'bottom', 'left', 'right']}
+          // Every touch is noted (and passed on): caregiver mode turns itself off after 5 minutes without one.
+          onStartShouldSetResponderCapture={() => {
+            app.noteTouch();
+            return false;
+          }}
+        >
           {landscape ? (
             <View style={{ flex: 1, flexDirection: 'row' }}>
               <UniversalBar vertical />

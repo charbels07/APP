@@ -1,6 +1,6 @@
 import { createDefaultProfile } from '../../data/defaults';
 import { enterFullscreen, exitFullscreen } from '../../lib/childLock';
-import { useBoard } from '../../state/BoardContext';
+import { useBoard, useProBoard } from '../../state/BoardContext';
 import { useSession } from '../../state/Session';
 import { PictoCredit } from '../PictoCredits';
 import { onboardingStrings } from '../../i18n/onboarding';
@@ -32,7 +32,7 @@ import { optionParts, voiceOption, type VoiceOption } from '../../lib/voices';
 import type { VoiceChoice } from '../../lib/voices';
 import { UI_LANG_NAMES } from '../../i18n/ui';
 import type { AppLink, ArabicDialect, CellDisplay, Lang, Profile, UiLang, WordClass } from '../../model/types';
-import { useApp, useBack } from '../../state/AppState';
+import { useApp, useBack, type SettingsStash } from '../../state/AppState';
 import { Btn, Field, Panel, Section, Segmented, Toggle, useNavRtl } from '../common';
 import { Icon, type IconName } from '../Icon';
 import { expanded } from '../a11y';
@@ -49,7 +49,9 @@ import { scheduleTitle } from '../screens/ScheduleScreen';
 import { CellMenu, MoveToTlaPanel, ShareTlaPanel, TlaMenu } from './EditMenus';
 import { Recorder } from './Recorder';
 import { pinTooEasy } from './CommPanels';
-import { stable } from '../../lib/profileDiff';
+import { applyPatch, isEmptyPatch, nextPatch, withPatch } from '../../lib/settingsPatch';
+import { codeOf, showsCodeField } from '../../lib/caregiverCode';
+import { outside } from '../../lib/outside';
 import { normalize } from '../../lib/search';
 
 /**
@@ -605,7 +607,8 @@ function AppLinkEditor({ conceptId }: { conceptId: string }) {
           {whatsapp && <Text style={s.note}>{t.appWhatsappHint}</Text>}
           {isIncomplete(draft) && <Text style={s.warnBox}>{t.appEmptyWarning}</Text>}
           <Field label={t.appTriggers} value={triggers} onChangeText={setTriggers} autoCapitalize="none" />
-          <Btn small icon="external" label={t.appTest} disabled={isIncomplete(draft)} onPress={() => openAppUrl(url)} />
+          {/* Trying the link opens the other app; the person comes back to this word. */}
+          <Btn small icon="external" label={t.appTest} disabled={isIncomplete(draft)} onPress={() => void outside(() => openAppUrl(url))} />
         </>
       )}
     </Section>
@@ -629,7 +632,16 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
   const cameFrom = useBack();
   const { profile, lang, t } = app;
   const [q, setQ] = useState('');
-  const [creating, setCreating] = useState(false);
+  // Choosing a word is open to the child (the picture of the timer). Making a new one (camera,
+  // photos, recording) is the adults': outside caregiver mode the code is asked first, and the
+  // picker opens again on the new word.
+  const here = app.overlay?.kind === 'picker' ? app.overlay : null;
+  const adult = app.editMode || app.freeEdit || !!here?.adult;
+  const [creating, setCreating] = useState(adult && !!here?.create);
+  const startCreating = () => {
+    if (adult || !here) return setCreating(true);
+    app.setOverlay({ kind: 'pin', then: { ...here, adult: true, create: true }, back: here });
+  };
   const [draft, setDraft] = useState<{ fr: string; en: string; ar: string; emoji: string; cls: WordClass }>({
     fr: '',
     en: '',
@@ -706,7 +718,7 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
       tone="edit"
     >
       {!creating ? (
-        <Btn icon="plus" label={t.createWord} onPress={() => setCreating(true)} />
+        <Btn icon="plus" label={t.createWord} onPress={startCreating} />
       ) : (
         <View style={s.createBox}>
           {/* The new word can be said instead of typed (in the language of the board). */}
@@ -932,13 +944,17 @@ function ScheduleEditor({ id }: { id: string }) {
 
 // ── Settings ──
 
-const copyOf = <T,>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
-
 /**
  * The settings being changed, before they are saved. Every switch of the "Board" page writes
- * here; "Save" copies it into the child's profile, "Cancel changes" throws it away.
+ * here; "Save" writes what was changed into the child's profile, "Cancel changes" throws it away.
  * (Three things do not wait for Save, because they are not the child's settings: the language
  * of the menus, the child lock of this device, and "Reset".)
+ *
+ * What is kept is the list of what the person changed (src/lib/settingsPatch.ts), shown on top of
+ * the profile as it is now: "Save" never puts back an older value of something the person did not
+ * touch. The list also waits in `app.settingsStash`: closed without a choice (caregiver mode
+ * turned itself off, Help was pressed, "Deleted words" was opened), the changes are found again
+ * the next time the settings open.
  */
 export interface SettingsDraft {
   st: Profile['settings'];
@@ -956,59 +972,63 @@ export interface SettingsDraft {
 
 export function useSettingsDraft(): SettingsDraft {
   const app = useApp();
-  const { profile } = app;
-  const [draft, setDraft] = useState(() => ({ settings: copyOf(profile.settings), help: copyOf(profile.help) }));
+  const { profile, settingsStash } = app;
+  const [patch, setPatch] = useState<SettingsStash>(() => settingsStash.current ?? { settings: {}, help: {} });
+  const latest = useRef(profile);
+  latest.current = profile;
+  const st = useMemo(() => withPatch(profile.settings, patch.settings), [profile.settings, patch.settings]);
+  const help = useMemo(() => withPatch(profile.help, patch.help), [profile.help, patch.help]);
+  const changed = !isEmptyPatch(profile.settings, patch.settings) || !isEmptyPatch(profile.help, patch.help);
+  // What waits is kept for the next opening of the settings (nothing once saved or cancelled).
+  useEffect(() => {
+    settingsStash.current = changed ? patch : null;
+  }, [settingsStash, patch, changed]);
   // On a professional's board the code shown and changed here is her own, not the family's.
+  // A code that was never chosen is shown as an empty field, never as a default.
   const own = app.ownCode;
-  const savedPin = own ? own.value ?? '' : profile.settings.pin;
+  const code = codeOf(own, profile.settings.pin);
+  const savedPin = code.unset ? '' : code.pin;
   const [pin, setPin] = useState(savedPin);
-  // The menus' language and the code are compared apart.
-  const core = (x: Profile['settings']) => stable({ ...x, uiLang: undefined, pin: undefined });
   const pinOk = pin === savedPin || (/^\d{4}$/.test(pin) && !pinTooEasy(pin));
-  const dirty = core(draft.settings) !== core(profile.settings) || stable(draft.help) !== stable(profile.help) || (pinOk && pin !== savedPin);
-  const dirtyRef = useRef(dirty);
-  dirtyRef.current = dirty;
+  const pinChanged = pinOk && pin !== savedPin;
+  const dirty = changed || pinChanged;
   // Listening to a voice in Settings prepares it for the whole app: when the settings close,
   // the app goes back to the voice that is really saved.
   const saved = useRef(profile.settings);
   saved.current = profile.settings;
   useEffect(() => () => void prepareVoices(saved.current), []);
-  // The profile changed elsewhere (another device, "Reset") while nothing was waiting here: follow it.
+  // The code changed elsewhere (another device, "Reset") while none was being typed here: follow it.
+  const before = useRef(savedPin);
   useEffect(() => {
-    if (dirtyRef.current) return;
-    setDraft({ settings: copyOf(profile.settings), help: copyOf(profile.help) });
-    setPin(savedPin);
+    if (pin === before.current) setPin(savedPin);
+    before.current = savedPin;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile.settings, profile.help, savedPin]);
+  }, [savedPin]);
   return {
-    st: draft.settings,
-    help: draft.help,
+    st,
+    help,
     pin,
     pinOk,
     setPin,
-    set: (fn) =>
-      setDraft((d) => {
-        const settings = copyOf(d.settings);
-        fn(settings);
-        return { ...d, settings };
-      }),
-    setHelp: (fn) =>
-      setDraft((d) => {
-        const help = copyOf(d.help);
-        fn(help);
-        return { ...d, help };
-      }),
+    set: (fn) => setPatch((p) => ({ ...p, settings: nextPatch(latest.current.settings, p.settings, fn) })),
+    setHelp: (fn) => setPatch((p) => ({ ...p, help: nextPatch(latest.current.help, p.help, fn) })),
     dirty,
     save: () => {
-      if (own && pinOk && pin !== savedPin) own.save(pin);
+      if (own && pinChanged) own.save(pin);
       app.update((d) => {
-        // The family's code is never touched from a professional's board.
-        d.settings = { ...copyOf(draft.settings), uiLang: d.settings.uiLang, pin: !own && pinOk ? pin : d.settings.pin };
-        d.help = copyOf(draft.help);
+        // Only what the person changed; the family's code is never touched from a professional's board.
+        applyPatch(d.settings, patch.settings);
+        applyPatch(d.help, patch.help);
+        if (!own && pinChanged) d.settings.pin = pin;
       });
+      // Emptied at once, not by the effect above: "Save" or "Leave without saving" often closes the
+      // panel in the same instant, and what was saved or thrown away must not come back.
+      settingsStash.current = null;
+      setPatch({ settings: {}, help: {} });
     },
     cancel: () => {
-      setDraft({ settings: copyOf(profile.settings), help: copyOf(profile.help) });
+      settingsStash.current = null;
+      setPatch({ settings: {}, help: {} });
       setPin(savedPin);
     },
   };
@@ -1090,6 +1110,7 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
   const { profile, t } = app;
   const sess = useSession();
   const board = useBoard();
+  const proBoard = useProBoard();
   const o = onboardingStrings(profile.settings.uiLang);
   const ax = accessStrings(profile.settings.uiLang);
   const { st, set, pin, setPin } = draft;
@@ -1437,8 +1458,9 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
 
       <Group title={t.gCodeData} icon="shield">
         {/* The family's code is chosen by those who decide for the child (the server refuses it from
-            anyone else); a professional changes her own code; without an account the board is one's own. */}
-        {(!board || board.manager || !!app.ownCode) && (
+            anyone else); a professional changes her own code; without an account the board is one's own.
+            On a child's board opened from a professional's workspace the family's code is never shown. */}
+        {showsCodeField({ own: !!app.ownCode, proBoard: !!proBoard, family: !!board, manager: !!board?.manager }) && (
           <>
             <Field label={app.ownCode ? t.sPinOwn : t.sPin} value={pin} keyboardType="number-pad" maxLength={4} onChangeText={(v) => setPin(v.replace(/\D/g, ''))} />
             {!draft.pinOk && <Text style={s.note}>{pin.length === 4 ? t.pinTooEasy : t.sPinFour}</Text>}

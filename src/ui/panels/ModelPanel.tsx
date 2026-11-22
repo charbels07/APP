@@ -17,6 +17,10 @@ export function ModelBody() {
   const { t, profile, lang } = app;
   const [text, setText] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  // Showing a sentence on the board is open to everyone. Recording a demonstration and deleting
+  // one change what the family keeps: outside caregiver mode, the code first.
+  const here = app.overlay?.kind === 'model' ? app.overlay : null;
+  const adult = app.editMode || app.freeEdit || !!here?.adult;
 
   const show = (sentence: string) => {
     const steps = parseSentence(profile, sentence, lang);
@@ -46,7 +50,12 @@ export function ModelBody() {
       </Section>
 
       <Section title={t.demos}>
-        <Btn kind="danger" icon="record" label={t.recordDemo} onPress={app.startRecording} />
+        <Btn
+          kind="danger"
+          icon="record"
+          label={t.recordDemo}
+          onPress={() => (adult ? app.startRecording() : app.setOverlay({ kind: 'pin', then: { kind: 'recordDemo' }, back: here ?? { kind: 'model' } }))}
+        />
         <Text style={styles.note}>{t.recordHint}</Text>
         {profile.demos.length === 0 && <Text style={styles.note}>{t.noDemos}</Text>}
         {profile.demos.map((d) => (
@@ -63,6 +72,7 @@ export function ModelBody() {
               label={confirmDelete === d.id ? '?' : undefined}
               accessibilityLabel={t.remove}
               onPress={() => {
+                if (!adult) return app.setOverlay({ kind: 'pin', then: { kind: 'model', adult: true, back: here?.back }, back: here ?? { kind: 'model' } });
                 if (confirmDelete !== d.id) return setConfirmDelete(d.id);
                 app.update((p) => void (p.demos = p.demos.filter((x) => x.id !== d.id)));
               }}

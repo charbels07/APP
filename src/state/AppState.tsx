@@ -1,9 +1,12 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { Platform } from 'react-native';
+import { AppState as DeviceState, Platform } from 'react-native';
 import { strings, type UiStrings } from '../i18n/ui';
 import { createRepeatGuard } from '../lib/repeatGuard';
 import { APPS_NEED_TAP, appLinkOf, findAppInSentence, isIncomplete, linkNeedsCode, openAppUrl } from '../lib/appLinks';
+import { codeOf, idleTooLong, isAdultPanel, lastTouchAt, opensAlone, touched } from '../lib/caregiverCode';
 import { clipFor } from '../lib/dialectVoice';
+import { isOutside } from '../lib/outside';
+import type { Patch } from '../lib/settingsPatch';
 import { joinTokens, renderStrip, tokenSegment, toSpeechPlan } from '../lib/grammar';
 import { audioOf, isFolderName, label } from '../lib/lexicon';
 import { countFeature, setScreen, type Screen } from '../lib/product';
@@ -15,18 +18,53 @@ import type { UsageEvent } from './usageTracker';
 
 export type View = 'board' | 'tla' | 'schedule';
 
+/**
+ * The word picker. Choosing a word is open to the child (the timer's picture); "Create a new
+ * word" belongs to the adults: outside caregiver mode it asks the code, and the picker then opens
+ * again with `adult` (and `create`: straight on the new word).
+ */
+export interface PickerOverlay {
+  kind: 'picker';
+  title?: string;
+  onPick: (conceptId: string) => void;
+  back?: Overlay;
+  adult?: boolean;
+  create?: boolean;
+}
+
+/** "Write to model". `adult`: the code was typed, a demonstration can be deleted. */
+export interface ModelOverlay {
+  kind: 'model';
+  back?: Overlay;
+  adult?: boolean;
+}
+
+/**
+ * What opens once the caregiver code is right. The new-board panel and printing open in caregiver
+ * mode; the settings, the child lock, the guide, a new word for the timer and the demonstrations
+ * open on their own (the board stays in use mode). `recordDemo`: a demonstration starts recording.
+ */
+export type AfterCode =
+  | { kind: 'newTla'; back?: Overlay }
+  | { kind: 'settings'; back?: Overlay }
+  | { kind: 'lock' }
+  | { kind: 'guide' }
+  | { kind: 'print'; back?: Overlay }
+  | PickerOverlay
+  | ModelOverlay
+  | { kind: 'recordDemo' }
+  | OpenLinkAfterCode;
+
+/** `back` (on the panels that have it): the panel this one was opened from. */
 export type Overlay =
   | null
-  | { kind: 'search' }
-  | { kind: 'keyboard' }
-  | { kind: 'help' }
-  | { kind: 'lang' }
-  /**
-   * Caregiver code. `then`: what opens once the code is right. The new-board panel opens in
-   * caregiver mode; the settings and the child lock open on their own (the board stays in use mode).
-   */
-  | { kind: 'pin'; then?: { kind: 'newTla' } | { kind: 'settings' } | { kind: 'lock' } | { kind: 'guide' } | OpenLinkAfterCode }
-  | { kind: 'settings' }
+  | { kind: 'search'; back?: Overlay }
+  | { kind: 'keyboard'; back?: Overlay }
+  | { kind: 'help'; back?: Overlay }
+  | { kind: 'lang'; back?: Overlay }
+  /** Caregiver code. `then`: what opens once the code is right. */
+  | { kind: 'pin'; then?: AfterCode; back?: Overlay }
+  | { kind: 'settings'; back?: Overlay }
   /** The child lock of this device (also in the settings). */
   | { kind: 'lock' }
   /** `cards`: print these words as picture cards (multi-selection). */
@@ -43,11 +81,10 @@ export type Overlay =
   /** Use mode, long press on a folder: its most requested words, without opening it. */
   | { kind: 'peek'; folder: string }
   | { kind: 'conceptEditor'; concept: string; back?: Overlay }
-  /** `back` (here and on the other panels that have it): the panel this one was opened from. */
-  | { kind: 'picker'; title?: string; onPick: (conceptId: string) => void; back?: Overlay }
+  | PickerOverlay
   | { kind: 'scheduleEditor'; id: string }
-  | { kind: 'model' }
-  | { kind: 'newTla' }
+  | ModelOverlay
+  | { kind: 'newTla'; back?: Overlay }
   | { kind: 'newSequence' }
   | { kind: 'guide'; back?: Overlay }
   /** Words and activity boards deleted in the last 30 days (src/lib/wordBin.ts). */
@@ -118,6 +155,15 @@ interface AppCtx {
   profile: Profile;
   /** Set on a professional's boards: the code asked is hers (see `OwnCode`). */
   ownCode?: OwnCode;
+  /** A board opened by an account of the app's team: no caregiver code is asked. */
+  freeEdit: boolean;
+  /**
+   * The settings the person changed and has not saved yet (src/lib/settingsPatch.ts). Kept here
+   * so that they are found again when the settings open again.
+   */
+  settingsStash: React.MutableRefObject<SettingsStash | null>;
+  /** A touch (or a key) just happened: caregiver mode counts its 5 minutes from here. */
+  noteTouch: () => void;
   update: (recipe: (draft: Profile) => void) => void;
   replaceProfile: (p: Profile) => void;
   /** Navigation language of the person (kept with their account, not in the child's profile). */
@@ -247,9 +293,13 @@ export function useBack(): (() => void) | undefined {
 let keySeq = 0;
 const newKey = () => `k${Date.now().toString(36)}${(keySeq++).toString(36)}`;
 
-/** After the caregiver code: do these panels open without switching the board to caregiver mode? */
-export const opensAlone = (then: { kind: string } | undefined): boolean =>
-  then?.kind === 'settings' || then?.kind === 'lock' || then?.kind === 'guide' || then?.kind === 'openLink';
+export { opensAlone };
+
+/** Unsaved changes of the settings page (board settings and the Help button's texts). */
+export interface SettingsStash {
+  settings: Patch<Profile['settings']>;
+  help: Patch<Profile['help']>;
+}
 
 export interface AppProviderProps {
   initial: Profile;
@@ -274,6 +324,11 @@ export interface AppProviderProps {
    * profile (which belongs to the family): on every board a professional opens.
    */
   ownCode?: OwnCode;
+  /**
+   * Caregiver mode does not turn itself off here: a professional's material, which opens in
+   * caregiver mode without a code inside her workspace (itself not behind a code).
+   */
+  staysOpen?: boolean;
   children: React.ReactNode;
 }
 
@@ -283,7 +338,7 @@ export interface OwnCode {
   save: (code: string) => void;
 }
 
-export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, preview = false, locked = false, onUsage, freeEdit = false, ownCode, children }: AppProviderProps) {
+export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, preview = false, locked = false, onUsage, freeEdit = false, ownCode, staysOpen = false, children }: AppProviderProps) {
   const usageRef = useRef(onUsage);
   usageRef.current = onUsage;
   const lockedRef = useRef(locked);
@@ -311,7 +366,10 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
     setProfile(draft);
     onChangeRef.current(draft);
   }, []);
+  const settingsStash = useRef<SettingsStash | null>(null);
   const replaceProfile = useCallback((p: Profile) => {
+    // A whole new profile ("Reset"): changes that were waiting for the old one are gone.
+    settingsStash.current = null;
     const next = { ...p, settings: { ...p.settings, uiLang: storedRef.current.settings.uiLang } };
     storedRef.current = next;
     setProfile(next);
@@ -345,6 +403,7 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
    * Opening a panel; where the caregiver code is not asked (freeEdit: a board opened by an
    * account of the app's team), "ask the code" opens the tools at once.
    */
+  const startRecordingRef = useRef<() => void>(() => {});
   const setOverlay = useCallback((o: Overlay) => {
     if (o?.kind === 'guide') countFeature('guide');
     if (o?.kind === 'pin' && freeEditRef.current) {
@@ -353,6 +412,7 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
         setOverlayState(null);
         return;
       }
+      if (o.then?.kind === 'recordDemo') return startRecordingRef.current();
       if (!opensAlone(o.then)) setEditModeState(true);
       setOverlayState(o.then ?? null);
     } else setOverlayState(o);
@@ -664,6 +724,7 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
     setView('board');
     setPath(['core']);
   }, [editStrip, stopPlaying]);
+  startRecordingRef.current = startRecording;
 
   const finishRecording = useCallback(
     (save: boolean) => {
@@ -835,6 +896,37 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
     setSelection(null);
   }, []);
 
+  // ── Caregiver mode turns itself off ──
+  // After 5 minutes without a touch, and when the app goes to the background (the tab is hidden):
+  // the next person to pick the device up is often the child. The adults' panels close with it.
+  // Settings that were changed and not saved are kept (`settingsStash`). Only where a code brings
+  // the person back: not for the app's team, not on a board where no code was ever chosen.
+  const noteTouch = touched;
+  const adultOpen = editMode || isAdultPanel(overlay);
+  const guarded = adultOpen && !freeEdit && !staysOpen && !codeOf(ownCode, profile.settings.pin).unset;
+  useEffect(() => {
+    if (!guarded) return;
+    touched();
+    const leave = () => setEditMode(false);
+    const check = () => {
+      if (idleTooLong(lastTouchAt(), Date.now())) leave();
+    };
+    const timer = setInterval(check, 5000);
+    const sub = DeviceState.addEventListener('change', (st) => {
+      // A system screen the app opened itself (camera, share sheet…) is not "leaving".
+      if (st === 'background' && !isOutside()) leave();
+      else if (st === 'active') check();
+    });
+    // A keyboard or a mouse wheel is a touch too (a browser; the board's own touches: `noteTouch`).
+    const web = Platform.OS === 'web' && typeof document !== 'undefined';
+    if (web) for (const e of ['keydown', 'wheel', 'pointerdown']) document.addEventListener(e, noteTouch, { capture: true, passive: true });
+    return () => {
+      clearInterval(timer);
+      sub?.remove();
+      if (web) for (const e of ['keydown', 'wheel', 'pointerdown']) document.removeEventListener(e, noteTouch, { capture: true });
+    };
+  }, [guarded, setEditMode, noteTouch]);
+
   // ── Timer (keeps running while the user communicates) ──
   const [timer, setTimer] = useState<TimerState>({
     totalMs: 5 * 60000,
@@ -900,6 +992,9 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
     () => ({
       profile,
       ownCode,
+      freeEdit,
+      settingsStash,
+      noteTouch,
       update,
       replaceProfile,
       setUiLang,
@@ -961,7 +1056,7 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
       setTimerOpen,
     }),
     [
-      ownCode,
+      ownCode, freeEdit, noteTouch,
       profile, update, replaceProfile, setUiLang, preview, t, lang, view, path, tlaId, overlay, editMode, setEditMode, strip,
       stripState.history.length, touchConcept, addText, speakStrip, speakConcept, deleteLast, clearStrip, undo, goHome,
       openFolder, goBack, openTla, openSchedule, pressHelp, recording, startRecording, finishRecording,

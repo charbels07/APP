@@ -136,7 +136,7 @@ batch 4 or 5.
 ## Batch 2 — What a child can reach (no database file)
 
 **Done on 22 November 2026** (one change, no database file). Checks: `npm run typecheck` clean, `npm test`
-560 passed, `npm run test:a11y` running on this version (result in the next change), and four real-browser runs on the demo build (below).
+560 passed, `npm run test:a11y` no violation (236 scans, the first keypad among them), and four real-browser runs on the demo build (below).
 What was done differently from the text, or decided on the way, is written under each item. The rules are
 in one file, `src/lib/caregiverCode.ts`, tested by `caregiverCode.test.ts`.
 

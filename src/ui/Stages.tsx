@@ -288,6 +288,9 @@ function BoardStage({ profileId }: { profileId: string }) {
         // Someone else's change: the photos and recordings it brings are fetched.
         media?.see(p);
       };
+      // A newer version taken before the board was listening (the server answered between the
+      // opening and this moment) is shown now.
+      apply(sync.copy.data);
       return () => {
         sync.onRemote = undefined;
       };
@@ -360,12 +363,15 @@ function deviceName(): string {
 function OpenGuideOnStart() {
   const app = useApp();
   const board = useBoard();
+  const sess = useSession();
   const latest = useRef(app);
   latest.current = app;
   const started = useRef(false);
   const start = (chooseFirst: boolean) => {
     const now = latest.current;
     if (started.current || !now.profile.guide?.openOnStart) return;
+    // A tablet linked with a code is the child's: the guide of a set-up never opens there.
+    if (sess.account?.provider === 'device') return;
     started.current = true;
     now.update((d) => void (d.guide = { ...d.guide, openOnStart: false }));
     now.setOverlay(chooseFirst ? { kind: 'pin', then: { kind: 'guide' } } : { kind: 'guide' });

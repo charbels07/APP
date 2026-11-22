@@ -307,7 +307,8 @@ export class ProfileSync {
     let collided = 0;
     if (this.copy.dirty) {
       const ours = diffProfiles(travelling(this.copy.base), travelling(this.copy.data));
-      const { profile: merged, conflicts } = applyOps(theirs, ours);
+      // (compared without the things that stay on each device, on both sides)
+      const { profile: merged, conflicts } = applyOps(travelling(theirs), ours);
       data = withDeviceThings(merged, this.copy.data);
       dirty = !same(travelling(data), travelling(theirs));
       collided = conflicts.length;
@@ -335,11 +336,14 @@ export class ProfileSync {
       server = await this.api.getProfile(this.id);
     } catch (e) {
       if (isGone(e)) {
-        // Access removed or profile deleted: the device copy goes too. A copy holding changes
-        // that were never sent is only erased when the removal is certain: "forbidden" is also
-        // what a board in the family's bin answers, or an account whose two-step code is not typed.
-        if (!this.copy.dirty || (await this.removed())) await forgetLocal(this.id);
-        throw e;
+        // "Forbidden" is what the server answers when access was removed or the profile deleted,
+        // but also for a board in the family's bin, an account whose two-step code is not typed,
+        // or a session the login server could not renew just now. The device copy goes, and the
+        // board closes, only when the removal is certain; otherwise the copy stays the board.
+        if (await this.removed()) {
+          await forgetLocal(this.id);
+          throw e;
+        }
       }
       // No answer: the device copy is the board.
       if (!this.copy.dirty || !this.copy.localOnly) this.setState('offline');
@@ -364,6 +368,8 @@ export class ProfileSync {
    */
   private async removed(): Promise<boolean> {
     try {
+      // Someone must be signed in for the answer to mean anything.
+      if (!(await this.api.currentAccount())) return false;
       const sec = await this.api.security();
       if (sec.twoStep && sec.level !== 'aal2') return false;
       if ((await this.api.listProfiles()).some((p) => p.id === this.id)) return false;

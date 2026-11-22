@@ -56,6 +56,8 @@ interface DevicePrefs {
   account?: Account;
   /** Children whose copy is kept on this device (removed at sign-out). */
   localProfiles?: string[];
+  /** The account these copies (and `lastProfile`) belong to: never opened for another account. */
+  localOwner?: string;
   /** Child lock on this device only (the parent's phone stays free). */
   childLock?: boolean;
   /** The child whose board was open last on this device: opened again when the server cannot answer. */
@@ -66,9 +68,12 @@ interface DevicePrefs {
  * The board this device can open by itself (no internet, a server that cannot answer): the one
  * that was open last, else the account's, else the first child it keeps a copy of.
  */
-export function localBoard(d: Pick<DevicePrefs, 'localProfiles' | 'lastProfile'> | null, a: Account): string | undefined {
-  const kept = d?.localProfiles ?? [];
-  const wanted = [d?.lastProfile, a.prefs.activeProfileId].filter((id): id is string => !!id);
+export function localBoard(d: Pick<DevicePrefs, 'localProfiles' | 'lastProfile' | 'localOwner' | 'account'> | null, a: Account): string | undefined {
+  // What this device keeps was left by one account: a copy that waits for another account
+  // (its session ended with changes not sent) is never the board of the person signed in now.
+  const mine = !!d && (d.localOwner ?? d.account?.id) === a.id;
+  const kept = mine ? (d?.localProfiles ?? []) : [];
+  const wanted = [mine ? d?.lastProfile : undefined, a.prefs.activeProfileId].filter((id): id is string => !!id);
   return wanted.find((id) => kept.includes(id)) ?? kept[0] ?? wanted[0];
 }
 
@@ -269,8 +274,11 @@ export function SessionProvider({ children, api = backend() }: { children: React
 
   // The board on screen is the one this device opens again by itself.
   useEffect(() => {
-    if (stage.name === 'board' && deviceRef.current && deviceRef.current.lastProfile !== stage.profileId) saveDevice({ lastProfile: stage.profileId });
-  }, [stage, saveDevice]);
+    const d = deviceRef.current;
+    if (stage.name !== 'board' || !d || !account) return;
+    if (d.lastProfile !== stage.profileId || d.localOwner !== account.id)
+      saveDevice({ lastProfile: stage.profileId, localOwner: account.id, ...(d.localOwner && d.localOwner !== account.id ? { localProfiles: [] } : {}) });
+  }, [stage, account, saveDevice]);
 
   // Start: what this device remembers, then who is signed in.
   useEffect(() => {
@@ -282,7 +290,8 @@ export function SessionProvider({ children, api = backend() }: { children: React
       const ended = async () => {
         // What the last account left on this device goes, except a board whose changes were never sent.
         await forgetEverything({ keepUnsent: true });
-        if (deviceRef.current?.account) saveDevice({ account: undefined, lastProfile: undefined });
+        const was = deviceRef.current;
+        if (was?.account) saveDevice({ account: undefined, lastProfile: undefined, localOwner: was.localOwner ?? was.account.id });
         setAccount(null);
         setStage({ name: 'welcome' });
       };
@@ -419,10 +428,13 @@ export function SessionProvider({ children, api = backend() }: { children: React
 
   const rememberLocal = useCallback(
     (id: string) => {
-      const list = deviceRef.current?.localProfiles ?? [];
-      if (!list.includes(id)) saveDevice({ localProfiles: [...list, id] });
+      const d = deviceRef.current;
+      const owner = account?.id ?? d?.localOwner;
+      // Copies left by another account are not this account's.
+      const list = d?.localOwner && owner && d.localOwner !== owner ? [] : (d?.localProfiles ?? []);
+      if (!list.includes(id) || d?.localOwner !== owner) saveDevice({ localProfiles: list.includes(id) ? list : [...list, id], localOwner: owner });
     },
-    [saveDevice],
+    [saveDevice, account],
   );
 
   const setChildLock = useCallback((on: boolean) => saveDevice({ childLock: on }), [saveDevice]);

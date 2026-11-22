@@ -37,7 +37,7 @@ scenario of `supabase/tests/`, a line in `scripts/test-db.sh` and in `supabase/c
 ## Batch 1 — The child keeps their voice and their board (no database file)
 
 **Done on 22 November 2026** (one change, no database file). Checks: `npm run typecheck` clean, `npm test`
-513 passed, `npm run test:a11y` no violation (232 scans), and a real-browser run on the demo build (below). What was
+518 passed, `npm run test:a11y` no violation (232 scans), and a real-browser run on the demo build (below). What was
 done differently from the text, or decided on the way, is written under each item.
 
 - [x] **A "use only" tablet stops receiving the family's changes for good.**
@@ -74,10 +74,11 @@ done differently from the text, or decided on the way, is written under each ite
 - [x] **"Back" on the first step of "Add a child" signs out and erases.** Done. The set-up remembers
   where it was opened from (`onboarding.back`: the board, or the invitations page) and returns there;
   a failed request never signs out. Only an account with no child at all leaves the app from there.
-- [x] **Opening a board erases a copy with unsent changes on `forbidden`.** Done. A copy with unsent
-  changes is erased only when the removal is certain: the server answers, the two-step code is not what
-  is missing, and the child is neither among the account's children nor in its bin (`removed`).
-  A copy without unsent changes is erased as before.
+- [x] **Opening a board erases a copy with unsent changes on `forbidden`.** Done, and wider than the
+  text: any copy, with or without unsent changes, is erased (and the board closed) only when the removal
+  is certain: someone is signed in, the two-step code is not what is missing, and the child is neither
+  among the account's children nor in its bin (`removed`). Otherwise the copy stays the board ("forbidden"
+  is also what the database answers when the login server could not renew the session just then).
 - [x] **A damaged board must still open (Q42).** Done. `src/lib/profileShape.ts` + `migrate`: every part
   gets the shape the screens expect, what is sound is returned untouched, no word moves
   (`damagedBoard.test.ts`, and the core-layout fixture still passes). `BoardRescue` around the board:
@@ -117,6 +118,16 @@ scan of the three new screens (the no-voice line, the credits panel, the rescue 
 Left for the owner's hand-test list (batch 6): a "use only" tablet receiving a new word while the child
 uses it; start without internet on a tablet (the board within a few seconds); a browser-made recording
 played on an iPad; a tablet without an Arabic voice showing the line.
+
+An independent review of the sync and start-up code found seven faults in the first version of this
+batch, all corrected before it went live: a copy left by another account on the same device could have
+been opened for the person signed in (the copies kept on a device now belong to one account:
+`localOwner`); a session the login server could not renew made the database answer "forbidden" and the
+clean copy was erased (see above); in a browser a recording that cannot be played was still silent (the
+browser says "playing" before it has read anything); a step left ticked on the server by an older version
+made a change of that sequence count as a collision; a newer version taken in the instant before the
+board listens was not shown; the guide of a set-up could open on a newly linked tablet (never there now);
+a login-server error such as "the confirmation e-mail could not be sent" was shown as "no internet".
 
 Seen on the way, not changed (not in this batch): a member whose access is removed while the board is
 open keeps it on screen until the app is opened again (`pull` ignores "forbidden"); worth a line in

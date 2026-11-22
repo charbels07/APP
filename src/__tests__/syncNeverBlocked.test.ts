@@ -276,6 +276,26 @@ describe('any other refused save', () => {
     }
   });
 
+  it('a step an older version left ticked on the server does not make our change of that sequence collide', async () => {
+    const sync = await ProfileSync.open(api, child, { pushDelay: 0 });
+    // Saved straight on the server, as an older version of the app did: a ticked step, and another change.
+    const cur = await api.getProfile(child);
+    const theirs = structuredClone(cur.data);
+    theirs.schedules[0].steps[0].done = true;
+    theirs.settings.modelPace = 1.3;
+    await api.saveProfile(child, theirs, cur.version);
+    let collided = 0;
+    sync.onConflict = (n) => (collided += n);
+    const p = structuredClone(sync.copy.data);
+    p.schedules[0].title = 'Matin';
+    sync.change(p);
+    await sync.flush();
+    expect(collided).toBe(0);
+    const now = (await api.getProfile(child)).data;
+    expect(now.schedules[0].title).toBe('Matin');
+    expect(now.settings.modelPace).toBe(1.3);
+  });
+
   it('"too many requests" waits like a lost connection and goes at the next look', async () => {
     const sync = await ProfileSync.open(api, child, { pushDelay: 0 });
     const save = jest.spyOn(api, 'saveProfile').mockRejectedValueOnce(new BackendError('too_many'));
@@ -360,6 +380,8 @@ describe('opening a board', () => {
       await new Promise<void>((r) => (answer = r));
       throw new BackendError('forbidden');
     });
+    // The removal is certain: the account's children no longer hold this one.
+    const list = jest.spyOn(api, 'listProfiles').mockResolvedValueOnce([]);
     try {
       const sync = await ProfileSync.open(api, child, { wait: 20 });
       let told: unknown = null;
@@ -371,6 +393,20 @@ describe('opening a board', () => {
       expect(await readLocal(child)).toBeNull();
     } finally {
       slow.mockRestore();
+      list.mockRestore();
+    }
+    await ProfileSync.open(api, child);
+  });
+
+  it('"forbidden" while the account still has the child (a session not renewed, a code not typed): the copy stays the board', async () => {
+    const clean = jest.spyOn(api, 'getProfile').mockRejectedValueOnce(new BackendError('forbidden'));
+    try {
+      const sync = await ProfileSync.open(api, child);
+      expect(sync.state).toBe('offline');
+      expect(sync.copy.name).toBe('Nour');
+      expect(await readLocal(child)).not.toBeNull();
+    } finally {
+      clean.mockRestore();
     }
   });
 
@@ -382,7 +418,7 @@ describe('opening a board', () => {
     await sync.writeNow();
     const gone = jest.spyOn(api, 'getProfile').mockRejectedValueOnce(new BackendError('forbidden'));
     try {
-      await expect(ProfileSync.open(api, child)).rejects.toMatchObject({ code: 'forbidden' });
+      await ProfileSync.open(api, child, { pushDelay: 60000 });
       const kept = await readLocal(child);
       expect(kept?.dirty).toBe(true);
       expect(kept?.data.settings.speechRate).toBe(0.71);
@@ -403,7 +439,7 @@ describe('opening a board', () => {
     sync.change(p);
     await sync.writeNow();
     await api.deleteProfile(other);
-    await expect(ProfileSync.open(api, other)).rejects.toMatchObject({ code: 'forbidden' });
+    await ProfileSync.open(api, other, { pushDelay: 60000 });
     expect((await readLocal(other))?.dirty).toBe(true);
     // Someone else's account on this device (it never had access): the copy goes, sent or not.
     await api.signOut();

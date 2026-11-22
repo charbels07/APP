@@ -149,7 +149,9 @@ function fail(error: { message?: string; name?: string; status?: number } | null
   if (/rate limit|too many/i.test(m)) throw new BackendError('too_many', m);
   if (/provider is not enabled|unsupported provider/i.test(m)) throw new BackendError('provider_off', m);
   if (/signups not allowed|anonymous sign-ins are disabled/i.test(m)) throw new BackendError('signup_off', m);
-  if (serverUnavailable({ name: error?.name, message: m, status: error?.status })) throw new BackendError('offline', m);
+  // The login server could not be reached or its gateway failed. (Its own errors keep their
+  // words: "the confirmation e-mail could not be sent" is not "no internet".)
+  if (isNetworkError({ name: error?.name, message: m, status: error?.status }) || [408, 502, 503, 504].includes(error?.status ?? -1)) throw new BackendError('offline', m);
   throw new BackendError(m.split(/\s/)[0], m);
 }
 /**

@@ -62,12 +62,20 @@ describe('who is signed in', () => {
 
 describe('the board this device opens by itself', () => {
   it('the one that was open last, when its copy is here', () => {
-    expect(localBoard({ localProfiles: ['a', 'b'], lastProfile: 'b' }, account({ activeProfileId: 'a' }))).toBe('b');
+    expect(localBoard({ localOwner: 'u1', localProfiles: ['a', 'b'], lastProfile: 'b' }, account({ activeProfileId: 'a' }))).toBe('b');
   });
   it('else the account\'s, else the first child kept here (someone who joined by invitation never chose one)', () => {
-    expect(localBoard({ localProfiles: ['a', 'b'] }, account({ activeProfileId: 'b' }))).toBe('b');
-    expect(localBoard({ localProfiles: ['a', 'b'] }, account())).toBe('a');
-    expect(localBoard({ localProfiles: ['a'], lastProfile: 'gone' }, account({ activeProfileId: 'also-gone' }))).toBe('a');
+    expect(localBoard({ localOwner: 'u1', localProfiles: ['a', 'b'] }, account({ activeProfileId: 'b' }))).toBe('b');
+    expect(localBoard({ localOwner: 'u1', localProfiles: ['a', 'b'] }, account())).toBe('a');
+    expect(localBoard({ localOwner: 'u1', localProfiles: ['a'], lastProfile: 'gone' }, account({ activeProfileId: 'also-gone' }))).toBe('a');
+    // A device set up before the owner was written down: the remembered account is the owner.
+    expect(localBoard({ account: account(), localProfiles: ['a'] }, account())).toBe('a');
+  });
+  it('never a copy another account left on this device (a session that ended with changes not sent)', () => {
+    const left = { localOwner: 'someone-else', localProfiles: ['their-child'], lastProfile: 'their-child' };
+    expect(localBoard(left, account())).toBeUndefined();
+    expect(localBoard(left, account({ activeProfileId: 'mine' }))).toBe('mine');
+    expect(localBoard({ localProfiles: ['their-child'] }, account())).toBeUndefined();
   });
   it('nothing kept here: what the account remembers, or nothing', () => {
     expect(localBoard({ localProfiles: [] }, account({ activeProfileId: 'x' }))).toBe('x');

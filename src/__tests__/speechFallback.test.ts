@@ -91,6 +91,26 @@ describe('a recorded word', () => {
     expect(mockPlayers[0].remove).toHaveBeenCalled();
   });
 
+  it('in a browser ("loaded" and "playing" are said before anything is read, then the error): said by the device\'s voice', async () => {
+    const p = speakSegments([recorded('a.webm', 'maman')], settings);
+    await run(1);
+    mockPlayers[0].emit({ isLoaded: true, playing: true, currentTime: 0 });
+    mockPlayers[0].emit({ isLoaded: false, playing: false, currentTime: 0, error: 'Playback error (code 4)' });
+    await run(50);
+    await p;
+    expect(mockSaid).toEqual(['maman']);
+  });
+
+  it('in a browser, "playing" with no sound and no error is replaced after a moment too', async () => {
+    const p = speakSegments([recorded('a.webm', 'maman')], settings);
+    await run(1);
+    mockPlayers[0].emit({ isLoaded: true, playing: true, currentTime: 0 });
+    await run(1600);
+    expect(mockSaid).toEqual(['maman']);
+    await run(50);
+    await p;
+  });
+
   it('that never loads is replaced after a moment, not after 15 seconds', async () => {
     const p = speakSegments([recorded('a.webm', 'maman')], settings);
     await run(1400);

@@ -103,7 +103,6 @@ function playOne(uri: string, rate = 1, span?: Span): Promise<boolean> {
       timers.forEach(clearTimeout);
       resolve(played);
     };
-    let loaded = false;
     let heard = false;
     /** Nothing was heard and nothing will be: the player is put away, the caller takes over. */
     const failed = () => {
@@ -130,8 +129,9 @@ function playOne(uri: string, rate = 1, span?: Span): Promise<boolean> {
         });
     };
     sub = p.addListener('playbackStatusUpdate', (status) => {
-      if (status.isLoaded) loaded = true;
-      if (status.playing || status.currentTime > 0) heard = true;
+      // Only sound that advanced counts: a browser says "loaded" and "playing" before it has
+      // read anything of the file.
+      if (status.currentTime > 0.02) heard = true;
       if (status.didJustFinish) return done();
       if (status.error) return failed();
       if (!started && status.isLoaded) return start();
@@ -145,16 +145,15 @@ function playOne(uri: string, rate = 1, span?: Span): Promise<boolean> {
       }
     });
     try {
-      loaded = p.isLoaded;
       if (started) p.play();
-      else if (loaded) start();
+      else if (p.isLoaded) start();
       // If the player never says it is loaded, the word is still said (from where it can).
       else timers.push(setTimeout(start, 600));
     } catch {
       return failed();
     }
-    // Still not loaded after a moment: this sound will not play here.
-    timers.push(setTimeout(() => !loaded && !heard && failed(), LOAD_WAIT));
+    // Nothing heard after a moment: this sound will not play here.
+    timers.push(setTimeout(() => !heard && failed(), LOAD_WAIT));
     timers.push(setTimeout(done, 15000));
   });
 }

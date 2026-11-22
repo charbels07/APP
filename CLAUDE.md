@@ -11,7 +11,10 @@
   session branch and run the checks again first. Database migrations (`supabase/migrations`) are not
   published by this: say so when a change needs one.
 - No Expo Router on purpose: the app is one surface with a persistent universal bar
-  (`src/ui/Root.tsx`); overlays live inside the content area so the bar is always reachable.
+  (`src/ui/Root.tsx`); overlays live inside the content area so the bar is always reachable. Help must
+  always be in reach of the child (owner's decision, November 2026): on a board, never open a page in a
+  full-screen `Modal`; a page opened from a panel is drawn by `Root` over that panel (the pictogram
+  credits: `CreditsHost` / `PictoCreditsPanel` in `src/ui/PictoCredits.tsx`).
 - Vocabulary is concept-based (`src/data/concepts.ts`); never move core cells
   (`src/data/defaults.ts`) when editing: positions are the user's motor plan.
 - Part of the words shown (levels 1 and 2): outside caregiver mode the main board is drawn without
@@ -21,6 +24,25 @@
 - Platform-specific code uses `.web.ts(x)` siblings (media store, printing, preview).
 - Sync: an open board looks for others' changes every 30 s with `profileVersion` (one number) and downloads the
   profile only when it is newer (`pull` in `src/state/profileSync.ts`). Never download whole profiles on a timer.
+- Sync, what never travels (owner's decision, November 2026; `src/lib/deviceOnly.ts`): the activity board opened
+  last (`lastTla`), the sequence shown and its ticked steps (`activeSchedule`, `done`), the welcome card and the
+  guide's progress (`guide.seen` / `read` / `openOnStart`) stay on each device. A change of these alone is
+  written on the device and sends nothing (`travelKey`); what is sent goes through `travelling`, what is received
+  through `withDeviceThings`. A new thing a child changes by simply using the board goes in that file, never in
+  what is sent: a "use only" tablet's save is refused by the server.
+- Sync, a refused save (`forbidden`, `core_protected`, `too_large`, anything): the changes stay on the device
+  (`localOnly`, state `local` or `refused`), tried again each time the board opens, when the server's version
+  moves and every half hour. It must never stop `pull` / `open` from taking the server's version (ours is put back on top: `take`),
+  and `push` never throws. `consent_protected`: the family's choices are put back from `base`, the rest is sent.
+  A board with a device copy opens from it without waiting for the server (`open`, `OPEN_WAIT`; `onGone` closes
+  it if the server then says it is no longer ours). "forbidden" erases a copy with unsent changes only when the
+  removal is certain (`removed`); a copy that cannot be read is kept under `caa.child.<id>.bad`.
+- A damaged board must still open (`src/lib/profileShape.ts`, used by `migrate`): every part of a saved profile
+  gets the shape the screens expect, what is sound is returned untouched (same objects), no word moves. A new
+  field of the profile gets its check there and a line in `damagedBoard.test.ts`. `migrate` no longer adds the
+  starting boards back to a profile that has its own (a deleted activity board stays deleted); only the main
+  board and the board of a folder card are guaranteed. Around the board, `BoardRescue` (`src/ui/BoardRescue.tsx`)
+  catches a screen that fails and offers "Try again" and the earlier versions.
 - Pictograms: only libraries verified as free for commercial use (`docs/PICTOGRAM-LICENSES.md`,
   `pictograms/libraries.json`). Never add ARASAAC or any NC / unclear-licence set. A pictogram is
   identified by its stable key `library/file` (`SymbolRef` kind `picto`), not by a number.
@@ -106,7 +128,7 @@
   known), and whenever a code is being chosen the keypad explains what it is (`t.pinWhy`). Never let
   the "choose a code" keypad appear without that explanation. "Forgot the code?" under the keypad: the account's password
   (`checkPassword`) or a code sent to the account's e-mail or phone (`requestPasswordReset`, checked by
-  `checkResetCode`, password unchanged) lets the family (or a professional, for her own code) choose a new one; a linked tablet is sent to a parent's device (who: `forgotCodeWays`). Board settings are edited through `useSettingsDraft` (saved on
+  `checkResetCode`, password unchanged) lets the family (or a professional, for her own code) choose a new one; a linked tablet is sent to a parent's device (who: `forgotCodeWays`). The code field of Settings → Code and data is shown only to who may choose the code (a manager, a professional for her own, a board without an account). Board settings are edited through `useSettingsDraft` (saved on
   "Save", not at each change): new settings controls use the draft's `st` / `set`, not `app.update`.
 - Words for the user: the Schedule screen holds "sequences" (step lists: New sequence / Edit sequence) and
   the week and month "schedules" (never "plan": it reads as a subscription plan). Lists the user orders
@@ -185,6 +207,10 @@
   silence before and after (`src/lib/trimSilence.ts`, pure and tested): the browser cuts the sound and saves
   a WAV; the tablet app keeps the file and writes the two moments in its name (`.t120-980.m4a`, read by
   `spanOfName` when playing). `mediaNamesIn` (`deviceData.ts`) must keep recognising every media name.
+  The browser always saves a WAV (`recordingWav`: its own WebM does not play on an iPad). A recording that
+  cannot be played (an error, nothing loaded after 1.5 s) is said by the device's voice instead (`playOne`
+  answers false in `src/lib/speech.ts`): a word is never left unsaid, and nothing on the way to saying a word
+  may throw (the usage recorder is called inside try / catch).
 - Figures for the app's team (`src/lib/product.ts`, migration `20261117000000_product.sql`): a screen counts
   with `countFeature('name')` and reports with `reportProblem('kind', e)`; both do nothing unless the open
   board's family agreed (`sharesProduct`: `shareStats` + `shareTerms` ≥ `SHARE_TERMS`). Names come from fixed
@@ -217,7 +243,14 @@
 - The session is kept in the system's secure storage on phones and tablets (`src/lib/deviceVault.ts`, through
   `sessionStore`); the browser keeps its storage.
 - A server that cannot answer is "offline", never "signed out" (`serverUnavailable` in `supabase.ts`): only a
-  clear "no session" may lead to `forgetEverything`, which erases the child's copy.
+  clear "no session" may lead to `forgetEverything`, which erases the child's copy. "Clear" is `noSession`
+  (the login server's own words: `session_not_found`, `user_not_found`…); any other error of `currentAccount` is
+  `offline`, and `fail` maps status 0 / 408 / 429 / 5xx to `offline`. `keepSessionFetch` keeps the login library
+  from erasing the stored session when a renewal is answered by anything else. At start (`whoIsSignedIn`,
+  `src/state/Session.tsx`) a device that remembers an account does not wait for a slow server: it opens the
+  board it keeps (`localBoard`: last one open, else the account's, else the first copy), and `route` falls back
+  to that board on any failure. Never sign out as the way out of a failed request (the set-up's first "Back"
+  returns to the stage it came from: `onboarding.back`).
 - Deleting a child's profile puts it in the family's bin for 30 days (`delete_profile`; `list_bin`,
   `restore_profile`; `ProfileBin`), then the nightly job erases it; the direct table delete is closed. The
   server keeps copies of the board (weekly, before a big change, by hand; 10 per child: `BoardVersions`);
@@ -251,7 +284,9 @@
 - Choosing without pointing (Settings → Touch, all off by default): switch scanning (`src/lib/scanning.ts`,
   `src/ui/Scanner.tsx`), resting the pointer (`src/lib/dwell.ts`, `src/state/access.tsx`), "Where it first lands"
   (`src/lib/touchChoice.ts`) and "Bigger touch area". The scan never covers the universal bar (the adults' way to
-  Settings) and pauses under every panel; it follows the displayed order (`compactPlaces`), never moves a card.
+  Settings), except Help, the one button of the bar it lights, after the board's last row (`HELP_ID`; owner's
+  decision, November 2026); it pauses under every panel; it follows the displayed order (`compactPlaces`),
+  never moves a card. "As soon as it touches" (`access: 'press'`) has no long press: the word was said on landing.
   A folder's name is not said in the spoken preview either.
 - Core word places are a release check (`src/__tests__/coreLayout.test.ts`, `fixtures/coreLayout.json`): never
   rewrite the fixture to make a test pass; only `UPDATE_CORE_LAYOUT=1` after a layout validated by the speech
@@ -264,7 +299,8 @@
   `compactPlaces`), folders get `load_board` and no `vocalization`, links never travel.
 - iOS permission sentences live in `ios.infoPlist` (English) and `locales/{fr,en,ar}.json`; plugins carry none; a
   change is made in the three languages (`permissionTexts.test.ts`). `NoVoiceWarning` treats an empty voice list
-  as "unknown" and shows nothing.
+  as "unknown" and shows nothing; the board itself says in one line when its language has no voice
+  (`NoVoiceNotice` in `Root`, same rule).
 - Figures for the team, list 3: "seen" counters (`useSeen`, `src/ui/Seen.tsx`), speed in five steps (`countSpeed`),
   the app version per day; migration `20261118000400_product_more.sql`; `SHARE_TERMS` is 3 (and `product_terms()`).
 - Notifications outside the app (owner's request, 20 November 2026; `docs/runbooks/NOTIFICATIONS.md`): browser

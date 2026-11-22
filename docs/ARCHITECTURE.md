@@ -108,7 +108,7 @@ elsewhere). Never remove one of these by hand.
 
 | Data | Key or place |
 |---|---|
-| The copy of each child's profile (works offline) | `caa.child.<profile id>` (AsyncStorage) |
+| The copy of each child's profile (works offline) | `caa.child.<profile id>` (AsyncStorage); a copy that could not be read is put aside under `caa.child.<profile id>.bad` |
 | Follow-up days not sent yet (kept 120 days) | `caa.usage.<profile id>` |
 | Feature counters not sent yet | `caa.product.<profile id>` |
 | Answers being typed during the set-up | `caa.onboarding.*` |
@@ -139,7 +139,7 @@ elsewhere). Never remove one of these by hand.
 | `src/ui/data/` | The Progress page (follow-up charts) |
 | `src/ui/pro/` | The professional workspace |
 | `src/ui/admin/` | The back office and "Help us improve Empower" |
-| `src/state/` | Shared state: `Session.tsx` (who is signed in, which step), `AppState.tsx` (the board, overlays), `profileSync.ts` (device copy ↔ server, every 30 s with `profileVersion`), `usageTracker.ts` (follow-up), `productCounters.ts` (counters for the team), `ownCode.ts` (a professional's own code) |
+| `src/state/` | Shared state: `Session.tsx` (who is signed in, which step), `AppState.tsx` (the board, overlays), `profileSync.ts` (device copy ↔ server, every 30 s with `profileVersion`; a refused save never stops receiving; what stays on each device: `src/lib/deviceOnly.ts`), `usageTracker.ts` (follow-up), `productCounters.ts` (counters for the team), `ownCode.ts` (a professional's own code) |
 | `src/lib/` | Logic without screens: grammar, search, voices, permissions, `profileDiff.ts` (changes, proposals, undo), `safety.ts` (cleaning what comes from others), `deviceData.ts`, `product.ts`, `notices.ts`, `childLock(.web).ts`… |
 | `src/backend/` | One contract (`Backend.ts`), two servers: `supabase.ts` (real) and `local.ts` (demo on the device); `index.ts` picks one |
 | `src/data/` | Words (`concepts.ts`), the core board (`defaults.ts`: **never move core cells**), dialects, the guide (`guide.ts`), set-up help, situations, pictogram index |

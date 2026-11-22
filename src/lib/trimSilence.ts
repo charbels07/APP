@@ -140,6 +140,19 @@ export function trimmedWav(channels: Float32Array[], rate: number): Uint8Array |
   return encodeWav(light.samples, light.rate);
 }
 
+/**
+ * Browser: the recording ready to save, always as a WAV file — cut when there is silence around
+ * the voice, whole otherwise. A browser records in its own format (WebM in Chrome), which an
+ * iPad cannot play: a recording that travels through the account must play on every device.
+ */
+export function recordingWav(channels: Float32Array[], rate: number): Uint8Array | null {
+  if (!channels.length || !channels[0].length) return null;
+  const cut = trimmedWav(channels, rate);
+  if (cut) return cut;
+  const light = lighter(toMono(channels), rate);
+  return encodeWav(light.samples, light.rate);
+}
+
 /** Loudness measured while recording: the moment (ms from the start) and the level (decibels, 0 = loudest). */
 export type Level = { ms: number; db: number };
 

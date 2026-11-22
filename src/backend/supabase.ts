@@ -70,15 +70,57 @@ const ms = (iso?: string | null) => (iso ? Date.parse(iso) : undefined);
 const iso = (t?: number | null) => (t ? new Date(t).toISOString() : null);
 const PENDING_ROLE = 'caa.pendingRole';
 
+// ("Load failed" is how Safari says that a request could not leave.)
 const isNetworkError = (e: { name?: string; message?: string; status?: number }) =>
-  e.name === 'AuthRetryableFetchError' || e.status === 0 || /network|fetch|timed? ?out/i.test(e.message ?? '');
+  e.name === 'AuthRetryableFetchError' || e.status === 0 || /network|fetch|load failed|timed? ?out/i.test(e.message ?? '');
+/** An answer that says nothing about the request itself: no answer, a time-out, "too many requests", a server error. */
+const statusUnavailable = (status: number | undefined) => status === 0 || status === 408 || status === 429 || (status ?? 0) >= 500;
 /**
  * The server could not answer (down, overloaded, paused, too many requests): that is "no internet"
  * for the app, never "signed out". Only a clear "this session or account does not exist" signs
  * out, because signing out erases the child's copy from the device.
  */
-export const serverUnavailable = (e: { name?: string; message?: string; status?: number }) =>
-  isNetworkError(e) || (e.status ?? 0) >= 500 || e.status === 429 || e.status === 408;
+export const serverUnavailable = (e: { name?: string; message?: string; status?: number }) => isNetworkError(e) || statusUnavailable(e.status);
+
+/** What the login server calls a session or an account that does not exist any more. */
+const NO_SESSION_CODES = new Set(['session_not_found', 'session_expired', 'user_not_found', 'refresh_token_not_found', 'refresh_token_already_used']);
+/**
+ * The login server said clearly that this session or this account is no more (ended elsewhere,
+ * account deleted). Nothing else means "signed out": an answer the app does not understand
+ * (a page of a network filter, an unknown refusal) keeps the session and the child's board.
+ */
+export const noSession = (e: { name?: string; message?: string; status?: number; code?: string } | null | undefined): boolean => {
+  if (!e || serverUnavailable(e)) return false;
+  if (e.name === 'AuthSessionMissingError') return true;
+  if (typeof e.code === 'string' && e.code) return NO_SESSION_CODES.has(e.code);
+  // Older login servers gave no code, only a sentence.
+  return /session.*(missing|not found|does not exist)|user.*(not found|does not exist)|invalid refresh token/i.test(e.message ?? '');
+};
+
+/**
+ * Renewing the session: an answer that is not a clear "this session is over" (a server error,
+ * "too many requests", a page that is not from the login server) is passed on as "the server
+ * cannot answer now". The login library erases the stored session on any other refusal, and
+ * a session erased here is a child's board erased at the next start.
+ */
+export function keepSessionFetch(base: typeof fetch): typeof fetch {
+  return (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => {
+    const res = await base(input, init);
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : ((input as { url?: string }).url ?? '');
+    if (res.ok || !/\/auth\/v1\/token\b.*grant_type=refresh_token/.test(url)) return res;
+    let clear = false;
+    if (!statusUnavailable(res.status)) {
+      try {
+        const body = (await res.clone().json()) as { code?: unknown; error_code?: unknown; msg?: string; message?: string; error_description?: string };
+        const code = typeof body?.error_code === 'string' ? body.error_code : typeof body?.code === 'string' ? body.code : undefined;
+        clear = noSession({ status: res.status, code, message: body?.msg ?? body?.message ?? body?.error_description });
+      } catch {
+        /* not an answer of the login server */
+      }
+    }
+    return clear ? res : new Response(JSON.stringify({ message: 'unavailable' }), { status: 503, headers: { 'Content-Type': 'application/json' } });
+  }) as typeof fetch;
+}
 
 /** The person's name as Google or Apple gave it with the sign-in, if any. */
 export function providerName(meta: Record<string, unknown> | null | undefined): string {
@@ -86,9 +128,15 @@ export function providerName(meta: Record<string, unknown> | null | undefined): 
   return (pick('full_name') || pick('name')).slice(0, 80);
 }
 
-/** Database / auth error → the app's short codes. */
-function fail(error: { message?: string } | null | undefined): never {
+/**
+ * Database / auth error → the app's short codes. `status`: the answer's number, when the caller
+ * has it apart from the error (database requests).
+ */
+function fail(error: { message?: string; name?: string; status?: number } | null | undefined, status?: number): never {
   const m = error?.message ?? 'unknown';
+  // The database could not answer (no connection, time-out, too many requests, server error):
+  // "offline" for the app, whatever the page that came back says.
+  if (statusUnavailable(status)) throw new BackendError('offline', m);
   if (/row-level security|permission denied/i.test(m)) throw new BackendError('forbidden', m);
   if (/invalid login credentials/i.test(m)) throw new BackendError('wrong_credentials', m);
   if (/email not confirmed|phone not confirmed/i.test(m)) throw new BackendError('not_verified', m);
@@ -101,7 +149,7 @@ function fail(error: { message?: string } | null | undefined): never {
   if (/rate limit|too many/i.test(m)) throw new BackendError('too_many', m);
   if (/provider is not enabled|unsupported provider/i.test(m)) throw new BackendError('provider_off', m);
   if (/signups not allowed|anonymous sign-ins are disabled/i.test(m)) throw new BackendError('signup_off', m);
-  if (/network|fetch/i.test(m)) throw new BackendError('offline', m);
+  if (serverUnavailable({ name: error?.name, message: m, status: error?.status })) throw new BackendError('offline', m);
   throw new BackendError(m.split(/\s/)[0], m);
 }
 /**
@@ -131,9 +179,9 @@ function mediaPath(profileId: string, name: string): string {
   return `${profileId}/${name}`;
 }
 
-async function data<T>(q: PromiseLike<{ data: T | null; error: { message?: string } | null }>): Promise<T> {
-  const { data: d, error } = await q;
-  if (error) fail(error);
+async function data<T>(q: PromiseLike<{ data: T | null; error: { message?: string } | null; status?: number }>): Promise<T> {
+  const { data: d, error, status } = await q;
+  if (error) fail(error, status);
   return d as T;
 }
 
@@ -323,7 +371,8 @@ export class SupabaseBackend implements Backend {
     private opts: { storageKey?: string; fetch?: typeof fetch } = {},
   ) {
     this.sb = createClient(url, anonKey, {
-      ...(opts.fetch ? { global: { fetch: opts.fetch } } : {}),
+      // A session renewal the server could not answer must not end the session (keepSessionFetch).
+      global: { fetch: keepSessionFetch(opts.fetch ?? ((...args: Parameters<typeof fetch>) => fetch(...args))) },
       auth: {
         // On the device, or for this visit only: the person's choice at sign-in ("Keep me logged in").
         storage: sessionStore,
@@ -346,16 +395,21 @@ export class SupabaseBackend implements Backend {
 
   async currentAccount(): Promise<Account | null> {
     // No internet is not "signed out": the app then keeps working from the device copy.
+    // `null` (signed out) only when the login server said clearly that the session or the account
+    // is no more. Any other failure is "offline": `null` erases the children's copies from the device.
     const { data: s, error: se } = await this.sb.auth.getSession();
-    if (se && serverUnavailable(se)) throw new BackendError('offline', se.message);
+    if (se) {
+      if (noSession(se)) return null;
+      throw new BackendError('offline', se.message);
+    }
     if (!s.session) return null;
     const { data: d, error } = await this.sb.auth.getUser();
     if (error) {
-      if (serverUnavailable(error)) throw new BackendError('offline', error.message);
-      return null;
+      if (noSession(error)) return null;
+      throw new BackendError('offline', error.message);
     }
     const u = d.user;
-    if (!u) return null;
+    if (!u) throw new BackendError('offline', 'no user in the answer');
     // The account's row: if the database cannot answer now, the app keeps working from the device.
     let row = await data<Row | null>(this.sb.from('accounts').select('*').eq('id', u.id).maybeSingle()).catch((e: unknown) => {
       throw new BackendError('offline', String((e as Error)?.message ?? e));

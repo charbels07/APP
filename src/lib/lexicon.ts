@@ -8,7 +8,9 @@ import { LANGS, type CellDisplay, type Concept, type Lang, type Profile, type Se
  * the built-in vocabulary are those of the dialect the family chose (settings.arabic).
  */
 export function getConcept(profile: Profile, id: string): Concept | undefined {
-  return profile.customConcepts[id] ?? conceptsFor(profile.settings.arabic)[id];
+  const c = profile.customConcepts[id] ?? conceptsFor(profile.settings.arabic)[id];
+  // An id named like something every object has ("toString"…) finds a function, not a word.
+  return c && typeof c === 'object' ? c : undefined;
 }
 
 /** Communication languages the app offers for this child: no Arabic when the family chose "none". */

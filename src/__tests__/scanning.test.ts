@@ -1,6 +1,7 @@
 /** Switch scanning (Settings → Touch): the rules of the highlight, the switches and the board's rows. */
 import {
   boardRows,
+  HELP_ID,
   cardId,
   cardIndex,
   chooseStep,
@@ -191,5 +192,37 @@ describe('scanning: the rows of a board', () => {
     expect(cardId(12)).toBe('c:12');
     expect(cardIndex('c:12')).toBe(12);
     expect(cardIndex('a:speak')).toBeNull();
+  });
+});
+
+describe('scanning: Help, the one button of the bar in the scan', () => {
+  // As the Scanner builds it: the sentence's buttons, the board's rows, then Help.
+  const withHelp = [...ROWS, [HELP_ID]];
+
+  it('row, then card: Help is lit after the last row, and one press asks for help', () => {
+    const groups = scanGroups(withHelp, 'rows');
+    const onHelp = go(startScan(groups), groups, AUTO, groups.length - 1);
+    expect(litIds(onHelp, groups)).toEqual([HELP_ID]);
+    expect(chooseStep(onHelp, groups).chosen).toBe(HELP_ID);
+  });
+
+  it('card by card: Help comes after the last card', () => {
+    const groups = scanGroups(withHelp, 'cards');
+    const all = groups[0];
+    expect(all[all.length - 1]).toBe(HELP_ID);
+    const onHelp = go(startScan(groups), groups, STEP, all.length - 1);
+    expect(chooseStep(onHelp, groups).chosen).toBe(HELP_ID);
+  });
+
+  it('the Scanner scans it on every board, says its name, and nothing else of the bar', () => {
+    const fs = require('fs') as typeof import('fs');
+    const path = require('path') as typeof import('path');
+    const scanner = fs.readFileSync(path.join(__dirname, '../ui/Scanner.tsx'), 'utf8');
+    expect(scanner).toContain('...grid.rows, [HELP_ID]]');
+    expect(scanner).toContain('if (id === HELP_ID) app.pressHelp();');
+    expect(scanner).toContain('id === HELP_ID ? words.help');
+    const bar = fs.readFileSync(path.join(__dirname, '../ui/UniversalBar.tsx'), 'utf8');
+    expect(bar).toContain("useScanned(id === 'help' ? HELP_ID : '')");
+    expect(scanner.match(/'a:[a-z]+'/g)?.every((id) => ["'a:delete'", "'a:speak'", "'a:back'"].includes(id))).toBe(true);
   });
 });

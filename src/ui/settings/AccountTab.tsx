@@ -159,7 +159,7 @@ function Children({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
           onPress={p.id === board.profileId ? undefined : () => sess.openProfile(p.id)}
         />
       ))}
-      {sess.account?.role === 'parent' && <Btn small icon="plus" label={x.addChild} onPress={() => sess.go({ name: 'onboarding' })} />}
+      {sess.account?.role === 'parent' && <Btn small icon="plus" label={x.addChild} onPress={() => sess.go({ name: 'onboarding', back: { name: 'board', profileId: board.profileId } })} />}
     </Section>
   );
 }

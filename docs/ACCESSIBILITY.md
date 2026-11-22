@@ -101,7 +101,9 @@ No screen scrolls sideways at 320 px, and nothing is lost at 200 % zoom in the s
      interface, in a browser) or the whole screen. The highlight is a thick violet ring with a white
      ring inside, tested at 3:1 or more on the page, white, every card colour and the dark cards of
      "High contrast" (WCAG 1.4.11). It never covers the bar, so the adults' way to Settings stays
-     open; Escape stops it and "Start scanning again" brings it back (WCAG 2.1.2, no keyboard trap).
+     open; of the bar it lights one button only, Help, after the board's last row: a child who chooses
+     with a switch can ask for help too. Escape stops it and "Start scanning again" brings it back
+     (WCAG 2.1.2, no keyboard trap).
    - **Choosing by resting the pointer** (0.5–3 s, a visible filling) serves mice, head pointers and
      eye-gaze pointers that move the cursor. iPadOS Eye Tracking and AssistiveTouch already make taps.
    - **For a hand that shakes**: "Where it first lands" and "Bigger touch area" (WCAG 2.5.2 pointer

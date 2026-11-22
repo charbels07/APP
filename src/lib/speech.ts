@@ -66,15 +66,25 @@ function speakOne(text: string, lang: Lang, settings: Settings, onWord?: (charIn
   });
 }
 
+/** How long a recording may take to load before the device's voice says the word instead. */
+const LOAD_WAIT = 1500;
+
 /**
  * `rate`: above 1 for the child voice of a dialect clip (faster and higher, like the synthetic child voice).
  * `span`: only this piece is played (a recorded word without the silence around it).
+ * Answers false when the sound could not be played at all (a format this device cannot read,
+ * a file that is damaged or never loads): the caller then says the word with the device's voice.
  */
-function playOne(uri: string, rate = 1, span?: Span): Promise<void> {
+function playOne(uri: string, rate = 1, span?: Span): Promise<boolean> {
   return new Promise((resolve) => {
     let settled = false;
-    // With a piece to play, the position is followed closely enough to stop at its end.
-    const p = span ? createAudioPlayer(uri, { updateInterval: 40 }) : createAudioPlayer(uri);
+    let p: AudioPlayer;
+    try {
+      // With a piece to play, the position is followed closely enough to stop at its end.
+      p = span ? createAudioPlayer(uri, { updateInterval: 40 }) : createAudioPlayer(uri);
+    } catch {
+      return resolve(false);
+    }
     player = p;
     if (rate !== 1) {
       try {
@@ -84,11 +94,29 @@ function playOne(uri: string, rate = 1, span?: Span): Promise<void> {
         /* this device cannot change the speed: the clip plays as it is */
       }
     }
-    const done = () => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    let sub: { remove: () => void } | undefined;
+    const done = (played = true) => {
       if (settled) return;
       settled = true;
-      sub.remove();
-      resolve();
+      sub?.remove();
+      timers.forEach(clearTimeout);
+      resolve(played);
+    };
+    let loaded = false;
+    let heard = false;
+    /** Nothing was heard and nothing will be: the player is put away, the caller takes over. */
+    const failed = () => {
+      if (settled) return;
+      if (heard) return done();
+      try {
+        p.pause();
+        p.remove();
+      } catch {
+        /* already gone */
+      }
+      if (player === p) player = null;
+      done(false);
     };
     // A piece: go to its beginning once the sound is loaded, then play.
     let started = !span || span.from < 0.02;
@@ -101,8 +129,11 @@ function playOne(uri: string, rate = 1, span?: Span): Promise<void> {
           if (!settled) p.play();
         });
     };
-    const sub = p.addListener('playbackStatusUpdate', (status) => {
+    sub = p.addListener('playbackStatusUpdate', (status) => {
+      if (status.isLoaded) loaded = true;
+      if (status.playing || status.currentTime > 0) heard = true;
       if (status.didJustFinish) return done();
+      if (status.error) return failed();
       if (!started && status.isLoaded) return start();
       if (span && started && status.currentTime >= span.to) {
         try {
@@ -113,11 +144,18 @@ function playOne(uri: string, rate = 1, span?: Span): Promise<void> {
         done();
       }
     });
-    if (started) p.play();
-    else if (p.isLoaded) start();
-    // If the player never says it is loaded, the word is still said (from where it can).
-    else setTimeout(start, 600);
-    setTimeout(done, 15000);
+    try {
+      loaded = p.isLoaded;
+      if (started) p.play();
+      else if (loaded) start();
+      // If the player never says it is loaded, the word is still said (from where it can).
+      else timers.push(setTimeout(start, 600));
+    } catch {
+      return failed();
+    }
+    // Still not loaded after a moment: this sound will not play here.
+    timers.push(setTimeout(() => !loaded && !heard && failed(), LOAD_WAIT));
+    timers.push(setTimeout(done, 15000));
   });
 }
 
@@ -150,15 +188,16 @@ async function saySegments(segments: Segment[], settings: Settings, mine: number
       // The dialect's own voice; if the clip cannot be read, the tablet's voice says the word.
       const uri = await clipUri(seg.pack, seg.text);
       if (mine !== generation) return;
-      if (uri) await playOne(uri);
-      else await speakOne(seg.text, seg.lang, settings);
+      const played = !!uri && (await playOne(uri));
+      if (!played && mine === generation) await speakOne(seg.text, seg.lang, settings);
     } else {
       // The family's recording; while it has not reached this device yet (it is copied through the
-      // account), the device's voice says the word: the child is never left without a voice.
-      const uri = await mediaUri(seg.media);
+      // account), or when this device cannot play it (made in a browser, damaged), the device's
+      // voice says the word: the child is never left without a voice.
+      const uri = await mediaUri(seg.media).catch(() => null);
       if (mine !== generation) return;
-      if (uri) await playOne(uri, 1, spanOfName(seg.media));
-      else if (seg.text?.trim()) await speakOne(seg.text, seg.lang ?? 'fr', settings);
+      const played = !!uri && (await playOne(uri, 1, spanOfName(seg.media)));
+      if (!played && mine === generation && seg.text?.trim()) await speakOne(seg.text, seg.lang ?? 'fr', settings);
     }
   }
 }

@@ -105,7 +105,7 @@ Found by the review of 21–22 November, corrected in the app (no database chang
 
 | Problem | Fix |
 |---|---|
-| The first "choose a code" keypad could be closed, and was skipped when the person's rights took more than 4 seconds: a family's board could stay without a code, and the first person to press "Caregiver" (the child) chose it. | On a family's board the keypad comes by itself for who decides for the child and cannot be closed (no cross, no Escape); it waits for the rights, which are asked again until they arrive. The bar and Help stay usable. |
+| The first "choose a code" keypad could be closed, and was skipped when the person's rights took more than 4 seconds: a family's board could stay without a code, and the first person to press "Caregiver" (the child) chose it. | At the first opening after the set-up the keypad comes by itself for who decides for the child and cannot be closed (no cross, no Escape); it waits for the rights, which are asked again until they arrive. The bar and Help stay usable. On a board already in use that still has no code, nothing covers the board (the child may be the one opening it); "Caregiver" then asks the account's password or an e-mailed code before a code can be chosen, and a tablet linked with a code never chooses it. |
 | While no code was chosen, "1234" opened caregiver mode on every device that may not choose the code (a linked tablet, a team member). | No code opens anything while none is chosen. Those devices get a sentence instead of a keypad: the code is chosen on a parent's device. |
 | A professional whose access was "use" only was asked the family's code (which is in the profile she received), saw it in Settings → Code and data, and "Settings" beside the child opened with no code. | She is always asked her own code, whatever the family lets her do; the family's code is never shown on a board opened from a professional's workspace. "Forgot the code?" chooses again without proof only on the try-it preview. (The server still sends the code inside the profile: batch 3.) |
 | Timer → "Add a picture" → "Create a new word" gave the camera, the photo library and the recorder without the code. | Choosing an existing word stays open to the child; creating one asks the code. |
@@ -114,7 +114,7 @@ Found by the review of 21–22 November, corrected in the app (no database chang
 | During the pause after 5 wrong codes, "Wrong code" hid the countdown. | The countdown is shown for the whole pause. |
 
 Tried in a real browser on the demonstration build (a family's board, a linked "use only" tablet, a
-professional with "use" access). Not tried on a tablet: see the hand-test list of the gap review.
+professional with "use" access, a board already in use without a code). Not tried on a tablet: see the hand-test list of the gap review.
 
 ### Added later: "Keep me logged in" (November 2026)
 

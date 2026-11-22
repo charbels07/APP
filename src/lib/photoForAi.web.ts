@@ -1,4 +1,6 @@
 /** Browser version: a file chooser (the camera on phones), resized with a canvas, kept in memory. */
+import { outside } from './outside';
+
 export interface AiPhoto {
   uri: string;
   data: string;
@@ -28,7 +30,8 @@ function chooseFile(camera: boolean): Promise<File | null> {
 }
 
 export async function pickPhotoForAi(source: 'library' | 'camera'): Promise<AiPhoto | null> {
-  const file = await chooseFile(source === 'camera');
+  // On a phone or tablet the browser's chooser (or the camera) can hide the page for a moment.
+  const file = await outside(() => chooseFile(source === 'camera'));
   if (!file) return null;
   const url = URL.createObjectURL(file);
   try {

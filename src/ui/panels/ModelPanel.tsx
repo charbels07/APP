@@ -20,7 +20,7 @@ export function ModelBody() {
   // Showing a sentence on the board is open to everyone. Recording a demonstration and deleting
   // one change what the family keeps: outside caregiver mode, the code first.
   const here = app.overlay?.kind === 'model' ? app.overlay : null;
-  const adult = app.editMode || !!here?.adult;
+  const adult = app.editMode || app.freeEdit || !!here?.adult;
 
   const show = (sentence: string) => {
     const steps = parseSentence(profile, sentence, lang);

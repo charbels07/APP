@@ -636,7 +636,7 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
   // photos, recording) is the adults': outside caregiver mode the code is asked first, and the
   // picker opens again on the new word.
   const here = app.overlay?.kind === 'picker' ? app.overlay : null;
-  const adult = app.editMode || !!here?.adult;
+  const adult = app.editMode || app.freeEdit || !!here?.adult;
   const [creating, setCreating] = useState(adult && !!here?.create);
   const startCreating = () => {
     if (adult || !here) return setCreating(true);
@@ -1021,9 +1021,13 @@ export function useSettingsDraft(): SettingsDraft {
         applyPatch(d.help, patch.help);
         if (!own && pinChanged) d.settings.pin = pin;
       });
+      // Emptied at once, not by the effect above: "Save" or "Leave without saving" often closes the
+      // panel in the same instant, and what was saved or thrown away must not come back.
+      settingsStash.current = null;
       setPatch({ settings: {}, help: {} });
     },
     cancel: () => {
+      settingsStash.current = null;
       setPatch({ settings: {}, help: {} });
       setPin(savedPin);
     },

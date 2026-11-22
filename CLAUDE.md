@@ -126,11 +126,15 @@
   address shows "not connected"). Web headers: `public/_headers` (a test checks the policy).
 - Caregiver code (rules in `src/lib/caregiverCode.ts`, tested): `settings.pin === '1234'` means "not chosen
   yet"; never show, suggest or accept a default code: while none is chosen no code opens anything
-  (`codeAccepted`), and who may not choose it gets a sentence instead of a keypad (`notChosen`). On a family's
-  board the first keypad comes by itself for who decides for the child and cannot be closed (owner's decision,
-  November 2026: `mustChooseFirst`, drawn by `Root` as `<PinPanel first />`, no cross, no Escape; the bar and
-  Help stay usable; the guide of a new board opens after it). It waits for the person's rights, which are
-  asked again until known (`askAccess` in `Stages.tsx`): never open the guide around it. Whenever a code is
+  (`codeAccepted`), and who may not choose it gets a sentence instead of a keypad (`notChosen`: a team
+  member, and every tablet linked with a code, full access included). On a family's board, at the first
+  opening after the set-up (`guide.openOnStart`), the keypad comes by itself for who decides for the child
+  and cannot be closed (owner's decision, November 2026: `mustChooseFirst`, drawn by `Root` as
+  `<PinPanel first />`, no cross, no Escape; the bar and Help stay usable; the guide opens after it). It waits
+  for the person's rights, which are asked again until known (`askAccess` in `Stages.tsx`): never open the
+  guide around it. At any later opening a board without a code is NEVER covered by a keypad (the child may be
+  the one opening it: the voice comes before the code); there the code is chosen from "Caregiver" after the
+  account's proof (`provesBeforeChoosing`, the `prove` step), so the child cannot be the one who chooses it. Whenever a code is
   being chosen the keypad explains what it is (`t.pinWhy`): never let the "choose a code" keypad appear
   without that explanation. Never write `'1234'` in a screen. "Forgot the code?" under the keypad: the account's password
   (`checkPassword`) or a code sent to the account's e-mail or phone (`requestPasswordReset`, checked by
@@ -138,13 +142,16 @@
   "Save", not at each change): new settings controls use the draft's `st` / `set`, not `app.update`. The draft
   is the list of what the person changed (`src/lib/settingsPatch.ts`), shown on top of the profile as it is
   now: "Save" writes those parts only, never a whole copy of the settings. It also waits in
-  `app.settingsStash`, so an unsaved change is found again when the settings open again.
+  `app.settingsStash`, so an unsaved change is found again when the settings open again ("Save" and "Cancel
+  changes" empty it at once).
 - Caregiver mode turns itself off (owner's decision, November 2026; effect in `AppState.tsx`): after 5 minutes
   without a touch and when the app goes to the background or the tab is hidden, caregiver mode and the adults'
   panels close (`isAdultPanel`); the board is then directly usable by the child (never put a keypad over it).
   Not for the app's team, not where no code exists (`staysOpen`: a professional's material). A system screen
   the app opens itself (camera, photo library, file chooser, share or print sheet, a permission question) is
   wrapped in `outside()` (`src/lib/outside.ts`), or it would end caregiver mode on Android: wrap any new one.
+  A screen that waits for a code read elsewhere (`ProveItsYou`, two-step set-up) calls `waitsElsewhere()`.
+  Typing counts as a touch through the shared `Field` (`touched()`).
 - What a child can reach without the code: choosing an existing word (the timer's picture), showing a sentence
   on the board. Creating a word (camera, photos, recording), recording or deleting a demonstration ask the
   code first: the panel opens again with `adult` on its overlay (`PickerOverlay`, `ModelOverlay`, `AfterCode`

@@ -3,7 +3,7 @@ import { AppState as DeviceState, Platform } from 'react-native';
 import { strings, type UiStrings } from '../i18n/ui';
 import { createRepeatGuard } from '../lib/repeatGuard';
 import { APPS_NEED_TAP, appLinkOf, findAppInSentence, isIncomplete, linkNeedsCode, openAppUrl } from '../lib/appLinks';
-import { codeOf, idleTooLong, isAdultPanel, opensAlone } from '../lib/caregiverCode';
+import { codeOf, idleTooLong, isAdultPanel, lastTouchAt, opensAlone, touched } from '../lib/caregiverCode';
 import { clipFor } from '../lib/dialectVoice';
 import { isOutside } from '../lib/outside';
 import type { Patch } from '../lib/settingsPatch';
@@ -901,18 +901,15 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
   // the next person to pick the device up is often the child. The adults' panels close with it.
   // Settings that were changed and not saved are kept (`settingsStash`). Only where a code brings
   // the person back: not for the app's team, not on a board where no code was ever chosen.
-  const lastTouch = useRef(Date.now());
-  const noteTouch = useCallback(() => {
-    lastTouch.current = Date.now();
-  }, []);
+  const noteTouch = touched;
   const adultOpen = editMode || isAdultPanel(overlay);
   const guarded = adultOpen && !freeEdit && !staysOpen && !codeOf(ownCode, profile.settings.pin).unset;
   useEffect(() => {
     if (!guarded) return;
-    lastTouch.current = Date.now();
+    touched();
     const leave = () => setEditMode(false);
     const check = () => {
-      if (idleTooLong(lastTouch.current, Date.now())) leave();
+      if (idleTooLong(lastTouchAt(), Date.now())) leave();
     };
     const timer = setInterval(check, 5000);
     const sub = DeviceState.addEventListener('change', (st) => {

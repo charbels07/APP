@@ -9,7 +9,7 @@ import path from 'path';
 import { createDefaultProfile } from '../data/defaults';
 import { GUIDE } from '../data/guide';
 import { strings } from '../i18n/ui';
-import { codeAccepted, codeOf, familyCodeUnset, IDLE_MS, idleTooLong, isAdultPanel, keypadStart, mayChooseCode, mustChooseFirst, opensAlone, pinPause, pinTooEasy, showsCodeField } from '../lib/caregiverCode';
+import { codeAccepted, codeOf, familyCodeUnset, IDLE_MS, idleTooLong, isAdultPanel, keypadStart, lastTouchAt, mayChooseCode, mustChooseFirst, opensAlone, pinPause, pinTooEasy, provesBeforeChoosing, showsCodeField, touched } from '../lib/caregiverCode';
 import type { Settings } from '../model/types';
 import { isOutside, outside, resetOutside, waitsElsewhere } from '../lib/outside';
 import { applyPatch, changedKeys, isEmptyPatch, nextPatch, withPatch } from '../lib/settingsPatch';
@@ -72,11 +72,37 @@ describe('a professional is asked her own code, never the family’s', () => {
 });
 
 describe('the first "choose a code" keypad of a family’s board', () => {
-  const parent = { family: true, manager: true, own: false, team: false, device: false, pin: '1234' };
+  // `fresh`: the first opening after the set-up (the guide is still waiting to open).
+  const parent = { family: true, manager: true, own: false, team: false, device: false, fresh: true, pin: '1234' };
 
-  it('comes by itself for who decides for the child, while no code is chosen', () => {
+  it('comes by itself at the first opening, for who decides for the child, while no code is chosen', () => {
     expect(mustChooseFirst(parent)).toBe(true);
     expect(mustChooseFirst({ ...parent, pin: '4821' })).toBe(false);
+  });
+
+  it('never covers a board already in use: the child may be the one opening it', () => {
+    // A family that never chose a code, the parent's account signed in on the child's tablet.
+    expect(mustChooseFirst({ ...parent, fresh: false })).toBe(false);
+    // There, the code is chosen from "Caregiver", once the account has proved who is choosing.
+    const later = { family: true, own: false, team: false, first: false };
+    expect(provesBeforeChoosing(later)).toBe(true);
+    expect(keypadStart({ unset: true, canChoose: true, proofFirst: provesBeforeChoosing(later) })).toBe('prove');
+    // Not at the first opening (the adult who made the board is there), not on the try-it preview or
+    // the set-up's trial, not for a professional's own code, not for the app's team.
+    expect(provesBeforeChoosing({ ...later, first: true })).toBe(false);
+    expect(provesBeforeChoosing({ ...later, family: false })).toBe(false);
+    expect(provesBeforeChoosing({ ...later, own: true })).toBe(false);
+    expect(provesBeforeChoosing({ ...later, team: true })).toBe(false);
+    // With a code, the keypad as always; who may not choose still gets the sentence.
+    expect(keypadStart({ unset: false, canChoose: true, proofFirst: true })).toBe('enter');
+    expect(keypadStart({ unset: true, canChoose: false, proofFirst: true })).toBe('notChosen');
+  });
+
+  it('a tablet linked with a code never chooses the family’s code, even with full access', () => {
+    // It has the parents' rights in the account, but it is the child's and can prove nothing.
+    expect(mayChooseCode({ own: false, family: true, manager: true, device: true })).toBe(false);
+    expect(keypadStart({ unset: true, canChoose: false })).toBe('notChosen');
+    expect(mayChooseCode({ own: false, family: true, manager: true, device: false })).toBe(true);
   });
 
   it('waits for the rights: unknown rights (no internet yet) show no keypad, and it comes when they arrive', () => {
@@ -106,6 +132,16 @@ describe('caregiver mode turns itself off', () => {
     expect(IDLE_MS).toBe(5 * 60 * 1000);
     expect(idleTooLong(1000, 1000 + IDLE_MS - 1)).toBe(false);
     expect(idleTooLong(1000, 1000 + IDLE_MS)).toBe(true);
+  });
+
+  it('a touch, a key or a letter typed in a field starts the 5 minutes again', () => {
+    const before = lastTouchAt();
+    const now = jest.spyOn(Date, 'now').mockReturnValue(before + 4 * 60 * 1000);
+    touched();
+    expect(lastTouchAt()).toBe(before + 4 * 60 * 1000);
+    now.mockRestore();
+    // The shared text field counts typing (a tablet's own keyboard sends nothing else to the app).
+    expect(fs.readFileSync(path.join(__dirname, '..', 'ui/common.tsx'), 'utf8')).toMatch(/onChangeText=\{\(v\) => \{\s*touched\(\);/);
   });
 
   it('the adults’ panels close with it, the child’s stay', () => {
@@ -313,7 +349,7 @@ describe('the screens keep these rules', () => {
     const picker = src('ui/panels/CaregiverPanels.tsx');
     expect(picker).toContain('<Btn icon="plus" label={t.createWord} onPress={startCreating} />');
     expect(picker).toContain("app.setOverlay({ kind: 'pin', then: { ...here, adult: true, create: true }, back: here });");
-    expect(picker).toContain('const adult = app.editMode || !!here?.adult;');
+    expect(picker).toContain('const adult = app.editMode || app.freeEdit || !!here?.adult;');
   });
 
   it('"Write to model": recording a demonstration and deleting one ask the code', () => {
@@ -348,7 +384,7 @@ describe('the screens keep these rules', () => {
     const app = src('state/AppState.tsx');
     expect(app).toContain('const guarded = adultOpen && !freeEdit && !staysOpen && !codeOf(ownCode, profile.settings.pin).unset;');
     expect(app).toContain("if (st === 'background' && !isOutside()) leave();");
-    expect(app).toContain('if (idleTooLong(lastTouch.current, Date.now())) leave();');
+    expect(app).toContain('if (idleTooLong(lastTouchAt(), Date.now())) leave();');
     // The camera, the photo library, the share and print sheets and the permission questions are marked.
     expect(src('lib/photos.ts')).toContain('outside(() => (source ===');
     expect(src('lib/platform.ts')).not.toContain('await Sharing.shareAsync(');
@@ -358,6 +394,9 @@ describe('the screens keep these rules', () => {
   it('the settings’ unsaved changes are kept outside the panel, and "Reset" drops them', () => {
     const settings = src('ui/panels/CaregiverPanels.tsx');
     expect(settings).toContain('settingsStash.current = changed ? patch : null;');
+    // "Save" and "Leave without saving" empty it at once: the panel often closes in the same instant.
+    const hook = settings.slice(settings.indexOf('export function useSettingsDraft'), settings.indexOf('// ── Searching the settings'));
+    expect(hook.match(/settingsStash\.current = null;/g)?.length).toBe(2);
     expect(settings).toContain('applyPatch(d.settings, patch.settings);');
     const app = src('state/AppState.tsx');
     expect(app.slice(app.indexOf('const replaceProfile'), app.indexOf('const lang ='))).toContain('settingsStash.current = null;');

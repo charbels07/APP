@@ -136,26 +136,31 @@ batch 4 or 5.
 ## Batch 2 — What a child can reach (no database file)
 
 **Done on 22 November 2026** (one change, no database file). Checks: `npm run typecheck` clean, `npm test`
-557 passed, `npm run test:a11y` still to run on this version (work in progress), and three real-browser runs on the demo build (below).
+560 passed, `npm run test:a11y` running on this version (result in the next change), and four real-browser runs on the demo build (below).
 What was done differently from the text, or decided on the way, is written under each item. The rules are
 in one file, `src/lib/caregiverCode.ts`, tested by `caregiverCode.test.ts`.
 
-- [x] **The first "choose a code" keypad cannot be skipped on a family's board (Q9).** Done, and made a
-  state of the board instead of a panel opened once: whenever someone who decides for the child (owner,
-  co-parent who manages) has a family's board open with no code chosen, the keypad is there, with no cross,
-  no Escape, no touch beside (`mustChooseFirst`, `<PinPanel first />` in `Root`). Reloading the page brings it
-  back. The bar stays usable: Help (or any panel opened from the bar) shows instead and the keypad returns
-  when it closes; a demonstration plays on the board. Once the code is chosen the guide opens (new board) or
-  the board is simply there. The rights are asked again until known (4 s, 12 s, then with each look at the
-  server and when the app comes back to the front); the guide of a new board no longer opens around the
-  keypad after 4 seconds. Never on a child's linked tablet, for the app's team, on a professional's boards or
-  on the try-it preview.
-  *On the way:* a family that had skipped the keypad before this version gets it at the next opening by a
-  parent (that is the gap being closed: with no code, the first person to press "Caregiver" chose it).
+- [x] **The first "choose a code" keypad cannot be skipped on a family's board (Q9).** Done. At the first
+  opening after the set-up, for someone who decides for the child (owner, co-parent who manages), the keypad
+  is a state of the board, not a panel opened once: no cross, no Escape, no touch beside (`mustChooseFirst`,
+  `<PinPanel first />` in `Root`); reloading the page brings it back. The bar stays usable: Help (or any
+  panel opened from the bar) shows instead and the keypad returns when it closes. Once the code is chosen
+  the guide opens. The rights are asked again until known (4 s, 12 s, then with each look at the server and
+  when the app comes back to the front); the guide no longer opens around the keypad after 4 seconds. Never
+  on a child's linked tablet, for the app's team, on a professional's boards or on the try-it preview.
+  *Decided on the way (to confirm with the owner):* a board already in use that still has no code (a family
+  that closed the keypad before this version; a profile handed over by a professional) is **not** covered by
+  the keypad: the person opening the app is often the child, and a child without their board comes before
+  a child reaching adult tools. There, "Caregiver", "Settings" and the like first ask the account's password
+  (or a code sent to its mailbox), then the code is chosen: the child cannot be the one who chooses it.
 - [x] **"1234" opens caregiver mode on every device that may not choose the code.** Done. While no code is
   chosen, no code is accepted (`codeAccepted`); and those devices no longer get a keypad at all but one
   sentence: the code is chosen by a parent on their own device (`t.pinNotChosen`, three languages).
-  "1234" is written in no screen any more (a test checks it).
+  "1234" is written in no screen any more (a test checks it). *More than the text:* a tablet linked with a
+  full-access code could choose the code itself (it has the parents' rights in the account): the first
+  person to press "Caregiver" on the child's tablet chose it. A linked tablet never chooses the code now.
+  Consequence: for a profile a professional created and has not handed over yet, a linked tablet has no
+  caregiver mode until the family has its account (she edits from her workspace, with her own code).
 - [x] **Timer (Q10).** Done. Choosing an existing word stays open; "Create a new word" outside caregiver
   mode asks the code (with "Back" to the picker), then opens straight on the new-word form without turning
   caregiver mode on. At the next visit the code is asked again. The timer's display and sound choices were
@@ -194,19 +199,29 @@ in one file, `src/lib/caregiverCode.ts`, tested by `caregiverCode.test.ts`.
   board the code leads to the panel that was asked instead of plain caregiver mode. "Deleted words" and
   back keeps the unsaved settings (same mechanism as above).
 
+An independent review of the change found six faults in its first version, all corrected before it went
+live: the un-closable keypad was shown on every family board without a code, so it could cover the board
+of a child opening the app alone on a tablet signed in with the parent's account (now only at the first
+opening after the set-up, see above); settings thrown away with "Leave without saving" came back at the
+next opening; a full-access linked tablet let anyone choose the code; on a tablet, typing in a field did
+not count as a touch (five minutes of writing closed the settings); the guide of a new board was put off
+to the next start when the code was chosen from the bar (the welcome card offers it now); the app's team
+needed extra taps for a new word and to delete a demonstration.
+
 Also done here because the settings' draft was being rewritten: batch 5's "Settings 'Save' writes the whole
 stale draft" ("Save" writes only what the person changed; a consent withdrawn on another device is no
 longer switched back on).
 
-Tried in a real browser (demo build, Chromium, 1180 × 900), 88 checks in three runs:
-- *a family's board* (59): the first keypad (no cross, Escape, a touch beside, a touch on the board behind,
+Tried in a real browser (demo build, Chromium, 1180 × 900), 104 checks in four runs:
+- *a family's board* (62): the first keypad (no cross, Escape, a touch beside, a touch on the board behind,
   Help over it and back, the page reloaded, "1234" refused as a new code, the guide after the code, nothing
   at the next opening); five wrong codes then the countdown, the keypad again after 30 s; caregiver mode
   off when the tab is hidden, still on after 4 minutes, a touch starting the 5 minutes again, off after 5;
   an unsaved setting found again after the tab was hidden; the timer's picker (existing word without the
   code, new word behind it, "Back", the code asked again next time); a demonstration recorded and deleted
   behind the code, a sentence shown without it; the guide's "Try it" for Settings and Help with "Back";
-  "Deleted words" and back with the change still waiting.
+  "Deleted words" and back with the change still waiting; the proof before "Download all my data" still
+  there after the tab was hidden, closed after 5 minutes without a touch.
 - *a tablet linked with a "use only" code, on a board whose code was never chosen* (16): no keypad in
   front of the child; "Caregiver", "Settings" and the timer's "Create a new word" answer with the sentence,
   with no keypad and no "Forgot the code?"; Help answers; once the family has chosen, the keypad asks the
@@ -214,6 +229,10 @@ Tried in a real browser (demo build, Chromium, 1180 × 900), 88 checks in three 
 - *a professional with "use" access* (13): "Settings" beside the child asks her to choose her own code;
   the code field holds hers; the family's code is nowhere on the page and is a wrong code on the keypad;
   "Forgot the code?" asks for her account's password.
+- *a board already in use with no code, opened with the parent's account* (13): nothing covers the board
+  and the child talks; "Caregiver" and "Settings" ask the account's password before any keypad, a wrong
+  password chooses nothing; after the right one the code is chosen. "Leave without saving" really throws
+  the change away, and saving while leaving leaves nothing waiting.
 
 Left for the owner's hand-test list (batch 6): on an Android tablet and an iPad, in caregiver mode, take a
 photo for a word, pick one from the library, record a word (first time: the microphone question), share a

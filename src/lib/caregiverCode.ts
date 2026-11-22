@@ -4,8 +4,11 @@
  * - "1234" is only what a new profile starts with. It means "not chosen yet" and is never a code:
  *   while nothing is chosen, no code opens anything.
  * - On a family's board the code is chosen by those who decide for the child (the owner, a
- *   co-parent who manages the profile). The first time one of them opens the board, the keypad
- *   comes by itself and cannot be closed (`mustChooseFirst`).
+ *   co-parent who manages the profile), on their own device: never on a tablet linked with a code.
+ *   At the first opening after the set-up the keypad comes by itself and cannot be closed
+ *   (`mustChooseFirst`). Later, a board that still has no code is never covered (the child may be
+ *   the one opening it): the code is chosen from "Caregiver", after the account's proof
+ *   (`provesBeforeChoosing`), so that the child cannot be the one who chooses it.
  * - On a professional's boards the code asked is her own (src/state/ownCode.ts).
  * - Caregiver mode turns itself off after 5 minutes without a touch, and when the app goes to the
  *   background (`IDLE_MS`, `isAdultPanel`).
@@ -29,29 +32,45 @@ export function codeOf(own: { value?: string } | undefined, familyPin: string | 
 /**
  * May this person choose the code here? Her own code: always. A board with no account behind it
  * (the try-it preview, the set-up's trial): it is the person's own. A family's board: only who
- * manages the profile (unknown while the rights have not arrived: no).
+ * manages the profile (unknown while the rights have not arrived: no), and never on a tablet
+ * linked with a code, even with full access: it is the child's, and it has no password or
+ * mailbox to prove who is choosing.
  */
-export const mayChooseCode = (o: { own: boolean; family: boolean; manager: boolean }): boolean => o.own || !o.family || o.manager;
+export const mayChooseCode = (o: { own: boolean; family: boolean; manager: boolean; device?: boolean }): boolean =>
+  o.own || !o.family || (o.manager && !o.device);
 
 /**
- * Where the keypad opens. Nothing chosen yet: who may choose chooses now; anyone else is told
- * where it is chosen and gets no keypad, since no code would be right.
+ * A family's board that has no code, outside the first opening: the account proves who is choosing
+ * (its password, a code sent to its mailbox) before the keypad lets a code be chosen. Otherwise
+ * the first person to press "Caregiver" on a device signed in with the parent's account, the child
+ * included, would choose it. Not for the app's team (never asked a code).
  */
-export function keypadStart(o: { unset: boolean; canChoose: boolean }): 'enter' | 'choose' | 'notChosen' {
+export const provesBeforeChoosing = (o: { family: boolean; own: boolean; team: boolean; first: boolean }): boolean =>
+  o.family && !o.own && !o.team && !o.first;
+
+/**
+ * Where the keypad opens. Nothing chosen yet: who may choose chooses now (`proofFirst`: after
+ * the account's proof); anyone else is told where it is chosen and gets no keypad, since no code
+ * would be right.
+ */
+export function keypadStart(o: { unset: boolean; canChoose: boolean; proofFirst?: boolean }): 'enter' | 'choose' | 'prove' | 'notChosen' {
   if (!o.unset) return 'enter';
-  return o.canChoose ? 'choose' : 'notChosen';
+  if (!o.canChoose) return 'notChosen';
+  return o.proofFirst ? 'prove' : 'choose';
 }
 
 /** Is the typed code the right one? Never while no code was chosen ("1234" included). */
 export const codeAccepted = (typed: string, o: { pin: string; unset: boolean }): boolean => !o.unset && typed === o.pin;
 
 /**
- * A family's board, opened by someone who decides for the child, with no code chosen: the keypad
- * comes first and cannot be closed. Not on a child's linked tablet (the code is chosen on a
- * parent's device), not for the app's team (never asked a code), not on a professional's boards.
+ * A family's board opened for the first time after its set-up (`fresh`: the guide is still waiting
+ * to open), by someone who decides for the child, with no code chosen: the keypad comes first and
+ * cannot be closed. Only then: the adult who just made the board is the one holding the device.
+ * At any later opening the board is left free (see `provesBeforeChoosing`). Not on a child's
+ * linked tablet, not for the app's team (never asked a code), not on a professional's boards.
  */
-export function mustChooseFirst(o: { family: boolean; manager: boolean; own: boolean; team: boolean; device: boolean; pin: string | undefined }): boolean {
-  return o.family && o.manager && !o.own && !o.team && !o.device && familyCodeUnset(o.pin);
+export function mustChooseFirst(o: { family: boolean; manager: boolean; own: boolean; team: boolean; device: boolean; fresh: boolean; pin: string | undefined }): boolean {
+  return o.family && o.fresh && o.manager && !o.own && !o.team && !o.device && familyCodeUnset(o.pin);
 }
 
 /**
@@ -76,6 +95,13 @@ export const opensAlone = (then: { kind: string } | undefined): boolean =>
 
 /** Without a touch for this long, the adults' tools close. */
 export const IDLE_MS = 5 * 60 * 1000;
+
+let lastTouch = Date.now();
+/** A touch, a key, a letter typed in a field: the 5 minutes start again. */
+export const touched = (): void => {
+  lastTouch = Date.now();
+};
+export const lastTouchAt = (): number => lastTouch;
 
 export const idleTooLong = (lastTouch: number, now: number): boolean => now - lastTouch >= IDLE_MS;
 

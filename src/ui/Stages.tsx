@@ -410,7 +410,7 @@ function OpenGuideOnStart() {
   useEffect(() => {
     if (!access) return;
     const p = latest.current;
-    if (mustChooseFirst({ family: true, manager, own: !!p.ownCode, team: p.freeEdit, device, pin: p.profile.settings.pin })) return;
+    if (mustChooseFirst({ family: true, manager, own: !!p.ownCode, team: p.freeEdit, device, fresh: !!p.profile.guide?.openOnStart, pin: p.profile.settings.pin })) return;
     start();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [access, manager]);

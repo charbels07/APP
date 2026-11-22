@@ -15,6 +15,7 @@ import { NavLangContext } from '../state/Session';
 import { Icon, type IconName } from './Icon';
 import { C, radius } from './theme';
 import { checked, pressed as pressedState } from './a11y';
+import { touched } from '../lib/caregiverCode';
 
 /**
  * Arabic navigation: menus read right to left (header, switches, fields, guide rows).
@@ -273,7 +274,7 @@ export function Section({ title, children }: { title: string; children: React.Re
 }
 
 export function Field(props: TextInputProps & { label?: string }) {
-  const { label, style, ...rest } = props;
+  const { label, style, onChangeText, ...rest } = props;
   const rtl = useNavRtl();
   return (
     <View style={{ gap: 4 }}>
@@ -283,6 +284,12 @@ export function Field(props: TextInputProps & { label?: string }) {
         style={[styles.input, rtl && { textAlign: 'right' }, style]}
         accessibilityLabel={rest.accessibilityLabel ?? label}
         {...rest}
+        // Typing counts as a touch (a tablet's own keyboard sends nothing else to the app):
+        // caregiver mode does not close under someone who is writing.
+        onChangeText={(v) => {
+          touched();
+          onChangeText?.(v);
+        }}
       />
     </View>
   );

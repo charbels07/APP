@@ -9,7 +9,7 @@ import type { Lang, UiLang } from '../../model/types';
 import { UI_LANG_NAMES } from '../../i18n/ui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { opensAlone, useApp, useBack } from '../../state/AppState';
-import { codeAccepted, codeOf, keypadStart, mayChooseCode, pinPause, pinTooEasy } from '../../lib/caregiverCode';
+import { codeAccepted, codeOf, keypadStart, mayChooseCode, pinPause, pinTooEasy, provesBeforeChoosing } from '../../lib/caregiverCode';
 import { useBoard } from '../../state/BoardContext';
 import { Btn, Panel, Section, useNavRtl } from '../common';
 import { usePictoLibrary } from '../PictoPicker';
@@ -310,13 +310,15 @@ export function PinPanel({ first = false }: { first?: boolean }) {
   const own = app.ownCode;
   const { pin, unset } = codeOf(own, profile.settings.pin);
   // In a child's profile the family chooses the code (the preview has no account: anyone trying it does).
-  const canChoose = mayChooseCode({ own: !!own, family: !!board, manager: !!board?.manager });
-  const [asked, setStep] = useState<'enter' | 'choose' | 'repeat' | 'forgot'>('enter');
-  // Nothing chosen yet: who may choose does it now; anyone else is told where it is chosen.
-  const step = asked === 'enter' ? keypadStart({ unset, canChoose }) : asked;
   // Forgotten code: who may choose a new one, and where the check code is sent.
   const sess = useSessionMaybe();
   const acc = sess?.account;
+  const canChoose = mayChooseCode({ own: !!own, family: !!board, manager: !!board?.manager, device: acc?.provider === 'device' });
+  const [asked, setStep] = useState<'enter' | 'choose' | 'repeat' | 'forgot'>('enter');
+  // Nothing chosen yet: who may choose does it now; anyone else is told where it is chosen. On a
+  // family's board already in use, the account first proves who is choosing (not the child).
+  const proofFirst = provesBeforeChoosing({ family: !!board, own: !!own, team: app.freeEdit, first });
+  const step = asked === 'enter' ? keypadStart({ unset, canChoose, proofFirst }) : asked;
   // A board that is not saved yet (the set-up's trial) is the signed-in person's own.
   const ways = forgotCodeWays({ account: acc, manager: board ? board.manager : true, ownCode: !!own });
   // The account was confirmed: the new code is chosen without the old one.
@@ -367,7 +369,7 @@ export function PinPanel({ first = false }: { first?: boolean }) {
     setTimeout(() => setCode(''), 400);
   };
   const press = (d: string) => {
-    if (waiting || step === 'notChosen') return;
+    if (waiting || step === 'notChosen' || step === 'prove') return;
     const next = (code + d).slice(0, 4);
     setMsg(null);
     setCode(next);
@@ -396,7 +398,9 @@ export function PinPanel({ first = false }: { first?: boolean }) {
       else
         app.update((p) => {
           p.settings.pin = next;
-          if (first && p.guide?.openOnStart) p.guide = { ...p.guide, openOnStart: false };
+          // The guide of a new board was waiting for the code: it opens now (the first keypad), or
+          // is offered by the welcome card (the code was chosen from the bar instead).
+          if (p.guide?.openOnStart) p.guide = { ...p.guide, openOnStart: false };
         });
       open();
     }
@@ -426,11 +430,17 @@ export function PinPanel({ first = false }: { first?: boolean }) {
       title={step === 'forgot' ? t.pinForgotTitle : step === 'enter' && !leaving ? t.pinTitle : t.pinChooseTitle}
       // The first choice of a family's code cannot be put off: no cross, no Escape.
       onClose={first ? undefined : close}
-      onBack={step === 'forgot' ? () => setStep('enter') : first ? undefined : cameFrom}
+      onBack={step === 'forgot' && !unset ? () => setStep('enter') : first ? undefined : cameFrom}
       maxWidth={step === 'enter' ? 380 : 440}
       tone="edit"
     >
-      {step === 'forgot' && (
+      {step === 'prove' && (
+        // No code yet on a board already in use: what the code is, then who is choosing it.
+        <View style={styles.pinWhy}>
+          <Text style={[styles.pinWhyText, rtlText]}>{t.pinWhy[0]}</Text>
+        </View>
+      )}
+      {(step === 'forgot' || step === 'prove') && (
         <ProveItsYou
           ways={sess ? ways : null}
           twoStep={!!sess?.security?.twoStep}
@@ -472,7 +482,7 @@ export function PinPanel({ first = false }: { first?: boolean }) {
           {beforeGuide && <Text style={[styles.pinWhyText, { fontWeight: '700' }, rtl && { textAlign: 'right', writingDirection: 'rtl' }]}>{t.pinThenGuide}</Text>}
         </View>
       )}
-      {step !== 'forgot' && step !== 'notChosen' && (
+      {step !== 'forgot' && step !== 'prove' && step !== 'notChosen' && (
         <>
           {leaving && (
             <Text style={[styles.pinWhyText, { fontWeight: '700' }, rtlText]}>{t.pinOpensApp.replace('{name}', leaving.name)}</Text>

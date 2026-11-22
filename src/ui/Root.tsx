@@ -48,9 +48,10 @@ export function Root({ banner }: { banner?: React.ReactNode } = {}) {
   const [credits, setCredits] = useState<CreditsPage | null>(null);
   const overlayKind = overlay?.kind;
   useEffect(() => setCredits(null), [overlayKind]);
-  // A family's board with no caregiver code yet, opened by a parent: the keypad comes by itself and
-  // stays until the code is chosen. Any panel opened from the bar (Help above all) shows instead,
-  // and the keypad is back when it closes; a demonstration plays on the board.
+  // A family's board opened for the first time after its set-up, by a parent, with no caregiver code
+  // yet: the keypad comes by itself and stays until the code is chosen. Any panel opened from the bar
+  // (Help above all) shows instead, and the keypad is back when it closes; a demonstration plays on
+  // the board. At any later opening the board is never covered: the child may be the one opening it.
   const board = useBoard();
   const sess = useSessionMaybe();
   const chooseFirst =
@@ -60,6 +61,7 @@ export function Root({ banner }: { banner?: React.ReactNode } = {}) {
       own: !!app.ownCode,
       team: app.freeEdit,
       device: sess?.account?.provider === 'device',
+      fresh: !!profile.guide?.openOnStart,
       pin: profile.settings.pin,
     }) &&
     !overlay &&

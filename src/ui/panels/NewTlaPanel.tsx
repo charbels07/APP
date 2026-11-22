@@ -8,11 +8,11 @@ import { countFeature } from '../../lib/product';
 import { mainBoardOrder, tlaLayout, type Placed } from '../../lib/boardOrder';
 import { pickPhotoForAi, type AiPhoto } from '../../lib/photoForAi';
 import { allConceptIds, getConcept, label, symbolOf } from '../../lib/lexicon';
-import { pictoCredit, pictoToMedia } from '../../lib/pictoLibrary';
+import { pictoCredit, pictoRef } from '../../lib/pictoLibrary';
 import type { PreparedIndex } from '../../lib/pictoSearch';
 import { normalize } from '../../lib/search';
 import { planAutomatically, planFromAi, planFromLibrary, type PlanItem, type TlaPlan } from '../../lib/tlaPlanner';
-import type { Board, Concept, Profile, Schedule, WordClass } from '../../model/types';
+import type { Board, Concept, Profile, Schedule, SymbolRef, WordClass } from '../../model/types';
 import { useApp, useBack } from '../../state/AppState';
 import { Btn, Field, Panel, Section, Toggle, useNavRtl } from '../common';
 import { moveItem, Reorderable } from '../Reorderable';
@@ -68,7 +68,7 @@ function labelsFor(lib: PreparedIndex, item: PlanItem) {
  */
 export function conceptMaker(lib: PreparedIndex, profile: Profile, stamp: string) {
   const newConcepts: Record<string, Concept> = {};
-  const symbols: Record<string, string> = {};
+  const symbols: Record<string, SymbolRef> = {};
   const credits: Record<string, string | undefined> = {};
   const made = new Map<number, string>(); // pictogram → concept, shared by words and steps
   let n = 0;
@@ -91,8 +91,8 @@ export function conceptMaker(lib: PreparedIndex, profile: Profile, stamp: string
       emoji: '⭐',
       custom: true,
     };
-    const media = await pictoToMedia(item.id).catch(() => undefined);
-    if (media) (symbols[cid] = media), (credits[cid] = await pictoCredit(item.id).catch(() => undefined));
+    const ref = await pictoRef(item.id).catch(() => undefined);
+    if (ref) (symbols[cid] = ref), (credits[cid] = await pictoCredit(item.id).catch(() => undefined));
     made.set(item.id, cid);
     return cid;
   };
@@ -107,14 +107,14 @@ export function conceptMaker(lib: PreparedIndex, profile: Profile, stamp: string
       custom: true,
     };
     if (plan?.anchor !== undefined) {
-      const media = await pictoToMedia(plan.anchor).catch(() => undefined);
-      if (media) (symbols[id] = media), (credits[id] = await pictoCredit(plan.anchor).catch(() => undefined));
+      const ref = await pictoRef(plan.anchor).catch(() => undefined);
+      if (ref) (symbols[id] = ref), (credits[id] = await pictoCredit(plan.anchor).catch(() => undefined));
     }
   };
   /** Writes the new words and their pictures into the profile. */
   const apply = (d: Profile) => {
     Object.assign(d.customConcepts, newConcepts);
-    for (const [cid, media] of Object.entries(symbols)) d.overrides[cid] = { symbol: { kind: 'media', name: media }, credit: credits[cid] };
+    for (const [cid, symbol] of Object.entries(symbols)) d.overrides[cid] = { symbol, ...(credits[cid] ? { credit: credits[cid] } : {}) };
   };
   return { conceptFor, titleConcept, apply };
 }

@@ -105,17 +105,16 @@ describe('what to do', () => {
     expect(planMedia(full, [PHOTO], here(PHOTO), 1000, both).send).toEqual([]);
     expect(planMedia(full, [PHOTO], here(PHOTO), 6000, both).send).toEqual([PHOTO]);
   });
-  it('a picture replaced on a manager’s device leaves the account; a received copy leaves this device', () => {
+  it('a picture replaced keeps its copy in the account; a received copy leaves this device', () => {
     const before = { overrides: { a: { symbol: { kind: 'media', name: PHOTO } }, b: { audio: { fr: VOICE } } } };
     const after = { overrides: { a: { symbol: { kind: 'media', name: '1762000000009_ab12cd.jpg' } }, b: { audio: { fr: VOICE } } } };
     expect(removedNames(before, after)).toEqual([PHOTO]);
     const book = markSent(markSent(emptyBook(), PHOTO, true), VOICE);
-    const r = afterRemoval(book, [PHOTO], true);
-    expect(r.book.remove).toEqual([PHOTO]);
+    const r = afterRemoval(book, [PHOTO]);
+    // The account keeps it ("Undo", earlier versions): it leaves only through the sweep, 30 days later.
+    expect(r.book.remove).toEqual([]);
     expect(r.eraseHere).toEqual([PHOTO]);
-    expect(planMedia(r.book, [VOICE], here(VOICE), 0, both).remove).toEqual([PHOTO]);
-    // Not a manager: the copy in the account stays (removed later by a manager's device).
-    expect(afterRemoval(book, [PHOTO], false).book.remove).toEqual([]);
+    expect(planMedia(r.book, [VOICE], here(VOICE), 0, both).remove).toEqual([]);
   });
   it('someone else’s change: received copies no word uses leave; a name used again keeps its copy', () => {
     const book = { ...markSent(markSent(emptyBook(), PHOTO, true), OTHER, true), remove: [VOICE] };
@@ -132,14 +131,21 @@ describe('what to do', () => {
       { name: OTHER, size: 10, createdAt: now - ORPHAN_AFTER - 1 },
       { name: '1762000000008_ab12cd.jpg', size: 10, createdAt: now - 1000 },
     ];
-    const r = afterList(book, files, [PHOTO, VOICE], now, true);
+    const r = afterList(book, files, [PHOTO, VOICE], now, true, []);
     // PHOTO is not there any more: it is sent again; VOICE arrived meanwhile: fetched at once.
     expect(r.book.sent.sort()).toEqual([VOICE, OTHER, '1762000000008_ab12cd.jpg'].sort());
     expect(r.book.retry[VOICE]).toBeUndefined();
     // Only the old file that no word uses (a recent one may belong to a change still on its way).
     expect(r.sweep).toEqual([OTHER]);
-    expect(afterList(book, files, [PHOTO, VOICE], now, false).sweep).toEqual([]);
-    expect(afterList(book, [{ name: OTHER, size: 1, createdAt: 0 }], [], now, true).sweep).toEqual([]);
+    expect(afterList(book, files, [PHOTO, VOICE], now, false, []).sweep).toEqual([]);
+    expect(afterList(book, [{ name: OTHER, size: 1, createdAt: 0 }], [], now, true, []).sweep).toEqual([]);
+    // Something the database still points to (an earlier version, "Undo", a proposal) stays…
+    expect(afterList(book, files, [PHOTO, VOICE], now, true, [OTHER]).sweep).toEqual([]);
+    // …and without the database's answer nothing is swept at all.
+    expect(afterList(book, files, [PHOTO, VOICE], now, true, null).sweep).toEqual([]);
+    expect(afterList(book, files, [PHOTO, VOICE], now, true).sweep).toEqual([]);
+    // Kept 30 days at least.
+    expect(ORPHAN_AFTER).toBe(30 * 24 * 60 * 60 * 1000);
   });
   it('reads back only what it expects from the device', () => {
     const b = readBook({ sent: [PHOTO, '../../x', 3], received: 'no', retry: { [VOICE]: { n: 1, at: 5 }, 'a/b': { n: 1, at: 1 } }, fullUntil: 'x' });
@@ -153,6 +159,8 @@ describe('what to do', () => {
 /** An account's storage in memory, with the failures a test asks for. */
 function fakeServer() {
   const files = new Map<string, number>();
+  const created = new Map<string, number>();
+  let inUse: string[] | null = [];
   const calls: string[] = [];
   let fail: Record<string, string> = {};
   const api = {
@@ -171,14 +179,25 @@ function fakeServer() {
     async listMedia() {
       calls.push('list');
       if (fail.list) throw new BackendError(fail.list);
-      return [...files.keys()].map((name) => ({ name, size: files.get(name)!, createdAt: 0 }));
+      return [...files.keys()].map((name) => ({ name, size: files.get(name)!, createdAt: created.get(name) ?? 0 }));
+    },
+    async mediaInUse() {
+      calls.push('inUse');
+      return inUse;
     },
     async removeMedia(_id: string, names: string[]) {
       calls.push(`rm ${names.join(',')}`);
       for (const n of names) files.delete(n);
     },
   };
-  return { api: api as unknown as Backend, files, calls, setFail: (f: Record<string, string>) => (fail = f) };
+  return {
+    api: api as unknown as Backend,
+    files,
+    created,
+    calls,
+    setFail: (f: Record<string, string>) => (fail = f),
+    setInUse: (names: string[] | null) => (inUse = names),
+  };
 }
 
 /** A second device: its own store. */
@@ -298,27 +317,67 @@ describe('copying in the background', () => {
     m.close();
   });
 
-  it('a manager replacing a photo removes the old copy from the account; others do not', async () => {
+  it('a replaced photo stays in the account 30 days, and while the database still points to it; managers only', async () => {
     const server = fakeServer();
     const phone = deviceStore();
     phone.names.add(PHOTO);
     const NEW = '1762000000009_ab12cd.jpg';
     let manager = true;
-    const m = await open(server.api, 'child', { files: phone, canRemove: () => manager, delay: 10_000 });
+    let now = 1_000_000_000_000;
+    const m = await open(server.api, 'child', { files: phone, canRemove: () => manager, delay: 10_000, now: () => now });
     const before = withPhoto(PHOTO);
     m.see(before);
     await m.run();
+    server.created.set(PHOTO, now);
     phone.names.add(NEW);
     const after = withPhoto(NEW);
     m.changed(before, after);
     await m.run();
-    expect([...server.files.keys()]).toEqual([NEW]);
-    manager = false;
-    const NEWER = '1762000000010_ab12cd.jpg';
-    phone.names.add(NEWER);
-    m.changed(after, withPhoto(NEWER));
+    // Replaced: both copies stay ("Undo", earlier versions).
+    expect([...server.files.keys()].sort()).toEqual([NEW, PHOTO].sort());
+    server.created.set(NEW, now);
+    // 31 days later, the earlier version of the board still uses it: it stays.
+    now += 31 * 24 * 60 * 60 * 1000;
+    server.setInUse([PHOTO]);
+    m.see(after);
     await m.run();
-    expect([...server.files.keys()].sort()).toEqual([NEW, NEWER].sort());
+    expect(server.files.has(PHOTO)).toBe(true);
+    // Nothing points to it any more: the next look removes it.
+    server.setInUse([]);
+    now += 13 * 60 * 60 * 1000;
+    m.see(after);
+    await m.run();
+    expect([...server.files.keys()]).toEqual([NEW]);
+    // A database not updated yet (no answer): nothing is removed; nor by someone who is not a manager.
+    const OLD = '1762000000011_ab12cd.jpg';
+    server.files.set(OLD, 10);
+    server.created.set(OLD, 1);
+    server.setInUse(null);
+    now += 13 * 60 * 60 * 1000;
+    m.see(after);
+    await m.run();
+    expect(server.files.has(OLD)).toBe(true);
+    manager = false;
+    server.setInUse([]);
+    now += 13 * 60 * 60 * 1000;
+    m.see(after);
+    await m.run();
+    expect(server.files.has(OLD)).toBe(true);
+    m.close();
+  });
+
+  it('a professional’s draft only sends: the family’s files are not copied onto her device', async () => {
+    const server = fakeServer();
+    server.files.set(OTHER, 10);
+    const hers = deviceStore();
+    hers.names.add(PHOTO);
+    const m = await open(server.api, 'child', { files: hers, fetch: false, canRemove: () => false, delay: 10_000 });
+    const p = withPhoto(PHOTO);
+    p.overrides.boire = { symbol: { kind: 'media', name: OTHER } };
+    m.see(p);
+    await m.run();
+    expect(server.files.has(PHOTO)).toBe(true);
+    expect(hers.names.has(OTHER)).toBe(false);
     m.close();
   });
 
@@ -400,7 +459,17 @@ describe('demo server: the same rules as the database', () => {
     await expect(api.uploadMedia(child, OTHER, buf(10), 'audio/wav')).rejects.toMatchObject({ code: 'forbidden' });
     await api.signOut();
     await api.signIn({ email: 'mum.media@example.com', password: 'secret123' });
+    // Sent today: never removed (a change may be on its way from another device).
     await api.removeMedia(child, [PHOTO]);
-    expect(await api.listMedia(child)).toEqual([]);
+    expect((await api.listMedia(child)).length).toBe(1);
+    const later = Date.now() + 31 * 24 * 60 * 60 * 1000;
+    const clock = jest.spyOn(Date, 'now').mockReturnValue(later);
+    try {
+      expect(await api.mediaInUse(child)).toEqual([]);
+      await api.removeMedia(child, [PHOTO]);
+      expect(await api.listMedia(child)).toEqual([]);
+    } finally {
+      clock.mockRestore();
+    }
   });
 });

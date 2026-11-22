@@ -9,6 +9,7 @@
  * family stops sharing, what this device kept is erased (`forget`), and the server erases its side.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { written } from '../lib/deviceFull';
 import type { Backend } from '../backend/Backend';
 import { isForgotten } from '../lib/deviceData';
 import { COUNTERS, describeProblem, currentScreen, type Counter, type DeviceForm, type ProblemItem, type ProductSink } from '../lib/product';
@@ -101,7 +102,7 @@ export class ProductCounter implements ProductSink {
     const keys = Object.keys(this.store.days).sort();
     for (const k of keys.slice(0, Math.max(0, keys.length - KEEP_DAYS))) delete this.store.days[k];
     for (const k of Object.keys(this.store.versions)) if (!this.store.days[k]) delete this.store.versions[k];
-    await AsyncStorage.setItem(this.key, JSON.stringify(this.store)).catch(() => {});
+    await written('counters', () => AsyncStorage.setItem(this.key, JSON.stringify(this.store)));
   }
 
   /** Sends what is not on the server yet (the server checks the family's agreement again). */

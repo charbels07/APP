@@ -7,8 +7,9 @@
  *   board: a use-only tablet keeps its own files (the database refuses them anyway).
  * - Fetches the files the profile uses and this device does not have (made on another device),
  *   under the same name, from the private storage (an address valid a few minutes).
- * - On a manager's device, removes from the account the files a change made here stopped using,
- *   and, once in a while, the old ones no word uses any more (`afterList` in `mediaPlan.ts`).
+ * - On a manager's device, removes from the account, once in a while, the files nothing uses any
+ *   more for 30 days: neither the board nor its earlier versions, recent history or waiting
+ *   proposals (`afterList` in `mediaPlan.ts`; the database checks it again).
  *
  * Never blocks the board: offline or refused, what waits is tried again later, with growing
  * waits. What this device knows is kept with the device copy of the profile (`caa.media.<id>`)
@@ -18,6 +19,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Backend } from '../backend/Backend';
 import { BackendError } from '../backend/Backend';
 import { isForgotten } from '../lib/deviceData';
+import { written } from '../lib/deviceFull';
 import { deleteMedia, hasMedia, saveMediaFrom } from '../lib/media';
 import { mediaArrived } from '../lib/mediaArrivals';
 import {
@@ -74,6 +76,11 @@ export interface MediaSyncOptions {
   canSend?: () => boolean;
   /** This person manages the child's team (may remove files from the account). */
   canRemove?: () => boolean;
+  /**
+   * Fetches the files made on other devices (default yes). A professional's draft of a child's board
+   * only sends what she added: the family's photos are not copied onto her device.
+   */
+  fetch?: boolean;
   /** Wait before working after a change (ms). */
   delay?: number;
   now?: () => number;
@@ -164,12 +171,15 @@ export class MediaSync {
     this.soon();
   }
 
-  /** A change made here: the names it stopped using leave the account (managers) and this device (received copies). */
+  /**
+   * A change made here: the copies received for names it stopped using leave this device (the
+   * account keeps its copy 30 days at least: `afterList`).
+   */
   changed(before: unknown, after: unknown) {
     const gone = removedNames(before, after);
     this.profile = after;
     if (gone.length) {
-      const { book, eraseHere } = afterRemoval(this.book, gone, this.canRemove());
+      const { book, eraseHere } = afterRemoval(this.book, gone);
       this.book = book;
       this.erase(eraseHere);
     }
@@ -242,7 +252,10 @@ export class MediaSync {
     if (!((this.book.checkedAt ?? 0) > this.now() - CHECK_EVERY)) {
       try {
         const files = await this.api.listMedia(this.id);
-        this.book = afterList(this.book, files, this.used(), this.now(), this.canRemove()).book;
+        // What the database still points to (earlier versions, recent history, proposals waiting):
+        // asked only by those who may remove; not known means nothing is removed.
+        const serverUsed = this.canRemove() ? await this.api.mediaInUse(this.id).catch(() => null) : null;
+        this.book = afterList(this.book, files, this.used(), this.now(), this.canRemove(), serverUsed).book;
       } catch (e) {
         if (codeOf(e) === 'offline') return this.retryLater();
         if (codeOf(e) === 'forbidden') return this.publish();
@@ -254,6 +267,8 @@ export class MediaSync {
     });
     this.publish();
     let offline = false;
+    // A few at a time: the database checks each file against everything that may still use it.
+    plan.remove = plan.remove.slice(0, 20);
     if (plan.remove.length) {
       try {
         await this.api.removeMedia(this.id, plan.remove);
@@ -272,7 +287,7 @@ export class MediaSync {
       if (step === 'offline') offline = true;
       if (step !== 'next') break;
     }
-    for (const name of plan.fetch) {
+    for (const name of this.opts.fetch === false ? [] : plan.fetch) {
       if (offline || this.leaving || this.gone()) break;
       const step = await this.fetchOne(name);
       this.publish();
@@ -373,7 +388,7 @@ export class MediaSync {
 
   private async save() {
     if (this.gone()) return;
-    await AsyncStorage.setItem(key(this.id), JSON.stringify(this.book)).catch(() => {});
+    await written('files', () => AsyncStorage.setItem(key(this.id), JSON.stringify(this.book)));
   }
 
   private publish() {

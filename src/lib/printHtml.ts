@@ -5,7 +5,7 @@
  */
 import { pictoCreditLine } from '../data/pictoCredit';
 import { SYMBOL_IMAGES } from '../data/symbolMap';
-import { pictoImageUriByKey } from './pictoLibrary';
+import { pictoDataUrlByKey } from './pictoLibrary';
 import { LANGS, type Board, type Lang, type Profile } from '../model/types';
 import { CLASS_COLORS } from '../ui/theme';
 import { compactPlaces } from './boardOps';
@@ -39,7 +39,7 @@ async function imageFor(profile: Profile, conceptId: string): Promise<{ img?: st
   try {
     if (sym.kind === 'picto') {
       const mod = SYMBOL_IMAGES[sym.key];
-      return { img: mod ? await bundledImageSrc(mod) : await pictoImageUriByKey(sym.key) };
+      return { img: mod ? await bundledImageSrc(mod) : await pictoDataUrlByKey(sym.key) };
     }
     if (sym.kind === 'media') return { img: await mediaDataUrl(sym.name) };
     return { emoji: sym.value };

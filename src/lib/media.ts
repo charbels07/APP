@@ -60,6 +60,14 @@ export async function saveMediaBytes(bytes: Uint8Array, ext: string): Promise<st
   return name;
 }
 
+/** Stores a file under the name a board uses (a board file imported with its photos); kept if already here. */
+export async function saveMediaNamed(name: string, bytes: Uint8Array): Promise<void> {
+  const file = new File(dir(), name);
+  if (file.exists) return;
+  file.create();
+  await file.write(bytes);
+}
+
 /** True when this device has the file. */
 export async function hasMedia(name: string): Promise<boolean> {
   return new File(dir(), name).exists;

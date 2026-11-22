@@ -15,11 +15,11 @@ import { pushStrings } from '../../i18n/push';
 import { pushIsOn, pushRefused, pushSupport, turnPushOff, turnPushOn } from '../../lib/push';
 import { settingsStrings, type SettingsStrings } from '../../i18n/settings';
 import { UI_LANG_NAMES } from '../../i18n/ui';
-import { exportJson } from '../../lib/platform';
 import type { UiLang } from '../../model/types';
 import { useApp } from '../../state/AppState';
 import type { BoardCtx } from '../../state/BoardContext';
 import type { MediaSync } from '../../state/mediaSync';
+import { BoardExportButton } from './BoardExport';
 import { forgetLocal } from '../../state/profileSync';
 import { useSession } from '../../state/Session';
 import { WriteTeam } from '../admin/WriteTeam';
@@ -78,7 +78,7 @@ export function MyAccount({ x }: { x: SettingsStrings }) {
   const { api, account, s } = sess;
   const [name, setName] = useState(account?.displayName ?? '');
   const [leaving, setLeaving] = useState(false);
-  const [erase, setErase] = useState(false);
+  const [erase, setErase] = useState(true);
   const [cur, setCur] = useState('');
   const [next, setNext] = useState('');
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -507,7 +507,8 @@ function Privacy({ board, x }: { board: BoardCtx; x: SettingsStrings }) {
       {x.privacyPoints.map((p) => (
         <Note key={p} text={`• ${p}`} />
       ))}
-      <Btn small icon="download" label={x.exportProfile} onPress={() => exportJson(`profil-${board.childName || 'caa'}.json`, app.profile)} />
+      <BoardExportButton small profile={app.profile} childName={board.childName} uiLang={sess.uiLang} />
+      <Note text={backupStrings(sess.uiLang).exportNote} />
       <ObzExportButton small profile={app.profile} childName={board.childName} label={x.exportObz} busy={x.exportObzBusy} failed={x.exportObzFailed} />
       <DownloadMyData />
       {owner && <Btn small kind="danger" icon="trash" label={`${x.deleteProfile} ${board.childName}`} onPress={() => setTyping('profile')} />}

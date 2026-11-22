@@ -766,6 +766,10 @@ export class SupabaseBackend implements Backend {
     }
   }
 
+  async checkFreshProof(): Promise<void> {
+    if (!(await data<boolean>(this.sb.rpc('fresh_proof')))) throw new BackendError('proof_needed');
+  }
+
   async exportMyData(): Promise<unknown> {
     return data<unknown>(this.sb.rpc('export_my_data'));
   }
@@ -1099,6 +1103,18 @@ export class SupabaseBackend implements Backend {
       if ((page ?? []).length < 1000) break;
     }
     return out;
+  }
+
+  async mediaInUse(profileId: string): Promise<string[] | null> {
+    if (!UUID.test(profileId)) throw new BackendError('invalid');
+    try {
+      const names = await data<string[] | null>(this.sb.rpc('media_in_use', { p_profile: profileId }));
+      return (names ?? []).filter(isSyncable);
+    } catch (e) {
+      // A database not updated yet: not known, so nothing is removed.
+      if (missingFunction(e)) return null;
+      throw e;
+    }
   }
 
   async removeMedia(profileId: string, names: string[]): Promise<void> {

@@ -216,17 +216,17 @@ export const SETUP_HELP: Record<SetupHelpId, SetupHelp> = {
       fr: [
         'Le vocabulaire, ce sont les mots et leur place. Notre vocabulaire de base compte environ 80 mots fréquents (je, vouloir, encore, pas…) qui ne changent jamais de place, plus des dossiers (nourriture, personnes, émotions…).',
         'La même place à chaque fois : la main apprend le chemin, comme sur un clavier.',
-        'Les autres choix partent d’un tableau qui existe déjà : celui de cette tablette, celui d’un frère ou d’une sœur, ou un fichier exporté depuis l’application.',
+        'Les autres choix partent d’un tableau qui existe déjà : celui de cette tablette, celui d’un frère ou d’une sœur, ou le fichier « Exporter le tableau » d’un autre aidant (sans son code, ses liens, son contact d’urgence, ses démonstrations ni sa corbeille). La même famille sur un autre appareil se connecte simplement, ou relie la tablette avec un code.',
       ],
       en: [
         'The vocabulary is the words and their places. Our core vocabulary has about 80 frequent words (I, want, more, not…) that never change place, plus folders (food, people, feelings…).',
         'The same place every time: the hand learns the way, as on a keyboard.',
-        'The other choices start from a board that already exists: the one on this tablet, a brother’s or sister’s, or a file exported from the app.',
+        'The other choices start from a board that already exists: the one on this tablet, a brother’s or sister’s, or another caregiver’s “Export the board” file (without its code, links, emergency contact, demonstrations or bin). The same family on another device simply signs in, or links the tablet with a code.',
       ],
       ar: [
         'المفردات هي الكلمات وأماكنها. مفرداتنا الأساسية فيها نحو 80 كلمة شائعة (أنا، أريد، أكثر، لا…) لا تغيّر مكانها أبداً، مع مجلدات (طعام، أشخاص، مشاعر…).',
         'المكان نفسه في كل مرة: تتعلّم اليد الطريق، كما على لوحة المفاتيح.',
-        'الخيارات الأخرى تبدأ من لوحة موجودة: لوحة هذا الجهاز، أو لوحة أخ أو أخت، أو ملف مُصدَّر من التطبيق.',
+        'الخيارات الأخرى تبدأ من لوحة موجودة: لوحة هذا الجهاز، أو لوحة أخ أو أخت، أو ملف «تصدير اللوحة» من مرافق آخر (بدون رمزه وروابطه وجهة اتصال الطوارئ وعروضه التوضيحية وسلة محذوفاته). العائلة نفسها على جهاز آخر تسجّل الدخول فقط، أو تربط الجهاز اللوحي برمز.',
       ],
     },
     guide: [{ chapter: 'principles', steps: [0] }],

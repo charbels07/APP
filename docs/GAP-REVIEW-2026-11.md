@@ -446,39 +446,91 @@ password change with two-step.
 
 ## Batch 5 — Files and merging
 
-- [ ] **Pictures and recordings added by a professional never reach the family.** [read] `MediaSync` is
-  only opened in `Stages.tsx` ~182; a `pro` account never reaches that stage. And every pick from
-  "App's library" is copied into the media store (`pictoToMedia`: `CaregiverPanels.tsx` ~419, ~682,
-  `NewTlaPanel.tsx` ~94, ~110) instead of being stored as `{ kind: 'picto', key }`. Fix both: library
-  picks as `picto` references; a send-only MediaSync for the profile a professional edits.
-- [ ] **Replaced pictures and recordings are kept 30 days (Q38).** Today `setSymbol`
-  (`CaregiverPanels.tsx` ~374) and the Recorder (~65, ~90) delete at once, the account copy ~2 s later;
-  "Undo" and "Earlier versions" then point to nothing. Files leave only through the sweep; names used
-  by the server copies and the last 30 days of history count as "in use". Same for a profile in the bin
-  (`eraseMediaOf`, `AccountTab.tsx` ~354) and for one file used by a duplicated board or a sibling.
+**Done on 22 November 2026.** One database file, `supabase/migrations/20261122000200_gap_batch5.sql`, its
+attacks in `supabase/tests/gap5_scenario.sql` (11 checks, in `scripts/test-db.sh`; line added to
+`supabase/check-migrations.sql`), the same rules in the demo server (`gapBatch5.test.ts`, `mediaSync.test.ts`).
+Checks: `npm run typecheck` clean, `npm test` 607 passed, `npm run test:db` 15 scenarios passed (485 checks),
+`npm run test:a11y` no violation (236 scans), and a real-browser run on the demo build (below).
+
+**For the owner: one file to run**, `20261122000200_gap_batch5.sql`, in Supabase → SQL Editor, after this version
+of the app is published (and after the batch 3 and 4 files). Until it has run: no device removes anything from
+the child's space in the account (the app asks the database what still uses a file and, without an answer,
+keeps everything), and a professional who may only propose keeps her pictures on her device (sent once the file
+has run). Once it has run, an older app that removes a replaced picture two seconds later is refused by the
+database. One earlier test was changed on purpose for that rule: `media_scenario.sql` (the file the family
+removes there is now 31 days old).
+
+- [x] **Pictures and recordings added by a professional never reach the family.** Done, both halves. A picture
+  chosen from "App's library" is kept as its key (`pictoRef`: `{ kind: 'picto', key }`) everywhere it was
+  copied: the word editor, "Create a new word", a new activity board, the set-up's own activities (the board
+  reads it from the offline library; printing reads it as data). The professional's draft of a child's board
+  opens a send-only `MediaSync` (`fetch: false`: the family's photos are not copied onto her device), for those
+  who may change the board or propose words or materials. *More than the text:* the database refused files
+  from a member who may only propose (a therapist is "propose" by default), so the family accepted a word whose
+  photo never arrived: `can_send_media` lets her send (level 2 with "propose words" or "create materials"); a
+  use-only tablet, someone removed and a professional whose acceptance was withdrawn still send nothing.
+- [x] **Replaced pictures and recordings are kept 30 days (Q38).** Done. Nothing is deleted at once any more:
+  the word editor, the recorder, deleting a child's profile and "Reset" put the old files on the device's
+  "erase later" list (`src/lib/mediaKeep.ts`), erased when a board opens, 30 days later, and only if no copy of
+  a board kept on the device uses them (a brother's board made from this one keeps them). In the account a
+  file leaves only through the sweep of a manager's device: sent more than 30 days ago and not used by the
+  profile, its earlier versions, the last 30 days of its history or a waiting proposal (`media_in_use`); the
+  storage rule checks the same thing again (`media_may_go`), so an older app cannot remove it earlier.
 - [x] **Settings "Save" writes the whole stale draft.** Done with batch 2 (`src/lib/settingsPatch.ts`).
-- [ ] **Merging (Q39).** [ran by reviewer] A swap against a delete loses a word (in nobody's bin); two
-  people each adding an activity board: the second is not listed (`tlaOrder` is one op,
-  `src/lib/profileDiff.ts`); `demos`, `bin` are not merged at all. Decision: a word is merged part by
-  part (picture, recording, labels); the message names what was not kept; `tlaOrder` merges as a list;
-  a conflicting move / swap is dropped whole; `demo` and `bin` ops by id. Core cells never move.
-- [ ] **Export becomes a real backup (Q40):** one archive with the pictures and sounds, without the
-  caregiver code. The file name must survive a "/" in the child's name (`platform.ts` ~36).
-- [ ] **Import (Q41, Q49):** presented as "from another caregiver"; an imported file always arrives with
-  no code, no links, no help contact, no demonstrations, no bin (`Onboarding.tsx` ~216). The set-up says
-  beside it that the same family on another device simply signs in, or links the tablet with a code.
-- [ ] **Reset profile (Q32):** asks the same proof as deleting; keeps the code and the family's choices
-  (follow-up, sharing); files kept 30 days. Today: two taps, code back to "not chosen", files removed.
-- [ ] **Photos left on a device (Q43):** "Also erase the photos and recordings made on this device" is
-  ticked by default at sign-out; after a successful `listProfiles`, `forgetChild` every stored child the
-  account can no longer open (and not dirty).
-- [ ] Follow-up kept on a tablet is not erased when follow-up is turned off from another device
-  (`Stages.tsx` ~281: call `tracker.forget()` / `product.forget()` in `onRemote` too).
-- [ ] Storage write failures are swallowed (`.catch(() => {})` in profileSync, usageTracker,
-  productCounters, mediaSync): show "this device is full", drop uploaded usage days first; add
-  `tx.onabort` in `media.web.ts`.
+- [x] **Merging (Q39).** Done in `src/lib/merge.ts` (used when someone else saved first): a move, a swap, or a
+  deletion with its entry in the bin are kept or dropped together (a word is never lost nor on the board twice;
+  core words never move in a merge); a word is merged part by part (picture, recording and name in each
+  language); the list of activity boards is merged as a list; demonstrations and the bin are merged entry by
+  entry (new `['demo', id]` and `['bin', id]` changes, which the history and proposals now carry too). The board
+  names what was not kept ("Changed elsewhere at the same time, the other version was kept: …", three
+  languages). Tests: `merge.test.ts`.
+- [x] **Export becomes a real backup (Q40).** Done: "Export the board (with its photos and sounds)" writes one
+  `<child>.caa.zip` (`board.json` and `media/…`), never the caregiver code, and says how many photos or
+  recordings were not on this device yet. The name survives a "/" in the child's name. Account → Privacy with
+  an account, Settings → Board → Code and data without one.
+- [x] **Import (Q41, Q49).** Done: "Import a board from another caregiver (file)" in the set-up reads this file
+  (and the older JSON), puts its photos and recordings on the device, and always takes it through `asReceived`:
+  no code, no links, no help contact, no demonstrations, no bin, none of the other family's follow-up or sharing
+  choices. Beside it: "The same family on another device needs no file: sign in with the same account, or link
+  the tablet with a code." The set-up's "?" and the guide say the same.
+- [x] **Reset profile (Q32).** Done: "Reset profile" shows what stays, then "Reset the board" asks the same proof
+  as deleting (`checkFreshProof`, the database's `fresh_proof`; nothing on a board without an account). The code,
+  the follow-up and sharing choices are kept; the old board's files stay 30 days; with an account the board as it
+  was stays among the earlier versions. *Decided on the way:* the child's languages are kept too (a board reset
+  to French for an Arabic-speaking child would say nothing useful).
+- [x] **Photos left on a device (Q43).** Done: "Also erase the photos and recordings made on this device" is
+  ticked by default at sign-out; after the account's list of children is read, the copies of children it can no
+  longer open leave the device with their received files (`forgetOthers`), never one with changes not sent.
+- [x] Follow-up turned off on another device: this device's days (and the app's counters, when sharing stops)
+  are erased when that change arrives (`onRemote` in `Stages.tsx`).
+- [x] Storage write failures. Done: the board's copy, the follow-up, the counters and the media book write
+  through `written(kind, …)` (`src/lib/deviceFull.ts`); a failure shows "This device is full: free some space…"
+  above the board until a write of that kind works again. The follow-up first lets the days already sent go,
+  then writes again. In a browser an aborted media write (`tx.onabort`) is reported the same way.
 - [x] Short race: `onRemote` is called after `await writeNow()` (`profileSync.ts` ~223, ~192). Done with batch 1.
-- [ ] The notification subscription survives every sign-out except the button (`Session.tsx` ~229).
+- [x] The notification subscription now ends with every sign-out: the button, the end of a visit without "Keep
+  me logged in", and a session ended elsewhere (the browser's subscription is removed even when the server can
+  no longer be told).
+
+Tried in a real browser (demo build, Chromium, 1180 × 900), 21 checks, no error in the page: a family signs up and
+chooses its code; in the word editor a picture of the app's library is kept as its key and nothing is copied
+into the media store; "Export the board" downloads `Adam.caa.zip` with `board.json`, the picture's key and no
+code, and the Account page says so; "Reset profile" says what stays, asks the password when the last proof is
+old, changes nothing before it, then gives the starting board with the code kept; "Add a child" → "Import a
+board from another caregiver" shows the same-family sentence, reads the file, and the new board has its words
+and pictures, no code (its family is asked to choose one), no demonstrations and no bin. Not tried in a browser
+(unit and demo-server tests only): merging two devices' changes, a professional's draft sending its photo, the
+30-day sweep, a full device.
+
+Left for the owner's hand-test list (batch 6): on a tablet, export a board with photos and recordings, share the
+file, and import it on another tablet in a new account; replace a photo, then "Undo" on another device the next
+day: the old photo must still show.
+
+Seen on the way, not changed (not in this batch):
+- A professional's materials (pro library) with their own photos: when a material is applied to a child, its
+  photos are not sent to the child's space (only library pictures, which travel as keys, are safe).
+- A member whose access is removed while the board is open still keeps it on screen until the app is opened
+  again (`pull` ignores "forbidden"); the copy now leaves at the next opening (`forgetOthers`).
 
 ## Batch 6 — Texts and documents
 
@@ -554,6 +606,6 @@ A separate project, after the owner has settled the legal side (company bank acc
 - Caregiver code: the first keypad cannot be closed; caregiver mode turns itself off (batch 2: done).
 - Professionals: invited therapists and teachers must be verified (batch 4: done); the family's code is not sent
   to them (batch 3: done).
-- Sync: device-only things never travel (batch 1). Media: replaced files kept 30 days (batch 5).
-- Import / export rules (batch 5). Payment rules above (new section).
+- Sync: device-only things never travel (batch 1: done). Media: replaced files kept 30 days (batch 5: done).
+- Import / export rules (batch 5: done). Payment rules above (new section).
 - Publishing rule mentions the web app as "live": say "for chosen testers" (batch 6).

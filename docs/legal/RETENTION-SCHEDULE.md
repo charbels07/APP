@@ -17,7 +17,7 @@ from the work of the same round (automatic retention, the bin, snapshots, purge)
 | Child's profile | `profiles` | Until it is deleted | "Delete the profile of …" (fresh proof first) | Built |
 | Deleted child's profile | The bin | **30 days**, can be restored, then erased | Automatic | Built *(Nov. 2026)* |
 | Board snapshots | Snapshots | The **last 10** (weekly and before big changes) | The oldest goes when an 11th is made | Built *(Nov. 2026)* |
-| Photos and recordings shared between the child's devices | Bucket `profile-media` | As long as the profile; fair-use quota | Server-side purge when the account or profile is deleted (purge queue + server function) | Built *(Nov. 2026)* |
+| Photos and recordings shared between the child's devices | Bucket `profile-media` | As long as the profile; a file no board uses any more stays 30 days, and as long as an earlier version of the board, the last 30 days of its history or a waiting proposal uses it; fair-use quota | Removed by a manager's device after that (the database refuses earlier); server-side purge when the account or profile is deleted (purge queue + server function) | Built *(Nov. 2026)* |
 | Follow-up days | `usage_days` | **24 months**, rolling | Automatic job | Built *(Nov. 2026)* |
 | Sentences of the follow-up (level "Use, words and sentences") | inside `usage_days` | **12 months** | Automatic job | Built *(Nov. 2026)* |
 | All the follow-up of a child | `usage_days` | — | "Erase the recorded data" (Progress page), at any time | Built |
@@ -53,7 +53,7 @@ from the work of the same round (automatic retention, the bin, snapshots, purge)
 |---|---|---|
 | Copy of each child's profile | While the account is signed in on the device | Sign-out, deletion, or the session ending elsewhere (`src/lib/deviceData.ts`) |
 | Follow-up days not sent yet | **120 days** (`KEEP_DAYS` in `src/state/usageTracker.ts`) | Automatic; also on sign-out |
-| Photos and recordings | Until the word is changed or the profile deleted | Deleted with the profile or the account; on sign-out only if the person ticks it (shared computer) |
+| Photos and recordings | 30 days after the board stops using them (changed word, deleted profile, reset) | Erased then if no board kept on the device uses them; with the account when it is deleted; at sign-out unless the person unticks it (ticked by default) |
 | Session | Until sign-out; or for the visit only when "Keep me logged in" is unticked | Sign-out |
 | Files made to print or share | Temporary | Sign-out (`clearExports`) |
 

@@ -10,6 +10,7 @@
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { clearMedia, deleteMedia } from './media';
+import { eraseLater, LATER_KEY } from './mediaKeep';
 import { mediaNamesIn as namesIn, readBook } from './mediaPlan';
 import { clearExports } from './platform';
 
@@ -50,6 +51,30 @@ export async function forgetChild(profileId: string): Promise<void> {
   await AsyncStorage.multiRemove([`caa.child.${profileId}`, `caa.child.${profileId}.bad`, `caa.usage.${profileId}`, `caa.product.${profileId}`, `caa.media.${profileId}`]).catch(() => {});
 }
 
+/**
+ * After the account's list of children was read: the copies kept here of children it can no longer
+ * open (access removed elsewhere, profile deleted, another account's) leave this device, with the
+ * files received for them. A copy with changes never sent stays (they would be lost). Returns the
+ * children forgotten.
+ */
+export async function forgetOthers(keep: string[]): Promise<string[]> {
+  const mine = new Set(keep);
+  const keys = await AsyncStorage.getAllKeys().catch(() => [] as readonly string[]);
+  const out: string[] = [];
+  for (const k of keys) {
+    const m = /^caa\.child\.([^.]+)$/.exec(k);
+    if (!m || mine.has(m[1])) continue;
+    try {
+      if (JSON.parse((await AsyncStorage.getItem(k)) ?? '{}')?.dirty === true) continue;
+    } catch {
+      /* unreadable: it goes */
+    }
+    await forgetChild(m[1]);
+    out.push(m[1]);
+  }
+  return out;
+}
+
 const CHILD_DATA = /^caa\.(child|usage|product|media|onboarding)\./;
 const OTHER_KEYS = ['caa.pendingRole', 'caa.pinlock'];
 
@@ -85,7 +110,7 @@ export async function forgetEverything(opts: { media?: boolean; beforeSignOut?: 
     if (m) gone.add(m[1]);
   }
   if (!opts.media) await eraseReceived(mine.filter((k) => k.startsWith('caa.media.')));
-  await AsyncStorage.multiRemove(mine).catch(() => {});
+  await AsyncStorage.multiRemove(opts.media ? [...mine, LATER_KEY] : mine).catch(() => {});
   await clearExports().catch(() => {});
   if (opts.media) await clearMedia().catch(() => {});
 }
@@ -96,7 +121,11 @@ export async function forgetEverything(opts: { media?: boolean; beforeSignOut?: 
  */
 export const mediaNamesIn = (profile: unknown): string[] => namesIn(profile);
 
-/** A deleted child's photos and recordings leave this device too. */
+/**
+ * A deleted child's photos and recordings leave this device too, 30 days later (the profile waits
+ * in the family's bin meanwhile), and only those no other board kept here uses (a brother's board
+ * made from this one shares its files): `src/lib/mediaKeep.ts`.
+ */
 export async function eraseMediaOf(profile: unknown): Promise<void> {
-  for (const name of mediaNamesIn(profile)) await deleteMedia(name).catch(() => {});
+  await eraseLater(mediaNamesIn(profile));
 }

@@ -44,6 +44,11 @@ const W = {
     weekDay: (d: string) => `Planning de la semaine : ${d} modifié`,
     eventNew: (w: string, d: string) => `Planning du mois : « ${w} » le ${d}`,
     eventGone: (w: string, d: string) => `Planning du mois : « ${w} » du ${d} retiré`,
+    demoNew: (t: string) => `Nouvelle démonstration « ${t} »`,
+    demoGone: (t: string) => `Démonstration « ${t} » supprimée`,
+    demoChanged: (t: string) => `Démonstration « ${t} » modifiée`,
+    binIn: (w: string) => `« ${w} » mis dans la corbeille`,
+    binOut: (w: string) => `« ${w} » sorti de la corbeille`,
   },
   en: {
     added: (w: string, b: string) => `“${w}” added to “${b}”`,
@@ -68,6 +73,11 @@ const W = {
     weekDay: (d: string) => `Week plan: ${d} changed`,
     eventNew: (w: string, d: string) => `Month plan: “${w}” on ${d}`,
     eventGone: (w: string, d: string) => `Month plan: “${w}” on ${d} removed`,
+    demoNew: (t: string) => `New demonstration “${t}”`,
+    demoGone: (t: string) => `Demonstration “${t}” deleted`,
+    demoChanged: (t: string) => `Demonstration “${t}” changed`,
+    binIn: (w: string) => `“${w}” put in the bin`,
+    binOut: (w: string) => `“${w}” taken out of the bin`,
   },
   ar: {
     added: (w: string, b: string) => `أُضيفت «${w}» إلى «${b}»`,
@@ -92,6 +102,11 @@ const W = {
     weekDay: (d: string) => `جدول الأسبوع: تعديل ${d}`,
     eventNew: (w: string, d: string) => `جدول الشهر: «${w}» في ${d}`,
     eventGone: (w: string, d: string) => `جدول الشهر: إزالة «${w}» في ${d}`,
+    demoNew: (t: string) => `عرض توضيحي جديد «${t}»`,
+    demoGone: (t: string) => `حُذف العرض التوضيحي «${t}»`,
+    demoChanged: (t: string) => `عُدّل العرض التوضيحي «${t}»`,
+    binIn: (w: string) => `وُضعت «${w}» في سلة المحذوفات`,
+    binOut: (w: string) => `أُخرجت «${w}» من سلة المحذوفات`,
   },
 };
 
@@ -190,6 +205,19 @@ export function describeOps(ops: Op[], before: Profile, ui: UiLang, lang: Lang):
       return ea
         ? { icon: 'calendar', text: w.eventNew(wordA(ea.concept), date), after: ea.concept, core }
         : { icon: 'calendar', text: w.eventGone(wordB(eb?.concept), date), before: eb?.concept, core };
+    }
+    if (kind === 'demo') {
+      const db = op.before as { title?: string } | undefined;
+      const da = op.after as { title?: string } | undefined;
+      if (!db) return { icon: 'play', text: w.demoNew(da?.title ?? ''), core };
+      if (!da) return { icon: 'trash', text: w.demoGone(db.title ?? ''), core };
+      return { icon: 'play', text: w.demoChanged(da.title ?? ''), core };
+    }
+    if (kind === 'bin') {
+      const it = (op.after ?? op.before) as { kind?: string; cell?: { concept?: string }; board?: { concept?: string } } | undefined;
+      const concept = it?.kind === 'board' ? it.board?.concept : it?.cell?.concept;
+      const name = concept ? (op.after ? wordB(concept) : wordA(concept)) : '';
+      return op.after ? { icon: 'trash', text: w.binIn(name), before: concept, core } : { icon: 'undo', text: w.binOut(name), after: concept, core };
     }
     if (kind === 'tlaOrder') return { icon: 'list', text: w.tlaOrder, core };
     if (kind === 'activeSchedule') return { icon: 'calendar', text: w.activeSchedule, core };

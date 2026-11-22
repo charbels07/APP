@@ -7,7 +7,7 @@ import {
 } from 'expo-audio';
 import React, { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
-import { deleteMedia } from '../../lib/media';
+import { eraseLater } from '../../lib/mediaKeep';
 import { outside } from '../../lib/outside';
 import { countFeature, reportProblem } from '../../lib/product';
 import { saveRecording } from '../../lib/recordingTrim';
@@ -64,7 +64,8 @@ export function Recorder({ media, onChange }: { media?: string; onChange: (name:
       const uri = recorder.uri;
       if (!uri) return;
       const name = await saveRecording(uri, levels.current, totalMs);
-      if (media) deleteMedia(media);
+      // The recording it replaces stays 30 days ("Undo", earlier versions).
+      if (media) void eraseLater([media]);
       onChange(name);
       countFeature('recording');
     } catch (e) {
@@ -89,7 +90,7 @@ export function Recorder({ media, onChange }: { media?: string; onChange: (name:
               icon="trash"
               accessibilityLabel={t.remove}
               onPress={() => {
-                deleteMedia(media);
+                void eraseLater([media]);
                 onChange(undefined);
               }}
             />

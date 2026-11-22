@@ -26,17 +26,20 @@ import {
   SPEECH,
   wordsAtLevel,
   type Answers,
+  type CustomWord,
   type FeedbackChoice,
   type StartVocab,
   type VisualChoice,
 } from '../../lib/onboarding';
-import { pickTextFile } from '../../lib/pickTextFile';
+import { pickBoardFile } from '../../lib/pickTextFile';
+import { asReceived, keepFilesOf, readBoardFile } from '../../lib/backupFile';
+import { eraseLater } from '../../lib/mediaKeep';
 import { exactPicto, searchPictos } from '../../lib/pictoSearch';
-import { loadPictoLibrary, pictoCredit, pictoToMedia } from '../../lib/pictoLibrary';
+import { loadPictoLibrary, pictoCredit, pictoRef } from '../../lib/pictoLibrary';
 import { prepareVoices, speakText } from '../../lib/speech';
 import { optionParts, voiceOption, type VoiceOption } from '../../lib/voices';
 import { forgetLegacyProfile, loadLegacyProfile, migrate } from '../../lib/storage';
-import type { Lang, Profile } from '../../model/types';
+import type { Lang, Profile, SymbolRef } from '../../model/types';
 import { AppProvider } from '../../state/AppState';
 import { useOwnCode } from '../../state/ownCode';
 import { useSession } from '../../state/Session';
@@ -222,11 +225,15 @@ export function Onboarding() {
           onImport={async () => {
             setError(null);
             try {
-              const f = await pickTextFile();
+              const f = await pickBoardFile();
               if (!f) return;
-              const parsed = JSON.parse(f.text);
-              if (!parsed?.boards?.core) throw new Error('bad');
-              setImported({ name: f.name, profile: migrate(parsed) });
+              // A board from another caregiver: no code, no links, no help contact, no
+              // demonstrations, no bin, none of the other family's choices (src/lib/backupFile.ts).
+              const read = readBoardFile(f.bytes);
+              await keepFilesOf(read);
+              // Not kept if the set-up is left: erased in 30 days unless a board here uses them.
+              void eraseLater([...read.media.keys()]);
+              setImported({ name: f.name, profile: asReceived(read.profile) });
               set({ vocab: 'file' });
             } catch {
               setError(o.fileBad);
@@ -684,6 +691,8 @@ function VocabStep({
           {v === 'copy' && a.vocab === 'copy' && siblings.length > 1 && (
             <Segmented value={a.copyFrom ?? siblings[0].id} onChange={(copyFrom: string) => set({ copyFrom })} options={siblings.map((c) => ({ value: c.id, label: c.name }))} />
           )}
+          {/* The same family on another device signs in (or links the tablet): no file. */}
+          {v === 'file' && <T style={{ color: C.textMuted, fontSize: 14 }}>{o.fileSameFamily}</T>}
           {v === 'file' && a.vocab === 'file' && (
             <View style={{ gap: 6 }}>
               {imported ? <T style={{ color: C.success, fontWeight: '600' }}>{`${o.fileOk} ${imported.name}`}</T> : null}
@@ -889,7 +898,7 @@ function TryBoard({
 }
 
 /** The family's own activities become words, with a pictogram from the offline library when one matches. */
-async function customWords(texts: string[], lang: Lang): Promise<{ id: string; label: string; media?: string; credit?: string }[]> {
+async function customWords(texts: string[], lang: Lang): Promise<CustomWord[]> {
   if (!texts.length) return [];
   const stamp = Date.now().toString(36);
   let index: Awaited<ReturnType<typeof loadPictoLibrary>> | null = null;
@@ -900,14 +909,14 @@ async function customWords(texts: string[], lang: Lang): Promise<{ id: string; l
   }
   const out = [];
   for (const [i, text] of texts.entries()) {
-    let media: string | undefined;
+    let symbol: SymbolRef | undefined;
     let credit: string | undefined;
     if (index) {
       const id = exactPicto(index, text) ?? searchPictos(index, text, lang, 1)[0];
-      if (id !== undefined) media = await pictoToMedia(id).catch(() => undefined);
-      if (id !== undefined && media) credit = await pictoCredit(id).catch(() => undefined);
+      if (id !== undefined) symbol = await pictoRef(id).catch(() => undefined);
+      if (id !== undefined && symbol) credit = await pictoCredit(id).catch(() => undefined);
     }
-    out.push({ id: `c_${stamp}${i}`, label: text, media, credit });
+    out.push({ id: `c_${stamp}${i}`, label: text, symbol, credit });
   }
   return out;
 }

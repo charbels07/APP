@@ -3,6 +3,8 @@
  * (private mode, sandboxed previews). A copy travels through the account to the child's other
  * devices (`src/state/mediaSync.ts`) under the same name.
  */
+import { storageFailed, storageWritten } from './deviceFull';
+
 const DB_NAME = 'caa-media';
 const STORE = 'files';
 const memory = new Map<string, Blob>();
@@ -52,8 +54,16 @@ async function put(name: string, blob: Blob, keep = true): Promise<void> {
     try {
       const tx = db.transaction(STORE, 'readwrite');
       tx.objectStore(STORE).put(blob, name);
-      tx.oncomplete = () => resolve();
+      tx.oncomplete = () => {
+        storageWritten('media');
+        resolve();
+      };
+      // A browser whose storage is full aborts the write: said on the board ("this device is full").
       tx.onerror = () => resolve();
+      tx.onabort = () => {
+        storageFailed('media', tx.error);
+        resolve();
+      };
     } catch {
       resolve();
     }
@@ -152,6 +162,27 @@ export async function saveMediaBytes(bytes: Uint8Array, ext: string): Promise<st
   await put(name, new Blob([bytes as Uint8Array<ArrayBuffer>], { type }));
   return name;
 }
+
+/** Stores a file under the name a board uses (a board file imported with its photos); kept if already here. */
+export async function saveMediaNamed(name: string, bytes: Uint8Array): Promise<void> {
+  if (await hasMedia(name)) return;
+  const ext = name.split('.').pop()?.toLowerCase() ?? '';
+  const type = TYPES[ext] ?? 'application/octet-stream';
+  await put(name, new Blob([bytes as Uint8Array<ArrayBuffer>], { type }), false);
+}
+
+const TYPES: Record<string, string> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+  m4a: 'audio/mp4',
+  aac: 'audio/aac',
+  mp4: 'audio/mp4',
+  wav: 'audio/wav',
+  webm: 'audio/webm',
+  mp3: 'audio/mpeg',
+};
 
 /** True when this browser has the file (without reading it). */
 export async function hasMedia(name: string): Promise<boolean> {

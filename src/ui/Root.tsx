@@ -30,6 +30,7 @@ import { C, radius } from './theme';
 import { TimerCard } from './TimerCard';
 import { UniversalBar } from './UniversalBar';
 import { NoVoiceNotice } from './VoiceCheck';
+import { DeviceFullNotice } from './DeviceFullNotice';
 import { CreditsHost, PictoCreditsPanel, type CreditsPage } from './PictoCredits';
 import { linkTarget } from '../lib/safety';
 import { AccessProvider } from '../state/access';
@@ -149,6 +150,7 @@ export function Root({ banner }: { banner?: React.ReactNode } = {}) {
       {banner}
       {/* A board that cannot speak says why (no voice on this device for the board's language). */}
       <NoVoiceNotice lang={profile.settings.lang} uiLang={profile.settings.uiLang} closeLabel={t.close} />
+      <DeviceFullNotice uiLang={profile.settings.uiLang} />
       <SentenceStrip compact={compact} />
       {profile.settings.quickZone && <QuickZone />}
       {/* Docked above the board: the board shrinks a little, nothing is covered. */}

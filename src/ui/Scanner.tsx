@@ -6,7 +6,9 @@
  * is a key (Space / Enter: what most switch interfaces type, listened to in a browser) or, when
  * chosen, a touch anywhere on the board and the sentence. The universal bar stays out of the
  * scan and out of the "whole screen" switch: the adults keep their way to Settings and to
- * caregiver mode (behind the code), as everywhere else.
+ * caregiver mode (behind the code), as everywhere else. One button of the bar is in the scan:
+ * Help, after the last row of the board (owner's decision, November 2026: a child who chooses
+ * with a switch must be able to ask for help too).
  *
  * The scan pauses while a panel is open, in caregiver mode, during a demonstration and while an
  * app is about to open. In a browser, Escape stops it (for an adult using the keyboard); it starts
@@ -29,6 +31,7 @@ import {
   type ScanMode,
   type ScanState,
   type SwitchAction,
+  HELP_ID,
 } from '../lib/scanning';
 import { speakPreview } from '../lib/speech';
 import { useAccess } from '../state/access';
@@ -62,7 +65,7 @@ export function Scanner() {
   const inFolder = app.view === 'board' && app.path.length > 1;
   const hasSentence = app.strip.length > 0;
   const groups = useMemo(
-    () => (grid ? scanGroups([hasSentence ? ['a:delete', 'a:speak'] : [], inFolder ? ['a:back'] : [], ...grid.rows], cfg.pattern) : []),
+    () => (grid ? scanGroups([hasSentence ? ['a:delete', 'a:speak'] : [], inFolder ? ['a:back'] : [], ...grid.rows, [HELP_ID]], cfg.pattern) : []),
     [grid, hasSentence, inFolder, cfg.pattern],
   );
   // Another board, a folder, the sentence's buttons appearing, a pause: the scan starts again from the top.
@@ -75,7 +78,8 @@ export function Scanner() {
   const stepKey = `${runKey}#${s.level}.${s.row}.${s.item}.${s.turns}.${s.waiting}`;
 
   const run = (id: string) => {
-    if (id === 'a:back') app.goBack();
+    if (id === HELP_ID) app.pressHelp();
+    else if (id === 'a:back') app.goBack();
     else if (id === 'a:speak') void app.speakStrip();
     else if (id === 'a:delete') app.deleteLast();
     else grid?.choose(id);
@@ -117,7 +121,7 @@ export function Scanner() {
     const id = spokenId(s, groups);
     if (!id) return;
     const words = strings(lang);
-    const text = id === 'a:back' ? words.back : id === 'a:speak' ? words.speak : id === 'a:delete' ? words.deleteShort : grid?.word(id);
+    const text = id === HELP_ID ? words.help : id === 'a:back' ? words.back : id === 'a:speak' ? words.speak : id === 'a:delete' ? words.deleteShort : grid?.word(id);
     if (text) speakPreview(text, lang, profile.settings);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stepKey, cfg.speak]);

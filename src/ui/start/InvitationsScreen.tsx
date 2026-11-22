@@ -96,7 +96,7 @@ export function InvitationsScreen() {
           })
         }
       />
-      {account?.role === 'parent' && <LinkBtn label={s.createOwn} onPress={() => go({ name: 'onboarding' })} />}
+      {account?.role === 'parent' && <LinkBtn label={s.createOwn} onPress={() => go({ name: 'onboarding', back: { name: 'invitations' } })} />}
     </StartLayout>
   );
 }

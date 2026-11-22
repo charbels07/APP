@@ -24,6 +24,7 @@ import { BackOffice } from './admin/BackOffice';
 import { TwoStepScreen } from './TwoStep';
 import { Onboarding } from './onboarding/Onboarding';
 import { ProHome } from './pro/ProHome';
+import { BoardRescue } from './BoardRescue';
 import { Root } from './Root';
 import { AuthScreen } from './start/AuthScreen';
 import { InvitationsScreen } from './start/InvitationsScreen';
@@ -144,10 +145,14 @@ function BoardStage({ profileId }: { profileId: string }) {
       await product.current?.flush();
       await files?.flush();
     };
-    ProfileSync.open(api, profileId).then(
+    // Started without the server: the device copy opens at once (the server is asked behind).
+    ProfileSync.open(api, profileId, sess.offline ? { wait: 300 } : {}).then(
       (sy) => {
         if (!alive) return;
         opened = sy;
+        // Opened from the device copy, and the server then said this board is no longer ours.
+        sy.onGone = (e) => alive && setError(e);
+        if (sy.gone) setError(sy.gone);
         // Called before a sign-out: what is not sent yet goes first.
         pendingSaves.add(sendNow);
         rememberLocal(profileId);
@@ -283,6 +288,9 @@ function BoardStage({ profileId }: { profileId: string }) {
         // Someone else's change: the photos and recordings it brings are fetched.
         media?.see(p);
       };
+      // A newer version taken before the board was listening (the server answered between the
+      // opening and this moment) is shown now.
+      apply(sync.copy.data);
       return () => {
         sync.onRemote = undefined;
       };
@@ -303,28 +311,30 @@ function BoardStage({ profileId }: { profileId: string }) {
   const manager = !!access && (access.owner || !!access.perms.manager);
   return (
     <BoardContext.Provider value={{ profileId, childName: sync.copy.name, sync, access, manager, tracker, media }}>
-      <AppProvider
-        initial={sync.copy.data}
-        onChange={onChange}
-        uiLang={uiLang}
-        setUiLang={setUiLang}
-        subscribe={subscribe}
-        locked={sess.childLock}
-        onUsage={tracker?.record}
-        // The accounts of the app's own team are never asked the caregiver code (the owner's
-        // choice): caregiver mode, the settings and the lock open at once for them.
-        freeEdit={sess.isAdmin}
-      >
-        <Root />
-        <OpenGuideOnStart />
-        {sess.childLock && <LockEffects />}
-        {note && (
-          <View style={styles.toast} accessibilityRole="alert">
-            <Icon name="users" size={20} color={C.edit} />
-            <T style={{ flex: 1, color: C.edit, fontWeight: '600' }}>{note}</T>
-          </View>
-        )}
-      </AppProvider>
+      <BoardRescue>
+        <AppProvider
+          initial={sync.copy.data}
+          onChange={onChange}
+          uiLang={uiLang}
+          setUiLang={setUiLang}
+          subscribe={subscribe}
+          locked={sess.childLock}
+          onUsage={tracker?.record}
+          // The accounts of the app's own team are never asked the caregiver code (the owner's
+          // choice): caregiver mode, the settings and the lock open at once for them.
+          freeEdit={sess.isAdmin}
+        >
+          <Root />
+          <OpenGuideOnStart />
+          {sess.childLock && <LockEffects />}
+          {note && (
+            <View style={styles.toast} accessibilityRole="alert">
+              <Icon name="users" size={20} color={C.edit} />
+              <T style={{ flex: 1, color: C.edit, fontWeight: '600' }}>{note}</T>
+            </View>
+          )}
+        </AppProvider>
+      </BoardRescue>
     </BoardContext.Provider>
   );
 }
@@ -353,12 +363,15 @@ function deviceName(): string {
 function OpenGuideOnStart() {
   const app = useApp();
   const board = useBoard();
+  const sess = useSession();
   const latest = useRef(app);
   latest.current = app;
   const started = useRef(false);
   const start = (chooseFirst: boolean) => {
     const now = latest.current;
     if (started.current || !now.profile.guide?.openOnStart) return;
+    // A tablet linked with a code is the child's: the guide of a set-up never opens there.
+    if (sess.account?.provider === 'device') return;
     started.current = true;
     now.update((d) => void (d.guide = { ...d.guide, openOnStart: false }));
     now.setOverlay(chooseFirst ? { kind: 'pin', then: { kind: 'guide' } } : { kind: 'guide' });

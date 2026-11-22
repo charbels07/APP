@@ -36,68 +36,102 @@ scenario of `supabase/tests/`, a line in `scripts/test-db.sh` and in `supabase/c
 
 ## Batch 1 — The child keeps their voice and their board (no database file)
 
-- [ ] **A "use only" tablet stops receiving the family's changes for good.** [ran, by two reviewers]
-  `src/state/profileSync.ts`: a refused save (`forbidden` / `core_protected`) sets `localOnly`, the copy
-  stays `dirty`; `pull()` returns into `push()` when dirty, `doPush` returns when `localOnly`, `open()`
-  only takes the server version when not dirty. Trigger is ordinary child use: `openTla` writes `lastTla`
-  into the profile (`src/state/AppState.tsx` ~615), ticking a schedule step (`ScheduleScreen.tsx` ~61),
-  closing the welcome card / opening the guide (`GuidePanel.tsx`). Same lock for level 1–2 members, after
-  two-step is turned on elsewhere, after a profile went to the bin and came back. Nothing ever clears
-  `localOnly`. Side effect: `boardSeen` lives in `pull()`, so the noon reminder goes out although the
-  child used the tablet.
-  **Decision (Q31):** these small things stay on each device and never travel (last activity board,
-  ticked steps / active sequence, welcome card and guide progress). And whatever the cause, a refused
-  save must never stop `pull()` / `open()` from taking the server's version; retry one push at each open.
-- [ ] **Any other refused save blocks that device's sync.** [ran] `doPush` rethrows everything except
-  offline / forbidden / core_protected: `consent_protected`, `too_large`, `invalid`, `too_many` leave the
-  state on "saving" for ever, and at restart `open()` awaits the failing push and the board shows an
-  error. Way in today: the code field of Settings → Code and data is shown to non-managers
-  (`CaregiverPanels.tsx` ~1439). Fix: hide that field unless `board.manager` or `ownCode`; on
-  `consent_protected` put the protected settings back from `base` and retry; never let a push block a pull.
-- [ ] **Errors that are not "no session" erase the children's copies.** [read; triggers plausible]
-  `currentAccount()` (`src/backend/supabase.ts` ~347) returns null for any `getUser` error that
-  `serverUnavailable` does not recognise; `Session.tsx` ~236 then runs `forgetEverything`. Reviewer also
-  reproduced: expired token + refresh answering 429 / 400 / an HTML 403 → auth-js removes the stored
-  session → same erase. Fix: null only for a clear "no session" (`AuthSessionMissingError`,
-  `session_not_found`, `user_not_found`); everything else is `offline`.
-- [ ] **A server error at start shows Welcome instead of the board.** [read] `fail()` (`supabase.ts` ~90)
-  only maps messages matching `/network|fetch/` to `offline`; 5xx / 429 / status 0 are not. Safari says
-  "Load failed" [plausible]. `route()` errors fall to Welcome (`Session.tsx` ~246). Fix: map status 0,
-  408, 429, ≥500 to `offline`; in `route()` fall back to the remembered or first local profile.
-- [ ] **Offline start only opens the board when `prefs.activeProfileId` is set.** [read] It is never set
-  for people who joined by invitation or took over a professional's profile (`Session.tsx` ~177, ~196).
-  Fix: save it when `route` picks a profile; fall back to `device.localProfiles[0]`.
-- [ ] **Offline start with an expired session: spinner for ~25 s.** [ran by reviewer] Race
-  `currentAccount()` against ~2 s when an account is remembered, open the local copy first, refresh behind.
-  `ProfileSync.open` also awaits `getProfile` (postgrest retries 1+2+4 s) before using the local copy.
-- [ ] **"Back" on the first step of "Add a child" signs out and erases.** [read]
-  `src/ui/onboarding/Onboarding.tsx` ~73, ~107, ~135: `hasBoard` is false until `listProfiles()` answers
-  (and stays false offline) → `sess.signOut()` → `forgetEverything`. Fix: Back returns to the board that
-  was open; never sign out from there.
-- [ ] **Opening a board erases a copy with unsent changes on `forbidden`.** [read] `profileSync.ts` ~91.
-  Keep a dirty copy (as `keepUnsent` does); erase only on a confirmed removal.
-- [ ] **A damaged board must still open (Q42).** [ran in part] `migrate` (`src/lib/storage.ts`) has no
-  shape pass: `tlaOrder` not a list throws; `schedules: 5`, a cell that is a string, an unknown `cls`
-  pass and crash at render; there is no error boundary. Fix: tolerant shape pass in `migrate`; an error
-  boundary around the board offering "Put back an earlier version" (today that button is inside the
-  board); keep an unreadable local copy under `caa.child.<id>.bad` instead of dropping it.
-  Also: `migrate` re-adds default boards the family deleted (`{...base.boards, ...p.boards}`), and should
-  append to `tlaOrder` any `kind:'tla'` board not listed.
-- [ ] **A tablet with no voice for the board's language is silent with no reason shown (Q35).** [read]
-  `NoVoiceWarning` only exists in Settings → Voice and the set-up. Add one notice for the adults when the
-  board opens on such a device (keep "empty voice list = unknown = show nothing").
-- [ ] **A recording that cannot be played stalls the sentence.** [read; iPad plausible] `playOne`
-  (`src/lib/speech.ts` ~72) has no error path and waits 15 s; `recordingTrim.web.ts` saves the raw `.webm`
-  when there is nothing to cut. Fix: always save WAV on web; on a load error or ~1.5 s without "loaded",
-  fall back to the device voice.
-- [ ] **Usage recording can mute a touch.** [plausible] `emit()` runs before the word is said
-  (`AppState.tsx` ~480) and `UsageTracker.open` trusts stored JSON. Wrap in try/catch.
-- [ ] **Help is always reachable (Q36, Q50).** Help (and only Help, from the bar) joins the switch scan
-  (`src/ui/Scanner.tsx`, `src/lib/scanning.ts`); it stays reachable under the child lock and when a page
-  covers the bar: the credits page is a full-screen `Modal` (`src/ui/PictoCredits.tsx` ~211), make it a
-  `Panel`. Update the `CLAUDE.md` line "The scan never covers the universal bar".
-- [ ] **Touch mode "as soon as it touches": a touch held 0.6 s says the word twice.** [read]
-  `src/ui/Grid.tsx` ~751: no `onLongPress` when `access === 'press'`.
+**Done on 22 November 2026** (one change, no database file). Checks: `npm run typecheck` clean, `npm test`
+518 passed, `npm run test:a11y` no violation (232 scans), and a real-browser run on the demo build (below). What was
+done differently from the text, or decided on the way, is written under each item.
+
+- [x] **A "use only" tablet stops receiving the family's changes for good.**
+  Done as decided (Q31). `src/lib/deviceOnly.ts`: the last activity board, the sequence shown and its ticked
+  steps, the welcome card and the guide's progress are left out of what is sent (`travelling`), put back on
+  what is received (`withDeviceThings`), and a change of these alone sends nothing. `src/state/profileSync.ts`
+  rewritten: a refused save (any reason) keeps the changes on the device and never stops `pull` / `open`;
+  theirs is taken, ours put back on top; one new try at each opening, when the server's version moves, and
+  every half hour while the board stays open.
+  A copy an older version left "to send, refused" is unlocked at the next opening. "The board was opened
+  today" is said whatever waits. Tests: `syncNeverBlocked.test.ts`.
+  *On the way:* a new device starts from what the account holds; when the account holds nothing about the
+  welcome card it counts as "seen" (otherwise every newly linked tablet would show it again). The first
+  save after this version removes these things from the server copy: nothing to run.
+- [x] **Any other refused save blocks that device's sync.** Done. `push` never throws; `too_many` waits
+  like a lost connection; `consent_protected` puts the family's choices (recording, sharing, code) back as
+  the server has them and sends the rest; everything else is the state "kept on this device: the account
+  did not accept them" (three languages). The code field of Settings → Code and data is shown only to
+  a manager, to a professional for her own code, or on a board without an account.
+- [x] **Errors that are not "no session" erase the children's copies.** Done. `noSession` in
+  `src/backend/supabase.ts`; everything else is `offline`. *More than the text:* the login library erases
+  the stored session itself when a renewal is refused by anything but a network error, so the erase
+  happened one start later; `keepSessionFetch` turns such an answer (429, an HTML page, an unknown refusal)
+  into "the server cannot answer now", and the session stays. Tests: `serverDown.test.ts`.
+- [x] **A server error at start shows Welcome instead of the board.** Done. Status 0 / 408 / 429 / 5xx
+  are `offline` (and Safari's "Load failed"); `route()` opens the board kept on the device on any failure.
+- [x] **Offline start only opens the board when `prefs.activeProfileId` is set.** Done. The device
+  remembers the board that was open (`lastProfile`), `route` saves the chosen child with the account, and
+  `localBoard` falls back to the first copy kept.
+- [x] **Offline start with an expired session: spinner for ~25 s.** Done. `whoIsSignedIn` waits 2 s when
+  the device remembers an account, then opens the board from the device and handles the server's answer
+  when it comes; `ProfileSync.open` no longer waits for the server when a copy exists (2.5 s at most,
+  0.3 s when the start was already offline).
+- [x] **"Back" on the first step of "Add a child" signs out and erases.** Done. The set-up remembers
+  where it was opened from (`onboarding.back`: the board, or the invitations page) and returns there;
+  a failed request never signs out. Only an account with no child at all leaves the app from there.
+- [x] **Opening a board erases a copy with unsent changes on `forbidden`.** Done, and wider than the
+  text: any copy, with or without unsent changes, is erased (and the board closed) only when the removal
+  is certain: someone is signed in, the two-step code is not what is missing, and the child is neither
+  among the account's children nor in its bin (`removed`). Otherwise the copy stays the board ("forbidden"
+  is also what the database answers when the login server could not renew the session just then).
+- [x] **A damaged board must still open (Q42).** Done. `src/lib/profileShape.ts` + `migrate`: every part
+  gets the shape the screens expect, what is sound is returned untouched, no word moves
+  (`damagedBoard.test.ts`, and the core-layout fixture still passes). `BoardRescue` around the board:
+  "Try again" and, for managers, the earlier versions. An unreadable device copy is kept under
+  `caa.child.<id>.bad`. Default boards the family deleted are no longer added back; a family-made
+  activity board missing from the list is put back at the end.
+  *On the way:* a starting activity board that is present but not in the list is left out of the list (an
+  older version had added deleted ones back into the saved profiles: listing them would bring them back).
+  Found while testing in the browser: a card whose word is named like a part of every JavaScript object
+  ("toString") made the board fail; such names are no longer accepted as ids.
+- [x] **A tablet with no voice for the board's language is silent with no reason shown (Q35).** Done.
+  One line above the board, closed with its cross, back at the next opening until a voice is installed
+  (`NoVoiceNotice`). An empty voice list still shows nothing.
+- [x] **A recording that cannot be played stalls the sentence.** Done. An error, or nothing loaded after
+  1.5 s: the device's voice says the word (`playOne` in `src/lib/speech.ts`, `speechFallback.test.ts`).
+  The browser always saves a WAV. **Not tried on an iPad** (hand-test list of batch 6).
+- [x] **Usage recording can mute a touch.** Done. The call is inside try / catch, the recorder too, and
+  the stored days are only taken back when they have the expected shape.
+- [x] **Help is always reachable (Q36, Q50).** Done. Help is the last step of the switch scan (after the
+  board's last row; lit on the bar; its name said by the spoken preview). The credits page is now a panel
+  of the board, beside the bar, over the panel it was opened from (which keeps its unsaved changes); any
+  other panel that opens, Help above all, takes its place. Outside a board it keeps its own window.
+  The child lock was checked by reading: it never hid Help. The scan still pauses on the Schedule page and
+  under panels (not asked).
+- [x] **Touch mode "as soon as it touches": a touch held 0.6 s says the word twice.** Done.
+
+Also done here because the code was being rewritten: batch 5's "Short race: `onRemote` is called after
+`await writeNow()`" (the board is now told before the write).
+
+Tried in a real browser (demo build, Chromium, 1180 × 900): the no-voice line and its cross; opening an
+activity board and ticking a step leave nothing to send and the server copy untouched; the credits panel
+beside the bar, Help answering over it; "Back" from "Add a child"; a board damaged in six ways opens with
+its activity boards, schedule and Help; the scan lights Help and the switch opens it; a touch held one
+second adds the word once; the rescue page with "Try again" and the earlier versions; an accessibility
+scan of the three new screens (the no-voice line, the credits panel, the rescue page): no rule broken.
+
+Left for the owner's hand-test list (batch 6): a "use only" tablet receiving a new word while the child
+uses it; start without internet on a tablet (the board within a few seconds); a browser-made recording
+played on an iPad; a tablet without an Arabic voice showing the line.
+
+An independent review of the sync and start-up code found seven faults in the first version of this
+batch, all corrected before it went live: a copy left by another account on the same device could have
+been opened for the person signed in (the copies kept on a device now belong to one account:
+`localOwner`); a session the login server could not renew made the database answer "forbidden" and the
+clean copy was erased (see above); in a browser a recording that cannot be played was still silent (the
+browser says "playing" before it has read anything); a step left ticked on the server by an older version
+made a change of that sequence count as a collision; a newer version taken in the instant before the
+board listens was not shown; the guide of a set-up could open on a newly linked tablet (never there now);
+a login-server error such as "the confirmation e-mail could not be sent" was shown as "no internet".
+
+Seen on the way, not changed (not in this batch): a member whose access is removed while the board is
+open keeps it on screen until the app is opened again (`pull` ignores "forbidden"); worth a line in
+batch 4 or 5.
 
 ## Batch 2 — What a child can reach (no database file)
 
@@ -248,7 +282,7 @@ scenario of `supabase/tests/`, a line in `scripts/test-db.sh` and in `supabase/c
 - [ ] Storage write failures are swallowed (`.catch(() => {})` in profileSync, usageTracker,
   productCounters, mediaSync): show "this device is full", drop uploaded usage days first; add
   `tx.onabort` in `media.web.ts`.
-- [ ] Short race: `onRemote` is called after `await writeNow()` (`profileSync.ts` ~223, ~192).
+- [x] Short race: `onRemote` is called after `await writeNow()` (`profileSync.ts` ~223, ~192). Done with batch 1.
 - [ ] The notification subscription survives every sign-out except the button (`Session.tsx` ~229).
 
 ## Batch 6 — Texts and documents

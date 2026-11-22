@@ -750,7 +750,9 @@ export const CellView = React.memo(function CellView(p: CellProps) {
         // tap counted in a browser (without one, a tap shorter than its press delay is not reported).
         onPress={land ? NOOP : !p.access || p.access === 'release' ? () => p.onPress(p.index) : undefined}
         onPressIn={land ? () => p.onLandIn?.(p.index) : p.access === 'press' ? () => p.onPress(p.index) : undefined}
-        onLongPress={land ? undefined : p.access === 'hold' ? () => p.onPress(p.index) : p.onLongPress ? () => p.onLongPress!(p.index) : undefined}
+        // "As soon as it touches": the word was said when the finger landed; a finger that stays
+        // (a slow release) must not say it a second time, nor open a folder's preview over the folder.
+        onLongPress={land || p.access === 'press' ? undefined : p.access === 'hold' ? () => p.onPress(p.index) : p.onLongPress ? () => p.onLongPress!(p.index) : undefined}
         delayLongPress={p.access === 'hold' ? p.holdMs ?? 1000 : 600}
         onPressOut={land ? () => p.onLandOut?.(p.index) : p.onPressOut ? () => p.onPressOut!(p.index) : undefined}
         pressRetentionOffset={land ? FAR : undefined}

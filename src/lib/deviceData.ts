@@ -47,7 +47,7 @@ async function eraseReceived(mediaKeys: string[]): Promise<void> {
 export async function forgetChild(profileId: string): Promise<void> {
   gone.add(profileId);
   await eraseReceived([`caa.media.${profileId}`]);
-  await AsyncStorage.multiRemove([`caa.child.${profileId}`, `caa.usage.${profileId}`, `caa.product.${profileId}`, `caa.media.${profileId}`]).catch(() => {});
+  await AsyncStorage.multiRemove([`caa.child.${profileId}`, `caa.child.${profileId}.bad`, `caa.usage.${profileId}`, `caa.product.${profileId}`, `caa.media.${profileId}`]).catch(() => {});
 }
 
 const CHILD_DATA = /^caa\.(child|usage|product|media|onboarding)\./;

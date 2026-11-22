@@ -131,8 +131,17 @@ export function Onboarding() {
     if (stepId === 'data' && !pro && !a.consent) return setError(consentText[uiLang].needed);
     goto(draft.step + 1);
   };
-  // Leaving at the first step: back to the workspace (professional), to the child already open, or out.
-  const leave = () => (pro ? sess.go({ name: 'pro' }) : hasBoard ? void sess.enter().catch(() => sess.signOut()) : void sess.signOut());
+  // Leaving at the first step: back to the workspace (professional) or to the screen "Add a child"
+  // was opened from (the board that was open: with or without internet, and never by signing
+  // out, which would erase that board from the device). Only an account that has no child at
+  // all leaves the app from here.
+  const cameFrom = sess.stage.name === 'onboarding' ? sess.stage.back : undefined;
+  const leave = () => {
+    if (pro) return sess.go({ name: 'pro' });
+    if (cameFrom) return sess.go(cameFrom);
+    if (hasBoard) return void sess.enter().catch((e) => setError(errorText(sess.s, e)));
+    void sess.signOut();
+  };
   const back = () => (draft.step === 0 ? leave() : goto(draft.step - 1));
 
   if (stepId === 'try') {

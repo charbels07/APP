@@ -680,12 +680,30 @@ or a lawyer. Database changes are six files dated 2026-11-18 (the owner runs the
 | Figures for the team, list 3 | "Seen" next to "used" for each feature (`useSeen`), the app version of each day, speed in five steps (start-up, sync, voice; `countSpeed`). Families are asked to agree again (`SHARE_TERMS` 3). Product page: "Seen, then used?", "Use by version"; Bugs page: "Speed". |
 | Documents | `docs/runbooks/` (release checklist, backup and restore, incident response, data breach, contingency and risk register), `docs/ACCESS-LIST.md`, `docs/ARCHITECTURE.md`, `docs/legal/` (drafts for the lawyer), store pages `public/support/` and `public/delete-account/`, `scripts/backup-offsite.sh`, `.github/` (Dependabot, checks on every change). |
 
+## Round 39 — The child keeps their voice and their board (22 November 2026)
+
+Batch 1 of the gap review (`docs/GAP-REVIEW-2026-11.md`): every place where a child could be left
+without their board or without a word being said. No database change.
+
+| What | How it was done |
+|---|---|
+| A tablet that may only use the board keeps receiving the family's changes | It used to stop for good: opening an activity board or ticking a step was sent like a change, refused, and nothing was received after. Now these small things stay on each device and are never sent (`src/lib/deviceOnly.ts`: last activity board, ticked steps and the sequence shown, welcome card, guide progress). And whatever the reason of a refusal, the device goes on receiving: theirs is taken, what could not be sent is put back on top and tried again when the board opens (`src/state/profileSync.ts`). |
+| A server that answers badly is not "signed out" | Only the login server's clear "this session / this account is no more" signs out and erases the children's copies (`noSession`). A server error, "too many requests", a time-out, a page from a network filter: "offline", the board stays. The login library is also kept from erasing its stored session on such an answer (`keepSessionFetch`). |
+| The board opens without waiting | A device that knows who is signed in waits 2 seconds for the server, then opens the board from its own copy and handles the answer when it comes (`whoIsSignedIn`). It opens the board that was open last, else the first one it keeps (`localBoard`): people who joined by invitation had none remembered. |
+| "Back" never erases | "Back" on the first step of "Add a child" returns to the board (or the invitations page) it was opened from. |
+| A damaged board still opens | `src/lib/profileShape.ts`: a saved profile whose part is not what the app expects (a list that is not a list, a card that is not a card, an unknown kind of word…) gets a safe value for that part only; no word moves. Around the board, a page "The board could not be shown" offers **Try again** and the earlier versions (`src/ui/BoardRescue.tsx`). A device copy that cannot be read is kept aside, not written over. An activity board the family deleted no longer comes back. |
+| A silent board says why | One line above the board when the device has no voice for the board's language, with where to install one (Settings → Voice). |
+| A recording that cannot be played | The device's voice says the word instead, at once on an error and after 1.5 seconds without sound (it waited 15 seconds, silent). The browser always saves recordings as WAV: every device can play them. |
+| Help within reach | Help is the last step of switch scanning (the only button of the bar in the scan). The pictogram credits no longer take the whole screen on a board: they open beside the bar. |
+| Small ones | "As soon as it touches": a finger that stays no longer says the word twice. The follow-up recorder can no longer stop a touch. The family's code field in Settings is shown only to who may choose the code. |
+| Tests | `syncNeverBlocked.test.ts` (23), `damagedBoard.test.ts` (17), `speechFallback.test.ts` (11), `sessionStart.test.ts` (13), `serverDown.test.ts` (15), three more in `scanning.test.ts`. A browser run on the demo build: 20 checks, three of them accessibility scans of the new screens (see the review file). |
+
 ## How everything is checked
 
 | Check | What it does |
 |---|---|
 | `npm run typecheck` | TypeScript reads the whole code and refuses mistakes such as a missing field or a wrong type. |
-| `npm test` | 437 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office, colour contrast. |
+| `npm test` | 518 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office, colour contrast. |
 | `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger, a tablet and a member of our team; then every attack found by the security review, which must fail; then a professional who prepares a profile and hands it to the parents; then the e-mails to the team; then the figures for the team, the problems and the votes; then the second round of 18 November (two-step sign-in, fresh proofs, the purge queue, the bin and the copies, consent, retention, sealed sentences, photos and recordings); 318 checks. The same runs on GitHub at every change. |
 | `npm run test:live` | The same story on a second, empty Supabase project (never the one families use), through the app's own code: 13 steps, including devices, history undo, invitation codes, revisions and materials (needs "Confirm email" off while it runs). Last full run: before the back office (all 13 passed); **to run again once the back-office migration is on the real project**. |
 | `npm run test:a11y` | Accessibility: 232 scans of 64 screens against WCAG 2.2 AA (four sizes, Arabic), then a keyboard-only run. Last run: 0 rule break. |

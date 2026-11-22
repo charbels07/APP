@@ -4,7 +4,8 @@
  * are here, pure and tested; the screen part is src/ui/Scanner.tsx.
  *
  * What is scanned is a list of rows, in the order seen on screen: the sentence's buttons when
- * they can be used (Back in a folder, Speak, Delete), then each row of cards of the board.
+ * they can be used (Back in a folder, Speak, Delete), then each row of cards of the board, then
+ * Help (the one button of the universal bar in the scan: `HELP_ID`).
  * - "Row, then card" (big boards): a whole row is lit; the switch enters it, then its cards are
  *   lit one by one. Not chosen after its turns, the row is left (the rows are lit again).
  * - "Card by card" (small boards): every item one after the other.
@@ -148,6 +149,9 @@ export function screenAction(x: number, width: number, mode: ScanMode): SwitchAc
   if (mode !== 'step') return 'choose';
   return x < width / 2 ? 'next' : 'choose';
 }
+
+/** The Help button of the universal bar: the only button of the bar in the scan, after the board's last row. */
+export const HELP_ID = 'a:help';
 
 /** A card of the board in the scan: `c:` and its index in the board. */
 export const cardId = (index: number) => `c:${index}`;

@@ -26,6 +26,8 @@ import { SymbolView } from './SymbolView';
 import { C, radius } from './theme';
 import { TimerCard } from './TimerCard';
 import { UniversalBar } from './UniversalBar';
+import { NoVoiceNotice } from './VoiceCheck';
+import { CreditsHost, PictoCreditsPanel, type CreditsPage } from './PictoCredits';
 import { linkTarget } from '../lib/safety';
 import { AccessProvider } from '../state/access';
 import { Scanner } from './Scanner';
@@ -38,6 +40,11 @@ export function Root({ banner }: { banner?: React.ReactNode } = {}) {
   const landscape = width >= height && width >= 700;
   const currentBoard = useCurrentBoard();
   const compact = width < 700 || height < 600;
+  // The pictogram credits, opened from a panel (Settings → About, the guide): drawn here, over
+  // that panel and beside the bar. Any other panel that opens (Help above all) takes its place.
+  const [credits, setCredits] = useState<CreditsPage | null>(null);
+  const overlayKind = overlay?.kind;
+  useEffect(() => setCredits(null), [overlayKind]);
 
   const content = (
     <View style={styles.content} role="main">
@@ -56,6 +63,7 @@ export function Root({ banner }: { banner?: React.ReactNode } = {}) {
       {overlay?.kind === 'peek' && <FolderPeek folder={overlay.folder} />}
       {!banner && !overlay && !profile.guide?.seen && !editMode && !app.playing && !app.recording && <WelcomeCard />}
       <CaregiverOverlay />
+      {credits && <PictoCreditsPanel {...credits} onClose={() => setCredits(null)} />}
     </View>
   );
 
@@ -116,6 +124,8 @@ export function Root({ banner }: { banner?: React.ReactNode } = {}) {
       )}
       {editMode && app.selection && <SelectionBar />}
       {banner}
+      {/* A board that cannot speak says why (no voice on this device for the board's language). */}
+      <NoVoiceNotice lang={profile.settings.lang} uiLang={profile.settings.uiLang} closeLabel={t.close} />
       <SentenceStrip compact={compact} />
       {profile.settings.quickZone && <QuickZone />}
       {/* Docked above the board: the board shrinks a little, nothing is covered. */}
@@ -128,19 +138,21 @@ export function Root({ banner }: { banner?: React.ReactNode } = {}) {
 
   return (
     <AccessProvider>
-      <SafeAreaView style={styles.root} edges={['top', 'bottom', 'left', 'right']}>
-        {landscape ? (
-          <View style={{ flex: 1, flexDirection: 'row' }}>
-            <UniversalBar vertical />
-            {main}
-          </View>
-        ) : (
-          <View style={{ flex: 1 }}>
-            {main}
-            <UniversalBar vertical={false} />
-          </View>
-        )}
-      </SafeAreaView>
+      <CreditsHost.Provider value={setCredits}>
+        <SafeAreaView style={styles.root} edges={['top', 'bottom', 'left', 'right']}>
+          {landscape ? (
+            <View style={{ flex: 1, flexDirection: 'row' }}>
+              <UniversalBar vertical />
+              {main}
+            </View>
+          ) : (
+            <View style={{ flex: 1 }}>
+              {main}
+              <UniversalBar vertical={false} />
+            </View>
+          )}
+        </SafeAreaView>
+      </CreditsHost.Provider>
     </AccessProvider>
   );
 }

@@ -4,8 +4,9 @@ import { useApp } from '../state/AppState';
 import { useBoard } from '../state/BoardContext';
 import { adminStrings } from '../i18n/admin';
 import { useSession } from '../state/Session';
-import { useDwellTarget, useRestMs } from '../state/access';
-import { DwellFill } from './AccessMarks';
+import { HELP_ID } from '../lib/scanning';
+import { useDwellTarget, useRestMs, useScanned } from '../state/access';
+import { DwellFill, ScanRing } from './AccessMarks';
 import { Icon, type IconName } from './Icon';
 import { useSeen } from './Seen';
 import { C } from './theme';
@@ -158,6 +159,8 @@ function BarButton({
   iconsOnly?: boolean;
 }) {
   const rest = useDwellTarget(`bar:${id}`, useRestMs(), onPress);
+  // Switch scanning: Help is the one button of the bar it lights (src/lib/scanning.ts).
+  const lit = useScanned(id === 'help' ? HELP_ID : '');
   const toneBg = tone === 'help' ? C.help : undefined;
   const iconSize = size === 'priority' ? 38 : size === 'priorityRow' ? 30 : size === 'main' ? 28 : 22;
   return (
@@ -197,6 +200,7 @@ function BarButton({
         </Text>
       )}
       {rest.active && <DwellFill ms={rest.ms} radius={12} />}
+      {lit && <ScanRing radius={size === 'priority' ? 16 : 14} />}
     </Pressable>
   );
 }

@@ -36,7 +36,8 @@ export type Stage =
   | { name: 'auth'; mode: 'signUp' | 'signIn' | 'forgot'; role: Role }
   | { name: 'pair' }
   | { name: 'invitations' }
-  | { name: 'onboarding' }
+  /** `back`: the screen "Add a child" was opened from (a board, the invitations): where its first "Back" returns. */
+  | { name: 'onboarding'; back?: { name: 'board'; profileId: string } | { name: 'invitations' } }
   | { name: 'board'; profileId: string }
   /** The professional workspace; `open`: the child to show first (a profile just created). */
   | { name: 'pro'; open?: string }
@@ -55,8 +56,63 @@ interface DevicePrefs {
   account?: Account;
   /** Children whose copy is kept on this device (removed at sign-out). */
   localProfiles?: string[];
+  /** The account these copies (and `lastProfile`) belong to: never opened for another account. */
+  localOwner?: string;
   /** Child lock on this device only (the parent's phone stays free). */
   childLock?: boolean;
+  /** The child whose board was open last on this device: opened again when the server cannot answer. */
+  lastProfile?: string;
+}
+
+/**
+ * The board this device can open by itself (no internet, a server that cannot answer): the one
+ * that was open last, else the account's, else the first child it keeps a copy of.
+ */
+export function localBoard(d: Pick<DevicePrefs, 'localProfiles' | 'lastProfile' | 'localOwner' | 'account'> | null, a: Account): string | undefined {
+  // What this device keeps was left by one account: a copy that waits for another account
+  // (its session ended with changes not sent) is never the board of the person signed in now.
+  const mine = !!d && (d.localOwner ?? d.account?.id) === a.id;
+  const kept = mine ? (d?.localProfiles ?? []) : [];
+  const wanted = [mine ? d?.lastProfile : undefined, a.prefs.activeProfileId].filter((id): id is string => !!id);
+  return wanted.find((id) => kept.includes(id)) ?? kept[0] ?? wanted[0];
+}
+
+/** How long the start waits for the server when this device already knows who is signed in. */
+const START_WAIT = 2000;
+
+/**
+ * Who is signed in, at the start of the app. `account: null` with `unknown: false` is the only
+ * answer that means "nobody" (the server said so clearly). When the server cannot be asked, or
+ * is slow while this device remembers an account (without internet the login library alone
+ * tries for some 25 seconds), the remembered account is used at once (`unknown`), and `later`
+ * gives the server's answer when it comes.
+ */
+export async function whoIsSignedIn(
+  api: Pick<Backend, 'currentAccount'>,
+  remembered: Account | undefined,
+  wait = START_WAIT,
+): Promise<{ account: Account | null; unknown: boolean; later?: Promise<Account | null> }> {
+  const asking = api.currentAccount();
+  if (!remembered) {
+    try {
+      return { account: await asking, unknown: false };
+    } catch {
+      return { account: null, unknown: true };
+    }
+  }
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const slow = new Promise<'slow'>((yes) => {
+    timer = setTimeout(() => yes('slow'), wait);
+  });
+  try {
+    const first = await Promise.race([asking, slow]);
+    if (first === 'slow') return { account: remembered, unknown: true, later: asking };
+    return { account: first, unknown: false };
+  } catch {
+    return { account: remembered, unknown: true };
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 interface SessionCtx {
@@ -175,7 +231,20 @@ export function SessionProvider({ children, api = backend() }: { children: React
       try {
         const list = await api.listProfiles();
         const active = list.find((p) => p.id === a.prefs.activeProfileId) ?? list[0];
-        if (active) return setStage({ name: 'board', profileId: active.id });
+        if (active) {
+          // Remembered with the account (someone who joined by invitation never chose a child
+          // herself): the same board opens next time, with or without internet.
+          if (a.prefs.activeProfileId !== active.id) {
+            void api
+              .updateAccount({ prefs: { activeProfileId: active.id } })
+              .then((u) => {
+                setAccount(u);
+                saveDevice({ account: u });
+              })
+              .catch(() => {});
+          }
+          return setStage({ name: 'board', profileId: active.id });
+        }
         // A member of the app's team opening the app: no questions, a ready-made test profile is
         // created once (it can be renamed or deleted in Settings → Account like any other).
         if (admin) {
@@ -192,15 +261,24 @@ export function SessionProvider({ children, api = backend() }: { children: React
         const { received } = await api.myInvitations().catch(() => ({ received: [] as { status: string }[] }));
         setStage(received.some((i) => i.status === 'pending') ? { name: 'invitations' } : { name: 'onboarding' });
       } catch (e) {
-        // Without internet: the child that was open last time, from this device's copy.
-        if (e instanceof BackendError && e.code === 'offline' && a.prefs.activeProfileId) {
-          setOffline(true);
-          setStage({ name: 'board', profileId: a.prefs.activeProfileId });
-        } else throw e;
+        // The server did not answer (no internet, a server error, anything else): the child's
+        // board from this device's copy, never the welcome page while a board is kept here.
+        const id = localBoard(deviceRef.current, a);
+        if (!id) throw e;
+        setOffline(true);
+        setStage({ name: 'board', profileId: id });
       }
     },
-    [api],
+    [api, saveDevice],
   );
+
+  // The board on screen is the one this device opens again by itself.
+  useEffect(() => {
+    const d = deviceRef.current;
+    if (stage.name !== 'board' || !d || !account) return;
+    if (d.lastProfile !== stage.profileId || d.localOwner !== account.id)
+      saveDevice({ lastProfile: stage.profileId, localOwner: account.id, ...(d.localOwner && d.localOwner !== account.id ? { localProfiles: [] } : {}) });
+  }, [stage, account, saveDevice]);
 
   // Start: what this device remembers, then who is signed in.
   useEffect(() => {
@@ -208,19 +286,20 @@ export function SessionProvider({ children, api = backend() }: { children: React
       const d = await readDevice();
       deviceRef.current = d;
       setDevice(d);
-      let a: Account | null = null;
+      /** Nobody is signed in any more, and no sign-out happened here (ended elsewhere, account deleted). */
+      const ended = async () => {
+        // What the last account left on this device goes, except a board whose changes were never sent.
+        await forgetEverything({ keepUnsent: true });
+        const was = deviceRef.current;
+        if (was?.account) saveDevice({ account: undefined, lastProfile: undefined, localOwner: was.localOwner ?? was.account.id });
+        setAccount(null);
+        setStage({ name: 'welcome' });
+      };
       // `null` only when the server said clearly that nobody is signed in. Any failure to ask
-      // (no internet, server down) keeps the last account: the child's board must stay on the device.
-      let unknown = false;
-      try {
-        a = await api.currentAccount();
-      } catch {
-        unknown = true;
-        if (d.account) {
-          setOffline(true);
-          a = d.account;
-        }
-      }
+      // (no internet, server down, a server that is slow) keeps the last account: the child's
+      // board must stay on the device, and must not wait.
+      const { account: a, unknown, later } = await whoIsSignedIn(api, d.account);
+      if (unknown && a) setOffline(true);
       // Nothing known and nothing remembered: the welcome page, without erasing anything.
       if (!a && unknown) return setStage({ name: 'welcome' });
       const kept = await keepSignedIn();
@@ -230,20 +309,36 @@ export function SessionProvider({ children, api = backend() }: { children: React
       if (a && a.provider !== 'device' && !kept && !sameVisit()) {
         await forgetEverything({ beforeSignOut: true });
         await api.signOut().catch(() => {});
-        saveDevice({ account: undefined, localProfiles: [] });
+        saveDevice({ account: undefined, localProfiles: [], lastProfile: undefined });
         return setStage({ name: 'welcome' });
       }
-      if (!a) {
-        // No session any more without a sign-out here (ended elsewhere, expired): what the last
-        // account left on this device goes, except a board whose changes were never sent.
-        await forgetEverything({ keepUnsent: true });
-        if (d.account) saveDevice({ account: undefined });
-        return setStage({ name: 'welcome' });
-      }
+      if (!a) return ended();
       markVisit();
       setAccount(a);
       saveDevice({ account: a });
-      await route(a).catch(() => setStage({ name: 'welcome' }));
+      if (!unknown) return route(a).catch(() => setStage({ name: 'welcome' }));
+      // The server has not answered: straight to what this device keeps, without the questions
+      // that would each wait for it.
+      const id = a.role === 'pro' ? undefined : localBoard(d, a);
+      if (a.role === 'pro') setStage({ name: 'pro' });
+      else if (id) setStage({ name: 'board', profileId: id });
+      else await route(a).catch(() => setStage({ name: 'welcome' }));
+      // Its answer, when it comes: the account as it is now, or the end of a session that is no more.
+      if (later) {
+        void later.then(
+          async (real) => {
+            if (!real) return ended();
+            setAccount(real);
+            saveDevice({ account: real });
+            setOffline(false);
+            if (real.provider === 'device') return;
+            const sec = await api.security().catch(() => null);
+            setSecurity(sec);
+            setIsAdmin(sec ? sec.team : await api.isAdmin().catch(() => false));
+          },
+          () => {},
+        );
+      }
     })();
   }, [api, route, saveDevice]);
 
@@ -275,7 +370,7 @@ export function SessionProvider({ children, api = backend() }: { children: React
     // This device stops receiving this person's notifications.
     await turnPushOff(api).catch(() => {});
     await api.signOut().catch(() => {});
-    saveDevice({ account: undefined, localProfiles: [] });
+    saveDevice({ account: undefined, localProfiles: [], lastProfile: undefined });
     setAccount(null);
     setIsAdmin(false);
     setSecurity(null);
@@ -333,10 +428,13 @@ export function SessionProvider({ children, api = backend() }: { children: React
 
   const rememberLocal = useCallback(
     (id: string) => {
-      const list = deviceRef.current?.localProfiles ?? [];
-      if (!list.includes(id)) saveDevice({ localProfiles: [...list, id] });
+      const d = deviceRef.current;
+      const owner = account?.id ?? d?.localOwner;
+      // Copies left by another account are not this account's.
+      const list = d?.localOwner && owner && d.localOwner !== owner ? [] : (d?.localProfiles ?? []);
+      if (!list.includes(id) || d?.localOwner !== owner) saveDevice({ localProfiles: list.includes(id) ? list : [...list, id], localOwner: owner });
     },
-    [saveDevice],
+    [saveDevice, account],
   );
 
   const setChildLock = useCallback((on: boolean) => saveDevice({ childLock: on }), [saveDevice]);

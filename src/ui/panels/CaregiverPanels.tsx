@@ -1436,8 +1436,14 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
       </Group>
 
       <Group title={t.gCodeData} icon="shield">
-        <Field label={app.ownCode ? t.sPinOwn : t.sPin} value={pin} keyboardType="number-pad" maxLength={4} onChangeText={(v) => setPin(v.replace(/\D/g, ''))} />
-        {!draft.pinOk && <Text style={s.note}>{pin.length === 4 ? t.pinTooEasy : t.sPinFour}</Text>}
+        {/* The family's code is chosen by those who decide for the child (the server refuses it from
+            anyone else); a professional changes her own code; without an account the board is one's own. */}
+        {(!board || board.manager || !!app.ownCode) && (
+          <>
+            <Field label={app.ownCode ? t.sPinOwn : t.sPin} value={pin} keyboardType="number-pad" maxLength={4} onChangeText={(v) => setPin(v.replace(/\D/g, ''))} />
+            {!draft.pinOk && <Text style={s.note}>{pin.length === 4 ? t.pinTooEasy : t.sPinFour}</Text>}
+          </>
+        )}
         {app.ownCode && <Text style={s.note}>{t.sPinOwnNote}</Text>}
         <Toggle label={t.sAi} note={t.sAiNote} value={st.aiSuggestions !== false} onChange={(v) => set((x) => void (x.aiSuggestions = v))} />
         <View style={s.wrapRow}>

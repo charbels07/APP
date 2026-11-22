@@ -167,11 +167,11 @@ describe('profile sync: device copy + server', () => {
     await api.redeemPairingCode(code, { id: 'tab-1', name: 'Tablette', platform: 'ios' });
     const sync = await ProfileSync.open(api, id, { pushDelay: 0 });
     const p = structuredClone(sync.copy.data);
-    p.lastTla = 'tla_park';
+    p.settings.speechRate = 0.6;
     sync.change(p);
     await sync.flush();
     expect(sync.state).toBe('local');
-    expect((await readLocal(id))?.data.lastTla).toBe('tla_park');
+    expect((await readLocal(id))?.data.settings.speechRate).toBe(0.6);
   });
 
   it('a removed collaborator loses the device copy too', async () => {

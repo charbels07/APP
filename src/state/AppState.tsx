@@ -461,7 +461,12 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
   const editModeRef = useRef(false);
   const emit = useCallback((e: UsageEvent) => {
     if (playingRef.current || recordRef.current || editModeRef.current) return;
-    usageRef.current?.(e);
+    // Called before the word is said: recording must never be able to stop a touch.
+    try {
+      usageRef.current?.(e);
+    } catch {
+      /* the word is said all the same */
+    }
   }, []);
 
   /** Same pictogram pressed again too soon: ignored (Settings → delay between two presses). */

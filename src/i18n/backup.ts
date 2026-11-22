@@ -34,6 +34,10 @@ const fr = {
   none: 'Pas encore de copie : la première est gardée au prochain changement.',
   historyRestore: (date: string) => `Tableau remis comme il était le ${date}`,
   failed: 'Cela n’a pas marché. Vérifiez la connexion internet et réessayez.',
+  rescueTitle: 'Le tableau n’a pas pu s’afficher',
+  rescueNote: 'Rien n’est effacé. Réessayez d’abord. Si cela recommence, une version précédente du tableau peut être remise, puis « Réessayer ».',
+  rescueRetry: 'Réessayer',
+  rescueAsk: 'Si cela recommence, demandez à un parent de remettre une version précédente du tableau (Réglages → Compte).',
   deleteToBin: 'Supprimer',
   deleteProfileNote: 'Le profil va dans la corbeille, pour toute l’équipe et sur tous les appareils : vous pouvez le remettre pendant 30 jours, puis il est effacé définitivement avec ses photos et enregistrements. Tapez le prénom pour confirmer :',
 };
@@ -69,6 +73,10 @@ const en: Dict = {
   none: 'No copy yet: the first one is kept at the next change.',
   historyRestore: (date) => `Board put back as it was on ${date}`,
   failed: 'It did not work. Check the internet connection and try again.',
+  rescueTitle: 'The board could not be shown',
+  rescueNote: 'Nothing is erased. Try again first. If it happens again, an earlier version of the board can be put back, then “Try again”.',
+  rescueRetry: 'Try again',
+  rescueAsk: 'If it happens again, ask a parent to put back an earlier version of the board (Settings → Account).',
   deleteToBin: 'Delete',
   deleteProfileNote: 'The profile goes to the bin, for the whole team and on every device: you can put it back for 30 days, then it is erased for good with its photos and recordings. Type the first name to confirm:',
 };
@@ -102,6 +110,10 @@ const ar: Dict = {
   none: 'لا توجد نسخة بعد: تُحفظ الأولى عند التغيير التالي.',
   historyRestore: (date) => `أُعيدت اللوحة كما كانت في ${date}`,
   failed: 'لم ينجح ذلك. تحقّق من الاتصال بالإنترنت وحاول مجددًا.',
+  rescueTitle: 'تعذّر عرض اللوحة',
+  rescueNote: 'لم يُمحَ شيء. حاول مجددًا أولًا. إذا تكرّر ذلك، يمكن إعادة نسخة سابقة من اللوحة ثم «حاول مجددًا».',
+  rescueRetry: 'حاول مجددًا',
+  rescueAsk: 'إذا تكرّر ذلك، اطلب من أحد الوالدين إعادة نسخة سابقة من اللوحة (الإعدادات ← الحساب).',
   deleteToBin: 'حذف',
   deleteProfileNote: 'ينتقل الملف إلى سلة المحذوفات لكل الفريق وعلى كل الأجهزة: يمكنك إعادته خلال 30 يومًا، ثم يُمحى نهائيًا مع صوره وتسجيلاته. اكتب الاسم للتأكيد:',
 };

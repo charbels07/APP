@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { pictoCreditLine } from '../data/pictoCredit';
 import { PICTO_BUILT, PICTO_LIBRARIES, PICTO_LICENSE_TEXTS, PICTO_TOTAL, PICTO_WORDS_SOURCE, type PictoLibraryInfo } from '../data/pictoLibraries';
 import type { UiLang } from '../model/types';
+import { Panel } from './common';
 import { Icon } from './Icon';
 import { C, radius } from './theme';
 
@@ -177,14 +178,42 @@ export function PictoCreditsBody({ lang }: { lang: UiLang }) {
   );
 }
 
+/** What the credits page needs to be drawn. */
+export interface CreditsPage {
+  lang: UiLang;
+  onLink?: (url: string) => void;
+}
+
+/**
+ * On a board, the credits page is drawn by the board itself, in its content area (`Root` gives
+ * this): the universal bar stays in reach beside it, Help above all, and the panel it was opened
+ * from stays as it was underneath. A page that took the whole screen hid the bar from the child.
+ * Outside a board (welcome page, professional workspace) there is no bar: `null`, own window.
+ */
+export const CreditsHost = createContext<((page: CreditsPage | null) => void) | null>(null);
+
+/** The credits as a panel of the board (see `CreditsHost`). */
+export function PictoCreditsPanel({ lang, onLink, onClose }: CreditsPage & { onClose: () => void }) {
+  const opener = useMemo(() => (onLink ? (url: string) => onLink(url) : open), [onLink]);
+  return (
+    <Panel title={T[lang].title} onClose={onClose} onBack={onClose} maxWidth={820}>
+      <LinkOpener.Provider value={opener}>
+        <PictoCreditsBody lang={lang} />
+      </LinkOpener.Provider>
+    </Panel>
+  );
+}
+
 /**
  * A short credit line and a button that opens the full page. `compact`: the button only
- * (welcome page). Usable anywhere, also outside the board (it brings its own window).
+ * (welcome page). Usable anywhere: on a board the page opens in the board's content area
+ * (`CreditsHost`), elsewhere in its own window.
  * `onLink`: on a page the child can reach (the guide), how a website opens on a tablet (after the
  * caregiver code: `openLink` of the board); the page closes first so the keypad is seen.
  */
 export function PictoCredit({ lang, compact = false, onLink }: { lang: UiLang; compact?: boolean; onLink?: (url: string) => void }) {
   const [shown, setShown] = useState(false);
+  const host = useContext(CreditsHost);
   const t = T[lang];
   const opener = useMemo(
     () =>
@@ -200,7 +229,7 @@ export function PictoCredit({ lang, compact = false, onLink }: { lang: UiLang; c
     <View style={{ gap: 6 }}>
       {!compact && <Text style={[st.muted, lang === 'ar' && st.rtl]}>{pictoCreditLine(lang)}</Text>}
       <Pressable
-        onPress={() => setShown(true)}
+        onPress={() => (host ? host({ lang, onLink }) : setShown(true))}
         accessibilityRole="button"
         accessibilityLabel={t.open}
         style={({ pressed }) => [st.openBtn, compact && { alignSelf: 'center' }, pressed && { opacity: 0.7 }]}
@@ -208,23 +237,25 @@ export function PictoCredit({ lang, compact = false, onLink }: { lang: UiLang; c
         <Icon name="shield" size={18} color={C.accent} />
         <Text style={st.openText}>{t.open}</Text>
       </Pressable>
-      <Modal visible={shown} animationType="slide" onRequestClose={() => setShown(false)} presentationStyle="pageSheet">
-        <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
-          <View style={st.header}>
-            <Text style={st.title} accessibilityRole="header">
-              {t.title}
-            </Text>
-            <Pressable onPress={() => setShown(false)} accessibilityRole="button" accessibilityLabel={t.close} style={st.close}>
-              <Icon name="x" size={24} />
-            </Pressable>
-          </View>
-          <ScrollView contentContainerStyle={st.body}>
-            <LinkOpener.Provider value={opener}>
-              <PictoCreditsBody lang={lang} />
-            </LinkOpener.Provider>
-          </ScrollView>
-        </SafeAreaView>
-      </Modal>
+      {!host && (
+        <Modal visible={shown} animationType="slide" onRequestClose={() => setShown(false)} presentationStyle="pageSheet">
+          <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
+            <View style={st.header}>
+              <Text style={st.title} accessibilityRole="header">
+                {t.title}
+              </Text>
+              <Pressable onPress={() => setShown(false)} accessibilityRole="button" accessibilityLabel={t.close} style={st.close}>
+                <Icon name="x" size={24} />
+              </Pressable>
+            </View>
+            <ScrollView contentContainerStyle={st.body}>
+              <LinkOpener.Provider value={opener}>
+                <PictoCreditsBody lang={lang} />
+              </LinkOpener.Provider>
+            </ScrollView>
+          </SafeAreaView>
+        </Modal>
+      )}
     </View>
   );
 }

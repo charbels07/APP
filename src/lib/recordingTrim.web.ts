@@ -1,10 +1,11 @@
 /**
  * Saving a recorded word without the silence around it (browser).
  * The recording is opened as sound, cut where the voice starts and stops, and saved again as a
- * small WAV file. If the browser cannot open it, the recording is kept as it was made.
+ * small WAV file (also when there is nothing to cut: every device can play a WAV file). Only if
+ * the browser cannot open its own recording is it kept as it was made.
  */
 import { saveMedia, saveMediaBytes } from './media';
-import { trimmedWav, type Level } from './trimSilence';
+import { recordingWav, type Level } from './trimSilence';
 
 type Ctor = new () => AudioContext;
 
@@ -31,7 +32,8 @@ async function channelsOf(uri: string): Promise<{ channels: Float32Array[]; rate
 export async function saveRecording(uri: string, _levels: Level[], _totalMs: number): Promise<string> {
   try {
     const sound = await channelsOf(uri);
-    const wav = sound && trimmedWav(sound.channels, sound.rate);
+    // Always a WAV file, cut or whole: the browser's own format (WebM) does not play on an iPad.
+    const wav = sound && recordingWav(sound.channels, sound.rate);
     if (wav) return await saveMediaBytes(wav, 'wav');
   } catch {
     /* not readable as sound here: kept as recorded */

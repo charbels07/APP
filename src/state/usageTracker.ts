@@ -104,7 +104,11 @@ export class UsageTracker {
     const t = new UsageTracker(api, profileId, deviceId, platform, level, now);
     try {
       const raw = await AsyncStorage.getItem(t.key);
-      if (raw) t.store = JSON.parse(raw);
+      // Only what has the expected shape is taken back (a damaged storage starts empty).
+      const kept = raw ? (JSON.parse(raw) as Partial<Stored> | null) : null;
+      if (kept && typeof kept === 'object' && kept.days && typeof kept.days === 'object' && !Array.isArray(kept.days)) {
+        t.store = { days: kept.days, pending: Array.isArray(kept.pending) ? kept.pending.filter((d) => typeof d === 'string') : [] };
+      }
     } catch {
       /* start empty */
     }
@@ -153,7 +157,25 @@ export class UsageTracker {
     this.lastAt = now;
   }
 
+  /**
+   * Called on every touch, before the word is said: whatever happens in here (a day kept in a
+   * shape this version does not know), the touch goes on and the child's word is said.
+   */
   record = (e: UsageEvent) => {
+    try {
+      this.note(e);
+    } catch {
+      // The day that could not be written is put aside: the next touch starts a clean one.
+      try {
+        delete this.store.days[dayOf(this.now())];
+        this.session = null;
+      } catch {
+        /* nothing more to do */
+      }
+    }
+  };
+
+  private note(e: UsageEvent) {
     if (!this.on()) return;
     const level = this.level();
     const day = this.today();
@@ -209,7 +231,7 @@ export class UsageTracker {
         break;
     }
     this.changed(day.day);
-  };
+  }
 
   /** No internet: the time is counted as offline use. */
   setOnline(online: boolean) {

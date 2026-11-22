@@ -120,12 +120,29 @@
 - A profile leaves a device through `src/lib/deviceData.ts` (`forgetEverything`, `forgetChild`), never
   by removing one storage key by hand. Photos and recordings are copied through the account (`src/state/mediaSync.ts`, pure part
   `src/lib/mediaPlan.ts`): same file name on every device and in `profile-media/<profile id>/<name>`; only names
-  that pass `isSyncable` travel or become paths. Sent by those who may change the board, received by the whole
+  that pass `isSyncable` travel or become paths. Sent by those who may change the board or propose words or
+  materials (a professional's draft board opens a send-only `MediaSync`, `fetch: false`), received by the whole
   team, photos shrunk before sending; it never blocks the board (waits and retries). Files received from the
   account leave the device with the child's copy (`forgetChild`, `forgetEverything`); files made on the device
-  stay at sign-out unless the person ticks erase. The database decides who sends, the kind, the size and the
-  quota (`20261118000300_media_sync.sql`, attacks in `supabase/tests/media_scenario.sql`); files of something
+  stay at sign-out only if the person unticks erase (ticked by default); after the account's list of children is
+  read, copies of children it no longer opens leave (`forgetOthers`, never one with unsent changes). The database
+  decides who sends, the kind, the size and the quota (`20261118000300_media_sync.sql`, `can_send_media` in
+  `20261122000200_gap_batch5.sql`, attacks in `media_scenario.sql` / `gap5_scenario.sql`); files of something
   erased are deleted by `caa-purge`; the demo server mirrors it (`LocalBackend.uploadMedia`).
+- Media: a file no board uses is kept 30 days (owner's decision, November 2026, gap review Q38): never delete a
+  photo or a recording at once when it is replaced or removed. On the device it goes through `eraseLater`
+  (`src/lib/mediaKeep.ts`, swept at board opening, never while a copy kept here uses it); in the account it leaves
+  only through the sweep of `afterList`, sent 30 days ago and absent from `media_in_use` (the profile, its earlier
+  versions, 30 days of history, the names a save stopped using in 30 days: `media_dropped`, waiting proposals),
+  which the storage rule checks again. Someone who may only propose sends 100 files / 20 MB per child a month. A database without
+  `media_in_use` means nothing is removed. A picture chosen from the app's library is kept as its key
+  (`pictoRef`: `{ kind: 'picto', key }`), never copied into the media store.
+- Merging (`src/lib/merge.ts`, used by `take`; gap review Q39): what belongs together (a move, a swap, a deletion
+  and its bin entry) is kept or dropped whole; a word is merged part by part (picture and link whole, recording and name per
+  language); a group partly there already is dropped too; `tlaOrder` merges as a list; demonstrations and the bin by id (`['demo', id]`, `['bin', id]` ops).
+  The board names what was not kept (`conflictNotKept`). Core cells never move in a merge.
+- A device that cannot write (full storage) says it in one line above the board (`DeviceFullNotice`,
+  `src/lib/deviceFull.ts`): storage writes go through `written(kind, …)`, never a bare `.catch(() => {})`.
 - Demo builds are asked for on purpose: `EXPO_PUBLIC_APP_MODE=demo` (a release build with no server
   address shows "not connected"). Web headers: `public/_headers` (a test checks the policy).
 - Caregiver code (rules in `src/lib/caregiverCode.ts`, tested): `settings.pin === '1234'` means "not chosen
@@ -369,7 +386,14 @@
   reaches goes through `launchApp` / `app.openLink` (`{ kind: 'pin', then: { kind: 'openLink' } }`, `linkNeedsCode`).
   Never call `Linking.openURL` / `openAppUrl` directly there; no switch turns this off (store rules for children's
   apps). The child lock still opens nothing; `freeEdit` and caregiver mode skip the code.
-- "Export for another AAC app (.obz)" sits next to the profile export; `obz.ts` uses the stored cells (never
+- "Export the board" (`src/lib/backupFile.ts`, gap review Q40): one `.caa.zip` with `board.json` and the photos and
+  recordings, never the caregiver code; its name survives any child's name (`backupFileName`). Importing it is
+  "a board from another caregiver" (set-up, Q41/Q49): it always arrives through `asReceived` (no code, no links,
+  no help contact, no demonstrations, no bin, none of the family's follow-up or sharing choices); beside it the
+  set-up says that the same family on another device signs in or links the tablet. "Reset" (`resetKeeping`)
+  asks the same proof as deleting (`checkFreshProof`), keeps the code, follow-up, sharing and languages, and the
+  old board's files stay 30 days.
+- "Export for another AAC app (.obz)" sits next to the board export; `obz.ts` uses the stored cells (never
   `compactPlaces`), folders get `load_board` and no `vocalization`, links never travel.
 - iOS permission sentences live in `ios.infoPlist` (English) and `locales/{fr,en,ar}.json`; plugins carry none; a
   change is made in the three languages (`permissionTexts.test.ts`). `NoVoiceWarning` treats an empty voice list

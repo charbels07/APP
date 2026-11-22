@@ -58,7 +58,7 @@ describe('profile sync: device copy + server', () => {
     theirs.settings.speechRate = 1.2;
     await api.saveProfile(id, theirs, other.version);
     let collided = 0;
-    mine.onConflict = (n) => (collided = n);
+    mine.onConflict = (n) => (collided = n.length);
     const p = structuredClone(mine.copy.data);
     p.settings.speechRate = 0.5;
     mine.change(p);

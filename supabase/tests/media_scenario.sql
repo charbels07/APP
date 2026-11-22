@@ -156,6 +156,10 @@ delete from storage.objects;
 select set_config('request.jwt.claim.sub', :'rita', false);
 select test.ok((select count(*) = 6 and count(*) filter (where name like :'adam' || '/%') = 6 from storage.objects),
   'a member who is not a manager, or a tablet, cannot remove or move a file');
+-- (since batch 5, a file leaves the account 30 days after it was sent at the earliest: gap5_scenario.sql)
+reset role;
+update storage.objects set created_at = now() - interval '31 days' where name = :'adam' || '/1762000000013_bb22bb.jpg';
+set role authenticated;
 delete from storage.objects where name = :'adam' || '/1762000000013_bb22bb.jpg';
 select test.ok((select count(*) = 5 from storage.objects), 'the family removes a file that was replaced');
 

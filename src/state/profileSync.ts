@@ -18,11 +18,13 @@ import type { Backend } from '../backend/Backend';
 import { BackendError } from '../backend/Backend';
 import type { ChildRecord, SaveResult } from '../backend/types';
 import { travelKey, travelling, withDeviceThings } from '../lib/deviceOnly';
-import { applyOps, diffProfiles, same, type Op } from '../lib/profileDiff';
+import { mergeOps } from '../lib/merge';
+import { diffProfiles, same, type Op } from '../lib/profileDiff';
 import { countSpeed } from '../lib/product';
 import { migrate } from '../lib/storage';
 import type { Profile } from '../model/types';
 import { forgetChild, isForgotten, remember } from '../lib/deviceData';
+import { written } from '../lib/deviceFull';
 
 export interface LocalCopy {
   data: Profile;
@@ -91,8 +93,11 @@ export class ProfileSync {
   private listeners = new Set<() => void>();
   /** Called when the profile changed because of someone else (the board redraws). */
   onRemote?: (p: Profile) => void;
-  /** Called when some of our changes collided with someone else's (theirs kept). */
-  onConflict?: (count: number) => void;
+  /**
+   * Called when some of our changes collided with someone else's (theirs kept): what was not kept,
+   * and the version those changes were made on (to name them).
+   */
+  onConflict?: (dropped: Op[], base: Profile) => void;
   /** Called after our changes reached the server (for the change history). */
   onSaved?: (ops: Op[], reason?: string) => void;
   /**
@@ -207,7 +212,8 @@ export class ProfileSync {
     clearTimeout(this.writeTimer);
     // The child left this device (sign-out, access removed): an open board must not write it back.
     if (isForgotten(this.id)) return;
-    await AsyncStorage.setItem(key(this.id), JSON.stringify(this.copy)).catch(() => {});
+    // A device that is full: said on the board; the changes still go to the account.
+    await written('board', () => AsyncStorage.setItem(key(this.id), JSON.stringify(this.copy)));
   }
 
   /** Sends unsent changes (one at a time). Never fails: what cannot be sent waits on the device. */
@@ -304,19 +310,20 @@ export class ProfileSync {
     const theirs = migrate(r.data);
     let data: Profile;
     let dirty = false;
-    let collided = 0;
+    let collided: Op[] = [];
+    const ourBase = this.copy.base;
     if (this.copy.dirty) {
       const ours = diffProfiles(travelling(this.copy.base), travelling(this.copy.data));
-      // (compared without the things that stay on each device, on both sides)
-      const { profile: merged, conflicts } = applyOps(travelling(theirs), ours);
+      // (compared without the things that stay on each device, on both sides; src/lib/merge.ts)
+      const { profile: merged, dropped } = mergeOps(travelling(theirs), ours);
       data = withDeviceThings(merged, this.copy.data);
       dirty = !same(travelling(data), travelling(theirs));
-      collided = conflicts.length;
+      collided = dropped;
     } else data = withDeviceThings(theirs, this.copy.data);
     this.put({ data, base: clone(theirs), version: r.version, name: r.name, dirty, ...(dirty ? {} : { localOnly: false, refused: undefined }) });
     // The board is told before anything else can happen: a touch made now is made on this version.
     this.onRemote?.(data);
-    if (collided) this.onConflict?.(collided);
+    if (collided.length) this.onConflict?.(collided, ourBase);
     await this.writeNow();
   }
 

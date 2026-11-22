@@ -47,7 +47,7 @@ export async function exportJson(filename: string, data: unknown): Promise<void>
 /** Exported files (a profile, a table of figures) wait in the cache folder for the share sheet: erased with the account. */
 export async function clearExports(): Promise<void> {
   for (const item of Paths.cache.list()) {
-    if (item instanceof File && /\.(json|csv|pdf|caa|obz)$/i.test(item.name)) item.delete();
+    if (item instanceof File && /\.(json|csv|pdf|caa|obz|zip)$/i.test(item.name)) item.delete();
   }
 }
 

@@ -13,6 +13,8 @@ import type { Profile } from '../model/types';
 import { AppProvider, useApp } from '../state/AppState';
 import { BoardContext, useBoard, type MyAccess } from '../state/BoardContext';
 import { MediaSync } from '../state/mediaSync';
+import { sweepLater } from '../lib/mediaKeep';
+import { describeOps } from '../lib/describeOps';
 import { useOwnCode } from '../state/ownCode';
 import { ProfileSync } from '../state/profileSync';
 import { ProductCounter } from '../state/productCounters';
@@ -116,6 +118,13 @@ function PreviewStage() {
   );
 }
 
+let swept = false;
+const sweepOnce = () => {
+  if (swept) return;
+  swept = true;
+  void sweepLater().catch(() => {});
+};
+
 /** A child's board: the device copy at once, kept in step with the server. */
 function BoardStage({ profileId }: { profileId: string }) {
   const sess = useSession();
@@ -160,13 +169,20 @@ function BoardStage({ profileId }: { profileId: string }) {
         // Called before a sign-out: what is not sent yet goes first.
         pendingSaves.add(sendNow);
         rememberLocal(profileId);
-        sy.onConflict = () => setNote(s.conflictNote);
+        // What was not kept is named (a few of them): "the picture of 'apple'"…
+        sy.onConflict = (dropped, base) => {
+          const p = sy.copy.data;
+          const names = [...new Set(describeOps(dropped, base, p.settings.uiLang, p.settings.lang).map((c) => c.text))];
+          setNote(names.length ? s.conflictNotKept(names.slice(0, 3).join(' · ') + (names.length > 3 ? ' …' : '')) : s.conflictNote);
+        };
         // Every change that reaches the server goes into the change history (with undo).
         sy.onSaved = (ops, reason) => {
           void api.addHistory({ profileId, summary: reason ?? '', ops, inverse: invertOps(ops) }).catch(() => {});
           void api.reportSync(profileId, sess.deviceId, { synced: true, backedUp: true, pendingChanges: 0 }).catch(() => {});
         };
         setSync(sy);
+        // Photos and recordings no board used for 30 days leave this device (once per start).
+        if (!outsider.current) void sweepOnce();
         // Communication data, recorded only at the level the family chose (off by default).
         void UsageTracker.open(api, profileId, sess.deviceId, `${Platform.OS} · ${deviceName()}`, () => sy.copy.data.settings.dataCollection ?? 'off').then((t) => {
           if (!alive) return t.close();
@@ -313,6 +329,9 @@ function BoardStage({ profileId }: { profileId: string }) {
         apply(p);
         // Someone else's change: the photos and recordings it brings are fetched.
         media?.see(p);
+        // Follow-up or sharing turned off from another device: what this device kept goes too.
+        if ((p.settings.dataCollection ?? 'off') === 'off') void tracker?.forget();
+        if (!sharesProduct(p.settings)) void product.current?.forget();
       };
       // A newer version taken before the board was listening (the server answered between the
       // opening and this moment) is shown now.
@@ -321,7 +340,7 @@ function BoardStage({ profileId }: { profileId: string }) {
         sync.onRemote = undefined;
       };
     },
-    [sync, media],
+    [sync, media, tracker],
   );
 
   if (error) {

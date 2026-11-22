@@ -108,7 +108,8 @@ export function readBook(raw: unknown): MediaBook {
     v: 1,
     sent: names(b.sent),
     received: names(b.received),
-    remove: names(b.remove),
+    // Removals are decided again at each sweep, with the database's answer (never from an older list).
+    remove: [],
     refused: names(b.refused),
     retry,
     fullUntil: time(b.fullUntil),
@@ -121,8 +122,13 @@ const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
 /** The account's list is read again after this long (at board open). */
 export const CHECK_EVERY = 12 * HOUR;
-/** A file in the account that no word uses any more is removed after this long (managers only). */
-export const ORPHAN_AFTER = 7 * 24 * HOUR;
+/**
+ * A file in the account that no word uses any more is removed after this long (managers only), and
+ * only when the database says that nothing else uses it either (`media_in_use`: the earlier
+ * versions of the board, the last 30 days of its history, proposals waiting): "Undo", "Earlier
+ * versions" and the bins never point to a file that is gone.
+ */
+export const ORPHAN_AFTER = 30 * 24 * HOUR;
 /** No space left / too many sent today: sending waits this long before trying again. */
 export const FULL_WAIT = 6 * HOUR;
 
@@ -228,10 +234,11 @@ export function removedNames(before: unknown, after: unknown): string[] {
 }
 
 /**
- * A change made here removed some names: a manager's device removes their copies from the account
- * (best effort); copies received from the account are no longer needed here either.
+ * A change made here removed some names: copies received from the account are no longer needed
+ * here (they come back from the account if an "Undo" uses them again). The account's copies stay:
+ * they leave only through the sweep of `afterList`, 30 days later at the earliest.
  */
-export function afterRemoval(book: MediaBook, gone: string[], canRemove: boolean): { book: MediaBook; eraseHere: string[] } {
+export function afterRemoval(book: MediaBook, gone: string[]): { book: MediaBook; eraseHere: string[] } {
   let next = book;
   const eraseHere: string[] = [];
   for (const name of gone) {
@@ -239,7 +246,6 @@ export function afterRemoval(book: MediaBook, gone: string[], canRemove: boolean
       eraseHere.push(name);
       next = { ...next, received: without(next.received, name) };
     }
-    if (canRemove && next.sent.includes(name)) next = { ...next, remove: add(next.remove, name) };
     next = { ...next, refused: without(next.refused, name), retry: dropRetry(next.retry, name) };
   }
   return { book: next, eraseHere };
@@ -276,8 +282,10 @@ export interface ServerFile {
 /**
  * The account's list was read: it says what is really there. Names that are there are not sent
  * again (and missing ones are fetched at once); names believed sent but missing are sent again.
- * A manager's device also lists the old files that no word uses any more (`sweep`): kept for
- * `ORPHAN_AFTER` first, so that a change still on its way from another device is never cut short.
+ * A manager's device also lists the old files that nothing uses any more (`sweep`): not the
+ * profile, and not what the database still points to (`serverUsed`: earlier versions, recent
+ * history, proposals waiting); kept for `ORPHAN_AFTER` first. Without the database's list (not
+ * known, or a database not updated yet) nothing is swept.
  */
 export function afterList(
   book: MediaBook,
@@ -285,9 +293,11 @@ export function afterList(
   used: string[],
   now: number,
   canRemove: boolean,
+  serverUsed?: string[] | null,
 ): { book: MediaBook; sweep: string[] } {
   const there = new Set(files.map((f) => f.name).filter(isSyncable));
-  const inUse = new Set(used);
+  const inUse = new Set([...used, ...(serverUsed ?? [])]);
+  if (!serverUsed) canRemove = false;
   const retry: MediaBook['retry'] = {};
   // A name that failed because the account did not have it yet is tried again at once now that it does.
   for (const [k, r] of Object.entries(book.retry)) if (!there.has(k)) retry[k] = r;
@@ -298,7 +308,8 @@ export function afterList(
         .map((f) => f.name)
     : [];
   return {
-    book: { ...book, sent: [...there], retry, checkedAt: now, remove: [...book.remove.filter((n) => there.has(n)), ...sweep] },
+    // (a name waiting to be removed that something uses again is kept)
+    book: { ...book, sent: [...there], retry, checkedAt: now, remove: [...book.remove.filter((n) => there.has(n) && !inUse.has(n)), ...sweep] },
     sweep,
   };
 }

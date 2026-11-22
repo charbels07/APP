@@ -39,6 +39,14 @@ const fr = {
   rescueRetry: 'Réessayer',
   rescueAsk: 'Si cela recommence, demandez à un parent de remettre une version précédente du tableau (Réglages → Compte).',
   deleteToBin: 'Supprimer',
+  deviceFull: 'Cet appareil est plein : libérez de la place, sinon les derniers changements risquent de ne pas être gardés ici.',
+  exportBoard: 'Exporter le tableau (avec ses photos et sons)',
+  exportBusy: 'Préparation du fichier…',
+  exportFailed: 'Le fichier n’a pas pu être préparé. Réessayez.',
+  exportMissing: (n: number) => `${n} photo(s) ou enregistrement(s) pas encore arrivés sur cet appareil ne sont pas dans le fichier.`,
+  exportNote: 'Sans le code d’accès. Pour donner le tableau à un autre aidant, ou le garder de côté.',
+  resetNote: 'Le tableau revient à celui de départ, sur tous les appareils de l’enfant. Le code, le suivi et le partage restent comme maintenant ; le tableau actuel reste dans les versions précédentes, et ses photos et enregistrements sont gardés 30 jours.',
+  resetGo: 'Réinitialiser le tableau',
   deleteProfileNote: 'Le profil va dans la corbeille, pour toute l’équipe et sur tous les appareils : vous pouvez le remettre pendant 30 jours, puis il est effacé définitivement avec ses photos et enregistrements. Tapez le prénom pour confirmer :',
 };
 
@@ -78,6 +86,14 @@ const en: Dict = {
   rescueRetry: 'Try again',
   rescueAsk: 'If it happens again, ask a parent to put back an earlier version of the board (Settings → Account).',
   deleteToBin: 'Delete',
+  deviceFull: 'This device is full: free some space, or the latest changes may not be kept here.',
+  exportBoard: 'Export the board (with its photos and sounds)',
+  exportBusy: 'Preparing the file…',
+  exportFailed: 'The file could not be prepared. Try again.',
+  exportMissing: (n) => `${n} photo(s) or recording(s) not yet received on this device are not in the file.`,
+  exportNote: 'Without the caregiver code. To give the board to another caregiver, or to keep it aside.',
+  resetNote: 'The board goes back to the starting one, on all the child’s devices. The code, the follow-up and the sharing stay as they are now; the current board stays in the earlier versions, and its photos and recordings are kept 30 days.',
+  resetGo: 'Reset the board',
   deleteProfileNote: 'The profile goes to the bin, for the whole team and on every device: you can put it back for 30 days, then it is erased for good with its photos and recordings. Type the first name to confirm:',
 };
 
@@ -115,6 +131,14 @@ const ar: Dict = {
   rescueRetry: 'حاول مجددًا',
   rescueAsk: 'إذا تكرّر ذلك، اطلب من أحد الوالدين إعادة نسخة سابقة من اللوحة (الإعدادات ← الحساب).',
   deleteToBin: 'حذف',
+  deviceFull: 'هذا الجهاز ممتلئ: أفرغ بعض المساحة، وإلا قد لا تُحفظ آخر التغييرات هنا.',
+  exportBoard: 'تصدير اللوحة (مع صورها وأصواتها)',
+  exportBusy: 'جارٍ تحضير الملف…',
+  exportFailed: 'تعذّر تحضير الملف. حاول مجددًا.',
+  exportMissing: (n) => `${n} من الصور أو التسجيلات لم تصل بعد إلى هذا الجهاز وليست في الملف.`,
+  exportNote: 'بدون رمز الدخول. لإعطاء اللوحة لمرافق آخر، أو للاحتفاظ بها جانبًا.',
+  resetNote: 'تعود اللوحة إلى لوحة البداية على كل أجهزة الطفل. يبقى الرمز والمتابعة والمشاركة كما هي الآن؛ وتبقى اللوحة الحالية في النسخ السابقة، وتُحفظ صورها وتسجيلاتها 30 يومًا.',
+  resetGo: 'إعادة ضبط اللوحة',
   deleteProfileNote: 'ينتقل الملف إلى سلة المحذوفات لكل الفريق وعلى كل الأجهزة: يمكنك إعادته خلال 30 يومًا، ثم يُمحى نهائيًا مع صوره وتسجيلاته. اكتب الاسم للتأكيد:',
 };
 

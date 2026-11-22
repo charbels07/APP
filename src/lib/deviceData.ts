@@ -10,6 +10,7 @@
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { clearMedia, deleteMedia } from './media';
+import { eraseLater, LATER_KEY } from './mediaKeep';
 import { mediaNamesIn as namesIn, readBook } from './mediaPlan';
 import { clearExports } from './platform';
 
@@ -30,8 +31,32 @@ async function sendPending(maxMs = 4000): Promise<void> {
   await Promise.race([all, new Promise((r) => setTimeout(r, maxMs))]);
 }
 
-/** The photos and recordings this device received for these children: erased with their copies. */
-async function eraseReceived(mediaKeys: string[]): Promise<void> {
+/** Every photo and recording that the copies of these children (kept on this device) use. */
+async function usedBy(profileIds: string[]): Promise<Set<string>> {
+  const used = new Set<string>();
+  if (!profileIds.length) return used;
+  try {
+    for (const [, v] of await AsyncStorage.multiGet(profileIds.map((id) => `caa.child.${id}`))) for (const n of namesIn(v)) used.add(n);
+  } catch {
+    /* unreadable: nothing more is known */
+  }
+  return used;
+}
+
+/** The children whose copy is kept on this device, these ones left out. */
+async function otherChildren(leaving: string[]): Promise<string[]> {
+  const keys = await AsyncStorage.getAllKeys().catch(() => [] as readonly string[]);
+  return keys.flatMap((k) => {
+    const m = /^caa\.child\.([^.]+)$/.exec(k);
+    return m && !leaving.includes(m[1]) ? [m[1]] : [];
+  });
+}
+
+/**
+ * The photos and recordings this device received for these children: erased with their copies,
+ * except those another board kept here uses (a brother's board made from this one).
+ */
+async function eraseReceived(mediaKeys: string[], keep: Set<string> = new Set()): Promise<void> {
   for (const k of mediaKeys) {
     let received: string[] = [];
     try {
@@ -39,15 +64,39 @@ async function eraseReceived(mediaKeys: string[]): Promise<void> {
     } catch {
       /* unreadable: nothing to erase */
     }
-    for (const name of received) await deleteMedia(name).catch(() => {});
+    for (const name of received) if (!keep.has(name)) await deleteMedia(name).catch(() => {});
   }
 }
 
 /** One child leaves this device (access removed, profile deleted). */
 export async function forgetChild(profileId: string): Promise<void> {
   gone.add(profileId);
-  await eraseReceived([`caa.media.${profileId}`]);
+  await eraseReceived([`caa.media.${profileId}`], await usedBy(await otherChildren([profileId])));
   await AsyncStorage.multiRemove([`caa.child.${profileId}`, `caa.child.${profileId}.bad`, `caa.usage.${profileId}`, `caa.product.${profileId}`, `caa.media.${profileId}`]).catch(() => {});
+}
+
+/**
+ * After the account's list of children was read: the copies kept here of children it can no longer
+ * open (access removed elsewhere, profile deleted, another account's) leave this device, with the
+ * files received for them. A copy with changes never sent stays (they would be lost). Returns the
+ * children forgotten.
+ */
+export async function forgetOthers(keep: string[]): Promise<string[]> {
+  const mine = new Set(keep);
+  const keys = await AsyncStorage.getAllKeys().catch(() => [] as readonly string[]);
+  const out: string[] = [];
+  for (const k of keys) {
+    const m = /^caa\.child\.([^.]+)$/.exec(k);
+    if (!m || mine.has(m[1])) continue;
+    try {
+      if (JSON.parse((await AsyncStorage.getItem(k)) ?? '{}')?.dirty === true) continue;
+    } catch {
+      /* unreadable: it goes */
+    }
+    await forgetChild(m[1]);
+    out.push(m[1]);
+  }
+  return out;
 }
 
 const CHILD_DATA = /^caa\.(child|usage|product|media|onboarding)\./;
@@ -84,8 +133,15 @@ export async function forgetEverything(opts: { media?: boolean; beforeSignOut?: 
     const m = /^caa\.(?:child|usage|product|media)\.(.+)$/.exec(k);
     if (m) gone.add(m[1]);
   }
-  if (!opts.media) await eraseReceived(mine.filter((k) => k.startsWith('caa.media.')));
-  await AsyncStorage.multiRemove(mine).catch(() => {});
+  if (!opts.media) {
+    // (a board kept because of unsent changes keeps its files)
+    const leaving = [...new Set(mine.flatMap((k) => /^caa\.(?:child|usage|product|media)\.([^.]+)/.exec(k)?.[1] ?? []))];
+    await eraseReceived(
+      mine.filter((k) => k.startsWith('caa.media.')),
+      await usedBy(await otherChildren(leaving)),
+    );
+  }
+  await AsyncStorage.multiRemove(opts.media ? [...mine, LATER_KEY] : mine).catch(() => {});
   await clearExports().catch(() => {});
   if (opts.media) await clearMedia().catch(() => {});
 }
@@ -96,7 +152,11 @@ export async function forgetEverything(opts: { media?: boolean; beforeSignOut?: 
  */
 export const mediaNamesIn = (profile: unknown): string[] => namesIn(profile);
 
-/** A deleted child's photos and recordings leave this device too. */
+/**
+ * A deleted child's photos and recordings leave this device too, 30 days later (the profile waits
+ * in the family's bin meanwhile), and only those no other board kept here uses (a brother's board
+ * made from this one shares its files): `src/lib/mediaKeep.ts`.
+ */
 export async function eraseMediaOf(profile: unknown): Promise<void> {
-  for (const name of mediaNamesIn(profile)) await deleteMedia(name).catch(() => {});
+  await eraseLater(mediaNamesIn(profile));
 }

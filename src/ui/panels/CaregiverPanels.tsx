@@ -1,4 +1,3 @@
-import { createDefaultProfile } from '../../data/defaults';
 import { enterFullscreen, exitFullscreen } from '../../lib/childLock';
 import { useBoard, useProBoard } from '../../state/BoardContext';
 import { useSession } from '../../state/Session';
@@ -16,22 +15,23 @@ import { VOICE_INDEX, VOICE_PROVIDER } from '../../data/voicePackIndex';
 import { CLASS_NAMES, CLASS_ORDER, CLASS_COLORS, C, radius } from '../theme';
 import { allConceptIds, availableLangs, display, getConcept, isRtl, label, langName, symbolOf, wordClass } from '../../lib/lexicon';
 import { deleteMedia } from '../../lib/media';
+import { eraseLater } from '../../lib/mediaKeep';
 import { libraryAccess, pickPhoto, type LibraryAccess } from '../../lib/photos';
 import { APP_PRESETS, appLinkOf, isIncomplete, openAppUrl } from '../../lib/appLinks';
-import { exportJson, exportPdf, printDocument } from '../../lib/platform';
+import { exportPdf, printDocument } from '../../lib/platform';
 import { boardCells, buildPrintHtml, conceptCell, type PrintOptions } from '../../lib/printHtml';
 import { canSpan } from '../../lib/boardOps';
 import { removeCells } from '../../lib/cellActions';
 import { binItems } from '../../lib/wordBin';
 import { backupStrings } from '../../i18n/backup';
-import { pictoCredit, pictoToMedia } from '../../lib/pictoLibrary';
+import { pictoCredit, pictoRef } from '../../lib/pictoLibrary';
 import { countFeature, reportProblem } from '../../lib/product';
 import { searchWords } from '../../lib/search';
 import { prepareVoices, speakText } from '../../lib/speech';
 import { optionParts, voiceOption, type VoiceOption } from '../../lib/voices';
 import type { VoiceChoice } from '../../lib/voices';
 import { UI_LANG_NAMES } from '../../i18n/ui';
-import type { AppLink, ArabicDialect, CellDisplay, Lang, Profile, UiLang, WordClass } from '../../model/types';
+import type { AppLink, ArabicDialect, CellDisplay, Lang, Profile, SymbolRef, UiLang, WordClass } from '../../model/types';
 import { useApp, useBack, type SettingsStash } from '../../state/AppState';
 import { Btn, Field, Panel, Section, Segmented, Toggle, useNavRtl } from '../common';
 import { Icon, type IconName } from '../Icon';
@@ -43,6 +43,10 @@ import { VoiceButton } from '../VoiceButton';
 import { NoVoiceWarning } from '../VoiceCheck';
 import { PrintPreview } from '../PrintPreview';
 import { ObzExportButton } from '../settings/ObzExport';
+import { BoardExportButton } from '../settings/BoardExport';
+import { useProof } from '../ProveItsYou';
+import { resetKeeping } from '../../lib/resetBoard';
+import { eraseMediaOf } from '../../lib/deviceData';
 import { SymbolView, useMediaUri } from '../SymbolView';
 import { useWiggle } from '../wiggle';
 import { scheduleTitle } from '../screens/ScheduleScreen';
@@ -373,7 +377,8 @@ function ConceptEditorBody({ conceptId, only }: { conceptId: string; only?: 'ima
     app.update((d) => {
       const o = (d.overrides[conceptId] ??= {});
       const old = o.symbol;
-      if (old?.kind === 'media' && (!symbol || symbol.kind !== 'media' || symbol.name !== old.name)) deleteMedia(old.name);
+      // The old picture stays 30 days ("Undo", earlier versions): erased later if nothing uses it then.
+      if (old?.kind === 'media' && (!symbol || symbol.kind !== 'media' || symbol.name !== old.name)) void eraseLater([old.name]);
       if (symbol) o.symbol = symbol;
       else delete o.symbol;
       if (credit) o.credit = credit;
@@ -418,9 +423,10 @@ function ConceptEditorBody({ conceptId, only }: { conceptId: string; only?: 'ima
                 initialQuery={label(profile, conceptId, profile.settings.uiLang)}
                 lang={profile.settings.uiLang}
                 onPick={async (id) => {
-                  const name = await pictoToMedia(id);
-                  if (!name) return;
-                  setSymbol({ kind: 'media', name }, await pictoCredit(id));
+                  // Kept as the library's key (the same picture on every device), never copied.
+                  const ref = await pictoRef(id).catch(() => undefined);
+                  if (!ref) return;
+                  setSymbol(ref, await pictoCredit(id).catch(() => undefined));
                   // For the app's team (families who agreed): a picture was swapped (never which one).
                   countFeature('pictoSwap');
                 }}
@@ -690,8 +696,11 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
     const name = draft.fr || draft.en || draft.ar;
     if (!name) return;
     setBusy(true);
-    const media =
-      ownPicture?.name ?? (picto !== undefined ? await pictoToMedia(picto).catch(() => undefined) : undefined);
+    const symbol: SymbolRef | undefined = ownPicture
+      ? { kind: 'media', name: ownPicture.name }
+      : picto !== undefined
+        ? await pictoRef(picto).catch(() => undefined)
+        : undefined;
     const credit = ownPicture?.name ? ownPicture.credit : picto !== undefined ? await pictoCredit(picto).catch(() => undefined) : undefined;
     app.update((d) => {
       d.customConcepts[id] = {
@@ -701,7 +710,7 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
         emoji: draft.emoji || '⭐',
         custom: true,
       };
-      if (media) d.overrides[id] = { symbol: { kind: 'media', name: media }, credit };
+      if (symbol) d.overrides[id] = { symbol, ...(credit ? { credit } : {}) };
       if (recording) (d.overrides[id] ??= {}).audio = { [lang]: recording };
     });
     kept.current = true;
@@ -1139,6 +1148,8 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
     });
   const setArabic = (v: ArabicDialect) => set((x) => void (x.arabic = v));
   const [confirmReset, setConfirmReset] = useState(false);
+  const resetProof = useProof('resetBoard');
+  const bx = backupStrings(profile.settings.uiLang);
 
   return (
     <>
@@ -1470,19 +1481,36 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
         <Toggle label={t.sAi} note={t.sAiNote} value={st.aiSuggestions !== false} onChange={(v) => set((x) => void (x.aiSuggestions = v))} />
         <View style={s.wrapRow}>
           {/* With an account, the backup is on the Account page (Privacy): not twice. */}
-          {!board && <Btn icon="download" label={t.sExport} onPress={() => exportJson('profil-caa.json', profile)} />}
+          {!board && <BoardExportButton profile={profile} uiLang={profile.settings.uiLang} />}
           {!board && <ObzExportButton profile={profile} label={t.sExportObz} busy={t.sExportObzBusy} failed={t.sExportObzFailed} />}
-          <Btn
-            kind="danger"
-            icon="trash"
-            label={confirmReset ? t.sResetConfirm : t.sReset}
-            onPress={async () => {
-              if (!confirmReset) return setConfirmReset(true);
-              app.replaceProfile(createDefaultProfile());
-              app.setEditMode(false);
-            }}
-          />
+          <Btn kind="danger" icon="trash" label={t.sReset} onPress={() => setConfirmReset(true)} />
         </View>
+        {confirmReset && (
+          <View style={{ gap: 8 }}>
+            <Text style={s.note}>{bx.resetNote}</Text>
+            <View style={s.wrapRow}>
+              <Btn small label={t.cancel} onPress={() => setConfirmReset(false)} />
+              <Btn
+                small
+                kind="danger"
+                icon="trash"
+                label={bx.resetGo}
+                onPress={async () => {
+                  // With an account the database asks the same proof as deleting (password or a code).
+                  await resetProof.run(async () => {
+                    if (sess?.account) await sess.api.checkFreshProof();
+                    // The old board's photos and recordings stay 30 days (earlier versions, "Undo").
+                    void eraseMediaOf(app.profile);
+                    app.replaceProfile(resetKeeping(app.profile));
+                    setConfirmReset(false);
+                    app.setEditMode(false);
+                  });
+                }}
+              />
+            </View>
+            {resetProof.gate}
+          </View>
+        )}
       </Group>
 
       <Group title={t.sAbout} icon="heart">

@@ -285,7 +285,7 @@ describe('any other refused save', () => {
     theirs.settings.modelPace = 1.3;
     await api.saveProfile(child, theirs, cur.version);
     let collided = 0;
-    sync.onConflict = (n) => (collided += n);
+    sync.onConflict = (n) => (collided += n.length);
     const p = structuredClone(sync.copy.data);
     p.schedules[0].title = 'Matin';
     sync.change(p);

@@ -73,7 +73,14 @@ export function areaOf(op: Op, base: Profile): ChangeArea {
   }
   if (kind === 'concept' || kind === 'override') return 'vocabulary';
   if (kind === 'setting') return 'settings';
-  return 'materials'; // schedule, tlaOrder, firstThen
+  if (kind === 'bin') {
+    // A word or a board put in the bin goes with the change that removed it.
+    const it = (op.after ?? op.before) as { kind?: string; board?: unknown } | undefined;
+    if (it?.kind === 'board') return (it.board as { kind?: string } | undefined)?.kind === 'tla' ? 'materials' : 'vocabulary';
+    const board = typeof it?.board === 'string' ? it.board : '';
+    return board === 'core' ? 'core' : base.boards[board]?.kind === 'tla' ? 'materials' : 'vocabulary';
+  }
+  return 'materials'; // schedule, tlaOrder, firstThen, demonstrations
 }
 
 function allowedArea(area: ChangeArea, perms: PermissionSet): boolean {

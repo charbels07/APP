@@ -22,7 +22,7 @@ import { adminStrings } from '../i18n/admin';
 import { strings, type UiStrings } from '../i18n/ui';
 import type { UiLang } from '../model/types';
 import { forgetLocal } from './profileSync';
-import { forgetEverything } from '../lib/deviceData';
+import { forgetEverything, forgetOthers } from '../lib/deviceData';
 import { keepSignedIn, setKeepSignedIn } from '../lib/keepSignedIn';
 import { CHILD_DATA_CONSENT } from '../lib/consent';
 import { markVisit, sameVisit } from '../lib/visit';
@@ -230,6 +230,16 @@ export function SessionProvider({ children, api = backend() }: { children: React
       if (opts.profileId) return setStage({ name: 'board', profileId: opts.profileId });
       try {
         const list = await api.listProfiles();
+        // Copies of children this account no longer opens (removed elsewhere, another account's
+        // left here) leave the device, with their photos; never one with changes not sent.
+        // Only when the list can be trusted: the two-step state is known (an account whose code is
+        // missing sees no child) and the list is not empty (an empty answer is never a reason to erase).
+        if ((a.provider === 'device' || sec) && list.length) void forgetOthers(list.map((p) => p.id))
+          .then((gone) => {
+            const d = deviceRef.current;
+            if (gone.length && d?.localProfiles?.some((id) => gone.includes(id))) saveDevice({ localProfiles: d.localProfiles.filter((id) => !gone.includes(id)) });
+          })
+          .catch(() => {});
         const active = list.find((p) => p.id === a.prefs.activeProfileId) ?? list[0];
         if (active) {
           // Remembered with the account (someone who joined by invitation never chose a child
@@ -290,6 +300,8 @@ export function SessionProvider({ children, api = backend() }: { children: React
       const ended = async () => {
         // What the last account left on this device goes, except a board whose changes were never sent.
         await forgetEverything({ keepUnsent: true });
+        // The browser stops receiving that person's notifications (the server forgets a dead address by itself).
+        await turnPushOff(api).catch(() => {});
         const was = deviceRef.current;
         if (was?.account) saveDevice({ account: undefined, lastProfile: undefined, localOwner: was.localOwner ?? was.account.id });
         setAccount(null);
@@ -308,6 +320,7 @@ export function SessionProvider({ children, api = backend() }: { children: React
       // (A tablet linked with a code always stays connected.)
       if (a && a.provider !== 'device' && !kept && !sameVisit()) {
         await forgetEverything({ beforeSignOut: true });
+        await turnPushOff(api).catch(() => {});
         await api.signOut().catch(() => {});
         saveDevice({ account: undefined, localProfiles: [], lastProfile: undefined });
         return setStage({ name: 'welcome' });

@@ -8,7 +8,7 @@
  *    someone else changed it meanwhile — nothing is overwritten silently;
  *  - undo: swapping `before` and `after` gives the opposite change.
  */
-import type { Board, Cell, Profile, Schedule } from '../model/types';
+import type { BinItem, Board, Cell, Demo, Profile, Schedule } from '../model/types';
 import { badKey } from './safety';
 
 export type OpPath =
@@ -25,7 +25,11 @@ export type OpPath =
   /** Week plan: one weekday ('0' = Monday). */
   | ['weekDay', string]
   /** Month plan: one event. */
-  | ['monthEvent', string];
+  | ['monthEvent', string]
+  /** A recorded demonstration ("Write to model"), by its id. */
+  | ['demo', string]
+  /** One entry of the profile's own bin (a word or an activity board deleted), by its id. */
+  | ['bin', string];
 
 export interface Op {
   path: OpPath;
@@ -97,7 +101,8 @@ function keyedDiff<T>(path: (id: string) => OpPath, a: Record<string, T>, b: Rec
   }
 }
 
-const byId = (list: Schedule[]) => Object.fromEntries(list.map((s) => [s.id, s]));
+const byId = <T extends { id: string }>(list: T[] | undefined): Record<string, T> =>
+  Object.fromEntries((Array.isArray(list) ? list : []).filter((x) => x && typeof x.id === 'string').map((x) => [x.id, x]));
 
 /** Every difference between two versions of a profile. */
 export function diffProfiles(base: Profile, draft: Profile): Op[] {
@@ -131,6 +136,8 @@ export function diffProfiles(base: Profile, draft: Profile): Op[] {
   if (!same(base.help, draft.help)) ops.push({ path: ['help'], before: clone(base.help), after: clone(draft.help) });
   keyedDiff((id) => ['weekDay', id], base.weekPlan ?? {}, draft.weekPlan ?? {}, ops);
   keyedDiff((id) => ['monthEvent', id], base.monthPlan ?? {}, draft.monthPlan ?? {}, ops);
+  keyedDiff((id) => ['demo', id], byId(base.demos), byId(draft.demos), ops);
+  keyedDiff((id) => ['bin', id], byId(base.bin), byId(draft.bin), ops);
   return ops;
 }
 
@@ -160,7 +167,20 @@ export function getAt(p: Profile, path: OpPath): unknown {
       return p.weekPlan?.[path[1]];
     case 'monthEvent':
       return p.monthPlan?.[path[1]];
+    case 'demo':
+      return p.demos?.find((d) => d.id === path[1]);
+    case 'bin':
+      return p.bin?.find((b) => b.id === path[1]);
   }
+}
+
+/** Replaces, adds (at the end) or removes the entry with this id. */
+function putById<T extends { id: string }>(list: T[], id: string, v: T | undefined): void {
+  const i = list.findIndex((x) => x.id === id);
+  if (v === undefined) {
+    if (i >= 0) list.splice(i, 1);
+  } else if (i >= 0) list[i] = v;
+  else list.push(v);
 }
 
 /** Writes one value into a profile (mutates it). */
@@ -217,6 +237,14 @@ export function setAt(p: Profile, path: OpPath, value: unknown): void {
       p.monthPlan ??= {};
       if (v === undefined) delete p.monthPlan[path[1]];
       else p.monthPlan[path[1]] = v as NonNullable<Profile['monthPlan']>[string];
+      return;
+    case 'demo':
+      if (!Array.isArray(p.demos)) p.demos = [];
+      putById(p.demos, path[1], v as Demo | undefined);
+      return;
+    case 'bin':
+      if (!Array.isArray(p.bin)) p.bin = [];
+      putById(p.bin, path[1], v as BinItem | undefined);
       return;
   }
 }

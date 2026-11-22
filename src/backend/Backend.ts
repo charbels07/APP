@@ -180,6 +180,11 @@ export interface Backend {
   twoStepCode(code: string): Promise<void>;
   /** Turns it off (a current code is asked first). */
   twoStepOff(code: string): Promise<void>;
+  /**
+   * Throws `proof_needed` unless the person signed in, or proved it is them, in the last 10 minutes
+   * (the database's `fresh_proof`). Asked before what is wiped in one tap, like "Reset" of a board.
+   */
+  checkFreshProof(): Promise<void>;
   /** Demonstration only: the code an authenticator app would show now. */
   demoTwoStepCode?(): Promise<string | undefined>;
 
@@ -277,6 +282,12 @@ export interface Backend {
   mediaUrl(profileId: string, name: string): Promise<string>;
   /** The files the account keeps for this child. */
   listMedia(profileId: string): Promise<{ name: string; size: number; createdAt: number }[]>;
+  /**
+   * The file names the database still points to for this child: the profile, its earlier versions,
+   * the last 30 days of its history and the proposals waiting. A file in it is never removed (the
+   * database refuses), nor one sent less than 30 days ago. `null` when the database is not updated yet.
+   */
+  mediaInUse(profileId: string): Promise<string[] | null>;
   /** Removes files from the account (the child's managers; a missing file, or someone else's refusal, is silent). */
   removeMedia(profileId: string, names: string[]): Promise<void>;
 

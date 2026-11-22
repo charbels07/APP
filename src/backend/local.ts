@@ -12,7 +12,8 @@ import type { Profile, UiLang } from '../model/types';
 import type { Op } from '../lib/profileDiff';
 import { type AccessLevel, type CollaboratorRole, type PermissionSet, preset } from '../lib/permissions';
 import { deleteMedia, mediaUri, saveMedia } from '../lib/media';
-import { isSyncable, MEDIA_LIMITS, mediaKind } from '../lib/mediaPlan';
+import { isSyncable, MEDIA_LIMITS, mediaKind, mediaNamesIn } from '../lib/mediaPlan';
+import { KEEP_MEDIA } from '../lib/mediaKeep';
 import { exampleBugs, exampleDocument, exampleOverview, exampleProduct, exampleRequests, exampleRoadmap } from '../lib/demoBackOffice';
 import { cleanVersion, COUNTERS, PROBLEM_KINDS, SCREENS, sharesProduct, type ProblemItem } from '../lib/product';
 import { demoObservations, demoUsage } from '../lib/demoUsage';
@@ -121,6 +122,8 @@ interface DB {
   consents?: { userId: string; version: number; profileId?: string; at: number }[];
   /** Copies of the boards (weekly, before a big change, by hand, before putting one back): 10 per child. */
   snapshots?: (Snapshot & { profileId: string; data: Profile })[];
+  /** Names a save stopped using, and when (as `media_dropped`). */
+  mediaDropped?: Record<string, Record<string, number>>;
   /**
    * A child's photos and recordings "in the account": only their names and sizes (the files
    * already live on this device; the demonstration follows the real server's rules).
@@ -251,6 +254,9 @@ export class LocalBackend implements Backend {
   private async startSession(accountId: string, aal: SessionMeta['aal'] = 'aal1'): Promise<void> {
     await store.set(SESSION_KEY, accountId);
     await store.set(SESSION_META_KEY, JSON.stringify({ aal, proofAt: Date.now() }));
+  }
+  async checkFreshProof(): Promise<void> {
+    await this.requireProof();
   }
   /** Signed in or proved again in the last 10 minutes (as the real database's fresh_proof). */
   private async requireProof(): Promise<void> {
@@ -833,6 +839,9 @@ export class LocalBackend implements Backend {
       // The family stops sharing: what was counted for the team is erased at once.
       if (was.shareStats === 'anonymous' && now.shareStats !== 'anonymous') db.featureDays = (db.featureDays ?? []).filter((f) => f.profileId !== p.id);
       LocalBackend.snapshotBefore(db, p, data, me.id);
+      // The names this save stopped using (the database's `media_dropped`): kept 30 days.
+      const still = new Set(mediaNamesIn(data));
+      for (const n of mediaNamesIn(p.data)) if (!still.has(n)) ((db.mediaDropped ??= {})[p.id] ??= {})[n] = Date.now();
       Object.assign(p, { data: clone(data), version: p.version + 1, updatedAt: Date.now(), updatedBy: me.id });
       return { ok: true, version: p.version };
     });
@@ -1734,8 +1743,9 @@ export class LocalBackend implements Backend {
     await this.tx((db, m) => {
       const me = LocalBackend.need(m);
       const a = LocalBackend.access(db, profileId, me.id);
-      // Those who may change the board: not a use-only tablet, not someone removed from the team.
-      if (!a || !(a.owner || a.perms.manager || a.level >= 3)) throw new BackendError('forbidden');
+      // Those who may change the board, or propose words or materials (a picture of a proposal
+      // must be there when the family accepts it): not a use-only tablet, not someone removed.
+      if (!a || !(a.owner || a.perms.manager || a.level >= 3 || (a.level >= 2 && (a.perms.proposeVocabulary || a.perms.createMaterials)))) throw new BackendError('forbidden');
       if (!isSyncable(name)) throw new BackendError('invalid');
       const kind = mediaKind(name)!;
       if (!contentType.startsWith(`${kind}/`)) throw new BackendError('media_type');
@@ -1766,12 +1776,33 @@ export class LocalBackend implements Backend {
     });
   }
 
+  /** What the database still points to (the same rule as `media_in_use`, migration 20261122000200). */
+  private static mediaInUse(db: DB, profileId: string): Set<string> {
+    const since = Date.now() - KEEP_MEDIA;
+    const texts: unknown[] = [db.profiles[profileId]?.data];
+    for (const x of db.snapshots ?? []) if (x.profileId === profileId) texts.push(x.data);
+    for (const h of db.history) if (h.profileId === profileId && h.createdAt > since) texts.push(h.ops, h.inverse);
+    for (const p of db.proposals) if (p.profileId === profileId && (p.status === 'pending' || p.status === 'revision')) texts.push(p.ops);
+    const dropped = Object.entries(db.mediaDropped?.[profileId] ?? {}).filter(([, at]) => at > since).map(([n]) => n);
+    return new Set([...texts.flatMap((t) => mediaNamesIn(t)), ...dropped]);
+  }
+
+  async mediaInUse(profileId: string): Promise<string[] | null> {
+    return this.tx((db, m) => {
+      LocalBackend.requireAccess(db, profileId, LocalBackend.need(m));
+      return [...LocalBackend.mediaInUse(db, profileId)];
+    });
+  }
+
   async removeMedia(profileId: string, names: string[]): Promise<void> {
     await this.tx((db, m) => {
       const a = LocalBackend.access(db, profileId, LocalBackend.need(m).id);
       // Like the storage server: someone who may not remove gets no error, and nothing is removed.
       if (!a || !(a.owner || a.perms.manager) || !db.media?.[profileId]) return;
-      db.media[profileId] = db.media[profileId].filter((f) => !names.includes(f.name));
+      // Never a file sent less than 30 days ago, nor one something still points to.
+      const used = LocalBackend.mediaInUse(db, profileId);
+      const old = Date.now() - KEEP_MEDIA;
+      db.media[profileId] = db.media[profileId].filter((f) => !names.includes(f.name) || used.has(f.name) || f.createdAt > old);
     });
   }
 

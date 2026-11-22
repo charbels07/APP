@@ -9,6 +9,7 @@
  * consent allows.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { written } from '../lib/deviceFull';
 import { BackendError, type Backend } from '../backend/Backend';
 import type { UsageDay, UsageSession } from '../backend/types';
 import { limitToConsent, LEVEL_RANK, type CollectLevel } from '../lib/usageConsent';
@@ -257,7 +258,11 @@ export class UsageTracker {
     if (isForgotten(this.profileId)) return;
     const keys = Object.keys(this.store.days).sort();
     for (const k of keys.slice(0, Math.max(0, keys.length - KEEP_DAYS))) delete this.store.days[k];
-    await AsyncStorage.setItem(this.key, JSON.stringify(this.store)).catch(() => {});
+    if (await written('usage', () => AsyncStorage.setItem(this.key, JSON.stringify(this.store)))) return;
+    // The device is full: the days already on the server leave this device first (today stays).
+    const today = dayOf(this.now());
+    for (const k of Object.keys(this.store.days)) if (k !== today && !this.store.pending.includes(k)) delete this.store.days[k];
+    await written('usage', () => AsyncStorage.setItem(this.key, JSON.stringify(this.store)));
   }
 
   /** Sends the days not on the server yet (what the consent allows; the server checks again). */

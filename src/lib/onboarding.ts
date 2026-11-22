@@ -8,7 +8,7 @@
 import { shareChoice } from './product';
 import { plainKind } from './voices';
 import type { Intake } from '../backend/types';
-import type { ArabicDialect, Lang, Profile } from '../model/types';
+import type { ArabicDialect, Lang, Profile, SymbolRef } from '../model/types';
 
 export type Speech = Intake['speech'];
 export type OtherWay = Intake['otherWays'][number];
@@ -118,7 +118,15 @@ export function intakeOf(a: Answers): Intake {
  * Applies the answers to a starting profile. `custom` are the family's own activities, already
  * turned into words (id, label and, when found, a pictogram stored on the device).
  */
-export function applyAnswers(base: Profile, a: Answers, custom: { id: string; label: string; media?: string; credit?: string }[] = []): Profile {
+/** A word the family typed during the set-up, with the picture found for it. */
+export interface CustomWord {
+  id: string;
+  label: string;
+  symbol?: SymbolRef;
+  credit?: string;
+}
+
+export function applyAnswers(base: Profile, a: Answers, custom: CustomWord[] = []): Profile {
   const p: Profile = JSON.parse(JSON.stringify(base));
   const st = p.settings;
   if (a.arabic) st.arabic = a.arabic;
@@ -161,7 +169,7 @@ export function applyAnswers(base: Profile, a: Answers, custom: { id: string; la
       emoji: '⭐',
       custom: true,
     };
-    if (c.media) p.overrides[c.id] = { ...(p.overrides[c.id] ?? {}), symbol: { kind: 'media', name: c.media }, ...(c.credit ? { credit: c.credit } : {}) };
+    if (c.symbol) p.overrides[c.id] = { ...(p.overrides[c.id] ?? {}), symbol: c.symbol, ...(c.credit ? { credit: c.credit } : {}) };
   }
   // Favourites go into « mes mots », in the free slots only (nothing already there moves).
   const mine = p.boards.mine;

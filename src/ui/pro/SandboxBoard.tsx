@@ -19,6 +19,7 @@ import { migrate } from '../../lib/storage';
 import type { Profile } from '../../model/types';
 import { AppProvider, useApp, type Overlay } from '../../state/AppState';
 import { ProBoardContext, type MyAccess } from '../../state/BoardContext';
+import { MediaSync } from '../../state/mediaSync';
 import { useOwnCode } from '../../state/ownCode';
 import { useSession } from '../../state/Session';
 import { Btn, Panel, Section } from '../common';
@@ -124,6 +125,11 @@ export function MaterialBoard({
   );
 }
 
+/** May send photos and recordings: changes the board, or proposes words or materials (the database's `can_send_media`). */
+export function mayProposeMedia(a: MyAccess): boolean {
+  return a.owner || !!a.perms.manager || a.level >= 3 || (a.level >= 2 && (!!a.perms.proposeVocabulary || !!a.perms.createMaterials));
+}
+
 /** Changes the person may apply themselves: put on top of the latest version (someone may have saved meanwhile). */
 async function applyDirect(api: Backend, profileId: string, ops: Op[], summary: string): Promise<void> {
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -186,6 +192,33 @@ export function ChildDraftBoard({
   }, [profileId]);
 
   const ops = useMemo(() => (base && draft ? diffProfiles(base.data, draft) : []), [base, draft]);
+  // The photos and recordings she adds go to the child's account, so that the family's devices
+  // find them once her change is applied or accepted. Send only: the family's own files are not
+  // copied onto her device. Those who may only use the board send nothing (the database refuses).
+  const media = useRef<MediaSync | null>(null);
+  const latestDraft = useRef(draft);
+  latestDraft.current = draft;
+  useEffect(() => {
+    if (!access || !mayProposeMedia(access)) return;
+    let alive = true;
+    let opened: MediaSync | null = null;
+    void MediaSync.open(api, profileId, { fetch: false, canSend: () => true, canRemove: () => false }).then((m) => {
+      if (!alive) return m.close();
+      opened = m;
+      media.current = m;
+      if (latestDraft.current) m.see(latestDraft.current);
+    });
+    return () => {
+      alive = false;
+      media.current = null;
+      // What is still waiting is sent before the board closes (if the connection allows).
+      const m = opened;
+      if (m) void m.flush().finally(() => m.close());
+    };
+  }, [api, profileId, access]);
+  useEffect(() => {
+    if (draft) media.current?.see(draft);
+  }, [draft]);
   if (error) {
     return (
       <View style={s.center}>

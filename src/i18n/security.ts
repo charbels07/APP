@@ -5,7 +5,7 @@
 import type { UiLang } from '../model/types';
 
 /** What the person is about to do, said before the proof is asked. */
-export type ProofReason = 'deleteAccount' | 'deleteProfile' | 'linkFull' | 'exportAll' | 'restore' | 'makeParent' | 'handOver';
+export type ProofReason = 'deleteAccount' | 'deleteProfile' | 'linkFull' | 'exportAll' | 'restore' | 'makeParent' | 'handOver' | 'resetBoard';
 
 const fr = {
   retTitle: 'Conservation et protections',
@@ -51,6 +51,7 @@ const fr = {
   proofBefore: {
     deleteAccount: 'Avant de supprimer le compte',
     deleteProfile: 'Avant de supprimer le profil de l’enfant',
+    resetBoard: 'Avant de réinitialiser le tableau',
     linkFull: 'Avant de relier un appareil avec accès complet',
     exportAll: 'Avant de télécharger toutes vos données',
     restore: 'Avant de remettre le tableau comme il était',
@@ -114,6 +115,7 @@ const en: Dict = {
   proofBefore: {
     deleteAccount: 'Before deleting the account',
     deleteProfile: 'Before deleting the child’s profile',
+    resetBoard: 'Before resetting the board',
     linkFull: 'Before linking a device with full access',
     exportAll: 'Before downloading all your data',
     restore: 'Before putting the board back as it was',
@@ -175,6 +177,7 @@ const ar: Dict = {
   proofBefore: {
     deleteAccount: 'قبل حذف الحساب',
     deleteProfile: 'قبل حذف ملف الطفل',
+    resetBoard: 'قبل إعادة ضبط اللوحة',
     linkFull: 'قبل ربط جهاز بوصول كامل',
     exportAll: 'قبل تنزيل كل بياناتك',
     restore: 'قبل إعادة اللوحة كما كانت',

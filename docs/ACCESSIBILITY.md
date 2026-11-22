@@ -52,7 +52,7 @@ Run it again at any time: `npm run test:a11y` (about 10 minutes; needs Playwrigh
 |---|---|
 | Text links such as "I already have an account" could be reached with Tab but did not answer Enter. | They are now buttons (they act inside the app); the links of the credits page are real links. |
 | Opening a panel left the focus behind it: one had to Tab through the whole board (60 cards) to reach it. | The focus goes into the panel; the board behind cannot be reached while it is open; the side bar stays reachable. |
-| Escape did nothing. | Escape closes the panel on top, and the focus goes back to the button that opened it. |
+| Escape did nothing. | Escape closes the panel on top, and the focus goes back to the button that opened it. One panel cannot be closed, on purpose: the first choice of the caregiver code on a family's board (the side bar, and Help on it, stay reachable with Tab). |
 | Two search fields hid the focus mark. | The focus mark is back. |
 
 Checked by the program: order of Tab on the first screen, Enter and Space on cards, tabs, panels,

@@ -46,7 +46,7 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
  * with Tab while it is open, and the focus goes back where it was afterwards.
  * The universal bar is outside, so it stays reachable.
  */
-function useDialog(onClose: () => void) {
+function useDialog(onClose: (() => void) | undefined) {
   const ref = useRef<React.ComponentRef<typeof View>>(null);
   const close = useRef(onClose);
   close.current = onClose;
@@ -65,7 +65,7 @@ function useDialog(onClose: () => void) {
     const t = setTimeout(() => {
       if (node && !node.contains(document.activeElement)) node.focus();
     }, 0);
-    const me = () => close.current();
+    const me = () => close.current?.();
     openPanels.push(me);
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && openPanels[openPanels.length - 1] === me) me();
@@ -99,7 +99,11 @@ export function Panel({
   onBack,
 }: {
   title: string;
-  onClose: () => void;
+  /**
+   * Not given: the panel cannot be closed (no cross, Escape and a touch beside do nothing). Only
+   * for the first choice of the caregiver code; the bar, and Help on it, stay reachable.
+   */
+  onClose?: () => void;
   /**
    * The panel was opened from another panel: "Back" returns there (Escape and a touch beside
    * the panel too), while the cross still closes everything.
@@ -135,9 +139,13 @@ export function Panel({
             {title}
           </Text>
           {headerRight}
-          <Pressable onPress={onClose} style={styles.closeBtn} accessibilityRole="button" accessibilityLabel={CLOSE[navLang]}>
-            <Icon name="x" size={24} />
-          </Pressable>
+          {onClose ? (
+            <Pressable onPress={onClose} style={styles.closeBtn} accessibilityRole="button" accessibilityLabel={CLOSE[navLang]}>
+              <Icon name="x" size={24} />
+            </Pressable>
+          ) : (
+            <View style={{ width: 12 }} />
+          )}
         </View>
         {scroll ? (
           <ScrollView contentContainerStyle={styles.panelBody} keyboardShouldPersistTaps="handled" scrollEnabled={!scrollLocked && !heldByChild}>

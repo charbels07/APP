@@ -6,6 +6,7 @@
 import fs from 'fs';
 import path from 'path';
 import { BackendError } from '../backend/Backend';
+import { showsCodeField } from '../lib/caregiverCode';
 import type { Account } from '../backend/types';
 import { DEFAULT_PREFS } from '../backend/types';
 import { localBoard, whoIsSignedIn } from '../state/Session';
@@ -104,7 +105,11 @@ describe('the screens keep these rules', () => {
 
   it('the family\'s code field is shown only to who may choose it', () => {
     const settings = read('ui/panels/CaregiverPanels.tsx');
-    expect(settings).toContain('{(!board || board.manager || !!app.ownCode) && (');
+    expect(settings).toContain('{showsCodeField({ own: !!app.ownCode, proBoard: !!proBoard, family: !!board, manager: !!board?.manager }) && (');
+    // A linked tablet or a team member who does not manage the profile: no field. The manager, and a board without an account: yes.
+    expect(showsCodeField({ own: false, proBoard: false, family: true, manager: false })).toBe(false);
+    expect(showsCodeField({ own: false, proBoard: false, family: true, manager: true })).toBe(true);
+    expect(showsCodeField({ own: false, proBoard: false, family: false, manager: false })).toBe(true);
   });
 
   it('"as soon as it touches": a finger that stays does nothing more', () => {

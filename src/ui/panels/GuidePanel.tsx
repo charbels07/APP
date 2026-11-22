@@ -4,7 +4,7 @@ import { GUIDE, GUIDE_TRACK_INTRO, type GuideAction, type GuideChapter, type Gui
 import { tailoredChapter } from '../../data/guideTailored';
 import { locate } from '../../lib/search';
 import type { DemoStep } from '../../model/types';
-import { useApp, useBack } from '../../state/AppState';
+import { useApp, useBack, type Overlay } from '../../state/AppState';
 import { Btn, Panel, Segmented, useNavRtl } from '../common';
 import { PictoCredit } from '../PictoCredits';
 import { Icon } from '../Icon';
@@ -43,7 +43,14 @@ export function GuidePanel() {
   };
 
   const run = (action: GuideAction) => {
-    if (NEEDS_CAREGIVER.includes(action) && !editMode) return app.setOverlay({ kind: 'pin' });
+    // Every panel opened from here keeps the way back to the guide ("Back" in its header).
+    const here: Overlay = app.overlay?.kind === 'guide' ? app.overlay : { kind: 'guide' };
+    if (action === 'settings' || action === 'newTla' || action === 'print') {
+      if (action === 'newTla') app.openTla();
+      const target = { kind: action, back: here };
+      // Outside caregiver mode the code comes first, then the panel that was asked.
+      return app.setOverlay(editMode ? target : { kind: 'pin', then: target, back: here });
+    }
     switch (action) {
       case 'demo':
         app.goHome();
@@ -51,7 +58,7 @@ export function GuidePanel() {
         return;
       case 'folder': {
         const loc = (locate(profile).get('ball') ?? []).find((l) => l.visible);
-        return loc ? app.showMeWhere(loc) : app.setOverlay({ kind: 'search' });
+        return loc ? app.showMeWhere(loc) : app.setOverlay({ kind: 'search', back: here });
       }
       case 'apps':
         app.goHome();
@@ -65,15 +72,11 @@ export function GuidePanel() {
         return app.openTla();
       case 'schedule':
         return app.openSchedule();
-      case 'newTla':
-        app.openTla();
-        app.setOverlay({ kind: 'newTla' });
-        return;
       case 'caregiver':
-        return app.setOverlay(editMode ? null : { kind: 'pin' });
+        return app.setOverlay(editMode ? null : { kind: 'pin', back: here });
       default:
-        // search, keyboard, lang, model, help, settings, print
-        return app.setOverlay({ kind: action });
+        // search, keyboard, lang, model, help
+        return app.setOverlay({ kind: action, back: here });
     }
   };
 

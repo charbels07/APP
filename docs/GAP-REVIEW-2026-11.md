@@ -135,31 +135,89 @@ batch 4 or 5.
 
 ## Batch 2 — What a child can reach (no database file)
 
-- [ ] **The first "choose a code" keypad cannot be skipped on a family's board (Q9).** [ran] Today the
-  cross and Escape close it (`CommPanels.tsx` ~422) and it is skipped when the rights take over 4 s
-  (`Stages.tsx` ~377; a failed `myAccess` is never retried). The try-it preview stays as it is.
-- [ ] **"1234" opens caregiver mode on every device that may not choose the code.** [read]
-  `CommPanels.tsx` ~304: unset + cannot choose → step `enter`, which compares with the literal '1234'.
-  Refuse every code while unset.
-- [ ] **Timer (Q10).** [ran] Timer → "Add a picture" opens the word picker with "Create a new word"
-  (camera, photo library, recording, Save) without the code (`TimerCard.tsx` ~41, `CaregiverPanels.tsx`
-  ~153, ~709). Picking an existing word stays open to the child; creating asks the code. The timer's
-  display and sound choices also write settings without the code: owner did not rule on those; leave.
-- [ ] **"Write to model" (Q11).** [ran] Typing / dictating a sentence stays open; "Record a
-  demonstration" and deleting one ask the code (`ModelPanel.tsx` ~49, ~59).
-- [ ] **Caregiver mode turns itself off (Q12)** after 5 minutes without a touch and when the app goes to
-  the background / the tab is hidden. An unsaved change is kept, not lost.
-- [ ] **Wrong codes (Q13).** [ran] The pauses stay (5 tries, then 30 s / 1 / 2 / 5 min). Bug: `msg`
-  ("Wrong code") hides the `t.pinLocked` countdown for the whole pause (`CommPanels.tsx`, `hint`).
-  The list of refused codes stays as it is (Q14).
-- [ ] **A professional with "use" access sees the family's code and passes the keypad.** [read]
-  `SandboxBoard.tsx` ~260 (`ownCode` undefined when she cannot prepare changes), ~266 (Settings opens
-  with no code); `CommPanels.tsx` `startForgot`: "no board" is treated as the preview → choose a code with
-  no proof. Always pass `ownCode` on a professional's board; "no board" is the preview only when
-  `app.preview`. (The data side is in batch 3.)
-- [ ] Guide "Try it" opens panels without `back`, and opens the keypad with no `then` for Settings / Print
-  (`GuidePanel.tsx` ~45). Settings → "Deleted words" drops unsaved settings silently
-  (`CaregiverPanels.tsx` ~1223).
+**Done on 22 November 2026** (one change, no database file). Checks: `npm run typecheck` clean, `npm test`
+557 passed, `npm run test:a11y` still to run on this version (work in progress), and three real-browser runs on the demo build (below).
+What was done differently from the text, or decided on the way, is written under each item. The rules are
+in one file, `src/lib/caregiverCode.ts`, tested by `caregiverCode.test.ts`.
+
+- [x] **The first "choose a code" keypad cannot be skipped on a family's board (Q9).** Done, and made a
+  state of the board instead of a panel opened once: whenever someone who decides for the child (owner,
+  co-parent who manages) has a family's board open with no code chosen, the keypad is there, with no cross,
+  no Escape, no touch beside (`mustChooseFirst`, `<PinPanel first />` in `Root`). Reloading the page brings it
+  back. The bar stays usable: Help (or any panel opened from the bar) shows instead and the keypad returns
+  when it closes; a demonstration plays on the board. Once the code is chosen the guide opens (new board) or
+  the board is simply there. The rights are asked again until known (4 s, 12 s, then with each look at the
+  server and when the app comes back to the front); the guide of a new board no longer opens around the
+  keypad after 4 seconds. Never on a child's linked tablet, for the app's team, on a professional's boards or
+  on the try-it preview.
+  *On the way:* a family that had skipped the keypad before this version gets it at the next opening by a
+  parent (that is the gap being closed: with no code, the first person to press "Caregiver" chose it).
+- [x] **"1234" opens caregiver mode on every device that may not choose the code.** Done. While no code is
+  chosen, no code is accepted (`codeAccepted`); and those devices no longer get a keypad at all but one
+  sentence: the code is chosen by a parent on their own device (`t.pinNotChosen`, three languages).
+  "1234" is written in no screen any more (a test checks it).
+- [x] **Timer (Q10).** Done. Choosing an existing word stays open; "Create a new word" outside caregiver
+  mode asks the code (with "Back" to the picker), then opens straight on the new-word form without turning
+  caregiver mode on. At the next visit the code is asked again. The timer's display and sound choices were
+  left as they are (not ruled).
+- [x] **"Write to model" (Q11).** Done. "Record a demonstration" asks the code and then starts recording;
+  deleting one asks the code and returns to the tab, where the deletion is confirmed as before. Typing or
+  dictating a sentence, replaying and the speed stay open.
+- [x] **Caregiver mode turns itself off (Q12).** Done: after 5 minutes without a touch (a key or the mouse
+  wheel count in a browser), and at once when the app goes to the background or the tab is hidden. The
+  adults' panels close with it (the settings and the lock opened from the bar, a new word or the
+  demonstrations opened after the code, anything whose "Back" leads to the settings). The board is then
+  directly usable: no keypad is put over it (a child must never find their board covered).
+  *"An unsaved change is kept":* the settings' draft is now the list of what the person changed
+  (`src/lib/settingsPatch.ts`) and waits in `app.settingsStash`: opening Settings again shows "Changes not
+  saved" with the switches as they were left; "Save" and "Cancel changes" work as before. A word or an
+  activity board half-typed in its form is not kept (those forms write when "Save" / "Create" is pressed).
+  *Decided on the way:* (1) a system screen the app opens itself is not "leaving" (`outside()` in
+  `src/lib/outside.ts`): camera, photo library, file chooser, share and print sheets, the microphone / camera /
+  photos / dictation questions, the new e-mail of an invitation, "Test" of an app link. On Android each of
+  these puts the app in the background: without this a parent could not add a photo to a word. (2) A screen
+  that waits for a code the person reads elsewhere (the proof before deleting or downloading, two-step
+  set-up) is not closed by leaving, or it would send a new code for ever (`waitsElsewhere`). In both cases the
+  5 minutes still apply on the way back. (3) Not for the app's team (never asked a code), and not on a
+  professional's material (it opens in caregiver mode inside her workspace, which is not behind a code).
+- [x] **Wrong codes (Q13).** Done. The countdown is shown for the whole pause; "Wrong code" for the tries
+  before it. Pauses and the list of refused codes unchanged (a test keeps them).
+- [x] **A professional with "use" access sees the family's code and passes the keypad.** Done. Her own code
+  is asked on every board she opens, whatever the family lets her do; "Settings" beside a child always goes
+  through it; Settings → Code and data never shows the family's code on a board opened from a professional's
+  workspace (`showsCodeField`: also true for the app's team, who have no code of their own there).
+  "Forgot the code?" chooses again without proof only on the try-it preview; on the set-up's trial board
+  (not saved yet) the signed-in person proves it is them. A material now also gets her own code if she
+  leaves caregiver mode and comes back. The family's code still travels inside the profile: batch 3.
+- [x] **Guide "Try it"; Settings → "Deleted words".** Done. Every panel opened by "Try it" has "Back" to the
+  guide (Search and its tabs, Help, Settings, Print, New board, the keypad); for Settings, Print and New
+  board the code leads to the panel that was asked instead of plain caregiver mode. "Deleted words" and
+  back keeps the unsaved settings (same mechanism as above).
+
+Also done here because the settings' draft was being rewritten: batch 5's "Settings 'Save' writes the whole
+stale draft" ("Save" writes only what the person changed; a consent withdrawn on another device is no
+longer switched back on).
+
+Tried in a real browser (demo build, Chromium, 1180 × 900), 88 checks in three runs:
+- *a family's board* (59): the first keypad (no cross, Escape, a touch beside, a touch on the board behind,
+  Help over it and back, the page reloaded, "1234" refused as a new code, the guide after the code, nothing
+  at the next opening); five wrong codes then the countdown, the keypad again after 30 s; caregiver mode
+  off when the tab is hidden, still on after 4 minutes, a touch starting the 5 minutes again, off after 5;
+  an unsaved setting found again after the tab was hidden; the timer's picker (existing word without the
+  code, new word behind it, "Back", the code asked again next time); a demonstration recorded and deleted
+  behind the code, a sentence shown without it; the guide's "Try it" for Settings and Help with "Back";
+  "Deleted words" and back with the change still waiting.
+- *a tablet linked with a "use only" code, on a board whose code was never chosen* (16): no keypad in
+  front of the child; "Caregiver", "Settings" and the timer's "Create a new word" answer with the sentence,
+  with no keypad and no "Forgot the code?"; Help answers; once the family has chosen, the keypad asks the
+  code, "1234" is a wrong code and the family's code works.
+- *a professional with "use" access* (13): "Settings" beside the child asks her to choose her own code;
+  the code field holds hers; the family's code is nowhere on the page and is a wrong code on the keypad;
+  "Forgot the code?" asks for her account's password.
+
+Left for the owner's hand-test list (batch 6): on an Android tablet and an iPad, in caregiver mode, take a
+photo for a word, pick one from the library, record a word (first time: the microphone question), share a
+PDF, print — caregiver mode must still be on afterwards; then press Home and come back — it must be off.
 
 ## Batch 3 — Database holes (one or more migration files + scenarios)
 
@@ -260,8 +318,7 @@ batch 4 or 5.
   "Undo" and "Earlier versions" then point to nothing. Files leave only through the sweep; names used
   by the server copies and the last 30 days of history count as "in use". Same for a profile in the bin
   (`eraseMediaOf`, `AccountTab.tsx` ~354) and for one file used by a duplicated board or a sibling.
-- [ ] **Settings "Save" writes the whole stale draft.** [read] `CaregiverPanels.tsx` ~1009: write only
-  the keys the person changed (a consent withdrawn on another device is switched back on today).
+- [x] **Settings "Save" writes the whole stale draft.** Done with batch 2 (`src/lib/settingsPatch.ts`).
 - [ ] **Merging (Q39).** [ran by reviewer] A swap against a delete loses a word (in nobody's bin); two
   people each adding an activity board: the second is not listed (`tlaOrder` is one op,
   `src/lib/profileDiff.ts`); `demos`, `bin` are not merged at all. Decision: a word is merged part by
@@ -315,7 +372,9 @@ batch 4 or 5.
   professional's name kept in the team's log 5 years after deletion; the payment rules below.
 - [ ] **Hand-test list for real tablets** (nothing here was tried on a device): speech and the four
   voices, recordings (and a browser-made recording played on an iPad), child lock, links behind the code,
-  offline start, a linked "use only" tablet receiving a new word, Arabic long sentence scrolling.
+  offline start, a linked "use only" tablet receiving a new word, Arabic long sentence scrolling; from
+  batch 2: in caregiver mode, a photo taken or picked, a word recorded, a PDF shared, a page printed must
+  leave caregiver mode on, and Home then back must find it off.
 - [ ] Small ones: hard-coded texts (`ModelPanel.tsx` ~38, `NewTlaPanel.tsx` ~360, "up" / "down" /
   "-" / "+" labels), `Pressable`s without a role (`CaregiverPanels.tsx` ~481, ~739, ~855,
   `Workspace.tsx` ~180, `ScheduleScreen.tsx` ~109), colour #98A2B3 on white, print failure shows
@@ -354,7 +413,7 @@ A separate project, after the owner has settled the legal side (company bank acc
 - "With a child's voice, 'Create a new word' requires a recording…" → optional (batch 6).
 - "The scan never covers the universal bar" → except Help (batch 1).
 - The back-office figures rule → totals for all, use for consenting families of 5+ (batch 3).
-- Caregiver code: the first keypad cannot be closed; caregiver mode turns itself off (batch 2).
+- Caregiver code: the first keypad cannot be closed; caregiver mode turns itself off (batch 2: done).
 - Professionals: invited therapists and teachers must be verified; the family's code is not sent to them
   (batches 3–4).
 - Sync: device-only things never travel (batch 1). Media: replaced files kept 30 days (batch 5).

@@ -7,11 +7,17 @@ import React from 'react';
 import { Linking, Platform, Text, View } from 'react-native';
 import type { SettingsStrings } from '../i18n/settings';
 import { MAIL_SERVICES, mailLinks, type MailService } from '../lib/inviteMail';
+import { outside } from '../lib/outside';
 import { Btn, useNavRtl } from './common';
 import { C } from './theme';
 
 /** Opens the new message: the service's app on a tablet or phone when it is installed, its page otherwise. */
 export async function openMail(service: MailService, to: string | undefined, subject: string, body: string): Promise<void> {
+  // The message is written in another app or tab, and the person comes back to the team's page.
+  return outside(() => openMailNow(service, to, subject, body));
+}
+
+async function openMailNow(service: MailService, to: string | undefined, subject: string, body: string): Promise<void> {
   const links = mailLinks(service, to, subject, body);
   if (Platform.OS !== 'web' && links.app) {
     try {

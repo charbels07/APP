@@ -124,14 +124,31 @@
   erased are deleted by `caa-purge`; the demo server mirrors it (`LocalBackend.uploadMedia`).
 - Demo builds are asked for on purpose: `EXPO_PUBLIC_APP_MODE=demo` (a release build with no server
   address shows "not connected"). Web headers: `public/_headers` (a test checks the policy).
-- Caregiver code: `settings.pin === '1234'` means "not chosen yet"; never show or suggest a default code.
-  The family chooses it the first time a new board opens, before the guide (`OpenGuideOnStart` in
-  `src/ui/Stages.tsx` opens `{ kind: 'pin', then: { kind: 'guide' } }` once the person's rights are
-  known), and whenever a code is being chosen the keypad explains what it is (`t.pinWhy`). Never let
-  the "choose a code" keypad appear without that explanation. "Forgot the code?" under the keypad: the account's password
+- Caregiver code (rules in `src/lib/caregiverCode.ts`, tested): `settings.pin === '1234'` means "not chosen
+  yet"; never show, suggest or accept a default code: while none is chosen no code opens anything
+  (`codeAccepted`), and who may not choose it gets a sentence instead of a keypad (`notChosen`). On a family's
+  board the first keypad comes by itself for who decides for the child and cannot be closed (owner's decision,
+  November 2026: `mustChooseFirst`, drawn by `Root` as `<PinPanel first />`, no cross, no Escape; the bar and
+  Help stay usable; the guide of a new board opens after it). It waits for the person's rights, which are
+  asked again until known (`askAccess` in `Stages.tsx`): never open the guide around it. Whenever a code is
+  being chosen the keypad explains what it is (`t.pinWhy`): never let the "choose a code" keypad appear
+  without that explanation. Never write `'1234'` in a screen. "Forgot the code?" under the keypad: the account's password
   (`checkPassword`) or a code sent to the account's e-mail or phone (`requestPasswordReset`, checked by
   `checkResetCode`, password unchanged) lets the family (or a professional, for her own code) choose a new one; a linked tablet is sent to a parent's device (who: `forgotCodeWays`). The code field of Settings → Code and data is shown only to who may choose the code (a manager, a professional for her own, a board without an account). Board settings are edited through `useSettingsDraft` (saved on
-  "Save", not at each change): new settings controls use the draft's `st` / `set`, not `app.update`.
+  "Save", not at each change): new settings controls use the draft's `st` / `set`, not `app.update`. The draft
+  is the list of what the person changed (`src/lib/settingsPatch.ts`), shown on top of the profile as it is
+  now: "Save" writes those parts only, never a whole copy of the settings. It also waits in
+  `app.settingsStash`, so an unsaved change is found again when the settings open again.
+- Caregiver mode turns itself off (owner's decision, November 2026; effect in `AppState.tsx`): after 5 minutes
+  without a touch and when the app goes to the background or the tab is hidden, caregiver mode and the adults'
+  panels close (`isAdultPanel`); the board is then directly usable by the child (never put a keypad over it).
+  Not for the app's team, not where no code exists (`staysOpen`: a professional's material). A system screen
+  the app opens itself (camera, photo library, file chooser, share or print sheet, a permission question) is
+  wrapped in `outside()` (`src/lib/outside.ts`), or it would end caregiver mode on Android: wrap any new one.
+- What a child can reach without the code: choosing an existing word (the timer's picture), showing a sentence
+  on the board. Creating a word (camera, photos, recording), recording or deleting a demonstration ask the
+  code first: the panel opens again with `adult` on its overlay (`PickerOverlay`, `ModelOverlay`, `AfterCode`
+  in `AppState.tsx`). A new tool that changes what the family keeps follows the same way.
 - Words for the user: the Schedule screen holds "sequences" (step lists: New sequence / Edit sequence) and
   the week and month "schedules" (never "plan": it reads as a subscription plan). Lists the user orders
   by hand use `src/ui/Reorderable.tsx` (hold and slide, plus arrows as the non-drag alternative).
@@ -139,9 +156,11 @@
   invitation it wrote: `join_profile`; `ParentsCard` in `src/ui/pro/Workspace.tsx`). While a professional
   owns a profile, recording and sharing stay off (database + `LocalBackend`); never offer those controls there.
   On every board a professional opens (her draft of a child's board, the try-board of the set-up, the
-  "Settings" shortcut of her workspace) the caregiver code IS asked: her own code (`useOwnCode` in
+  "Settings" shortcut of her workspace, a material) the caregiver code IS asked: her own code (`useOwnCode` in
   `src/state/ownCode.ts`, kept in her account's `prefs.pin`, chosen the first time with `t.pinWhyPro`),
-  never the family's, which she neither sees nor changes (`AppProvider ownCode`). Only the accounts of
+  never the family's, which she neither sees nor changes (`AppProvider ownCode`). Always pass `ownCode`
+  there, whatever the family lets her do ("use" only included): without it the family's code is the one
+  compared and shown (`showsCodeField`). Only the accounts of
   the app's own team are never asked a code, on any board they open (`freeEdit={sess.isAdmin}`: the
   owner's decision, November 2026). Never use `freeEdit` for anyone else, a professional included.
 - Notices are stored as sentences by the server: a new notice gets its three versions in
@@ -197,7 +216,8 @@
   out of full screen: never promise that the browser lock keeps a child in (Guided Access does).
 - A panel opened from another panel carries it in the overlay's `back` (`src/state/AppState.tsx`); the
   panel passes `onBack={useBack()}` to `Panel`, which shows "Back" (Escape and a touch beside go back, the
-  cross closes everything). When a panel opens another one, give `back`; never leave only the cross.
+  cross closes everything). When a panel opens another one, give `back`; never leave only the cross (the
+  guide's "Try it" too; when the code is needed, `{ kind: 'pin', then: <the panel>, back }`).
 - Searching a word or a picture always goes through `src/ui/SearchBox.tsx` (say the word, draw when
   `aiAvailable()`, type): never a bare `TextInput` for a search. It works outside a board too (`profile`,
   `uiLang` props; `useAppMaybe`). Several `VoiceButton`s can be on one screen: each only hears its own session.

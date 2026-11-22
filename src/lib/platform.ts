@@ -6,6 +6,10 @@ import { Asset } from 'expo-asset';
 import { Directory, File, Paths } from 'expo-file-system';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import { outside } from './outside';
+
+/** The share sheet covers the app for a moment (`outside`: caregiver mode stays open meanwhile). */
+const share = (uri: string, options: Sharing.SharingOptions) => outside(() => Sharing.shareAsync(uri, options));
 
 export const PAPER_POINTS = { A4: { w: 595, h: 842 }, A3: { w: 842, h: 1191 } };
 
@@ -18,7 +22,7 @@ export async function bundledImageSrc(mod: number): Promise<string> {
 }
 
 export async function printDocument(html: string, landscape: boolean): Promise<void> {
-  await Print.printAsync({ html, orientation: landscape ? Print.Orientation.landscape : Print.Orientation.portrait });
+  await outside(() => Print.printAsync({ html, orientation: landscape ? Print.Orientation.landscape : Print.Orientation.portrait }));
 }
 
 /** Generates the PDF locally (works in airplane mode, PRN-02) and opens the share sheet. */
@@ -29,7 +33,7 @@ export async function exportPdf(html: string, paper: 'A4' | 'A3', landscape: boo
     width: landscape ? size.h : size.w,
     height: landscape ? size.w : size.h,
   });
-  await Sharing.shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf' });
+  await share(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf' });
 }
 
 export async function exportJson(filename: string, data: unknown): Promise<void> {
@@ -37,7 +41,7 @@ export async function exportJson(filename: string, data: unknown): Promise<void>
   if (file.exists) file.delete();
   file.create();
   await file.write(JSON.stringify(data, null, 2));
-  await Sharing.shareAsync(file.uri, { mimeType: 'application/json' });
+  await share(file.uri, { mimeType: 'application/json' });
 }
 
 /** Exported files (a profile, a table of figures) wait in the cache folder for the share sheet: erased with the account. */
@@ -53,7 +57,7 @@ export async function exportText(filename: string, text: string, mimeType: strin
   if (file.exists) file.delete();
   file.create();
   await file.write(mimeType === 'text/csv' ? `\uFEFF${text}` : text);
-  await Sharing.shareAsync(file.uri, { mimeType });
+  await share(file.uri, { mimeType });
 }
 
 /** A binary file (the boards for another AAC app, `.obz`) through the share sheet. */
@@ -62,7 +66,7 @@ export async function exportBytes(filename: string, bytes: Uint8Array, mimeType:
   if (file.exists) file.delete();
   file.create();
   await file.write(bytes);
-  await Sharing.shareAsync(file.uri, { mimeType, UTI: mimeType === 'application/zip' ? 'public.zip-archive' : undefined });
+  await share(file.uri, { mimeType, UTI: mimeType === 'application/zip' ? 'public.zip-archive' : undefined });
 }
 
 /** Reads a bundled asset (e.g. the pictogram library) as bytes or text. */

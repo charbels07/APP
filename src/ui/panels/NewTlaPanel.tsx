@@ -13,7 +13,7 @@ import type { PreparedIndex } from '../../lib/pictoSearch';
 import { normalize } from '../../lib/search';
 import { planAutomatically, planFromAi, planFromLibrary, type PlanItem, type TlaPlan } from '../../lib/tlaPlanner';
 import type { Board, Concept, Profile, Schedule, WordClass } from '../../model/types';
-import { useApp } from '../../state/AppState';
+import { useApp, useBack } from '../../state/AppState';
 import { Btn, Field, Panel, Section, Toggle, useNavRtl } from '../common';
 import { moveItem, Reorderable } from '../Reorderable';
 import { PictoSearch, PictoThumb, usePictoLibrary } from '../PictoPicker';
@@ -187,6 +187,7 @@ export function StepsEditor({
 
 export function NewTlaPanel() {
   const app = useApp();
+  const onBack = useBack();
   const { t, profile } = app;
   const lib = usePictoLibrary();
   const ui = profile.settings.uiLang;
@@ -354,7 +355,7 @@ export function NewTlaPanel() {
     plan?.source === 'library' ? t.sourceLibrary : plan?.source === 'ai' ? t.sourceAi : plan ? t.sourceAuto : '';
 
   return (
-    <Panel title={t.newTlaTitle} onClose={() => app.setOverlay(null)} tone="edit" maxWidth={900} scrollLocked={holding}>
+    <Panel title={t.newTlaTitle} onClose={() => app.setOverlay(null)} onBack={onBack} tone="edit" maxWidth={900} scrollLocked={holding}>
       <View style={styles.row}>
         <View style={styles.grow}>
           <Field label={t.tlaTopic} value={topic} onChangeText={setTopic} onSubmitEditing={suggest} autoFocus placeholder="préparer un gâteau" />

@@ -99,6 +99,23 @@ is told to do it from a parent's device. A child cannot use it: it needs the par
 (the database cannot tell who holds the tablet); that is enough, because the code only ever kept
 the adults' tools from a child's hands, and the account itself downloads the profile the code is in.
 
+### Added later: what a child can reach (gap review, batch 2, 22 November 2026)
+
+Found by the review of 21–22 November, corrected in the app (no database change):
+
+| Problem | Fix |
+|---|---|
+| The first "choose a code" keypad could be closed, and was skipped when the person's rights took more than 4 seconds: a family's board could stay without a code, and the first person to press "Caregiver" (the child) chose it. | On a family's board the keypad comes by itself for who decides for the child and cannot be closed (no cross, no Escape); it waits for the rights, which are asked again until they arrive. The bar and Help stay usable. |
+| While no code was chosen, "1234" opened caregiver mode on every device that may not choose the code (a linked tablet, a team member). | No code opens anything while none is chosen. Those devices get a sentence instead of a keypad: the code is chosen on a parent's device. |
+| A professional whose access was "use" only was asked the family's code (which is in the profile she received), saw it in Settings → Code and data, and "Settings" beside the child opened with no code. | She is always asked her own code, whatever the family lets her do; the family's code is never shown on a board opened from a professional's workspace. "Forgot the code?" chooses again without proof only on the try-it preview. (The server still sends the code inside the profile: batch 3.) |
+| Timer → "Add a picture" → "Create a new word" gave the camera, the photo library and the recorder without the code. | Choosing an existing word stays open to the child; creating one asks the code. |
+| "Write to model": anyone could record a demonstration or delete one. | Both ask the code; showing a sentence on the board stays open. |
+| Caregiver mode stayed on until someone turned it off. | It turns itself off after 5 minutes without a touch and when the app goes to the background (the tab is hidden); the adults' panels close with it and the board is directly usable. Settings changed and not saved are kept and found again in Settings. |
+| During the pause after 5 wrong codes, "Wrong code" hid the countdown. | The countdown is shown for the whole pause. |
+
+Tried in a real browser on the demonstration build (a family's board, a linked "use only" tablet, a
+professional with "use" access). Not tried on a tablet: see the hand-test list of the gap review.
+
 ### Added later: "Keep me logged in" (November 2026)
 
 On the log-in and sign-up forms. Ticked (the default, right for the family's own tablet or

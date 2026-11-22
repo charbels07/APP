@@ -8,7 +8,7 @@
  */
 import React from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { useApp } from '../../state/AppState';
+import { useApp, useBack } from '../../state/AppState';
 import { selected } from '../a11y';
 import { Panel, useNavRtl } from '../common';
 import { Icon, type IconName } from '../Icon';
@@ -27,6 +27,9 @@ const TOOLS: { tool: Tool; icon: IconName }[] = [
 export function ToolsPanel({ tool }: { tool: Tool }) {
   const app = useApp();
   const { t } = app;
+  const onBack = useBack();
+  // Opened from another panel (the guide's "Try it"): the way back follows from one tab to the next.
+  const back = app.overlay && 'back' in app.overlay ? app.overlay.back : undefined;
   const rtl = useNavRtl();
   // Three names of several words do not fit beside their icons on a phone or a small tablet:
   // there the name goes under the icon, on up to three lines.
@@ -36,14 +39,14 @@ export function ToolsPanel({ tool }: { tool: Tool }) {
   // For the app's team (families who agreed): the three tabs were on screen.
   useSeen('search', 'keyboard', 'model');
   return (
-    <Panel title={t.search} onClose={() => app.setOverlay(null)}>
+    <Panel title={t.search} onClose={() => app.setOverlay(null)} onBack={onBack}>
       <View style={[styles.tabs, rtl && { flexDirection: 'row-reverse' }]} accessibilityRole="tablist">
         {TOOLS.map(({ tool: k, icon }) => {
           const on = k === tool;
           return (
             <Pressable
               key={k}
-              onPress={() => app.setOverlay({ kind: k })}
+              onPress={() => app.setOverlay(back ? { kind: k, back } : { kind: k })}
               style={({ pressed }) => [styles.tab, narrow && styles.tabNarrow, on && styles.tabOn, pressed && { opacity: 0.75 }]}
               accessibilityRole="tab"
               accessibilityLabel={names[k]}

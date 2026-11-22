@@ -3,6 +3,7 @@ import React, { useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { arabicLocale, label } from '../lib/lexicon';
 import { installedFor } from '../lib/dictation';
+import { outside } from '../lib/outside';
 import { strings } from '../i18n/ui';
 import type { Lang, Profile, UiLang } from '../model/types';
 import { useAppMaybe } from '../state/AppState';
@@ -74,7 +75,7 @@ export function VoiceButton({
     finalText.current = '';
     try {
       if (!ExpoSpeechRecognitionModule.isRecognitionAvailable()) throw new Error('unavailable');
-      const perm = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+      const perm = await outside(() => ExpoSpeechRecognitionModule.requestPermissionsAsync());
       if (!perm.granted) throw new Error('denied');
       // Help the recogniser with the board's own words.
       const vocab = profile

@@ -13,6 +13,7 @@ import type { TwoStepSetup } from '../backend/Backend';
 import { BackendError } from '../backend/Backend';
 import { securityStrings, type SecurityStrings } from '../i18n/security';
 import { codeFrom } from '../lib/codeInput';
+import { waitsElsewhere } from '../lib/outside';
 import { useSession } from '../state/Session';
 import { Btn, useNavRtl } from './common';
 import { ErrorText, LinkBtn, StartLayout, T } from './start/StartLayout';
@@ -64,6 +65,9 @@ export function TwoStepCard({ required }: { required?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const demo = useDemoCode(!!setup || turningOff);
+  // Setting it up, or turning it off, needs the authenticator app: going there does not close the settings.
+  const waiting = !!setup || turningOff;
+  useEffect(() => (waiting ? waitsElsewhere() : undefined), [waiting]);
   if (!account || account.provider === 'device') return null;
   const on = !!security?.twoStep;
   const team = required || !!security?.team;

@@ -41,7 +41,8 @@ import { C, radius } from './theme';
 /** A switch that bounces (or a hand that taps twice) counts once. */
 const BOUNCE_MS = 200;
 
-export function Scanner() {
+/** `paused`: something covers the board that is not one of the app's panels (the first choice of the code). */
+export function Scanner({ paused: covered = false }: { paused?: boolean } = {}) {
   const app = useApp();
   const { scan } = useAccess();
   const { profile } = app;
@@ -49,7 +50,7 @@ export function Scanner() {
   const a = accessStrings(profile.settings.uiLang);
   const grid = useSyncExternalStore(scan.subscribe, scan.grid, scan.grid);
   const [stopped, setStopped] = useState(false);
-  const panelOpen = !!app.overlay || app.editMode;
+  const panelOpen = !!app.overlay || app.editMode || covered;
   // A panel opened (and then closed) after Escape: scanning comes back.
   useEffect(() => {
     if (panelOpen) setStopped(false);

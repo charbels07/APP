@@ -418,3 +418,24 @@ export class MediaSync {
     }
   }
 }
+
+/**
+ * Sends, once, the photos and recordings of this device that a child's board will use after a change made
+ * from elsewhere (a professional's material proposed to or added on the child's board): the family's
+ * devices then find them once the change is accepted. Send only, nothing is fetched or removed; never
+ * throws (the database decides who may send, and what is refused simply stays here).
+ */
+export async function sendFilesFor(api: Backend, profileId: string, profile: unknown, files?: MediaFiles): Promise<void> {
+  try {
+    const m = await MediaSync.open(api, profileId, { fetch: false, canSend: () => true, canRemove: () => false, ...(files ? { files } : {}) });
+    try {
+      m.see(profile);
+      await m.flush();
+    } finally {
+      m.close();
+    }
+  } catch {
+    // Never in the way of the proposal itself.
+  }
+}
+

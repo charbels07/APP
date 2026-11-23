@@ -122,7 +122,7 @@ Scale (CNIL): severity and likelihood each **negligible, limited, significant, m
 | Measures | Board stored on each device and working offline; photos and recordings shared between the child's devices; bin of 30 days; snapshots; daily backups (7 days) and weekly encrypted off-site copies; quarterly restore test; continuity pledge; exports (JSON, .obz, print) |
 | **Severity** | Significant to maximum |
 | **Likelihood** | Limited |
-| Residual actions | Storage files are not in the database backups (decide an off-site copy); test what a device does when the server refuses its session (it may erase its board copy: `docs/runbooks/CONTINGENCY.md`) |
+| Residual actions | Storage files are not in the database backups (decide an off-site copy); a device erases its board copy only on the login server's clear "no session" (an outage keeps the board, built November 2026); an offline-only mode is needed before any closure (`docs/runbooks/CONTINGENCY.md`) |
 
 ### 3.5 Other points for the DPO
 

@@ -467,4 +467,37 @@ describe('opening a board', () => {
     expect(sync.copy.data.boards.core).toBeDefined();
     expect(await AsyncStorage.getItem(badKey(child))).toBe('{"data": 5, "version"');
   });
+  it('access removed while the board is on screen: the next look closes it and the copy goes (gap review)', async () => {
+    const sync = await ProfileSync.open(api, child);
+    let told: unknown = null;
+    sync.onGone = (e) => (told = e);
+    const refused = jest.spyOn(api, 'profileVersion').mockRejectedValue(new BackendError('forbidden'));
+    // Not certain yet (the account still lists the child: a session being renewed): nothing happens.
+    const still = jest.spyOn(api, 'listProfiles');
+    try {
+      await sync.pull();
+      expect(told).toBeNull();
+      expect(await readLocal(child)).not.toBeNull();
+      // The next looks (every 30 s) do not ask again at once.
+      const asked = still.mock.calls.length;
+      await sync.pull();
+      expect(still.mock.calls.length).toBe(asked);
+      // Five minutes later the account no longer has the child: the board is told, the copy goes.
+      still.mockResolvedValue([]);
+      const now = Date.now();
+      const clock = jest.spyOn(Date, 'now').mockReturnValue(now + 5 * 60 * 1000 + 1);
+      try {
+        await sync.pull();
+      } finally {
+        clock.mockRestore();
+      }
+      expect(told).toMatchObject({ code: 'forbidden' });
+      expect(sync.gone).toMatchObject({ code: 'forbidden' });
+      expect(await readLocal(child)).toBeNull();
+    } finally {
+      refused.mockRestore();
+      still.mockRestore();
+    }
+    await ProfileSync.open(api, child);
+  });
 });

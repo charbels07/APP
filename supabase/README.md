@@ -90,6 +90,11 @@ only reads, and says "done" or "TO RUN" for each file. A new migration gets its 
 
 ## 6. The AI helper (Photo → activity board, word suggestions)
 
+**Switched off (owner's decision Q47, November 2026): do not deploy `caa-ai` and set no Anthropic key.**
+While the function is not deployed the app shows nothing about AI. Before it is turned on: a spending
+ceiling in SQL (gap review, batch 3, "AI ceiling"), the consent text and the documents saying what is
+sent, and the families asked again. The steps below are kept for that day only.
+
 The app never holds the Anthropic key: a small server function asks Claude for it.
 
 1. Create an API key on console.anthropic.com (an organisation for the app, with a monthly spend

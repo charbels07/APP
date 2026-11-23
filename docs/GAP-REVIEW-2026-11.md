@@ -621,11 +621,32 @@ Seen on the way, not changed (not in this batch):
   kept up to 90 days. **Decided by the owner on 23 November 2026 and done**: copies 90 days (the script's default),
   the list 100 days (`20261123000100_deletion_list.sql`, `deletion_list_scenario.sql`): to run in Supabase.
 - The storage purge reason 'media' exists in SQL but is never used (unused media leave through the sweep).
-- `supabase/README.md` still explains how to deploy `caa-ai` (a how-to; nothing deploys it).
-- A professional's "Account & licence" page shows no app version (the support page's path works for parents).
+- `supabase/README.md` still explains how to deploy `caa-ai` (a how-to; nothing deploys it). *Done after batch 6.*
+- A professional's "Account & licence" page shows no app version (the support page's path works for parents). *Done
+  after batch 6.*
 - "We may ask you to confirm with a code sent to that address" (delete-account page) is a manual process.
 - CONTINGENCY / DPIA say "a device whose session is refused erases its board copy": older than the rule of
   `CLAUDE.md` (only a clear "no session" erases).
+
+## After batch 6 — the last gaps (23 November 2026)
+
+The owner asked for the gaps still open after the six batches. Done:
+- [x] **A member removed while the board is on screen** kept it until the app was opened again. Now the look for
+  changes (every 30 s) that the server refuses asks, at most every 5 minutes, whether the removal is certain
+  (`removed`, as at opening); if so the device copy goes and the board closes with "This profile can no
+  longer be opened from this account." (`goneWhileOpen` in `src/state/profileSync.ts`; test in `syncNeverBlocked.test.ts`). "Remove access"
+  in Team and the guide say so.
+- [x] **A professional's material with its own photos**: proposing it (or adding it to a profile she owns), and
+  sharing it with a child's team, now send its photos and recordings from her device to the child's space
+  (`sendFilesFor` in `src/state/mediaSync.ts`, send only, never in the way; test in `mediaSync.test.ts`). Still
+  true: files only on another of her devices are not sent; a material shared with the team and added by the
+  family more than 30 days later may have lost files no board used meanwhile (the 30-day sweep).
+- [x] Small: CONTINGENCY and the DPIA draft describe the start-up rule as built (an outage keeps the board; only
+  the login server's clear "no session" erases); `supabase/README.md` says not to deploy `caa-ai` while the AI is
+  off; a professional's "Account & licence" page shows the app version (and the support page says where).
+
+Decided by the owner: the small counts of the back office stay counted for all families (no change). The store
+identifiers wait until the whole app has been checked.
 
 ---
 

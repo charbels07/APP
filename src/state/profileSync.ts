@@ -78,6 +78,11 @@ const OPEN_WAIT = 2500;
  * rarely closed): a refusal can pass (a session that was renewed, rights that were given).
  */
 const RETRY_REFUSED_EVERY = 30 * 60 * 1000;
+/**
+ * An open board the server refuses (access removed while it is on screen): whether the removal is
+ * certain is asked at most this often (a board in the bin or a two-step code not typed refuses too).
+ */
+const GONE_CHECK_EVERY = 5 * 60 * 1000;
 const codeOf = (e: unknown) => (e instanceof BackendError ? e.code : 'unknown');
 /** The server says this board is not ours (access removed, profile deleted). */
 const isGone = (e: unknown) => codeOf(e) === 'forbidden' || codeOf(e) === 'not_found';
@@ -117,6 +122,8 @@ export class ProfileSync {
   private sayingSeen = false;
   /** When the server last refused a save. */
   private refusedAt = 0;
+  /** When an open board last asked whether a refusal means it is no longer ours. */
+  private goneCheckedAt = 0;
   /** What travels of `copy.data`, to tell a real change from this device's own small things. */
   private sentKey: string;
 
@@ -440,7 +447,25 @@ export class ProfileSync {
       this.settle();
     } catch (e) {
       if (codeOf(e) === 'offline') this.setState('offline');
+      else if (isGone(e)) await this.goneWhileOpen(e);
     }
+  }
+
+  /**
+   * The server refuses a board that is on screen: when the removal is certain (access removed,
+   * profile deleted for good), the device copy goes and the screen closes the board, as at opening.
+   * Not certain (the bin, a two-step code, a session being renewed): the board stays as it is.
+   */
+  private async goneWhileOpen(e: unknown): Promise<void> {
+    const now = Date.now();
+    if (this.gone || now - this.goneCheckedAt < GONE_CHECK_EVERY) return;
+    this.goneCheckedAt = now;
+    if (!(await this.removed())) return;
+    clearTimeout(this.pushTimer);
+    clearTimeout(this.writeTimer);
+    await forgetLocal(this.id);
+    this.gone = e;
+    this.onGone?.(e);
   }
 
   /** Before leaving (sign out, other child): last changes written and sent if possible. */

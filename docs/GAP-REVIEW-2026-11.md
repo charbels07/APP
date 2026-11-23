@@ -541,8 +541,13 @@ Decided by the owner (23 November 2026):
   board still has it), then is deleted for good, even one uploaded by mistake: the family cannot remove it
   sooner. No screen shows it meanwhile; it comes back only through "Undo", an earlier version or "Deleted words".
 - The database file of this batch was run on 23 November 2026.
+- To use a photo again for another word, the family picks it from the device's Photos: a photo taken with the
+  app's camera is now saved there too (tablet and phone apps; iOS asks once to add photos, Android 10 and later
+  asks nothing). No gallery of the child's photos inside the app.
 
-Left for the owner's hand-test list (batch 6): on a tablet, export a board with photos and recordings, share the
+Left for the owner's hand-test list (batch 6): on an iPad and an Android tablet, "Take a photo" for a word: the
+photo is in the device's Photos afterwards (iPad: the question to add photos, once), and caregiver mode is still
+on. On a tablet, export a board with photos and recordings, share the
 file, and import it on another tablet in a new account; replace a photo, then "Undo" on another device the next
 day: the old photo must still show.
 

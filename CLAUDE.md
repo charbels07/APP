@@ -136,7 +136,10 @@
   versions, 30 days of history, the names a save stopped using in 30 days: `media_dropped`, waiting proposals),
   which the storage rule checks again. Someone who may only propose sends 100 files / 20 MB per child a month. A database without
   `media_in_use` means nothing is removed. A picture chosen from the app's library is kept as its key
-  (`pictoRef`: `{ kind: 'picto', key }`), never copied into the media store.
+  (`pictoRef`: `{ kind: 'picto', key }`), never copied into the media store. A photo taken with the app's camera
+  is also saved to the device's Photos (owner's decision, 23 November 2026: that is how a family reuses a photo
+  for another word; `keepInPhotos` in `src/lib/photos.ts`, add-only permission, never in a browser); there is no
+  in-app gallery of the child's photos.
 - Merging (`src/lib/merge.ts`, used by `take`; gap review Q39): what belongs together (a move, a swap, a deletion
   and its bin entry) is kept or dropped whole; a word is merged part by part (picture and link whole, recording and name per
   language); a group partly there already is dropped too; `tlaOrder` merges as a list; demonstrations and the bin by id (`['demo', id]`, `['bin', id]` ops).

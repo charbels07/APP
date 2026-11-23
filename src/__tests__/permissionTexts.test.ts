@@ -1,6 +1,6 @@
 /**
- * The sentences iOS shows when the app asks for the microphone, speech recognition, the camera and
- * the photo library: in French, English and Arabic (Expo's `locales`, one InfoPlist.strings per
+ * The sentences iOS shows when the app asks for the microphone, speech recognition, the camera,
+ * the photo library and adding a photo taken in the app to Photos: in French, English and Arabic (Expo's `locales`, one InfoPlist.strings per
  * language), English when the device is in another language (`ios.infoPlist`).
  */
 import fs from 'fs';
@@ -8,7 +8,7 @@ import path from 'path';
 
 const ROOT = path.join(__dirname, '..', '..');
 const read = (file: string) => JSON.parse(fs.readFileSync(path.join(ROOT, file), 'utf8'));
-const KEYS = ['NSMicrophoneUsageDescription', 'NSSpeechRecognitionUsageDescription', 'NSCameraUsageDescription', 'NSPhotoLibraryUsageDescription'];
+const KEYS = ['NSMicrophoneUsageDescription', 'NSSpeechRecognitionUsageDescription', 'NSCameraUsageDescription', 'NSPhotoLibraryUsageDescription', 'NSPhotoLibraryAddUsageDescription'];
 
 describe('permission sentences', () => {
   const expo = read('app.json').expo;
@@ -30,7 +30,7 @@ describe('permission sentences', () => {
   it('come from one place: the plugins do not carry their own', () => {
     for (const p of expo.plugins) {
       const options = Array.isArray(p) ? p[1] ?? {} : {};
-      for (const k of ['microphonePermission', 'cameraPermission', 'photosPermission', 'speechRecognitionPermission']) expect(options[k]).toBeUndefined();
+      for (const k of ['microphonePermission', 'cameraPermission', 'photosPermission', 'savePhotosPermission', 'speechRecognitionPermission']) expect(options[k]).toBeUndefined();
     }
   });
 

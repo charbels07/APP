@@ -40,7 +40,7 @@
 | Counters, problems (with consent) | Counted on the device → sent daily → 180 days | `feature_days`, `error_counts` |
 | Messages, votes | Written by a person → read by the team → 3 years | `feedback`, `roadmap_votes` |
 | Notifications outside the app (web version, with consent) | The browser registers → the database writes a notification (never a child's name, word or sentence) → `caa-push` sends it encrypted through the browser's notification service → 2 days; registration 12 months without use | `push_subs`, `push_out`, `profile_seen` |
-| Deletion list | Written when an account, a profile or a document is erased → `caa-purge` deletes the files → 30 days | `storage_purge` |
+| Deletion list | Written when an account, a profile or a document is erased → `caa-purge` deletes the files → 100 days (longer than the oldest off-site copy, 90 days) | `storage_purge` |
 | Backups | Daily (7 days), weekly encrypted off-site (30–90 days) | Supabase; `[off-site storage]` |
 
 ## 2. Fundamental principles

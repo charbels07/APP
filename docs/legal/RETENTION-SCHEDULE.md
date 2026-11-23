@@ -47,10 +47,10 @@ The nightly job `retention_daily` runs at 03:25 UTC; the bin is emptied at 03:10
 | Identity documents of professionals | `verification-docs`, `verifications` | Until the decision (accepted or refused) | Deleted at the decision | Built |
 | Diplomas, the verification request | same | As long as the account `[to decide]` | With the account | **To decide** |
 | Parent's consent (date, text version) | `consents` | Today: as long as the parent's account (kept when only the profile is deleted). `[proof period after the account is deleted: to decide]` | With the account | Recording built *(Nov. 2026)*; retention **to decide** |
-| Deletion list: the folders and files to erase from storage (a person's or a child's ID, a file name, the reason, the dates) | Purge queue `storage_purge` | Until `caa-purge` has deleted the files, then **30 days** | Automatic job (`retention_daily`) | Built *(Nov. 2026)*. *Reviewer: the off-site copies are kept up to 90 days, longer than this list; see `docs/runbooks/BACKUP-AND-RESTORE.md`, section 6* |
+| Deletion list: the folders and files to erase from storage (a person's or a child's ID, a file name, the reason, the dates) | Purge queue `storage_purge` | Until `caa-purge` has deleted the files, then **100 days**: longer than the oldest off-site copy (90 days), so a restored copy can be cleaned of every later deletion | Automatic job (`retention_daily`, `20261123000100_deletion_list.sql`) | Built *(Nov. 2026)* |
 | Supabase logs | Supabase | **1 day** (free plan) / **7 days** (Pro) | Supabase | Provider |
 | Daily backups | Supabase | **7 days** (Pro) | Supabase | Provider |
-| Encrypted weekly copies | `[off-site storage]` | **30 to 90 days** (`BACKUP_KEEP_DAYS`, 60 by default) | `scripts/backup-offsite.sh` or the bucket's lifecycle rule | Built |
+| Encrypted weekly copies | `[off-site storage]` | **90 days** (`BACKUP_KEEP_DAYS`, 90 by default; never more) | `scripts/backup-offsite.sh` or the bucket's lifecycle rule | Built |
 | Subscriptions *(to come)* | — | `[accounting duty: to write]` | — | **To write** |
 
 ## On the devices

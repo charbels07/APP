@@ -45,7 +45,7 @@ Processors used by several purposes (their agreements to sign or check):
 | 11 | E-mails to the team | Professionals who apply | Legitimate interest | 90 days |
 | 12 | Security of the service | Everyone | Legitimate interest; legal obligation | Rate log 2 days; logs 1–7 days |
 | 13 | Backups | Everyone | Legitimate interest; legal obligation (security) | 7 days; off-site 30–90 days |
-| 14 | Data rights and consents | Parents, professionals | Legal obligation | Consents: as long as the account `[proof period: to decide]`; deletion list 30 days after the files are deleted |
+| 14 | Data rights and consents | Parents, professionals | Legal obligation | Consents: as long as the account `[proof period: to decide]`; deletion list 100 days after the files are deleted |
 | 15 | Notices in the app | Account holders | Contract | 12 months |
 | 16 | Subscriptions *(to come)* | Parents, professionals | Contract; legal obligation (accounting) | `[to write]` |
 | 17 | Notifications outside the app, web version (reminder at 12:00 for parents, new idea to vote on) | Parents, professionals who turned them on | Consent (asked in the app, then by the browser) | Device until turned off or 12 months unused; messages 2 days; last opening of a board: one moment per child |
@@ -187,7 +187,7 @@ Processors used by several purposes (their agreements to sign or check):
 | Purpose | Restore the service after a loss |
 | Data | The whole database (not the files) |
 | Recipients | Supabase; `[off-site storage provider]` (encrypted, the key is not with them) |
-| Retention | 7 days (Supabase); 30 to 90 days off-site |
+| Retention | 7 days (Supabase); 90 days off-site |
 | Security | Encrypted to a key kept offline by two people; quarterly restore test; deletions re-applied after a restore (`docs/runbooks/BACKUP-AND-RESTORE.md`) |
 
 ## 14. Data rights and consents
@@ -196,7 +196,7 @@ Processors used by several purposes (their agreements to sign or check):
 |---|---|
 | Purpose | Prove agreements; answer access, deletion and portability requests |
 | Data | The parent's agreement at profile creation (date, text version); requests received; the deletion list (the folder or file to erase: a person's or a child's ID, a file name, the reason, the dates) |
-| Retention | Consents: today as long as the parent's account (they are deleted with it; kept when only the profile is deleted) `[proof period: to decide]`; deletion list (`storage_purge`): until `caa-purge` deleted the files, then 30 days; requests `[to decide]` |
+| Retention | Consents: today as long as the parent's account (they are deleted with it; kept when only the profile is deleted) `[proof period: to decide]`; deletion list (`storage_purge`): until `caa-purge` deleted the files, then 100 days (longer than the oldest off-site copy); requests `[to decide]` |
 
 ## 15. Notices in the app
 

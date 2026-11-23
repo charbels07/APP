@@ -155,7 +155,7 @@ countries (their own laws on transfers).*
 | Invitations | Valid 30 days; erased 60 days after they were written if nobody answered, 12 months after if they were accepted, declined or cancelled |
 | Notifications outside the app | The browser's registration: until you turn them off, or 12 months without opening the app; each notification: 2 days |
 | Our server's daily backups | 7 days |
-| Our encrypted weekly copy, kept with another provider | `[60]` days (30 at least, 90 at most) |
+| Our encrypted weekly copy, kept with another provider | 90 days |
 
 The full schedule is in `[link to the retention schedule]`.
 

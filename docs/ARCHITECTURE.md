@@ -111,7 +111,7 @@ From `supabase/README.md`, "What is where", plus what was added in November 2026
 | AI calls per account and day; daily ceiling | `ai_calls`, `ai_budget` |
 | Recent actions, to refuse repeats | `rate_log` (2 days) |
 | E-mails written for the team, and where the sending function is (its key also opens `caa-purge` and `caa-push`) | `team_mail`, `team_mail_config` |
-| Files waiting to be deleted after an account, a child's profile or a professional's document is erased | `storage_purge` (emptied by `caa-purge`; a line goes 30 days after its files are deleted) |
+| Files waiting to be deleted after an account, a child's profile or a professional's document is erased | `storage_purge` (emptied by `caa-purge`; a line goes 100 days after its files are deleted: longer than the oldest off-site copy) |
 | The names of the files a save stopped using (random names only), so that they stay 30 days | `media_dropped` |
 | Browsers that accepted notifications (web version), notifications waiting, the signing keys (private half sealed), when a child's board was last opened | `push_subs`, `push_out`, `push_config`, `profile_seen` |
 

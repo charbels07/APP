@@ -366,6 +366,8 @@
   text: raise `CHILD_DATA_CONSENT` and `consent_version()` together.
 - Retention runs every night (`retention_daily`, migration `20261118000500_privacy.sql`): follow-up 24 months
   (sentences 12), history 24 months, notices 12 months, messages to the team 3 years, the team's log 5 years.
+  The deletion list (`storage_purge`) is kept 100 days after its files are gone, longer than the off-site copies of
+  the database (90 days, `BACKUP_KEEP_DAYS`; owner's decision, 23 November 2026): never keep copies longer than it.
   Inactive accounts are only counted (Back office → Security): never delete accounts automatically unless asked.
   The values are in `docs/legal/RETENTION-SCHEDULE.md`; change both together.
 - The children's sentences (`usage_days.samples_sealed`) and the observations' texts (`utterance_sealed`,

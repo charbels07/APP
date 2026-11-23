@@ -3,7 +3,7 @@
  * permissions summary, subscription (later), privacy and data, preferences, help.
  * Nothing here can interrupt the child's communication.
  */
-import Constants from 'expo-constants';
+import { APP_VERSION } from '../../lib/appVersion';
 import React, { useEffect, useState, useSyncExternalStore } from 'react';
 import { Text, TextInput, View } from 'react-native';
 import type { Device, Invitation, OwnedProfile, ProfileSummary } from '../../backend/types';
@@ -621,7 +621,7 @@ function Help({ x }: { x: SettingsStrings }) {
   return (
     <Section title={x.help}>
       <Btn small icon="book" label={x.openGuide} onPress={() => app.setOverlay({ kind: 'guide', back: { kind: 'settings' } })} />
-      <Note text={`${x.version} ${Constants.expoConfig?.version ?? ''}`} />
+      <Note text={`${x.version} ${APP_VERSION}`} />
     </Section>
   );
 }

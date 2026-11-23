@@ -88,7 +88,7 @@ const fr = {
   saved: 'Enregistré.',
   revoke: 'Retirer l’accès',
   revokeConfirm: 'Confirmer : retirer l’accès',
-  revokeNote: 'L’accès au serveur est coupé tout de suite. Ce qui a déjà été téléchargé ou imprimé ne peut pas être effacé à distance.',
+  revokeNote: 'L’accès au serveur est coupé tout de suite ; le tableau quitte ses appareils en quelques minutes s’il est ouvert, sinon à la prochaine ouverture. Ce qui a été imprimé ou exporté ne peut pas être effacé à distance.',
   back: 'Retour',
 
   by: 'par',
@@ -290,7 +290,7 @@ const en: Dict = {
   saved: 'Saved.',
   revoke: 'Remove access',
   revokeConfirm: 'Confirm: remove access',
-  revokeNote: 'Server access stops at once. What was already downloaded or printed cannot be erased remotely.',
+  revokeNote: 'Server access stops at once; the board leaves their devices within a few minutes if it is open, otherwise the next time the app opens. What was printed or exported cannot be erased remotely.',
   back: 'Back',
 
   by: 'by',
@@ -489,7 +489,7 @@ const ar: Dict = {
   saved: 'تمّ الحفظ.',
   revoke: 'سحب الصلاحية',
   revokeConfirm: 'تأكيد: سحب الصلاحية',
-  revokeNote: 'يتوقف الوصول إلى الخادم فوراً. ما تمّ تنزيله أو طباعته لا يمكن محوه عن بُعد.',
+  revokeNote: 'يتوقف الوصول إلى الخادم فوراً؛ وتغادر اللوحة أجهزته خلال دقائق إن كانت مفتوحة، وإلا عند فتح التطبيق في المرة التالية. ما تمّت طباعته أو تصديره لا يمكن محوه عن بُعد.',
   back: 'رجوع',
 
   by: 'من',

@@ -30,7 +30,7 @@ import {
 } from '../lib/mediaPlan';
 import { preset } from '../lib/permissions';
 import type { Profile } from '../model/types';
-import { MediaSync, type MediaFiles } from '../state/mediaSync';
+import { MediaSync, sendFilesFor, type MediaFiles } from '../state/mediaSync';
 
 // The device's media store, in memory (the real one is a folder on a tablet, IndexedDB in a browser).
 const mockStore = new Set<string>();
@@ -379,6 +379,26 @@ describe('copying in the background', () => {
     expect(server.files.has(PHOTO)).toBe(true);
     expect(hers.names.has(OTHER)).toBe(false);
     m.close();
+  });
+
+  it('a material a professional proposes sends its own photo and recording to the child’s space, nothing else (gap review)', async () => {
+    const server = fakeServer();
+    server.files.set(OTHER, 10);
+    const hers = deviceStore();
+    hers.names.add(PHOTO);
+    hers.names.add(VOICE);
+    const p = withPhoto(PHOTO, VOICE);
+    p.overrides.boire = { symbol: { kind: 'media', name: OTHER } };
+    await sendFilesFor(server.api, 'child', p, hers);
+    expect(server.files.has(PHOTO)).toBe(true);
+    expect(server.files.has(VOICE)).toBe(true);
+    // Send only: the family's files are not fetched onto her device, nothing is removed from the account.
+    expect(hers.names.has(OTHER)).toBe(false);
+    expect(server.calls.some((c) => c.startsWith('rm '))).toBe(false);
+    // Refused (she may not send) or offline: never in the way of the proposal.
+    const refused = fakeServer();
+    refused.setFail({ up: 'forbidden' });
+    await expect(sendFilesFor(refused.api, 'child', p, hers)).resolves.toBeUndefined();
   });
 
   it('what the device knows is kept with the child’s copy and leaves with it, with the received files', async () => {

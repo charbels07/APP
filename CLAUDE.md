@@ -37,7 +37,8 @@
   A board with a device copy opens from it without waiting for the server (`open`, `OPEN_WAIT`; `onGone` closes
   it if the server then says it is no longer ours). "forbidden" erases a copy and closes the board only when
   the removal is certain (`removed`: it is also what the database answers when a session could not be renewed);
-  a copy that cannot be read is kept under `caa.child.<id>.bad`. The copies kept on a device belong to one
+  a copy that cannot be read is kept under `caa.child.<id>.bad`. An open board the server refuses asks the same
+  question at most every 5 minutes (`goneWhileOpen` in `pull`): a member removed while the board is on screen loses it. The copies kept on a device belong to one
   account (`localOwner` in `Session.tsx`): `localBoard` never opens another account's.
 - A damaged board must still open (`src/lib/profileShape.ts`, used by `migrate`): every part of a saved profile
   gets the shape the screens expect, what is sound is returned untouched (same objects), no word moves. A new

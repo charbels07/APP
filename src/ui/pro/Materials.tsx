@@ -42,6 +42,7 @@ import { Row, when } from '../settings/TeamTab';
 import { SymbolView } from '../SymbolView';
 import { C, radius } from '../theme';
 import { MaterialBoard } from './SandboxBoard';
+import { sendFilesFor } from '../../state/mediaSync';
 import { checked } from '../a11y';
 
 export const KIND_ICON: Record<ResourceKind, IconName> = { tla: 'grid', schedule: 'calendar', firstThen: 'chevronRight', timer: 'timer', cards: 'image' };
@@ -452,13 +453,18 @@ function ResourceActions({
           run(async () => {
             const child = await api.getProfile(id);
             const ops = resourceToOps(migrate(child.data), r.kind, r.data);
+            const after = applyOps(migrate(child.data), ops).profile;
             // A profile this professional created (no family yet): added directly, nobody to ask.
             if (users.find((u) => u.id === id)?.access === 'owner') {
-              const saved = await api.saveProfile(id, applyOps(migrate(child.data), ops).profile, child.version);
+              const saved = await api.saveProfile(id, after, child.version);
               if (!saved.ok) throw new BackendError('generic');
+              // The material's own photos and recordings go to the child's space too (gap review).
+              await sendFilesFor(api, id, after);
               return p.addedToProfile;
             }
             await api.createProposal(id, { title: `${p.kinds[r.kind]} « ${name} »`, ops, baseVersion: child.version });
+            // Its own photos and recordings go to the child's space, so the family's devices have them once accepted.
+            await sendFilesFor(api, id, after);
             return p.proposed;
           }),
         )}
@@ -490,6 +496,9 @@ function ResourceActions({
               onPress={() =>
                 run(async () => {
                   await api.shareResource(r.id, { profileId: u.id, mode: 'view' });
+                  // The family may add it to the child's board ("Shared with me"): its own photos and
+                  // recordings wait in the child's space so their devices find them.
+                  await sendFilesFor(api, u.id, r.data);
                   return p.shareDone;
                 })
               }

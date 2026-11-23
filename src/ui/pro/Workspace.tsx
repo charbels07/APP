@@ -43,6 +43,7 @@ import { selected } from '../a11y';
 import { noticeText } from '../../lib/notices';
 import { peopleStrings } from '../../i18n/people';
 import { forgetChild } from '../../lib/deviceData';
+import { APP_VERSION } from '../../lib/appVersion';
 
 const SECTIONS: ProSection[] = ['dashboard', 'users', 'library', 'collab', 'learn', 'account'];
 const SECTION_ICON: Record<ProSection, IconName> = {
@@ -902,6 +903,8 @@ function ProAccount({ p, verification, users, onVerify }: { p: ProStrings; verif
       <DownloadMyData />
       <DeleteAccount x={x} />
       <PictoCredit lang={uiLang} />
+      {/* Asked by the support page (parents find it under Settings → Account → Help). */}
+      <Note text={`${x.version} ${APP_VERSION}`} />
     </>
   );
 }

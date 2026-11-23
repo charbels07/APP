@@ -31,10 +31,15 @@ device and works without internet; nothing in these plans should take it away.
    review), unless the project uses a custom domain. **Decision to take now, calmly:** a custom
    domain for the Supabase project, so that the address can move without a new build.
 
-**To check (risk):** at start, the app treats an answer from the server that is an error but not
-a "network" error as "signed out", and then erases the board copy of that device except unsent
-changes (`currentAccount` in `src/backend/supabase.ts`, then `Session.tsx`). Test what the app
-does when Supabase answers with an error page (500, a paused project): the board must stay.
+**What the app does (built, November 2026):** a server that cannot answer (no connection, a timeout,
+"too many requests", any 5xx error page, a paused project) is "offline", never "signed out": the
+device opens the board it keeps and sends its changes later (`serverUnavailable` and `fail` in
+`src/backend/supabase.ts`, `whoIsSignedIn` / `localBoard` in `src/state/Session.tsx`). Only the
+login server's own clear answer that the session or the account no longer exists
+(`session_not_found`, `user_not_found`…) signs the device out and erases the board copy. A board
+whose access is refused is erased only when the removal is certain (`removed` in
+`src/state/profileSync.ts`). Still to try on a real tablet: start with Supabase answering an error
+page (`docs/runbooks/HAND-TEST-TABLETS.md`).
 
 ## 2. Data loss on the server
 
@@ -66,9 +71,9 @@ does when Supabase answers with an error page (500, a paused project): the board
    three languages; remind them how to export (the board's open file, "Download all my data",
    printed boards); keep the server long enough for them to do it.
 4. **Never** delete accounts or end sessions on the server before the devices can keep their
-   boards without the server: today a device whose session is refused erases its board copy
-   (section 1, "To check"). A "keep this board on this device without an account" mode is
-   needed before any closure.
+   boards without the server: a deleted account or an ended session is a clear "no session",
+   and the device then erases its board copy (section 1). A "keep this board on this device
+   without an account" mode is needed before any closure.
 
 ## 5. The app is suspended from a store
 
@@ -112,7 +117,7 @@ Likelihood and impact: low / medium / high. Reviewed every quarter with the acce
 | 3 | A database rule lets someone read another family's child | Low | High | Rules in the database, `npm run test:db` with every known attack, an outside security test before selling | `[developer]` | `[date]` |
 | 4 | Supabase outage of more than a day | Low | Medium | Offline boards; restore plan; custom domain (to decide) | `[owner]` | `[date]` |
 | 5 | Server data lost | Low | High | Daily backups, weekly off-site copy, quarterly restore test | `[owner]` | `[date]` |
-| 6 | The device erases its board when the server refuses the session (outage answer, closure) | To test | High | Test it (section 1); build an offline-only mode before any closure | `[developer]` | `[date]` |
+| 6 | The device erases its board when the server says the session or the account no longer exists (closure) | Low (an outage keeps the board: built) | High | Build an offline-only mode before any closure; try an outage on a real tablet | `[developer]` | `[date]` |
 | 7 | The developer is unavailable | Medium | High | Second admin on every account, documentation, backup developer | `[owner]` | `[date]` |
 | 8 | Money runs out | Medium | High | Continuity pledge, cost order, notice period | `[owner]` | `[date]` |
 | 9 | Store suspension | Medium | High | Store rules checked at each release; deletion page; privacy forms kept true | `[owner]` | `[date]` |

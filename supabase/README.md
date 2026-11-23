@@ -243,6 +243,10 @@ own instead). With the command line, the same in one go:
 npx supabase functions deploy caa-mail --no-verify-jwt
 ```
 
+`supabase/config.toml` says the same for the command line (`verify_jwt = false` for `caa-mail`,
+`caa-purge` and `caa-push`); a function deployed from the dashboard's editor does not read it, so
+check the switch there.
+
 **2. The secrets.** *Edge Functions → Secrets*, three lines (typed there, never in a chat or a file):
 
 | Name | Value |

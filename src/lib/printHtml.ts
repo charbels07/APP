@@ -120,3 +120,13 @@ ${o.cutCards ? '.cell { outline: 1px dashed #666; outline-offset: 2.5mm; }' : ''
 <div class="foot">${escape(pictoCreditLine(lang))}</div>
 </body></html>`;
 }
+
+/**
+ * The person closed the print dialog without printing (iPad: "Printing did not complete"): not a
+ * failure to tell them about. Anything else that stops a print or a PDF is said on the panel.
+ */
+export function printCancelled(e: unknown): boolean {
+  const code = (e as { code?: unknown } | null)?.code;
+  const message = e instanceof Error ? e.message : typeof e === 'string' ? e : '';
+  return code === 'ERR_PRINT_INCOMPLETE' || /did not complete|cancel/i.test(message);
+}

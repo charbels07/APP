@@ -4,8 +4,8 @@
   `node_modules/<pkg>/build/*.d.ts` before using an API instead of relying on memory.
 - Use `EXPO_OFFLINE=1 npx expo install <pkg>` (the Expo API host may be unreachable).
 - Checks before committing: `npm run typecheck` and `npm test`.
-- Publishing (owner's decision, November 2026): every finished change goes on the live app without
-  asking. Once the checks pass: commit, push the session branch, open a pull request into the
+- Publishing (owner's decision, November 2026): every finished change goes on the web app (for chosen testers
+  today; the product will be sold in the stores only) without asking. Once the checks pass: commit, push the session branch, open a pull request into the
   repository's default branch (`claude/amazing-ptolemy-w798kn`, the one Cloudflare publishes) and merge
   it; Cloudflare rebuilds the web app by itself. If the default branch moved meanwhile, bring it into the
   session branch and run the checks again first. Database migrations (`supabase/migrations`) are not
@@ -87,8 +87,8 @@
   been confirmed by the owner's ear: change its numbers only with them.
 - Vibration: removed on purpose (owner's decision, November 2026): no vibration anywhere (touch, timer,
   dragging) and no switch for it. Do not add `expo-haptics` or `navigator.vibrate` back unless asked.
-- With a child's voice (Girl or Boy), "Create a new word" requires a recording in the board's language before
-  Save (`PickerPanel`, `t.recordRequired`).
+- "Create a new word" offers a recording in the board's language ("Your voice for this word (optional)",
+  `t.recordOwn` in `PickerPanel`), never requires one, whatever the voice (gap review Q48).
 - Settings → Board page (owner's request, November 2026: "tidy, simple words, nothing twice"): ten groups
   closed at first (`Group` in `CaregiverPanels.tsx`): Languages, Words and pictures, Display, Touch, Sentence,
   Voice, Universal bar, Help button, Code and data, About. A new control goes into the group it belongs to,
@@ -241,6 +241,14 @@
   (`CreateTiles`) and names a material by what it contains (`src/lib/resourceNames.ts`, shown with
   `resourceName`). AI buttons and messages only show when `aiAvailable()` says yes: never a sentence about
   the AI being unavailable.
+- AI switched off, code kept (owner's decision Q47, November 2026): the server function `caa-ai` stays undeployed;
+  nothing on screen, in the guide or in the set-up help mentions AI, and Settings has no AI switch (a family's
+  earlier "off", `settings.aiSuggestions === false`, is still respected, by "Draw" too). Before turning it on:
+  a ceiling in SQL, the consent text and the documents saying what is sent, the families asked again.
+- The app's name is "Empower Communication" everywhere (Q51): `app.json` name, the web manifest (under the icon
+  too), `APP_NAME`, the texts, the noon reminder's title (`push_words`). One version number: `app.json` =
+  `package.json` (`appIdentity.test.ts`). `ios.bundleIdentifier`, `android.package` and `eas.json` are the
+  owner's to choose. Support e-mail `empowerhub.me@gmail.com`, company "Empower Hub", Beirut, Lebanon.
 - Activity boards (TLA) order their topic words like the child's main board (`src/lib/boardOrder.ts`:
   `mainBoardOrder`, `tlaLayout`, `arrangeTla`). Automatic when a board is created; on a board already made
   it is only done on request ("Arrange like the main board" in the board's menu): never re-order a board
@@ -317,7 +325,7 @@
   Professionals, Administration, Product, Requests, Bugs, Content, Security. A new figure goes to the page
   it belongs to, with a one-line intro kept short. The demo server answers with invented figures
   (`src/lib/demoBackOffice.ts`, flagged `example`). Content is counted from the app's own data files.
-- "Help us improve Empower" (`src/ui/admin/WriteTeam.tsx`): six subjects (`FeedbackKind`) plus votes
+- "Help us improve Empower Communication" (`src/ui/admin/WriteTeam.tsx`): six subjects (`FeedbackKind`) plus votes
   (`roadmap`, one vote per account, ideas written by the team in three languages). It is a message sent on
   purpose: it never depends on the sharing switch. Keep the "no personal or medical information" reminder.
 - Services and keys: `docs/API-KEYS.md` (keep it up to date when a feature starts needing one).

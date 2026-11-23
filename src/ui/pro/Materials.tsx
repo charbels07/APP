@@ -14,7 +14,8 @@ import { proStrings, type ProStrings } from '../../i18n/pro';
 import { label, symbolOf } from '../../lib/lexicon';
 import { pickPhoto } from '../../lib/photos';
 import { exportJson, printDocument } from '../../lib/platform';
-import { buildPrintHtml, conceptCell } from '../../lib/printHtml';
+import { buildPrintHtml, conceptCell, printCancelled } from '../../lib/printHtml';
+import { reportProblem } from '../../lib/product';
 import {
   duplicateData,
   EDITED_ON_BOARD,
@@ -251,11 +252,20 @@ function CardsForm({ data, onChange, p, startWithPhoto, title }: { data: Resourc
     onChange(next);
     setPhotoName('');
   };
+  // A print that could not be made is said under the button (a dialog closed without printing is not).
+  const [printFailed, setPrintFailed] = useState(false);
   const print = async () => {
-    const cells = await Promise.all(cards.map((id) => conceptCell(profile, id, lang)));
-    const cols = 4;
-    const html = buildPrintHtml(title, Math.max(1, Math.ceil(cells.length / cols)), cols, cells, { paper: 'A4', landscape: false, blackWhite: false, labels: true, cutCards: true }, lang);
-    await printDocument(html, false);
+    setPrintFailed(false);
+    try {
+      const cells = await Promise.all(cards.map((id) => conceptCell(profile, id, lang)));
+      const cols = 4;
+      const html = buildPrintHtml(title, Math.max(1, Math.ceil(cells.length / cols)), cols, cells, { paper: 'A4', landscape: false, blackWhite: false, labels: true, cutCards: true }, lang);
+      await printDocument(html, false);
+    } catch (e) {
+      if (printCancelled(e)) return;
+      reportProblem('print', e);
+      setPrintFailed(true);
+    }
   };
   return (
     <>
@@ -287,6 +297,7 @@ function CardsForm({ data, onChange, p, startWithPhoto, title }: { data: Resourc
         </Section>
       ) : null}
       {cards.length > 0 && <Btn icon="printer" label={p.print} onPress={print} />}
+      {printFailed && <Note text={p.printFailed} />}
     </>
   );
 }

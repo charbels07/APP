@@ -54,4 +54,4 @@ Before this promise is published:
 
 ## Contact
 
-`[Company name]`, `[address]` — `[support e-mail]`.
+Empower Hub, Beirut, Lebanon — `empowerhub.me@gmail.com`.

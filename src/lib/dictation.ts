@@ -10,3 +10,31 @@ export function installedFor(installed: readonly string[], locale: string): bool
   const lang = want.split('-')[0];
   return installed.map(norm).some((l) => l === want || l.split('-')[0] === lang);
 }
+
+/** What went wrong with a dictation, in words a family can act on (gap review, batch 6). */
+export type DictationProblem = 'denied' | 'unavailable' | 'noSpeech' | 'network' | 'other';
+
+/**
+ * The recogniser's error code (or the reason `start` threw) → the sentence to show. `null`: nothing to
+ * say (the person stopped it). Never "the online demo" for every cause: each cause has its own words.
+ */
+export function dictationProblem(code: string | undefined): DictationProblem | null {
+  switch (code) {
+    case 'aborted':
+      return null;
+    case 'not-allowed':
+    case 'denied':
+      return 'denied';
+    case 'service-not-allowed':
+    case 'language-not-supported':
+    case 'unavailable':
+      return 'unavailable';
+    case 'no-speech':
+    case 'speech-timeout':
+      return 'noSpeech';
+    case 'network':
+      return 'network';
+    default:
+      return 'other';
+  }
+}

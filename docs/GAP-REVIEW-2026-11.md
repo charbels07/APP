@@ -559,42 +559,73 @@ Seen on the way, not changed (not in this batch):
 
 ## Batch 6 — Texts and documents
 
-- [ ] **Recording becomes optional (Q48):** remove "record before Save" from "Create a new word"
-  (`PickerPanel`, `t.recordRequired`); "Record" stays as an option; correct the guide and `CLAUDE.md`.
-- [ ] **AI switched off, code kept (Q47):** the server function stays undeployed. Remove from the
-  screens: the "AI suggestions" switch and its note (`CaregiverPanels.tsx` ~1442), the sentence under
-  "Draw" about the AI "to be set up" (`SearchBox.tsx` ~181, `ui.ts`), "Draw" ignoring that switch.
-  Nothing on screen mentions AI. The consent text does not change now. (When the AI is turned on later:
-  the ceiling in SQL, the consent text and documents saying what is sent, families asked again.)
-- [ ] **Untrue sentences:** a recording "stays on this device" (`ui.ts` ~186, ~221, ~619, ~652, ~1051,
-  ~1300; `guide.ts` ~366): recordings are copied through the account. The dictation failure message
-  speaks of "the online demo" for every cause (`VoiceButton.tsx` ~62). On web the line "Apple's or
-  Google's service hears it" is never shown (`VoiceButton.tsx` ~97).
-- [ ] **Support and delete-account pages** (`public/support/`, `public/delete-account/`, three
-  languages): support e-mail `empowerhub.me@gmail.com`, company "Empower Hub", address "Beirut, Lebanon";
-  take OUT the privacy e-mail and the "[number] working days" lines; check the remaining brackets
-  ("[link]", "[60] days") and the backup sentence against `docs/SECURITY.md`.
-- [ ] **Name and version (Q51):** "Empower Communication" everywhere, under the icon included
-  (`app.json` name "CAA", slug, the web page title); one version number (`app.json` 0.1.0 vs
-  `package.json` 1.0.0). No `ios.bundleIdentifier` / `android.package` / `eas.json` yet: ask the owner.
-- [ ] **Documents (Q24, Q52):** `docs/ARCHITECTURE.md` and the legal drafts say "web for chosen testers
-  today, sold in the stores only"; add caa-purge, caa-push and the browser push services; retention
-  documents follow the code (deletion list 30 days, decided invitations 12 months);
-  `docs/SECURITY.md` counts; `docs/ACCESS-LIST.md` secrets (`PUSH_CONTACT`, `SMTP_HOST`); README
-  figures. Add `supabase/config.toml` with `verify_jwt = false` for caa-mail, caa-purge, caa-push.
-- [ ] **For the owner's lawyer** (a list, not decisions): should the proof of consent survive account
-  deletion (today deleted with it); retention of observations, diplomas, inactive accounts; the
-  professional's name kept in the team's log 5 years after deletion; the payment rules below.
-- [ ] **Hand-test list for real tablets** (nothing here was tried on a device): speech and the four
-  voices, recordings (and a browser-made recording played on an iPad), child lock, links behind the code,
-  offline start, a linked "use only" tablet receiving a new word, Arabic long sentence scrolling; from
-  batch 2: in caregiver mode, a photo taken or picked, a word recorded, a PDF shared, a page printed must
-  leave caregiver mode on, and Home then back must find it off.
-- [ ] Small ones: hard-coded texts (`ModelPanel.tsx` ~38, `NewTlaPanel.tsx` ~360, "up" / "down" /
-  "-" / "+" labels), `Pressable`s without a role (`CaregiverPanels.tsx` ~481, ~739, ~855,
-  `Workspace.tsx` ~180, `ScheduleScreen.tsx` ~109), colour #98A2B3 on white, print failure shows
-  nothing, empty states of Schedule and Activity boards, dead `LangPanel`, `expo-constants` imported
-  but not in `package.json`.
+**Done on 23 November 2026.** One small database file, `supabase/migrations/20261123000000_app_name.sql` (the
+noon reminder's title), its scenario `supabase/tests/app_name_scenario.sql` (in `scripts/test-db.sh` and
+`supabase/check-migrations.sql`). Checks: `npm run typecheck` clean, `npm test` 620 passed (64 files), `npm run
+test:db` 16 scenarios passed, `npm run test:a11y` no violation (150 screens, keyboard checks).
+
+**For the owner: one file to run**, `20261123000000_app_name.sql`, in Supabase → SQL Editor, after this version is
+published. Until it has run, the noon reminder is titled "Empower" (nothing else changes).
+
+- [x] **Recording becomes optional (Q48).** "Create a new word" shows "Your voice for this word (optional)" for
+  every voice; Save no longer waits for it (`t.recordOwn`, `PickerPanel`). Guide and `CLAUDE.md` corrected.
+- [x] **AI switched off, code kept (Q47).** No AI switch in Settings → Code and data; no sentence about the AI
+  under "Draw" (`drawUnavailable`, `drawAiOff` removed): if the helper stops answering, "Draw" simply goes
+  away. "Draw" now also respects a family's earlier "off" (`aiSuggestions === false`, kept in the profile). The
+  guide and the set-up help no longer mention AI ("Ask the AI", "Create from a photo" and the privacy step about
+  the AI are gone, since they only show with the AI on); the iOS permission sentences no longer say a photo is
+  sent to the AI. Tested in `guide.test.ts`. The consent text is unchanged. When the AI is turned on later: the
+  ceiling in SQL (above), the consent text and documents saying what is sent, families asked again, the switch
+  and the guide's lines back.
+- [x] **Untrue sentences.** A recording "stays on this device" → "with an account, it also reaches the child's
+  other devices" (`recordNote`, guide "Editing a word", three languages). Dictation failures now say their cause
+  (`dictationProblem` in `src/lib/dictation.ts`: microphone not allowed, not possible here, nothing heard, no
+  internet, other; a stop by the person says nothing), never "the online demo". In a browser the line saying
+  that the browser's service (Google's, Apple's…) hears the sentence is shown while listening (`dictateOnlineWeb`).
+- [x] **Support and delete-account pages** (three languages): `empowerhub.me@gmail.com` (for data questions too),
+  "Empower Hub · Beirut, Lebanon"; privacy e-mail and "[number] working days" taken out; no bracket left. The
+  deletion steps quote the real buttons (bin 30 days, hand-over or erase per child, `profiles_left`, the proof);
+  backups "90 days at most, no photos or recordings" (`scripts/backup-offsite.sh` refuses more; the 7 / 60 days
+  were not certain and are gone). What stays after deletion is said (observations written on another family's
+  profile under the author's name, team notices 12 months, a professional's verification log 5 years).
+- [x] **Name and version (Q51).** "Empower Communication" in `app.json` (name, slug `empower-communication`,
+  `web.name` / `shortName`: the page title and under the icon), the web manifest, `APP_NAME` (invitations, the
+  professional workspace), every text that said "Empower", the service worker's fallback title and the noon
+  reminder (migration above). One version: `package.json` follows `app.json`, 0.1.0 (the one the app shows and
+  reports). `appIdentity.test.ts`. **Still the owner's to choose**: `ios.bundleIdentifier`, `android.package`,
+  `eas.json` (a test keeps them empty until then).
+- [x] **Documents (Q24, Q52).** Architecture, legal drafts, runbooks, `SECURITY.md`, `HOW-IT-WORKS.md`,
+  `ACCESS-LIST.md`, `API-KEYS.md`, README: web for chosen testers, sold in the stores only; caa-purge, caa-push
+  and the four browser notification services added; the AI marked switched off (Anthropic not a recipient
+  today); retention follows the code (bins 30 days, unused media 30 days, decided invitations 12 months after
+  they were written, the deletion list 30 days after its files are gone); figures recounted; every secret of the
+  functions listed. `supabase/config.toml` sets `verify_jwt = false` for caa-mail, caa-purge and caa-push (they
+  check the database-made key in `x-mail-key`). The known contact values replace the placeholders of the drafts.
+- [x] **For the owner's lawyer**: `docs/legal/QUESTIONS-FOR-LAWYER.md` (proof of consent deleted with the account,
+  observations, diplomas, inactive accounts, the name in the team's log 5 years, the payment rules).
+- [x] **Hand-test list for real tablets**: `docs/runbooks/HAND-TEST-TABLETS.md`, every hand-test paragraph of
+  batches 1–5 plus this one (a new word saved with Girl / Boy without recording; a print dialog closed without
+  printing on an iPad must show no failure line).
+- [x] Small ones: example texts follow the language (`modelExample`, `topicExample`); "up" / "down" / "-" / "+"
+  are named ("Move up", "One minute less", "Slower"…); the drawing pad is named; roles on the word-class chips
+  (radio, checked), the sequence's picture, the workspace's licence banner and the Schedule tabs (tab,
+  selected); #98A2B3 replaced by the field-border colour for icons and check boxes (tested); a failed print or
+  PDF says so on the print panel and on a professional's cards (a dialog closed without printing does not);
+  Schedule without a sequence or without steps no longer says "All done!", Activity boards without a board say
+  how to make one; the dead `LangPanel` and its overlay removed; `expo-constants` is in `package.json`.
+
+Decided on the way (not asked, tell the owner): the version kept is 0.1.0, not 1.0.0.
+
+Seen on the way, not changed (not in this batch):
+- The deletion list (`storage_purge`) loses a line 30 days after its files are deleted, while off-site copies are
+  kept up to 90 days: restoring a copy older than 30 days needs the deletion lists of the later weekly copies too
+  (written in `BACKUP-AND-RESTORE.md`). To decide: keep the lines 90 days, or keep the copies 30 days.
+- The storage purge reason 'media' exists in SQL but is never used (unused media leave through the sweep).
+- `supabase/README.md` still explains how to deploy `caa-ai` (a how-to; nothing deploys it).
+- A professional's "Account & licence" page shows no app version (the support page's path works for parents).
+- "We may ask you to confirm with a code sent to that address" (delete-account page) is a manual process.
+- CONTINGENCY / DPIA say "a device whose session is refused erases its board copy": older than the rule of
+  `CLAUDE.md` (only a clear "no session" erases).
 
 ---
 
@@ -625,7 +656,7 @@ A separate project, after the owner has settled the legal side (company bank acc
 
 ## `CLAUDE.md` lines to update when the matching batch ships
 
-- "With a child's voice, 'Create a new word' requires a recording…" → optional (batch 6).
+- "With a child's voice, 'Create a new word' requires a recording…" → optional (batch 6: done).
 - "The scan never covers the universal bar" → except Help (batch 1).
 - The back-office figures rule → totals for all, use for consenting families of 5+ (batch 3: done).
 - Caregiver code: the first keypad cannot be closed; caregiver mode turns itself off (batch 2: done).
@@ -633,4 +664,4 @@ A separate project, after the owner has settled the legal side (company bank acc
   to them (batch 3: done).
 - Sync: device-only things never travel (batch 1: done). Media: replaced files kept 30 days (batch 5: done).
 - Import / export rules (batch 5: done). Payment rules above (new section).
-- Publishing rule mentions the web app as "live": say "for chosen testers" (batch 6).
+- Publishing rule mentions the web app as "live": say "for chosen testers" (batch 6: done).

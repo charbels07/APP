@@ -95,7 +95,14 @@ export function TlaScreen() {
           )}
         </View>
       </View>
-      {current ? <Grid board={current} /> : null}
+      {current ? (
+        <Grid board={current} />
+      ) : (
+        // No activity board left (all deleted): say so, and where a new one is made.
+        <View style={styles.empty}>
+          <Text style={styles.emptyText}>{t.noTla}</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -116,4 +123,6 @@ const styles = StyleSheet.create({
   },
   tabActive: { borderColor: C.accent, backgroundColor: C.accentSoft },
   tabText: { fontSize: 16, fontWeight: '700', color: C.text, userSelect: 'none' },
+  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  emptyText: { fontSize: 18, color: C.textMuted, textAlign: 'center', maxWidth: 520 },
 });

@@ -43,11 +43,13 @@ export function SearchBox({
   const t = uiLang ? strings(uiLang) : app?.t ?? strings('fr');
   const rtl = (uiLang ?? app?.profile.settings.uiLang) === 'ar';
   const [drawing, setDrawing] = useState(false);
-  // Searching by drawing needs the AI helper: without it the button is simply not there.
-  const [canDraw, setCanDraw] = useState(false);
+  // Searching by drawing needs the AI helper: without it the button is simply not there. A family that
+  // turned the AI off (the switch is gone while the AI is switched off, gap review Q47) keeps it off.
+  const [aiUp, setAiUp] = useState(false);
+  const canDraw = aiUp && profile?.settings.aiSuggestions !== false;
   useEffect(() => {
     let alive = true;
-    void aiAvailable().then((ok) => alive && setCanDraw(ok));
+    void aiAvailable().then((ok) => alive && setAiUp(ok));
     return () => {
       alive = false;
     };
@@ -74,7 +76,7 @@ export function SearchBox({
           />
         ) : null}
       </View>
-      {drawing && canDraw && profile ? <DrawSearch lang={lang} profile={profile} t={t} onWord={onChange} onPen={lockScroll} /> : null}
+      {drawing && canDraw && profile ? <DrawSearch lang={lang} profile={profile} t={t} onWord={onChange} onPen={lockScroll} onGone={() => setAiUp(false)} /> : null}
       <View style={[styles.box, rtl && { flexDirection: 'row-reverse' }]}>
         <View style={styles.glass}>
           <Icon name="search" size={22} color={C.textMuted} />
@@ -108,31 +110,33 @@ function DrawSearch({
   t,
   onWord,
   onPen,
+  onGone,
 }: {
   lang: Lang;
   profile: Profile;
   t: ReturnType<typeof strings>;
   onWord: (w: string) => void;
   onPen: (down: boolean) => void;
+  /** The helper stopped answering: "Draw" goes away, without a sentence about it. */
+  onGone: () => void;
 }) {
   const [strokes, setStrokes] = useState<Stroke[]>([]);
   const [size, setSize] = useState<[number, number]>([0, 0]);
-  const [state, setState] = useState<'idle' | 'thinking' | 'done' | 'failed' | 'unavailable' | 'off'>('idle');
+  const [state, setState] = useState<'idle' | 'thinking' | 'done' | 'failed'>('idle');
   const [guesses, setGuesses] = useState<DrawingGuess[]>([]);
   const ctl = useRef<AbortController | null>(null);
   useEffect(() => () => ctl.current?.abort(), []);
   const wordOf = (g: DrawingGuess) => g[lang] || g.fr || g.en || g.ar || '';
 
   const find = async () => {
-    if (!profile.settings.aiSuggestions) return setState('off');
-    if (!(await aiAvailable())) return setState('unavailable');
+    if (!(await aiAvailable())) return onGone();
     ctl.current?.abort();
     const c = new AbortController();
     ctl.current = c;
     setState('thinking');
     const res = await askAiToReadDrawing(strokes, size[0], size[1], c.signal, profile.settings.arabic);
     if (c.signal.aborted) return;
-    if (res === null) return setState('unavailable');
+    if (res === null) return onGone();
     setGuesses(res);
     setState(res.length ? 'done' : 'failed');
     if (res.length) onWord(wordOf(res[0]));
@@ -141,7 +145,7 @@ function DrawSearch({
   return (
     <View style={{ gap: 8 }}>
       <Text style={styles.muted}>{t.drawHint}</Text>
-      <DrawPad strokes={strokes} onChange={setStrokes} onSize={(w, h) => setSize([w, h])} onPen={onPen} />
+      <DrawPad label={t.drawHint} strokes={strokes} onChange={setStrokes} onSize={(w, h) => setSize([w, h])} onPen={onPen} />
       <View style={[styles.row, { flexWrap: 'wrap' }]}>
         <Btn small icon="undo" label={t.undoStroke} disabled={!strokes.length} onPress={() => setStrokes((s) => s.slice(0, -1))} />
         <Btn
@@ -180,8 +184,6 @@ function DrawSearch({
         </View>
       )}
       {state === 'failed' && <Text style={styles.warn}>{t.drawFailed}</Text>}
-      {state === 'unavailable' && <Text style={styles.warn}>{t.drawUnavailable}</Text>}
-      {state === 'off' && <Text style={styles.warn}>{t.drawAiOff}</Text>}
     </View>
   );
 }

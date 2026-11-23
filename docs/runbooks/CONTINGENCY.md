@@ -10,11 +10,12 @@ device and works without internet; nothing in these plans should take it away.
 
 | Provider | What stops | What keeps working |
 |---|---|---|
-| Supabase (database, sign-in, files, server functions) | Sign-in, sync between devices, teams, invitations, follow-up sent to the server, back office, AI helper, team e-mails | The board on each device, speaking, recordings, photos already on the device; changes wait and are sent later |
+| Supabase (database, sign-in, files, server functions) | Sign-in, sync between devices, teams, invitations, follow-up sent to the server, back office, team e-mails, deleting the files of what was erased (`caa-purge`: it waits and catches up), browser notifications (`caa-push`) | The board on each device, speaking, recordings, photos already on the device; changes wait and are sent later |
 | Gmail (codes by e-mail) | New accounts, password reset, "Forgot the code?" by e-mail, team e-mails | Everything else; "Forgot the code?" with the account's password |
 | Google / Apple sign-in | Signing in with them | Accounts already signed in |
-| Anthropic (AI helper) | AI suggestions (the app hides the buttons) | The situation library and everything else |
-| Cloudflare | The support and account-deletion pages | The apps |
+| Anthropic (AI helper) | Nothing today: the AI is switched off and `caa-ai` is not deployed | Everything |
+| The browsers' notification services (Google FCM, Mozilla, Apple, Microsoft) | Browser notifications of the web version (tried again up to 5 times until the notification expires: 3 hours for the reminder, 2 days for a new idea) | Everything else |
+| Cloudflare | The support and account-deletion pages; the testers' web version | The store apps |
 | App Store / Google Play | New installs and updates | Installed apps |
 
 **Plan.**
@@ -58,7 +59,8 @@ does when Supabase answers with an error page (500, a paused project): the board
 ## 4. Money runs out
 
 1. The continuity pledge (`docs/legal/CONTINUITY-PLEDGE-DRAFT.md`) says what families keep.
-2. Costs first cut: the AI helper (switch off `caa-ai`), then anything that is not the server.
+2. Costs first cut: anything that is not the server (the AI helper costs nothing today: it is
+   switched off).
    The Supabase plan with backups is the last cost to keep.
 3. If the service must close: give families the notice period promised in the pledge, in the
    three languages; remind them how to export (the board's open file, "Download all my data",
@@ -70,8 +72,8 @@ does when Supabase answers with an error page (500, a paused project): the board
 
 ## 5. The app is suspended from a store
 
-There is no web version for families (the owner's choice, November 2026): a suspension stops
-new installs and updates in that store.
+The product is sold in the stores only (the owner's choice, November 2026); the web version is
+for chosen testers, not for families: a suspension stops new installs and updates in that store.
 
 1. Read the reason; answer in the store's console within a day. Most suspensions are about
    privacy forms, account deletion, children's category rules or sign-in.
@@ -80,15 +82,17 @@ new installs and updates in that store.
    `docs/legal/RECORD-OF-PROCESSING.md`; Sign in with Apple is offered where Google is.
 3. Installed apps keep working: tell families, in a notice, not to delete the app.
 4. If it lasts: the owner decides whether to open a temporary way for existing families (the
-   code still builds for the web; it is not offered today).
+   web version exists, for testers; it is not offered to families today).
 
 ## 6. A regulator or a lawyer challenges us
 
 1. Answer within the deadline given; `[DPO]` and `[lawyer]` lead.
 2. Have ready: `docs/legal/` (policy, record of processing, DPIA, retention), `docs/SECURITY.md`,
    the breach register, the consent records.
-3. If a processing must stop at once, the switches that exist: the AI helper (function off),
-   team e-mails (`delete from public.team_mail_config;`), product counters and anonymous figures
+3. If a processing must stop at once, the switches that exist: team e-mails, file deletion and
+   browser notifications together (`delete from public.team_mail_config;`: `caa-mail`, `caa-purge`
+   and `caa-push` use the same key; the work waits in its queue), notifications alone (delete the
+   function `caa-push`), product counters and anonymous figures
    (families' choices; the server checks them). Communication itself (the board) never needs to
    stop.
 

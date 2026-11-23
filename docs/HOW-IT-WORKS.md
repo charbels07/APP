@@ -703,8 +703,8 @@ without their board or without a word being said. No database change.
 | Check | What it does |
 |---|---|
 | `npm run typecheck` | TypeScript reads the whole code and refuses mistakes such as a missing field or a wrong type. |
-| `npm test` | 518 automatic tests (Jest): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office, colour contrast. |
-| `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger, a tablet and a member of our team; then every attack found by the security review, which must fail; then a professional who prepares a profile and hands it to the parents; then the e-mails to the team; then the figures for the team, the problems and the votes; then the second round of 18 November (two-step sign-in, fresh proofs, the purge queue, the bin and the copies, consent, retention, sealed sentences, photos and recordings); 318 checks. The same runs on GitHub at every change. |
+| `npm test` | About 600 automatic tests in 62 files (Jest, November 2026): grammar, search, permissions, change sets, demo server, sync and merges, set-up answers, materials, guide, communication data and consent, the four domains, card actions, the pictogram library and its licences, the back office, colour contrast. |
+| `npm run test:db` | The database and its security rules on a throw-away PostgreSQL: a parent, a therapist, a teacher, a stranger, a tablet and a member of our team; then every attack found by the security review, which must fail; then a professional who prepares a profile and hands it to the parents; then the e-mails to the team; then the figures for the team, the problems and the votes; then the second round of 18 November (two-step sign-in, fresh proofs, the purge queue, the bin and the copies, consent, retention, sealed sentences, photos and recordings), the notifications and the gap review's batches 3 to 5; 16 scenarios, 493 checks on 23 November 2026. The same runs on GitHub at every change. |
 | `npm run test:live` | The same story on a second, empty Supabase project (never the one families use), through the app's own code: 13 steps, including devices, history undo, invitation codes, revisions and materials (needs "Confirm email" off while it runs). Last full run: before the back office (all 13 passed); **to run again once the back-office migration is on the real project**. |
 | `npm run test:a11y` | Accessibility: 232 scans of 64 screens against WCAG 2.2 AA (four sizes, Arabic), then a keyboard-only run. Last run: 0 rule break. |
 | Browser walkthroughs | Playwright drives the web version like a person: the parent journey, the team (invite, undo, join with a code), the professional journey (verification, tour, request, draft, proposal, approval), and the Arabic screens. |
@@ -753,9 +753,9 @@ without their board or without a word being said. No database change.
   them up. Days recorded while the follow-up was off are never recorded later.
 - **Function recognition** is a set of simple word rules: a guide for the speech therapist, to be
   checked against observations, not an assessment.
-- **AI on devices** needs the `caa-ai` function deployed with an Anthropic key (see
-  `supabase/README.md`); until then the app uses the situation library. Search by drawing works in
-  the browser demo only for now.
+- **AI**: switched off by the owner's decision (November 2026). The `caa-ai` function stays in the
+  code, not deployed; the app uses the situation library. Turning it on later needs the ceiling in
+  the database, the consent text and the documents saying what is sent, and families asked again.
 - **The team's own accounts are counted in the figures** (as a parent account, and its test profile as
   a child). Negligible once real families arrive; to be excluded in the database if exact numbers matter.
 - **Accessibility**: checked by a program against WCAG 2.2 AA on the web version (`docs/ACCESSIBILITY.md`);

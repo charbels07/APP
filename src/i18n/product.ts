@@ -1,5 +1,5 @@
 /**
- * Words of "Help us improve Empower" (the form parents and professionals see) and of the pages
+ * Words of "Help us improve Empower Communication" (the form parents and professionals see) and of the pages
  * of the back office about the product: feature adoption, requests, technical problems, content
  * and privacy. Three languages, like every screen.
  */
@@ -7,8 +7,8 @@ import type { UiLang } from '../model/types';
 
 const fr = {
   // ── The form (account page of a parent, of a professional) ──
-  improveTitle: 'Aidez-nous à améliorer Empower',
-  improveIntro: 'Qu’est-ce qui rendrait Empower plus utile pour vous ?',
+  improveTitle: 'Aidez-nous à améliorer Empower Communication',
+  improveIntro: 'Qu’est-ce qui rendrait Empower Communication plus utile pour vous ?',
   kinds: {
     feature: 'Proposer une nouvelle fonction',
     vocabulary: 'Demander du vocabulaire manquant',
@@ -154,7 +154,7 @@ const fr = {
   asked: 'Ce qui est demandé',
   askedNote: 'Tous les messages, par sujet.',
   ideas: 'Idées soumises au vote',
-  ideasNote: 'Les parents et les professionnels votent depuis leur page « Aidez-nous à améliorer Empower ».',
+  ideasNote: 'Les parents et les professionnels votent depuis leur page « Aidez-nous à améliorer Empower Communication ».',
   ideaVotes: (votes: number, parents: number, pros: number) => `${votes} vote${votes > 1 ? 's' : ''} · ${parents} de parents · ${pros} de professionnels`,
   addIdea: 'Ajouter une idée',
   askedTo: 'Demandée à',
@@ -265,8 +265,8 @@ const fr = {
 type Dict = typeof fr;
 
 const en: Dict = {
-  improveTitle: 'Help us improve Empower',
-  improveIntro: 'What would make Empower more useful for you?',
+  improveTitle: 'Help us improve Empower Communication',
+  improveIntro: 'What would make Empower Communication more useful for you?',
   kinds: {
     feature: 'Suggest a new feature',
     vocabulary: 'Request missing vocabulary',
@@ -409,7 +409,7 @@ const en: Dict = {
   asked: 'What is asked for',
   askedNote: 'Every message, by subject.',
   ideas: 'Ideas put to the vote',
-  ideasNote: 'Parents and professionals vote from their “Help us improve Empower” page.',
+  ideasNote: 'Parents and professionals vote from their “Help us improve Empower Communication” page.',
   ideaVotes: (votes, parents, pros) => `${votes} vote${votes === 1 ? '' : 's'} · ${parents} from parents · ${pros} from professionals`,
   addIdea: 'Add an idea',
   askedTo: 'Asked to',
@@ -515,8 +515,8 @@ const en: Dict = {
 };
 
 const ar: Dict = {
-  improveTitle: 'ساعدنا على تحسين Empower',
-  improveIntro: 'ما الذي يجعل Empower أكثر فائدة لك؟',
+  improveTitle: 'ساعدنا على تحسين Empower Communication',
+  improveIntro: 'ما الذي يجعل Empower Communication أكثر فائدة لك؟',
   kinds: {
     feature: 'اقتراح وظيفة جديدة',
     vocabulary: 'طلب مفردات ناقصة',
@@ -659,7 +659,7 @@ const ar: Dict = {
   asked: 'ما يُطلب',
   askedNote: 'كل الرسائل حسب الموضوع.',
   ideas: 'أفكار مطروحة للتصويت',
-  ideasNote: 'يصوّت الأهل والمختصون من صفحة «ساعدنا على تحسين Empower».',
+  ideasNote: 'يصوّت الأهل والمختصون من صفحة «ساعدنا على تحسين Empower Communication».',
   ideaVotes: (votes, parents, pros) => `${votes} صوت · ${parents} من الأهل · ${pros} من المختصين`,
   addIdea: 'إضافة فكرة',
   askedTo: 'موجّهة إلى',

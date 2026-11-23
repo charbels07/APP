@@ -45,3 +45,5 @@ $P -d aac -c "delete from profiles; delete from auth.users; delete from storage.
 $P -d aac -f supabase/tests/gap4_scenario.sql 2>&1 | grep -E "ok —|PASSED|ERROR"
 $P -d aac -c "delete from profiles; delete from auth.users; delete from storage.objects; delete from storage_purge;"
 $P -d aac -f supabase/tests/gap5_scenario.sql 2>&1 | grep -E "ok —|PASSED|ERROR"
+$P -d aac -c "delete from profiles; delete from auth.users; delete from storage.objects; delete from storage_purge;"
+$P -d aac -f supabase/tests/app_name_scenario.sql 2>&1 | grep -E "ok —|PASSED|ERROR"

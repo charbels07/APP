@@ -8,46 +8,47 @@
 
 | | |
 |---|---|
-| Controller | `[Company name]`, `[address]`, `[registration number]` |
+| Controller | Empower Hub, Beirut, Lebanon, `[registration number]` |
 | Representative (if the company is outside the EU) | `[name]` |
 | Data protection officer | `[DPO]`, `[DPO e-mail]` |
-| Contact for requests | `[privacy e-mail]` |
-| Last update | `[date]` (first draft: 18 November 2026, from the code) |
+| Contact for requests | `empowerhub.me@gmail.com` |
+| Last update | `[date]` (first draft: 18 November 2026, from the code; services, functions and retention checked again on 23 November 2026) |
+| Where the product is offered | The App Store and Google Play only. A web version is open today to chosen testers (sign-up open, no list of testers); it is not offered to families |
 
 Processors used by several purposes (their agreements to sign or check):
 
 | Processor | Role | Location | Agreement |
 |---|---|---|---|
-| Supabase | Database, sign-in, file storage, server functions, daily backups | EU region `[Frankfurt or Paris]`; US company | `[DPA signed? SCCs]` |
+| Supabase | Database, sign-in, file storage, daily backups, and the server functions `caa-mail` (team e-mails), `caa-purge` (deletes the stored files of what was erased, from the queue `storage_purge`) and `caa-push` (delivers browser notifications) | EU region `[Frankfurt or Paris]`; US company | `[DPA signed? SCCs]` |
 | Google (Gmail) | Sends sign-in codes and the team's e-mails | `[to confirm]` | `[to check: a free Gmail account may have no DPA]` |
-| Anthropic | AI helper (`caa-ai`), when switched on | US | `[DPA, SCCs]` |
-| Cloudflare | Public pages (support, deletion, privacy) | Worldwide | `[DPA]` |
+| Anthropic | Not used: the AI helper is switched off and `caa-ai` is not deployed (owner's decision, November 2026). *Before it is turned on: this record, the agreement, the consent text, families asked again* | US | — |
+| Cloudflare | Public pages (support, deletion, privacy) and the web version for chosen testers | Worldwide | `[DPA]` |
 | `[off-site storage provider]` | Encrypted weekly copy of the database | EU `[region]` | `[DPA]` |
 | Apple, Google (stores, sign-in) | Distribution, optional sign-in, subscriptions *(to come)* | — | Their terms *(controller or processor: to qualify)* |
 | Expo (EAS) | Builds the apps; receives no user data | — | — |
-| Google (FCM), Mozilla, Apple, Microsoft (the browsers' notification services) | Carry a notification to the browser that accepted them; the message is encrypted for that browser, they cannot read it | Worldwide | Their terms *(carrier chosen by the person's browser: to qualify)* |
+| Google (Firebase Cloud Messaging, `fcm.googleapis.com`), Mozilla (autopush, `updates.push.services.mozilla.com`), Apple (web push, `*.push.apple.com`), Microsoft (WNS, `*.notify.windows.com`): the browsers' notification services | Carry a notification of the web version to the browser that accepted them; the message is encrypted for that browser, they cannot read it. `caa-push` posts to these four only (checked by the function and by the database) | Worldwide | Their terms *(carrier chosen by the person's browser: to qualify)* |
 
 ## Summary
 
 | # | Purpose | People | Legal basis (to confirm) | Retention |
 |---|---|---|---|---|
 | 1 | Accounts and sign-in | Parents, professionals, team members | Contract | Until deletion; inactive 24 months → reviewed |
-| 2 | The child's board and its sync between devices | Children, parents | Contract; explicit consent (art. 9) | Until deletion; bin 30 days; last 10 snapshots |
-| 3 | Team work around a child | Parents, professionals, team members, children | Contract | History 24 months; invitations valid 30 days |
+| 2 | The child's board and its sync between devices | Children, parents | Contract; explicit consent (art. 9) | Until deletion; bin 30 days; words and boards deleted on the board 30 days; unused photos and recordings 30 days; last 10 snapshots |
+| 3 | Team work around a child | Parents, professionals, team members, children | Contract | History 24 months; invitations valid 30 days, not answered 60 days, decided 12 months |
 | 4 | Communication follow-up and observations | Children, adults who write notes | Explicit consent of the parent | Days 24 months; sentences 12 months; device 120 days |
 | 5 | Verification of professionals | Professionals | Legitimate interest (protecting children) | Identity document deleted at the decision; diploma `[to decide]` |
 | 6 | Back office and the team's action log | The app's team, professionals | Legitimate interest; legal obligation | Action log 5 years |
 | 7 | Messages to the team and votes | Parents, professionals | Legitimate interest | 3 years |
 | 8 | Feature counters and technical problems | Children (counters per profile); none (problems) | Consent of the parent | 180 days; erased when consent is withdrawn |
 | 9 | Anonymous figures for the team | Children of consenting families | Consent of the parent | Computed, not stored apart |
-| 10 | AI helper | Account holder who uses it | Contract | Count per day 30 days; content not stored |
+| 10 | AI helper: **switched off, not deployed** | — | — | Nothing collected today; the count per day would be kept 30 days |
 | 11 | E-mails to the team | Professionals who apply | Legitimate interest | 90 days |
 | 12 | Security of the service | Everyone | Legitimate interest; legal obligation | Rate log 2 days; logs 1–7 days |
 | 13 | Backups | Everyone | Legitimate interest; legal obligation (security) | 7 days; off-site 30–90 days |
-| 14 | Data rights and consents | Parents, professionals | Legal obligation | Consents `[as long as the profile + proof period]`; deletion list 90 days |
+| 14 | Data rights and consents | Parents, professionals | Legal obligation | Consents: as long as the account `[proof period: to decide]`; deletion list 30 days after the files are deleted |
 | 15 | Notices in the app | Account holders | Contract | 12 months |
-| 17 | Notifications outside the app (reminder at 12:00 for parents, new idea to vote on) | Parents, professionals who turned them on | Consent (asked in the app, then by the browser) | Device until turned off or 12 months unused; messages 2 days; last opening of a board: one moment per child |
 | 16 | Subscriptions *(to come)* | Parents, professionals | Contract; legal obligation (accounting) | `[to write]` |
+| 17 | Notifications outside the app, web version (reminder at 12:00 for parents, new idea to vote on) | Parents, professionals who turned them on | Consent (asked in the app, then by the browser) | Device until turned off or 12 months unused; messages 2 days; last opening of a board: one moment per child |
 
 ## 1. Accounts and sign-in
 
@@ -73,7 +74,7 @@ Processors used by several purposes (their agreements to sign or check):
 | Source | Parents; professionals allowed by the parents |
 | Recipients | The child's team, within the rights given; Supabase |
 | Transfers | Supabase Inc. support access `[safeguards]` |
-| Retention | Until the profile is deleted; then 30 days in the bin; then erased (files by the purge function). Snapshots: last 10. On a device: until sign-out or deletion |
+| Retention | Until the profile is deleted; then 30 days in the bin; then erased (files by the purge function `caa-purge`). Words and activity boards deleted on the board: 30 days in the profile's own bin. A photo or recording no board uses any more: 30 days (longer while an earlier version, the last 30 days of history or a waiting proposal uses it). Snapshots: last 10. On a device: until sign-out or deletion; unused files 30 days |
 | Security | Row-level security; private storage per child with a fair-use quota; changes from others cleaned (`src/lib/safety.ts`); the board works offline |
 
 ## 3. Team work around a child
@@ -84,7 +85,7 @@ Processors used by several purposes (their agreements to sign or check):
 | People | Parents, professionals, team members, children (the profile concerned) |
 | Data | Members (name, role, level, rights; their e-mail visible to the family and managers only), invitations (e-mail, name, message, code), proposals, change history (never what the child said), notices, shared materials |
 | Recipients | The team, according to rights; Supabase |
-| Retention | History 24 months; invitations valid 30 days; notices 12 months |
+| Retention | History 24 months; invitations valid 30 days, erased 60 days after they were written if not answered, 12 months after if decided (accepted, declined or cancelled); notices 12 months |
 | Security | An invitation gives at most what its author holds; removing someone cancels their invitations; rate limits (30 invitations, 40 shares a day) |
 
 ## 4. Communication follow-up and observations
@@ -153,17 +154,12 @@ Processors used by several purposes (their agreements to sign or check):
 | Retention | Not stored apart: computed from purposes 4 and 2 |
 | Security | Consenting families only; at least 5 children of 5 families (a group of 1 to 4 is never given as a number, in the back office and in the weekly e-mail); no name, word or sentence. Plain totals (accounts, profiles, linked devices, teams) count every family |
 
-## 10. AI helper (when switched on)
+## 10. AI helper (switched off)
 
 | | |
 |---|---|
-| Purpose | Suggest words for a new board, read a photo, guess a drawing |
-| People | The account holder who uses it |
-| Data | The topic typed, the photo or drawing sent; count of calls per day |
-| Recipients | Anthropic (processor) |
-| Transfers | US `[safeguards]` |
-| Retention | Content: not stored by us; count: 30 days |
-| Security | Only people who look after a child; 40 calls a day per account and a daily ceiling; never the child's name, words or sentences; the family can turn "AI suggestions" off |
+| State | **Not in use.** The owner switched the AI off (November 2026): the server function `caa-ai` stays in the code but is not deployed, and nothing is sent to Anthropic |
+| Before it is turned on | This entry is written for what is really sent, with its legal basis, recipient, transfer and retention; the daily ceiling is finished in the database; the consent text changes and families are asked again |
 
 ## 11. E-mails to the team
 
@@ -199,8 +195,8 @@ Processors used by several purposes (their agreements to sign or check):
 | | |
 |---|---|
 | Purpose | Prove agreements; answer access, deletion and portability requests |
-| Data | The parent's agreement at profile creation (date, text version); requests received; the deletion list (IDs and dates only) |
-| Retention | Consents: `[as long as the profile, plus the proof period]`; deletion list 90 days; requests `[to decide]` |
+| Data | The parent's agreement at profile creation (date, text version); requests received; the deletion list (the folder or file to erase: a person's or a child's ID, a file name, the reason, the dates) |
+| Retention | Consents: today as long as the parent's account (they are deleted with it; kept when only the profile is deleted) `[proof period: to decide]`; deletion list (`storage_purge`): until `caa-purge` deleted the files, then 30 days; requests `[to decide]` |
 
 ## 15. Notices in the app
 
@@ -213,3 +209,16 @@ Processors used by several purposes (their agreements to sign or check):
 ## 16. Subscriptions *(to come)*
 
 `[To write with billing: what the stores send us, accounting retention.]`
+
+## 17. Notifications outside the app (web version)
+
+| | |
+|---|---|
+| Purpose | Remind a parent at 12:00 (the device's time) when the child's board was not opened that day; tell people about a new idea to vote on |
+| People | Parents and professionals who turned them on; never a child's tablet |
+| Data | The browser's notification address and its two keys, the language and time zone of the device, the day of the last reminder; the notifications waiting (title, text, already worded by the database); for each child, the moment the board was last opened (`profile_seen`) |
+| Legal basis | Consent (asked once in the app, then by the browser; switches in the account's preferences) |
+| Recipients | Supabase (`caa-push` sends); the browser's notification service (Google FCM, Mozilla, Apple, Microsoft), which carries the message encrypted for that browser |
+| Transfers | The notification services are worldwide `[safeguards]` |
+| Retention | Registration: until turned off, sign-out on that device or account deletion; 12 months without opening the app. Notifications: 2 days. Last opening: one moment per child, replaced at each opening, gone with the profile |
+| Security | Never a child's name, word or sentence; the database decides and words everything; `caa-push` only posts to the four notification services (`isPushService`, `push_endpoint_ok`); the signing key's private half is sealed |

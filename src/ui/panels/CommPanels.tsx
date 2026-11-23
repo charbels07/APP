@@ -1,25 +1,21 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { availableLangs, isFolderName, isRtl, label, langName, symbolOf } from '../../lib/lexicon';
+import { availableLangs, isFolderName, isRtl, label, symbolOf } from '../../lib/lexicon';
 import { countFeature } from '../../lib/product';
 import { search, type Location } from '../../lib/search';
 import { speakText } from '../../lib/speech';
 import { typedChips } from '../../lib/typedWords';
-import type { Lang, UiLang } from '../../model/types';
-import { UI_LANG_NAMES } from '../../i18n/ui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { opensAlone, useApp, useBack } from '../../state/AppState';
 import { codeAccepted, codeOf, keypadStart, mayChooseCode, pinPause, pinTooEasy, provesBeforeChoosing } from '../../lib/caregiverCode';
 import { useBoard } from '../../state/BoardContext';
-import { Btn, Panel, Section, useNavRtl } from '../common';
+import { Btn, Panel, useNavRtl } from '../common';
 import { usePictoLibrary } from '../PictoPicker';
 import { chipPicture } from '../SentenceStrip';
-import { Icon } from '../Icon';
 import { SymbolView } from '../SymbolView';
 import { C, radius } from '../theme';
 import { SearchBox } from '../SearchBox';
 import { VoiceButton } from '../VoiceButton';
-import { pressed } from '../a11y';
 import { useSessionMaybe } from '../../state/Session';
 import { forgotCodeWays } from '../../lib/forgotCode';
 import { ProveItsYou } from '../ProveItsYou';
@@ -212,76 +208,6 @@ export function HelpPanel() {
 }
 
 /** Language switch: two actions (protected against accidental change, spec §26). */
-const UI_LANGS: UiLang[] = ['fr', 'en', 'ar'];
-
-/**
- * Two separate choices, open to everyone from the bar: the words' language (what the
- * device says and writes on the cards) and the navigation language (menus, buttons, guide).
- */
-export function LangPanel() {
-  const app = useApp();
-  const { t, profile } = app;
-  const st = profile.settings;
-  const back = useBack();
-  return (
-    <Panel title={t.language} onClose={() => app.setOverlay(null)} onBack={back} maxWidth={560}>
-      <Section title={t.wordsLang}>
-        <Text style={styles.muted}>{t.wordsLangNote}</Text>
-        {/* The child's languages first; the others stay reachable below. */}
-        {(st.langs?.length ? st.langs : availableLangs(st)).map((l) => (
-          <LangChoice
-            key={l}
-            label={langName(st, l)}
-            active={st.lang === l}
-            onPress={() => app.update((d) => void (d.settings.lang = l))}
-          />
-        ))}
-        {st.langs?.length && st.langs.length < availableLangs(st).length ? (
-          <>
-            <Text style={styles.muted}>{t.otherLangs}</Text>
-            <View style={[styles.row, { flexWrap: 'wrap' }]}>
-              {availableLangs(st).filter((l) => !st.langs.includes(l)).map((l) => (
-                <LangChoice key={l} compact label={langName(st, l)} active={st.lang === l} onPress={() => app.update((d) => void (d.settings.lang = l))} />
-              ))}
-            </View>
-          </>
-        ) : null}
-        <Text style={styles.muted}>{t.langNote}</Text>
-      </Section>
-      <Section title={t.navLang}>
-        <Text style={styles.muted}>{t.navLangNote}</Text>
-        <View style={[styles.row, { flexWrap: 'wrap' }]}>
-          {UI_LANGS.map((l) => (
-            <LangChoice
-              key={l}
-              compact
-              label={UI_LANG_NAMES[l]}
-              active={st.uiLang === l}
-              onPress={() => app.setUiLang(l)}
-            />
-          ))}
-        </View>
-      </Section>
-      <Btn kind="primary" icon="check" label={t.close} onPress={() => app.setOverlay(null)} />
-    </Panel>
-  );
-}
-
-function LangChoice({ label, active, onPress, compact }: { label: string; active: boolean; onPress: () => void; compact?: boolean }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [styles.langBtn, compact && styles.langCompact, active && styles.langActive, pressed && { opacity: 0.7 }]}
-      accessibilityRole="button"
-      {...pressed(active)}
-      accessibilityLabel={label}
-    >
-      <Text style={[styles.langText, active && { color: C.accent }]}>{label}</Text>
-      {active && <Icon name="check" size={compact ? 20 : 24} color={C.accent} strokeWidth={3} />}
-    </Pressable>
-  );
-}
-
 /** Wrong codes are counted on this device (the pauses: `pinPause`). */
 const PIN_LOCK = 'caa.pinlock';
 export { pinPause, pinTooEasy };
@@ -597,19 +523,6 @@ const styles = StyleSheet.create({
   info: { backgroundColor: C.surfaceAlt, borderRadius: radius.md, padding: 12, gap: 4 },
   infoTitle: { fontSize: 14, fontWeight: '800', color: C.textMuted },
   infoText: { fontSize: 17, color: C.text, marginBottom: 6 },
-  langBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    minHeight: 64,
-    paddingHorizontal: 18,
-    borderRadius: radius.md,
-    borderWidth: 2,
-    borderColor: C.border,
-  },
-  langActive: { borderColor: C.accent, backgroundColor: C.accentSoft },
-  langCompact: { flexGrow: 1, flexBasis: 140, minHeight: 52, paddingHorizontal: 14, gap: 8 },
-  langText: { fontSize: 22, fontWeight: '700', color: C.text },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 14, marginVertical: 6 },
   dot: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: C.edit },
   dotOn: { backgroundColor: C.edit },

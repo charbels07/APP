@@ -178,7 +178,7 @@ const fr = {
   avgNames: { activityBoards: 'Tableaux d’activité', ownWords: 'Mots ajoutés', changedWords: 'Mots personnalisés', schedules: 'Plannings', demonstrations: 'Démonstrations enregistrées' } as Record<string, string>,
 
   // ── Messages ──
-  messagesIntro: 'Ce que les personnes ont écrit depuis l’application (« Aidez-nous à améliorer Empower »).',
+  messagesIntro: 'Ce que les personnes ont écrit depuis l’application (« Aidez-nous à améliorer Empower Communication »).',
   noMessages: 'Aucun message.',
   markDone: 'Traité',
   reopen: 'Rouvrir',
@@ -190,7 +190,7 @@ const fr = {
   actions: { verified: 'a accepté', more_info: 'a demandé un complément à', rejected: 'a refusé', open_document: 'a ouvert un document de' } as Record<string, string>,
 
   // ── "Write to the team" (families and professionals) ──
-  writeTeam: 'Aidez-nous à améliorer Empower',
+  writeTeam: 'Aidez-nous à améliorer Empower Communication',
 };
 
 type Dict = typeof fr;
@@ -367,7 +367,7 @@ const en: Dict = {
   averages: 'On average per child',
   avgNames: { activityBoards: 'Activity boards', ownWords: 'Words added', changedWords: 'Words personalised', schedules: 'Schedules', demonstrations: 'Recorded demonstrations' },
 
-  messagesIntro: 'What people wrote from the app (“Help us improve Empower”).',
+  messagesIntro: 'What people wrote from the app (“Help us improve Empower Communication”).',
   noMessages: 'No message.',
   markDone: 'Dealt with',
   reopen: 'Reopen',
@@ -377,7 +377,7 @@ const en: Dict = {
   noLog: 'Nothing yet.',
   actions: { verified: 'accepted', more_info: 'asked for more information from', rejected: 'refused', open_document: 'opened a document of' },
 
-  writeTeam: 'Help us improve Empower',
+  writeTeam: 'Help us improve Empower Communication',
 };
 
 const ar: Dict = {
@@ -552,7 +552,7 @@ const ar: Dict = {
   averages: 'في المتوسط لكل طفل',
   avgNames: { activityBoards: 'لوحات الأنشطة', ownWords: 'كلمات مضافة', changedWords: 'كلمات مخصّصة', schedules: 'جداول', demonstrations: 'عروض مسجّلة' },
 
-  messagesIntro: 'ما كتبه الأشخاص من التطبيق («ساعدنا على تحسين Empower»).',
+  messagesIntro: 'ما كتبه الأشخاص من التطبيق («ساعدنا على تحسين Empower Communication»).',
   noMessages: 'لا توجد رسائل.',
   markDone: 'تمّت المعالجة',
   reopen: 'إعادة فتح',
@@ -562,7 +562,7 @@ const ar: Dict = {
   noLog: 'لا شيء حتى الآن.',
   actions: { verified: 'قبِل', more_info: 'طلب معلومات إضافية من', rejected: 'رفض', open_document: 'فتح وثيقة' },
 
-  writeTeam: 'ساعدنا على تحسين Empower',
+  writeTeam: 'ساعدنا على تحسين Empower Communication',
 };
 
 const DICTS: Record<UiLang, Dict> = { fr, en, ar };

@@ -136,13 +136,17 @@ When a family deletes an account or a child's profile, it must not come back wit
 
 - The server keeps a **deletion list**: the IDs (never names) of the accounts and profiles
   deleted, with the date. It is filled by the server-side deletion (its purge queue,
-  `[table name of the purge queue]`). Profiles erased at the end of their 30 days in the bin are
-  on it too.
+  `storage_purge`: the folder `<id>/` of the account or the profile, the reason, the dates).
+  Profiles erased at the end of their 30 days in the bin are on it too.
 - The deletion list is copied with the database every week (layer 2), and must be read from the
   **damaged project** before a restore when it is still readable: it is newer than any backup.
-  Keep it as long as the oldest backup (90 days at most).
+  **Today the database removes a line 30 days after its files were deleted** (`retention_daily`),
+  while the off-site copies are kept 30 to 90 days. Restoring the newest copy (a week old at most)
+  is covered; for an older copy, also read the deletion list of the weekly copies made after it.
+  *To decide: keep the lines as long as the oldest backup (90 days), or keep the off-site copies
+  30 days.*
 - If the damaged project cannot be read at all: use the newest off-site copy's deletion list,
-  plus the deletion requests received by e-mail at `[privacy e-mail]` since that copy.
+  plus the deletion requests received by e-mail at `empowerhub.me@gmail.com` since that copy.
 
 After the restore, in the SQL Editor of the restored project, with the IDs deleted **after the
 date of the copy**:

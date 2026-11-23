@@ -13,9 +13,13 @@ Version `[number]`, `[date]`.
 
 Empower Communication is an app that helps children who cannot rely on speech to communicate
 with pictures and a voice (augmentative and alternative communication, "AAC"). It is published by
-`[Company name]`, `[legal form]`, `[address]`, `[registration number]` ("we").
+Empower Hub, `[legal form]`, Beirut, Lebanon, `[registration number]` ("we").
 
-- Questions about your data and requests: `[privacy e-mail]`
+The app is sold in the App Store and Google Play only. A web version of the app is open today to
+chosen testers; it is not offered to families. *Reviewer: say whether the testers' web version
+needs its own mention (its sign-up is open: there is no list of testers).*
+
+- Questions about your data and requests: `empowerhub.me@gmail.com`
 - Our data protection officer: `[DPO]`, `[DPO e-mail]`
 
 We are the **controller** of the data described here: we decide why and how it is used.
@@ -61,15 +65,15 @@ For children's data that can reveal a disability, see section 6.*
 | **Anonymous figures** for our team (numbers from the follow-up and settings), only if you agree to "Help improve the app" | To improve the app | Consent of the parent |
 | **Your agreement** when you create a child's profile (date and version of the text) | To prove the agreement | Legal obligation |
 | **Security records**: recent actions (to refuse someone who repeats an action too often), what our team does in the back office | To protect accounts and children's data | Legitimate interest; legal obligation |
-| **AI helper**, only when it is offered and you use it: the topic you type, the photo or the drawing you send | To suggest words for a new board, or guess what a drawing shows | Contract *(to confirm)* |
-| **Notifications outside the app**, only if you turn them on: your browser's notification address and keys, the language and time zone of the device; for the reminder, the moment your child's board was last opened | To remind a parent at 12:00 when the board was not opened that day, and to tell you about a new idea to vote on | Consent |
+| **AI helper**: switched off. Nothing is sent to an AI service *(reviewer: if it is turned on later, this line says what is sent and families are asked again first)* | — | — |
+| **Notifications outside the app** (web version only), only if you turn them on: your browser's notification address and keys, the language and time zone of the device; for the reminder, the moment your child's board was last opened | To remind a parent at 12:00 when the board was not opened that day, and to tell you about a new idea to vote on | Consent |
 | **Subscription** *(to come: billing is not built yet)* | To manage your subscription (bought through the App Store or Google Play) | Contract |
 
 **What we never collect:** your location, your contacts, advertising identifiers. The app
 contains no advertising and no tracking library.
 
 **What never leaves for our team:** the child's name, words, sentences, photos or recordings.
-The AI helper never receives the child's name, words or sentences.
+No notification ever holds the child's name, words or sentences.
 
 ## 5. Where your data is
 
@@ -104,12 +108,11 @@ shared computer you can also erase the photos and recordings.
 | Who | What for | What they receive | Where | Safeguards *(to confirm)* |
 |---|---|---|---|---|
 | **The people you invite** to the child's team | Working with the child | What you allow (board, follow-up only with "See the progress data") | — | Rights chosen by you, checked by our server |
-| **Supabase** | Server: database, sign-in, files, server functions | Everything stored on the server | EU (`[region]`); Supabase Inc. is a US company | Data processing agreement; standard contractual clauses |
+| **Supabase** | Server: database, sign-in, files, and our server functions (e-mails to our team, deleting the files of what was erased, sending notifications) | Everything stored on the server | EU (`[region]`); Supabase Inc. is a US company | Data processing agreement; standard contractual clauses |
 | **Google** (Gmail) | Sending the sign-in codes; e-mails to our team | Your e-mail address and the code; professionals' name, profession and country in our team's e-mail | `[to confirm]` | Data processing terms of Google Workspace / Gmail *(a free Gmail account may not offer them: to check)* |
 | **Google**, **Apple** | Sign in with Google / Apple, if you choose it | What you agree to share with them (name, e-mail) | `[to confirm]` | Their own terms |
-| **Anthropic** | The AI helper, only when it is offered and you use it | The topic, photo or drawing only | United States | Data processing agreement; standard contractual clauses |
-| **Cloudflare** | Hosting our public pages (support, account deletion, this policy) | Technical data of the visit (IP address) | Worldwide network | Data processing agreement |
-| **Your browser's notification service** (Google, Mozilla, Apple or Microsoft), only if you turn notifications on | Carrying a notification to your device | The message, encrypted for your browser (they cannot read it); never a child's name or words | Worldwide | Their own terms |
+| **Cloudflare** | Hosting our public pages (support, account deletion, this policy) and the web version used by testers | Technical data of the visit (IP address) | Worldwide network | Data processing agreement |
+| **Your browser's notification service** (Google Firebase Cloud Messaging for Chrome and the browsers built on it, Mozilla for Firefox, Apple for Safari, Microsoft for Edge on Windows), only if you turn notifications on in the web version | Carrying a notification to your device | The message, encrypted for your browser (they cannot read it); never a child's name or words | Worldwide | Their own terms |
 | **Apple App Store**, **Google Play** | Distributing the app; subscriptions *(to come)* | What their stores collect under their own policies | — | Their own terms |
 | **Your device's speech services** | Dictation (section 9) | Your voice, when you dictate | Apple, Google | Their own terms |
 
@@ -118,7 +121,8 @@ We never sell or rent data.
 ## 8. Transfers outside the European Union
 
 Some providers are based in the United States or may reach the data from there (support,
-security): Supabase, Anthropic, Google, Apple, Cloudflare. Each transfer relies on `[the EU–US
+security): Supabase, Google, Apple, Cloudflare, and the browsers' notification services
+(Google, Mozilla, Apple, Microsoft) when notifications are on. Each transfer relies on `[the EU–US
 Data Privacy Framework where the provider is certified, or standard contractual clauses]`.
 *To confirm per provider, and for families in Lebanon, Saudi Arabia, Jordan, the UAE and other
 countries (their own laws on transfers).*
@@ -138,6 +142,8 @@ countries (their own laws on transfers).*
 |---|---|
 | Your account | Until you delete it. An account not used for 24 months is reviewed by our team (not deleted automatically) `[decision rule to write]` |
 | A child's profile | Until it is deleted. A deleted profile stays 30 days in a bin, where it can be restored, then is erased |
+| Words and activity boards deleted on the board | 30 days in the profile's own bin, where they can be put back |
+| A photo or recording no board uses any more | 30 days, then erased (longer while an earlier copy of the board still uses it) |
 | Earlier copies of a board | The last 10 |
 | Follow-up (days of use) | 24 months, rolling |
 | Sentences of the follow-up | 12 months |
@@ -146,9 +152,10 @@ countries (their own laws on transfers).*
 | Notices in the app | 12 months |
 | Feature counters and technical problems | 180 days |
 | Identity documents of professionals | Deleted as soon as the check is decided |
-| Invitations | Valid 30 days |
+| Invitations | Valid 30 days; erased 60 days after they were written if nobody answered, 12 months after if they were accepted, declined or cancelled |
+| Notifications outside the app | The browser's registration: until you turn them off, or 12 months without opening the app; each notification: 2 days |
 | Our server's daily backups | 7 days |
-| Our encrypted weekly copy, kept with another provider | `[60]` days (90 at most) |
+| Our encrypted weekly copy, kept with another provider | `[60]` days (30 at least, 90 at most) |
 
 The full schedule is in `[link to the retention schedule]`.
 
@@ -172,12 +179,12 @@ The full schedule is in `[link to the retention schedule]`.
 
 | Right | In the app | Or |
 |---|---|---|
-| **See and get a copy** of your data | "Download all my data": one file with your account, your children's profiles, teams, invitations, proposals, history, devices, follow-up, observations, messages, votes and agreements *(place on screen: Settings → Account → Privacy and data — to check once merged)*. "Export the profile (file)" and the board's open format (.obz) for the board itself | `[privacy e-mail]` |
-| **Correct** | Settings → Account → My account (name, e-mail, password); the board in caregiver mode | `[privacy e-mail]` |
-| **Delete** | Settings → Account → Privacy and data → "Delete my account", or "Delete the profile of …" for one child (30 days in the bin first). Professionals: Account & licence → "Delete my account" | `[privacy e-mail]`, or `[website]/delete-account/` |
-| **Withdraw your agreement** | Progress → choose "Do not record any data", and "Erase the recorded data"; turn off "Help improve the app" (what was counted for the child is erased at once); turn off "AI suggestions" (Settings → Board → Code and data) | `[privacy e-mail]` |
-| **Object / restrict** | The same switches | `[privacy e-mail]` |
-| **Portability** | "Download all my data" (JSON) and the .obz export | `[privacy e-mail]` |
+| **See and get a copy** of your data | "Download all my data": one file with your account, your children's profiles, teams, invitations, proposals, history, devices, follow-up, observations, messages, votes and agreements *(place on screen: Settings → Account → Privacy and data — to check once merged)*. "Export the profile (file)" and the board's open format (.obz) for the board itself | `empowerhub.me@gmail.com` |
+| **Correct** | Settings → Account → My account (name, e-mail, password); the board in caregiver mode | `empowerhub.me@gmail.com` |
+| **Delete** | Settings → Account → Privacy and data → "Delete my account", or "Delete the profile of …" for one child (30 days in the bin first). Professionals: Account & licence → "Delete my account" | `empowerhub.me@gmail.com`, or `[website]/delete-account/` |
+| **Withdraw your agreement** | Progress → choose "Do not record any data", and "Erase the recorded data"; turn off "Help improve the app" (what was counted for the child is erased at once); turn off notifications in your account's preferences | `empowerhub.me@gmail.com` |
+| **Object / restrict** | The same switches | `empowerhub.me@gmail.com` |
+| **Portability** | "Download all my data" (JSON) and the .obz export | `empowerhub.me@gmail.com` |
 
 We answer within one month. We may ask you to prove that the account is yours. You can also
 complain to the CNIL (cnil.fr) or to the data protection authority of your country.
@@ -189,7 +196,7 @@ grows, nothing new is sent until you agree again.
 
 ## 14. Contact
 
-`[Company name]`, `[address]` — `[privacy e-mail]` — DPO: `[DPO]`.
+Empower Hub, Beirut, Lebanon — `empowerhub.me@gmail.com` — DPO: `[DPO]`.
 
 *Reviewer: also check the store forms (App Store "App Privacy", Google Play "Data safety")
 against this text and `docs/legal/RECORD-OF-PROCESSING.md`.*

@@ -21,7 +21,7 @@ self.addEventListener('push', function (event) {
     return typeof v === 'string' ? v.slice(0, max) : '';
   };
   event.waitUntil(
-    self.registration.showNotification(text(d.title, 120) || 'Empower', {
+    self.registration.showNotification(text(d.title, 120) || 'Empower Communication', {
       body: text(d.body, 300),
       tag: text(d.tag, 40) || 'empower',
       icon: '/icon-192.png',

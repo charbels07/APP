@@ -186,6 +186,7 @@ const fr = {
   addPhoto: 'Ajouter une photo',
   photoName: 'Nom de la photo',
   print: 'Imprimer / PDF',
+  printFailed: 'L’impression n’a pas pu se faire. Réessayez.',
   editorBanner: 'Support en cours : utilisez les outils habituels (mode accompagnant ouvert). Le tableau de l’enfant n’est pas touché.',
 
   libTemplates: 'Éléments créés',
@@ -440,6 +441,7 @@ const en: Dict = {
   addPhoto: 'Add a photo',
   photoName: 'Photo name',
   print: 'Print / PDF',
+  printFailed: 'The page could not be printed. Try again.',
   editorBanner: 'Material in progress: use the usual tools (caregiver mode is open). The child’s board is not touched.',
 
   libTemplates: 'Created items',
@@ -691,6 +693,7 @@ const ar: Dict = {
   addPhoto: 'إضافة صورة',
   photoName: 'اسم الصورة',
   print: 'طباعة / PDF',
+  printFailed: 'تعذّرت الطباعة. حاول مجددًا.',
   editorBanner: 'مادة قيد الإعداد: استعمل الأدوات المعتادة (وضع المرافق مفتوح). لوحة الطفل لا تُمسّ.',
 
   libTemplates: 'العناصر المُنشأة',

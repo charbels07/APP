@@ -13,14 +13,24 @@ Supabase values are allowed inside the app.
 |---|---|---|---|---|
 | **Supabase** (server) | Accounts, children's profiles, teams, files, back office | Project address + *publishable* key (public) | `.env` on your computer and the two build variables in Cloudflare | Done |
 | Supabase *secret* key | Full access to the database | Secret | Nowhere in the app. Only in Supabase itself: it hands it to the server functions by itself (`SUPABASE_SECRET_KEY`; the older `SUPABASE_SERVICE_ROLE_KEY` is retired in early 2027, the functions read the new one first) | Never used by the app |
-| **Cloudflare** | Hosts the website | Your Cloudflare account | Connected to the GitHub repository | Done |
+| **Cloudflare** | Hosts the support, account-deletion and privacy pages, and the web version for chosen testers (the product is sold in the App Store and Google Play only) | Your Cloudflare account | Connected to the GitHub repository | Done |
 | **E-mail sender** (confirmation codes, password reset) | Sends the app's e-mails | SMTP user + password | Supabase → Authentication → SMTP settings | Done with a Gmail app password. For real families, a mail service (Resend, Brevo, SendGrid…) delivers better and sends more per hour |
 
 ### E-mails to the team (optional)
 
 | Service | What it does | Key | Where it goes | Today |
 |---|---|---|---|---|
-| **Server function `caa-mail`** | Sends the team an e-mail when a professional applies, and the figures of the week every Monday | The same Gmail address and an app password of its own (`SMTP_USER`, `SMTP_PASS`), plus the team's address (`MAIL_TO`) | Supabase → Edge Functions → Secrets (never in the app) | On since 15 November 2026: the test e-mail arrived in the team's mailbox (`supabase/README.md`, section 10) |
+| **Server function `caa-mail`** | Sends the team an e-mail when a professional applies, and the figures of the week every Monday | The same Gmail address and an app password of its own (`SMTP_USER`, `SMTP_PASS`), plus the team's address (`MAIL_TO`, optional); `SMTP_HOST` only for another provider than Gmail (default `smtp.gmail.com`, port 465) | Supabase → Edge Functions → Secrets (never in the app) | On since 15 November 2026: the test e-mail arrived in the team's mailbox (`supabase/README.md`, section 10) |
+
+### Server functions with nothing to buy
+
+| Function | What it does | Key | Today |
+|---|---|---|---|
+| **`caa-purge`** | Deletes the stored files of an erased account, child's profile or professional's document (queue `storage_purge`) | None: Supabase hands it its server key (`SUPABASE_SECRET_KEY`) | To deploy with the database files of 18 November (`supabase/README.md`, section 11) |
+| **`caa-push`** | Delivers the browser notifications of the web version, only to the browsers' own notification services (Google FCM, Mozilla, Apple, Microsoft) | None to buy: it makes its own pair of signing keys, kept by the database. Optional secret `PUSH_CONTACT` (`mailto:…`, an address those services may write to; else `SMTP_USER`) | To turn on: `docs/runbooks/NOTIFICATIONS.md` |
+
+The three functions above are called by the database only, with a key the database made (header
+`x-mail-key`); they are deployed with "Verify JWT" off (`supabase/config.toml`).
 
 ## 2. Sign-in
 
@@ -30,9 +40,14 @@ Supabase values are allowed inside the app.
 | **Apple sign-in** | "Continue with Apple" (Apple asks for it when another sign-in such as Google is offered on iPhone/iPad) | Apple Developer account, Services ID, key file (.p8) | Supabase → Providers → Apple | Prepared in the app, waits for the Apple Developer account |
 | **Phone sign-in (SMS)** | Sign in with a phone number | An SMS provider (Twilio or similar), paid per message | Supabase → Providers → Phone | Off. Optional |
 
-## 3. AI: works without a key, better with one
+## 3. AI: switched off
 
-One key covers all four lines: an **Anthropic API key**, kept in the server function
+**Owner's decision (November 2026): the AI is switched off.** The server function `caa-ai` stays in
+the code but is not deployed, and no key is set; nothing is sent to an AI service. Before it is
+turned on: the daily ceiling finished in the database, the consent text and the legal documents
+saying what is sent, and families asked again. What follows says what the key would change.
+
+One key would cover all four lines: an **Anthropic API key**, kept in the server function
 `caa-ai`. The app itself never holds it.
 
 | Feature | Without the key | With the key |
@@ -42,7 +57,7 @@ One key covers all four lines: an **Anthropic API key**, kept in the server func
 | **Photo → board** (a menu, a game box) | Not available | Reads the photo and proposes the words |
 | **Search by drawing** | Not available | Guesses what the child drew. On the website only for now; on tablets the drawing still has to be sent as a picture (to do) |
 
-How to turn it on (once):
+How it would be turned on (only after the owner's decision):
 
 1. Create a key on console.anthropic.com and **set a monthly spending limit** there.
 2. In a terminal, in the project:
@@ -85,7 +100,7 @@ day, only people who look after a child, and only the topic, the photo or the dr
 
 | Feature | Key | Today |
 |---|---|---|
-| The 24,000 pictograms | None: they are inside the app | Done |
+| The pictograms (about 24,100) | None: they are inside the app | Done |
 
 ## 6. Publishing on the stores
 
@@ -108,7 +123,7 @@ day, only people who look after a child, and only the topic, the photo or the dr
 ## The short answer
 
 - To **work**: Supabase, Cloudflare and an e-mail sender. All three are in place.
-- To be **more accurate**: one Anthropic key (words, steps, photos, drawings) is the one that
-  changes the most for families, and everything is ready for it.
+- The AI (one Anthropic key: words, steps, photos, drawings) is switched off by decision; the code
+  is ready if the owner turns it on, with the steps of section 3.
 - Voices and dictation work with the device's own services; better ones exist but are a
   project of their own (cost, internet, privacy), not just a key to paste.

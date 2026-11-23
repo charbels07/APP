@@ -2,7 +2,7 @@ import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-spe
 import React, { useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { arabicLocale, label } from '../lib/lexicon';
-import { installedFor } from '../lib/dictation';
+import { dictationProblem, installedFor, type DictationProblem } from '../lib/dictation';
 import { outside } from '../lib/outside';
 import { strings } from '../i18n/ui';
 import type { Lang, Profile, UiLang } from '../model/types';
@@ -39,7 +39,7 @@ export function VoiceButton({
   const t = uiLang ? strings(uiLang) : app?.t ?? strings('fr');
   const [listening, setListening] = useState(false);
   const [transcript, setTranscript] = useState('');
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<DictationProblem | null>(null);
   const finalText = useRef('');
   // Several microphones can be on the same screen (a search field, a new word…): what is heard
   // only goes to the one that was pressed.
@@ -60,17 +60,18 @@ export function VoiceButton({
     finalText.current = '';
     if (tx.trim()) onFinal(tx);
   });
-  useSpeechRecognitionEvent('error', () => {
+  useSpeechRecognitionEvent('error', (e) => {
     if (!mine.current) return;
     mine.current = false;
     setListening(false);
-    setError(true);
+    setError(dictationProblem(e.error));
   });
 
   // The system's online service hears this dictation (said under the button while it listens).
+  // In a browser it always does: the browser's own service (Google's, Apple's…) hears it.
   const [online, setOnline] = useState(false);
   const start = async () => {
-    setError(false);
+    setError(null);
     setTranscript('');
     finalText.current = '';
     try {
@@ -97,7 +98,7 @@ export function VoiceButton({
           onDevice = false;
         }
       }
-      setOnline(Platform.OS !== 'web' && !onDevice);
+      setOnline(Platform.OS === 'web' || !onDevice);
       ExpoSpeechRecognitionModule.start({
         lang: locale,
         interimResults: true,
@@ -107,8 +108,8 @@ export function VoiceButton({
       });
       mine.current = true;
       setListening(true);
-    } catch {
-      setError(true);
+    } catch (e) {
+      setError(dictationProblem(e instanceof Error ? e.message : undefined));
     }
   };
 
@@ -124,8 +125,8 @@ export function VoiceButton({
         <Text style={[styles.micText, compact && { fontSize: 16 }]}>{listening ? t.listening : idleLabel ?? t.dictate}</Text>
       </Pressable>
       {transcript && !onPartial ? <Text style={styles.transcript}>« {transcript} »</Text> : null}
-      {error && <Text style={[styles.note, styles.warn]}>{t.dictateUnavailable}</Text>}
-      {listening && online && <Text style={styles.note}>{t.dictateOnline}</Text>}
+      {error && <Text style={[styles.note, styles.warn]}>{t.dictateProblem[error]}</Text>}
+      {listening && online && <Text style={styles.note}>{Platform.OS === 'web' ? t.dictateOnlineWeb : t.dictateOnline}</Text>}
     </View>
   );
 }

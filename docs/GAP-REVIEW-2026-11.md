@@ -536,10 +536,11 @@ who may only propose could fill the child's space for 30 days (capped). Also fro
 used by a copy kept aside stays on the "erase later" list until nothing uses it; files made here that someone
 else's change stopped using are erased after 30 days too; an imported file's photos are checked for size.
 
-Left open, for the owner to decide:
-- A parent cannot remove a photo uploaded by mistake (for example one showing another child) from the account
-  before 30 days: the word no longer shows it, but the file stays in the child's space until the sweep. Say if
-  the family should be able to remove such a file at once.
+Decided by the owner (23 November 2026):
+- A photo or recording no board uses stays in the child's space 30 days (longer while an earlier version of the
+  board still has it), then is deleted for good, even one uploaded by mistake: the family cannot remove it
+  sooner. No screen shows it meanwhile; it comes back only through "Undo", an earlier version or "Deleted words".
+- The database file of this batch was run on 23 November 2026.
 
 Left for the owner's hand-test list (batch 6): on a tablet, export a board with photos and recordings, share the
 file, and import it on another tablet in a new account; replace a photo, then "Undo" on another device the next

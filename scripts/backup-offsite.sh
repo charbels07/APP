@@ -17,7 +17,7 @@
 #   BACKUP_GPG_RECIPIENT   the gpg key id or e-mail of the public key }
 #   BACKUP_RCLONE_REMOTE   where the copies go, as rclone names it ("offsite:empower-backups").
 #                          The remote's own access keys live in rclone's config, not here.
-#   BACKUP_KEEP_DAYS       optional, 30 to 90 (default 60)
+#   BACKUP_KEEP_DAYS       optional, 30 to 90 (default 90: the deletion list is kept 100 days, longer)
 #   BACKUP_PRUNE           optional, "yes" (default) or "no": "no" when the storage key cannot
 #                          delete and the bucket's own lifecycle rule removes old copies
 #
@@ -51,7 +51,7 @@ case "$BACKUP_RCLONE_REMOTE" in
   *) fail "BACKUP_RCLONE_REMOTE must look like 'remote:folder' (got '$BACKUP_RCLONE_REMOTE'). Nothing was done." ;;
 esac
 
-KEEP_DAYS="${BACKUP_KEEP_DAYS:-60}"
+KEEP_DAYS="${BACKUP_KEEP_DAYS:-90}"
 [[ "$KEEP_DAYS" =~ ^[0-9]+$ ]] && [ "$KEEP_DAYS" -ge 30 ] && [ "$KEEP_DAYS" -le 90 ] ||
   fail "BACKUP_KEEP_DAYS must be a number from 30 to 90 (got '$KEEP_DAYS'). Nothing was done."
 

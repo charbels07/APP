@@ -33,6 +33,7 @@ from (values
   ('20261122000000_gap_batch3.sql',         exists (select 1 from fn where schema_name = 'public' and name = 'manages_team')),
   ('20261122000100_gap_batch4.sql',         exists (select 1 from fn where schema_name = 'public' and name = 'offer_profile')),
   ('20261122000200_gap_batch5.sql',         exists (select 1 from fn where schema_name = 'public' and name = 'media_in_use')),
-  ('20261123000000_app_name.sql',           exists (select 1 from pg_proc where proname = 'push_words' and prosrc like '%Empower Communication%'))
+  ('20261123000000_app_name.sql',           exists (select 1 from pg_proc where proname = 'push_words' and prosrc like '%Empower Communication%')),
+  ('20261123000100_deletion_list.sql',      exists (select 1 from pg_proc where proname = 'retention_daily' and prosrc like '%100 days%'))
 ) as t(file, ok)
 order by file;

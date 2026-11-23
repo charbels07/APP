@@ -617,9 +617,9 @@ published. Until it has run, the noon reminder is titled "Empower" (nothing else
 Decided on the way (not asked, tell the owner): the version kept is 0.1.0, not 1.0.0.
 
 Seen on the way, not changed (not in this batch):
-- The deletion list (`storage_purge`) loses a line 30 days after its files are deleted, while off-site copies are
-  kept up to 90 days: restoring a copy older than 30 days needs the deletion lists of the later weekly copies too
-  (written in `BACKUP-AND-RESTORE.md`). To decide: keep the lines 90 days, or keep the copies 30 days.
+- The deletion list (`storage_purge`) lost a line 30 days after its files were deleted, while off-site copies are
+  kept up to 90 days. **Decided by the owner on 23 November 2026 and done**: copies 90 days (the script's default),
+  the list 100 days (`20261123000100_deletion_list.sql`, `deletion_list_scenario.sql`): to run in Supabase.
 - The storage purge reason 'media' exists in SQL but is never used (unused media leave through the sweep).
 - `supabase/README.md` still explains how to deploy `caa-ai` (a how-to; nothing deploys it).
 - A professional's "Account & licence" page shows no app version (the support page's path works for parents).

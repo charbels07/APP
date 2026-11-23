@@ -12,7 +12,7 @@ children's profiles, teams, history, follow-up, the back office.
 | Layer | What | How often | Kept | Where | Who checks |
 |---|---|---|---|---|---|
 | 1 | Supabase's own backups (Pro plan or higher) | Every day, by Supabase | 7 days on Pro | Supabase, same region as the project | `[owner]`, every week: Database → Backups shows one backup per day |
-| 2 | Encrypted copy away from Supabase (`scripts/backup-offsite.sh`) | Every week | 30 to 90 days (`BACKUP_KEEP_DAYS`, 60 by default) | Another provider, in the EU: `[off-site storage provider and region]` | `[owner]`; the script prints what it did |
+| 2 | Encrypted copy away from Supabase (`scripts/backup-offsite.sh`) | Every week | 90 days (`BACKUP_KEEP_DAYS`, 90 by default) | Another provider, in the EU: `[off-site storage provider and region]` | `[owner]`; the script prints what it did |
 | 3 | Restore test into a separate project | Every quarter | — (the test project is deleted after) | A new, empty Supabase project | `[owner]` + `[second admin]` |
 
 The free Supabase plan keeps no backup at all: the project must be on a paid plan before real
@@ -140,11 +140,9 @@ When a family deletes an account or a child's profile, it must not come back wit
   Profiles erased at the end of their 30 days in the bin are on it too.
 - The deletion list is copied with the database every week (layer 2), and must be read from the
   **damaged project** before a restore when it is still readable: it is newer than any backup.
-  **Today the database removes a line 30 days after its files were deleted** (`retention_daily`),
-  while the off-site copies are kept 30 to 90 days. Restoring the newest copy (a week old at most)
-  is covered; for an older copy, also read the deletion list of the weekly copies made after it.
-  *To decide: keep the lines as long as the oldest backup (90 days), or keep the off-site copies
-  30 days.*
+  The database removes a line **100 days** after its files were deleted (`retention_daily`, owner's
+  decision of 23 November 2026), longer than the oldest off-site copy (90 days at most): the deletion
+  list of the damaged project (or of the newest copy) covers every deletion made after any copy.
 - If the damaged project cannot be read at all: use the newest off-site copy's deletion list,
   plus the deletion requests received by e-mail at `empowerhub.me@gmail.com` since that copy.
 
@@ -174,7 +172,7 @@ Kept by `[owner]` in `[place]`. One line per run, per test, per restore.
 | Copy | Lives | Why |
 |---|---|---|
 | Supabase daily backups | 7 days (Pro) | Set by Supabase |
-| Off-site encrypted copies | 30 to 90 days (`BACKUP_KEEP_DAYS`, 60 by default) | Long enough to notice a slow problem; short enough that deleted data does not live on for long |
+| Off-site encrypted copies | 90 days (`BACKUP_KEEP_DAYS`, 90 by default; never more than the deletion list's 100 days) | Long enough to notice a slow problem; short enough that deleted data does not live on for long |
 | Restore test projects | Deleted the same day | They hold real data |
 | Decrypted files (`copy.dump`) | Deleted right after use | They are readable |
 

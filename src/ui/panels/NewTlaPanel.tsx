@@ -358,7 +358,7 @@ export function NewTlaPanel() {
     <Panel title={t.newTlaTitle} onClose={() => app.setOverlay(null)} onBack={onBack} tone="edit" maxWidth={900} scrollLocked={holding}>
       <View style={styles.row}>
         <View style={styles.grow}>
-          <Field label={t.tlaTopic} value={topic} onChangeText={setTopic} onSubmitEditing={suggest} autoFocus placeholder="préparer un gâteau" />
+          <Field label={t.tlaTopic} value={topic} onChangeText={setTopic} onSubmitEditing={suggest} autoFocus placeholder={t.topicExample} />
         </View>
         <Btn kind="primary" icon="star" label={t.suggest} disabled={!lib || !topic.trim() || thinking} onPress={suggest} style={styles.grow} />
       </View>

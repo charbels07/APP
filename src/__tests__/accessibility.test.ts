@@ -43,6 +43,15 @@ describe('colours can be read (WCAG 1.4.3 and 1.4.11)', () => {
     expect(contrast(C.inputBorder, C.surface)).toBeGreaterThanOrEqual(3);
     expect(contrast(C.inputBorder, C.bg)).toBeGreaterThanOrEqual(3);
   });
+  it('the pale grey #98A2B3 (2.6:1 on white) is not used for an icon or a check box', () => {
+    // Only the edge of the "little words" cards keeps it (a colour of the board, beside a dark text).
+    const fs = require('fs') as typeof import('fs');
+    const path = require('path') as typeof import('path');
+    const files = (dir: string): string[] =>
+      fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? files(path.join(dir, e.name)) : /\.tsx?$/.test(e.name) ? [path.join(dir, e.name)] : []));
+    const uses = files(path.join(__dirname, '..', 'ui')).filter((f) => !f.endsWith('theme.ts') && /#98A2B3/i.test(fs.readFileSync(f, 'utf8')));
+    expect(uses).toEqual([]);
+  });
   it('the scanning highlight stands out by at least 3:1 on the page and on every card (WCAG 1.4.11, 2.4.7)', () => {
     // The violet ring on the page, on white and on each kind of word's colour…
     for (const bg of [C.bg, C.surface, C.surfaceAlt, ...Object.values(CLASS_COLORS).map((c) => c.bg)])

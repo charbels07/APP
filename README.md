@@ -1,10 +1,15 @@
-# CAA — Augmentative & Alternative Communication app (first draft)
+# Empower Communication — Augmentative & Alternative Communication (AAC) app
 
-Tablet-first AAC app for French, English and Arabic (the family chooses the dialect: Lebanese,
-Syrian, Jordanian / Palestinian, Egyptian, Saudi, Gulf, Iraqi or Standard Arabic — or no Arabic), built from the
-*Cahier des charges CAA*. This is **draft 0.1**: the mechanics are real, the
-vocabulary and boards are **placeholders** that the speech-language therapist
-must replace and validate.
+Tablet-first AAC app for French, English and Arabic (three languages for the words and for the
+menus; the family chooses the Arabic: Lebanese, Syrian, Jordanian / Palestinian, Egyptian, Saudi,
+Gulf, Iraqi or Standard Arabic — or no Arabic), built from the *Cahier des charges CAA*. The
+mechanics are real; the vocabulary and boards are **placeholders** that the speech-language
+therapist must replace and validate.
+
+**Where it is offered:** the product will be sold in the App Store and Google Play only (no store
+build has been made yet). The web version is for chosen testers today: Cloudflare publishes it
+from the default branch, with the support, account-deletion and privacy pages (`public/`); its
+sign-up is open (no list of testers), but it is not offered to families.
 
 **Live demo (browser):** https://claude.ai/artifact/6KiN8TkiZfScTfEq8HAqzS
 (private until shared from the page's *Share* menu). The caregiver code is chosen the first time
@@ -13,14 +18,14 @@ the board opens (there is no default code).
 ## Stack
 
 - **Expo SDK 58 / React Native 0.88 / TypeScript.** One codebase for iPad,
-  Android tablets and the web demo. iOS builds run in the cloud with EAS
+  Android tablets and the web version (testers, demo). iOS builds run in the cloud with EAS
   (`npx eas-cli build -p ios`), so no Mac is required to build.
 - Offline-first: the child's board runs from a copy on the device (`src/lib/storage.ts`). With an
   account it is synced through Supabase (EU region): accounts, teams, proposals, follow-up, the
   back office; security rules in the database (`supabase/`, `docs/SECURITY.md`). How it fits
   together: `docs/ARCHITECTURE.md`; what to run before a release: `docs/runbooks/`.
 - Pictograms: ten open libraries that are free for commercial use (Mulberry, OpenMoji, Fluent Emoji,
-  Noto Emoji, Twemoji, Health Icons, Material Symbols, Phosphor, Lucide, Tabler: about 24,400
+  Noto Emoji, Twemoji, Health Icons, Material Symbols, Phosphor, Lucide, Tabler: about 24,100
   pictograms, no ARASAAC). Licence check: `docs/PICTOGRAM-LICENSES.md`; libraries and versions:
   `pictograms/libraries.json`; full database (one line per pictogram): `pictograms/database/`.
   The built-in words' pictures are in `assets/symbols/`, the whole library (160 px WebP, base64
@@ -35,9 +40,16 @@ the board opens (there is no default code).
 npm install
 npm run web          # browser
 npm start            # Expo dev server (Expo Go / dev build on a device)
-npm test             # unit tests (grammar, search, data integrity)
+npm test             # Jest tests (about 600 in 62 files, November 2026)
 npm run typecheck
+npm run test:db      # the database rules and every known attack (PostgreSQL 15+; 16 scenarios)
+npm run test:a11y    # WCAG 2.2 AA scan (Python 3, Playwright)
 ```
+
+The database is built by the dated files of `supabase/migrations/` (23 on 23 November 2026); the
+server functions are in `supabase/functions/`: `caa-mail` (team e-mails), `caa-purge` (deletes the
+files of what was erased), `caa-push` (browser notifications of the web version) and `caa-ai` (AI
+helper: in the code, **not deployed** — the AI is switched off by the owner's decision).
 
 `EXPO_OFFLINE=1` in front of `expo` commands avoids network lookups in
 restricted environments.
@@ -55,7 +67,7 @@ restricted environments.
 | `src/lib/pictoSearch.ts`, `pictoLibrary.ts` | Offline pictogram search and topic suggestions. |
 | `src/lib/appLinks.ts` | App pictograms (YouTube, WhatsApp, Spotify, Anghami…): links, trigger words, "which app does this sentence ask for". |
 | `src/ui/DrawPad.tsx`, `VoiceButton.tsx`, `wiggle.ts` | Finger drawing pad (search by drawing), microphone button (dictation, search by voice), pictogram wiggle animation. |
-| `src/data/guide.ts`, `src/ui/panels/GuidePanel.tsx` | In-app guide content (FR/EN, quotes the real button names — a test checks them) and its panel / welcome card. |
+| `src/data/guide.ts`, `src/ui/panels/GuidePanel.tsx` | In-app guide content (FR/EN/AR, quotes the real button names — a test checks them) and its panel / welcome card. |
 | `src/lib/parseSentence.ts` | Dictated sentence → board words (for animated modelling). |
 | `src/lib/boardOps.ts` | Move / swap cards, spread a card over empty slots. |
 | `src/lib/grammar.ts` | Sentence strip grammar: FR/EN conjugation, elision, negation, code-switching segments. |
@@ -66,6 +78,11 @@ restricted environments.
 | `src/ui/` | Screens, universal bar, grid, panels. |
 
 ## Spec coverage (draft 0.1)
+
+*The draft notes below are the history of the first versions; several things changed since: pictures
+from the internet were removed, the voice is one of four (Woman, Man, Girl, Boy), there is no
+vibration, and the AI is switched off. The current state is in `docs/HOW-IT-WORKS.md` and
+`CLAUDE.md`.*
 
 Done: core board with stable positions and progressive reveal · Fitzgerald
 colour code · folders · sentence strip (speak all / per word, delete, clear with
@@ -123,9 +140,11 @@ Draft 0.8 adds: a minimum delay between two presses on the same pictogram (Setti
 Communication, 2 s by default, off / 1 / 2 / 3 / 5 s): repeated taps no longer fill the sentence
 with "pas pas pas"; other pictograms stay usable at once, replays and dictation are not limited.
 
-Not yet (later phases of the spec): accounts, multi-device sync, roles and
-companion app, AI generation from photos, on-device/server AI for TLAs on iPad, switch scanning / eye gaze,
-Arabic morphology, other dialects, opt-in usage statistics, version history.
+Built since these drafts: accounts, sync between devices, teams and roles, the professional
+workspace, opt-in follow-up and statistics, copies of the board, the other Arabic dialects, switch
+scanning. Not yet: the store builds, billing, Arabic morphology, eye-gaze tested with real devices;
+the AI (photos, topics, drawings) is written but switched off. The honest list is at the end of
+`docs/HOW-IT-WORKS.md`.
 
 ## Before the App Store
 

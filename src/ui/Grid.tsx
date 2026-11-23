@@ -559,7 +559,7 @@ const EmptyCell = React.memo(function EmptyCell({
         moveTarget && { borderColor: C.accent, backgroundColor: C.accentSoft },
       ]}
     >
-      <Icon name={moveTarget ? 'target' : 'plus'} size={22} color={moveTarget ? C.accent : '#98A2B3'} />
+      <Icon name={moveTarget ? 'target' : 'plus'} size={22} color={moveTarget ? C.accent : C.inputBorder} />
     </Pressable>
   );
 });

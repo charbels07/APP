@@ -7,13 +7,15 @@
 
 # Terms of use — Empower Communication
 
-Version `[number]`, `[date]`. Published by `[Company name]`, `[address]` ("we").
+Version `[number]`, `[date]`. Published by Empower Hub, Beirut, Lebanon ("we").
 
 ## 1. What the app is
 
 Empower Communication is an augmentative and alternative communication (AAC) app: a board of
 pictures and words that speaks for a child who cannot rely on speech. It works on iPhone, iPad
-and Android, in French, English and Arabic. Families use it with the child; professionals
+and Android, in French, English and Arabic, and is sold in the App Store and Google Play only. A
+web version is open today to chosen testers; it is not offered to families. *(Reviewer: whether
+testers of the web version need terms of their own.)* Families use it with the child; professionals
 (speech therapists, teachers…) can join a child's team when the family allows it.
 
 ## 2. Two commitments we make
@@ -36,8 +38,8 @@ and Android, in French, English and Arabic. Families use it with the child; prof
 - **Keep another way to communicate.** A device can break, run out of battery, be lost or be
   stolen. Keep a backup way for the child to communicate: a printed board (the app prints its
   boards: "Print / PDF"), another device, gestures the people around the child know.
-- The AI helper's suggestions (when it is offered) and the pictograms chosen automatically must
-  be checked by an adult before the child uses them.
+- The pictograms chosen automatically must be checked by an adult before the child uses them.
+  *(The AI helper is switched off today; if it is offered one day, its suggestions too.)*
 - The vocabulary in Arabic dialects and the words added for some picture libraries are first
   versions marked "to review" where the app says so.
 
@@ -122,4 +124,4 @@ countries outside the EU.]`
 
 ## 14. Contact
 
-`[Company name]`, `[address]` — support: `[support e-mail]` — privacy: `[privacy e-mail]`.
+Empower Hub, Beirut, Lebanon — `empowerhub.me@gmail.com` (support and questions about your data).

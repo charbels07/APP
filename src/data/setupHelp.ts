@@ -36,17 +36,17 @@ export const SETUP_HELP: Record<SetupHelpId, SetupHelp> = {
   child: {
     lines: {
       fr: [
-        'Le prénom est affiché dans l’application et aux personnes que vous invitez dans l’équipe. Il n’est jamais envoyé à l’aide par IA.',
+        'Le prénom est affiché dans l’application et aux personnes que vous invitez dans l’équipe.',
         'L’âge est facultatif : il est seulement gardé dans le profil, pour vous et l’équipe.',
         'Garçon ou fille : uniquement pour accorder les mots en français et en arabe (« je suis fatigué » ou « fatiguée »). Cela se change dans les Réglages.',
       ],
       en: [
-        'The first name is shown in the app and to the people you invite to the team. It is never sent to the AI helper.',
+        'The first name is shown in the app and to the people you invite to the team.',
         'The age is optional: it is only kept in the profile, for you and the team.',
         'Boy or girl: only to make words agree in French and Arabic (« je suis fatigué » or « fatiguée »). It can be changed in Settings.',
       ],
       ar: [
-        'يظهر الاسم في التطبيق وللأشخاص الذين تدعوهم إلى الفريق. لا يُرسل أبداً إلى المساعد بالذكاء الاصطناعي.',
+        'يظهر الاسم في التطبيق وللأشخاص الذين تدعوهم إلى الفريق.',
         'العمر اختياري: يُحفظ فقط في الملف، لك وللفريق.',
         'ولد أو بنت: فقط لتصريف الكلمات بالفرنسية والعربية (مثل «أنا تعبان» أو «تعبانة»). يمكن تغييره من الإعدادات.',
       ],

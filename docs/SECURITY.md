@@ -14,7 +14,7 @@ Only the right person can see or change each thing.
 | Therapists' diplomas and identity papers | Identity documents are what thieves look for. |
 | Accounts | Nobody should be able to enter someone else's. |
 | The back office | It opens certificates and shows figures: your team only. |
-| Your keys (the AI key above all) | Someone using your key spends your money. |
+| Your keys | Someone using your key reaches the data or spends your money (the AI key, if the AI is ever turned on: it is switched off today). |
 
 An attacker has five doors to try: **the database**, **the sign-in**, **the keys**, **the app on
 the tablet**, **the website and its libraries**. The review went through each one.
@@ -28,7 +28,7 @@ the tablet**, **the website and its libraries**. The review went through each on
 | Nothing for visitors | Someone who is not signed in cannot call any function or read any table | `…_security.sql` §13 |
 | Private files | Documents and photos are in private folders, one per person or per child | `…_storage.sql`, `…_security.sql` §10 |
 | Keys | The app only holds the public key. The powerful keys are never in the code (checked: nothing in the whole history) | `.env` (not on GitHub) |
-| Browser protections | The website only runs its own code and only talks to its own server and two picture libraries | `public/_headers` |
+| Browser protections | The website (support pages and the testers' web version) only runs its own code and only talks to its own server (Supabase) | `public/_headers` |
 | Guards in the app | Links, imported boards and other people's changes are cleaned before the app uses them | `src/lib/safety.ts` |
 
 ## 3. What the review found and what was done
@@ -47,7 +47,7 @@ then fixed, then covered by an automatic test.
 | After "Sign out", the child's whole copy (name, words, caregiver code) stayed in the browser. | Signing out sends what was not sent, then really erases it; an open board can no longer write it back. A choice also erases photos and recordings (shared computer). |
 | Caregiver code: 1234 for everyone, shown on the keypad of the real app, unlimited tries. | No hint anywhere and no code to know beforehand: the first time, the person chooses the code (typed twice). 5 wrong tries then a pause that grows. |
 | A team member with editing rights could turn on "record sentences" or "share statistics". | These two choices and the caregiver code can only be changed by the family, in the database and in the app. |
-| Any throw-away sign-in could use the AI helper (40 calls a day each) at your cost. | The helper is for people who look after a child here, with a ceiling for the whole service each day. (It is not deployed on the real server yet.) |
+| Any throw-away sign-in could use the AI helper (40 calls a day each) at your cost. | The helper is for people who look after a child here, with a ceiling for the whole service each day. (The AI is switched off: `caa-ai` is not deployed, owner's decision of November 2026.) |
 
 ### Medium
 
@@ -216,9 +216,11 @@ The back office can now show how the features are used and which technical probl
 
 - **the family's agreement, checked by the database**: `save_feature_day` and `report_problems`
   refuse a child whose family did not turn on "Help improve the app" *and* agree to the list that
-  mentions these counters (`shareTerms` 2). An older agreement is not enough. Only the family can
+  mentions these counters (`shareTerms` 2 at first, 3 since the "seen" and speed counters of
+  18 November: `product_terms()`). An older agreement is not enough. Only the family can
   change it (`guard_share_terms`), and a new profile cannot arrive "already agreed";
-- **known names and numbers only**: a counter has one of 30 names and a whole number; a problem
+- **known names and numbers only**: a counter has one of 61 names (30 at first; 31 "seen" and speed
+  counters added on 18 November) and a whole number; a problem
   has a kind, an error type, a screen and a system from fixed lists, a version, and a place in
   the code as digits. Anything else is dropped by the database, so no text can travel
   (the error's message is never even read by the app);
@@ -272,7 +274,7 @@ built, each with its attack replayed by `npm run test:db`:
 | **"Download all my data"** | One file with everything the server keeps about the account and its children (GDPR access and portability), after a fresh proof. | same, `src/ui/settings/DownloadMyData.tsx` |
 | **Dictation on the device** | When the language is installed for it, dictation runs on the device and no audio leaves it; otherwise a line says that Apple's or Google's service hears the sentence. | `src/ui/VoiceButton.tsx` |
 | **A server error is not a sign-out** | A server that cannot answer (down, paused, overloaded) no longer makes the app erase the child's copy: only a clear "this session does not exist" signs out. | `src/backend/supabase.ts`, `src/state/Session.tsx` |
-| **A child's photos and recordings copied through the account** | Private bucket `profile-media`, one folder per child, read only by the child's team through a 5-minute download address (never the back office). Only people who may change the board send (a use-only tablet, a proposer, a stranger, a removed member, an unverified professional are refused); only the names the app makes, only pictures and sounds of the type the name says (checked again after the storage server measured the file), 2 MB per picture, 3 MB per sound, 1,500 files and 150 MB per child (a per-child lock), 1,000 files per person per day; removing stays with the managers. Files of an erased profile or account are deleted by `caa-purge`. | `…20261118000300_media_sync.sql`, `supabase/tests/media_scenario.sql`, `src/state/mediaSync.ts` |
+| **A child's photos and recordings copied through the account** | Private bucket `profile-media`, one folder per child, read only by the child's team through a 5-minute download address (never the back office). Only people who may change the board send, and since batch 5 someone who may only propose (100 files and 20 MB per child in 30 days at most); a use-only tablet, a stranger, a removed member, an unverified professional are refused; only the names the app makes, only pictures and sounds of the type the name says (checked again after the storage server measured the file), 2 MB per picture, 3 MB per sound, 1,500 files and 150 MB per child (a per-child lock), 1,000 files per person per day; removing stays with the managers, and a file no board uses is removed only 30 days after it was sent and when nothing points to it (`media_in_use`, batch 5). Files of an erased profile or account are deleted by `caa-purge`. | `…20261118000300_media_sync.sql`, `supabase/tests/media_scenario.sql`, `src/state/mediaSync.ts` |
 | **Notifications outside the app** | The database decides who is told what and words it (never a child's name, word or sentence); the server function `caa-push` only delivers, and only to the browsers' own notification services (an address anywhere else is refused twice: database and function). Each message is encrypted for one browser; the signing key's private half is sealed. The app can read neither the devices, the queue nor the "last opened" moment; a child's tablet cannot register. | `…20261120000000_push.sql`, `supabase/functions/caa-push`, attacks in `supabase/tests/push_scenario.sql` |
 | **Links out of the app behind the code** | On the tablet apps, a pictogram that opens another app (YouTube…) first asks the caregiver code (store rules for children's apps). | `src/lib/appLinks.ts` |
 
@@ -283,7 +285,9 @@ What these need on the server is in §4 ("After the update of 18 November 2026")
 ### After the update of 22 November 2026 (5 minutes)
 
 Once the new version of the app is published, run `20261122000000_gap_batch3.sql` in Supabase →
-SQL Editor ("Success"). `supabase/check-migrations.sql` says which files are still to run. Until
+SQL Editor ("Success"), then `20261122000100_gap_batch4.sql` (people and rights) and
+`20261122000200_gap_batch5.sql` (files kept 30 days). `supabase/check-migrations.sql` says which
+files are still to run. Until
 it runs the app works as before, with the holes listed in §3 (batch 3) still open. Run it after
 the app is published, not before: an app that was not updated reads the profile the old way,
 which this file closes (a page left open on the old version shows the board from the device
@@ -297,7 +301,8 @@ until it is reloaded).
    names. Until they run, the app keeps working with the older rules (it falls back), but the new
    protections are not active on the server.
 2. **Deploy the function `caa-purge`** exactly like `caa-mail` (supabase/README.md §11), with
-   *Verify JWT* turned **off**. It uses the connection already made for the team's e-mails.
+   *Verify JWT* turned **off** (`supabase/config.toml` says it for the command line). It uses the
+   connection already made for the team's e-mails.
 3. **Turn on two-step sign-in for every team account**: sign in to the app with it; the back
    office now shows "Turn on" first (Settings → Account → My account works too). Keep the
    authenticator on a phone that is not shared. A lost phone: Supabase → Authentication → Users →
@@ -356,9 +361,9 @@ Names move a little between versions of the dashboard; look for the nearest word
 
 | Command | What it proves |
 |---|---|
-| `npm run test:db` | 429 checks on a throw-away database: the normal story, then **every attack of this review, which must fail**, then the hand-over of a profile created by a professional, the e-mails to the team, the figures for the team, the problems and the votes, then the second round: two-step sign-in, fresh proofs, hidden addresses, the purge queue, the bin and the copies, consent, retention, sealed sentences, the full export, photos and recordings, notifications, and the holes of the gap review (batch 3). The same runs on GitHub at every change (`.github/workflows/checks.yml`). |
-| `npm test` | 574 tests; `security.test.ts` covers links, other people's changes, what stays on the device, the print page, the website protections. |
-| `npm audit` | Known flaws in libraries. Today: none in what ships to families (4 medium ones in build tools only). |
+| `npm run test:db` | 16 scenarios, 493 checks on 23 November 2026, on a throw-away database with the 23 migration files: the normal story, then **every attack of this review, which must fail**, then the hand-over of a profile created by a professional, the e-mails to the team, the figures for the team, the problems and the votes, then the second round: two-step sign-in, fresh proofs, hidden addresses, the purge queue, the bin and the copies, consent, retention, sealed sentences, the full export, photos and recordings, notifications, and the holes of the gap review (batches 3, 4 and 5). The same runs on GitHub at every change (`.github/workflows/checks.yml`). |
+| `npm test` | About 600 tests in 62 files (23 November 2026); `security.test.ts` covers links, other people's changes, what stays on the device, the print page, the website protections. |
+| `npm audit` | Known flaws in libraries. On 23 November 2026: none in what ships to families; `npm audit --omit=dev` lists 4 medium ones, all in Expo's build tools (`@expo/cli`, `@expo/fingerprint`, `glob`, `minimatch`); 22 medium in all with the development tools. |
 | `npm run test:a11y` | The screens still pass the accessibility scan after these changes. |
 
 When a database rule changes, add the attack to `supabase/tests/security_scenario.sql` first,

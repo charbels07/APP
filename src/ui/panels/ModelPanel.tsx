@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { parseSentence } from '../../lib/parseSentence';
+import { strings } from '../../i18n/ui';
 import { useApp } from '../../state/AppState';
 import { Btn, Field, Section, Segmented } from '../common';
 import { Icon } from '../Icon';
@@ -39,7 +40,7 @@ export function ModelBody() {
               value={text}
               onChangeText={setText}
               onSubmitEditing={() => text.trim() && show(text)}
-              placeholder="je veux manger"
+              placeholder={strings(lang).modelExample}
               returnKeyType="go"
               style={lang === 'ar' ? { textAlign: 'right' } : undefined}
             />

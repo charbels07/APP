@@ -2,8 +2,8 @@
   "ios": {
     "NSMicrophoneUsageDescription": "The microphone records how a word is said (a name, a word in dialect) and lets an adult dictate a sentence to show it on the board. Recordings are kept in the child’s private space in the family’s account, so they also play on the child’s other devices.",
     "NSSpeechRecognitionUsageDescription": "Speech recognition turns what an adult says into words: to find a word by saying it, or to show a dictated sentence on the board.",
-    "NSCameraUsageDescription": "The camera takes a photo of a person, an object or a place to add it to the child’s words. Photos are kept in the child’s private space in the family’s account, so they also appear on the child’s other devices. A photo taken to suggest an activity board is only sent once to the AI, and not kept.",
-    "NSPhotoLibraryUsageDescription": "Photos from the library illustrate the child’s words. They are kept in the child’s private space in the family’s account, so they also appear on the child’s other devices. A photo chosen to suggest an activity board is only sent once to the AI, and not kept.",
+    "NSCameraUsageDescription": "The camera takes a photo of a person, an object or a place to add it to the child’s words. Photos are kept in the child’s private space in the family’s account, so they also appear on the child’s other devices.",
+    "NSPhotoLibraryUsageDescription": "Photos from the library illustrate the child’s words. They are kept in the child’s private space in the family’s account, so they also appear on the child’s other devices.",
     "NSPhotoLibraryAddUsageDescription": "A photo taken in the app for one of the child’s words is also saved in this device’s Photos, so you can use it again for another word. It is also kept in the child’s private space in the family’s account."
   }
 }

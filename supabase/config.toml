@@ -1,0 +1,18 @@
+# Settings read by the Supabase command line (`npx supabase functions deploy …`). Only the server
+# functions that the database calls itself are listed: they cannot show a sign-in token, so
+# "Verify JWT" must be off. Each one checks the caller another way: the header `x-mail-key` must hold
+# the 64-character key the database made (`team_mail_config`), and the database itself checks it
+# (`team_mail_take`, `storage_purge_take`, `push_keys` / `push_take`); anything else gets 401.
+# A function deployed from the dashboard's editor does not read this file: turn "Verify JWT" off by
+# hand there (supabase/README.md §10–11, docs/runbooks/NOTIFICATIONS.md).
+# `caa-ai` is not listed on purpose: it is not deployed (the AI is switched off), and if it ever is,
+# it needs the person's own sign-in token (Verify JWT stays on).
+
+[functions.caa-mail]
+verify_jwt = false
+
+[functions.caa-purge]
+verify_jwt = false
+
+[functions.caa-push]
+verify_jwt = false

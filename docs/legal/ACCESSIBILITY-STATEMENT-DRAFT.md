@@ -8,7 +8,7 @@
 
 # Accessibility statement — Empower Communication
 
-`[Company name]` wants Empower Communication to be usable by everyone: children who
+Empower Hub wants Empower Communication to be usable by everyone: children who
 communicate with it, and the adults around them, including people who use a screen reader, a
 keyboard, a switch or a large text size.
 
@@ -25,9 +25,9 @@ EN 301 549.
 
 | | |
 |---|---|
-| Date | 14 November 2026 |
+| Date | 14 November 2026; scan run again on 18 November 2026 |
 | Method | Automatic scan (axe-core) and reading of the code, by the development team; not an independent audit |
-| What | The web build of the app (the same code as the phone and tablet apps): 57 screens, 204 scans, at four sizes (computer, phone, 320 px wide, 200 % zoom) and in Arabic (right to left) |
+| What | The web build of the app (the same code as the phone and tablet apps; the web version itself is only open to chosen testers, the product is the store apps): 64 screens, 232 scans, at four sizes (computer, phone, 320 px wide, 200 % zoom) and in Arabic (right to left) |
 | Keyboard | Tab, Enter, Space and Escape on every main screen; the focus is always visible |
 | Colours | Every colour pair of the app is tested automatically for contrast (4.5:1 for text, 3:1 for controls) |
 | Result | 0 rule breaks left in the scans (4 kinds found at the start, fixed) |
@@ -65,7 +65,7 @@ If something in the app is hard or impossible to use for you or your child:
 
 - in the app: Settings → Account → "Help us improve Empower" → "Report an accessibility
   difficulty" (professionals: Account & licence);
-- by e-mail: `[support e-mail]`.
+- by e-mail: `empowerhub.me@gmail.com`.
 
 We answer within `[number]` working days. If our answer does not satisfy you, you can contact
 `[the competent authority of your country — in France, the Défenseur des droits]`.

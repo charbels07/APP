@@ -20,6 +20,7 @@ export function DrawPad({
   height = 260,
   onSize,
   onPen,
+  label,
 }: {
   strokes: Stroke[];
   onChange: (strokes: Stroke[]) => void;
@@ -27,6 +28,8 @@ export function DrawPad({
   onSize?: (w: number, h: number) => void;
   /** Finger down / up (the parent stops scrolling meanwhile). */
   onPen?: (down: boolean) => void;
+  /** What the pad is for, said by a screen reader (in the menus' language). */
+  label: string;
 }) {
   const [width, setWidth] = useState(0);
   const current = useRef<Stroke | null>(null);
@@ -80,7 +83,7 @@ export function DrawPad({
           current.current = null;
           onPen?.(false);
         }}
-        accessibilityLabel="drawing pad"
+        accessibilityLabel={label}
       />
     </View>
   );

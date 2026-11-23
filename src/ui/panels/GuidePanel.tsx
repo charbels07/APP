@@ -75,7 +75,7 @@ export function GuidePanel() {
       case 'caregiver':
         return app.setOverlay(editMode ? null : { kind: 'pin', back: here });
       default:
-        // search, keyboard, lang, model, help
+        // search, keyboard, model, help
         return app.setOverlay({ kind: action, back: here });
     }
   };

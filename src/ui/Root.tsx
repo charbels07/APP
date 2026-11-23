@@ -13,7 +13,7 @@ import { Btn } from './common';
 import { Icon } from './Icon';
 import { CaregiverOverlay } from './panels/CaregiverPanels';
 import { SettingsScreen } from './settings/SettingsScreen';
-import { HelpPanel, LangPanel, PinPanel } from './panels/CommPanels';
+import { HelpPanel, PinPanel } from './panels/CommPanels';
 import { ToolsPanel } from './panels/ToolsPanel';
 import { GuidePanel, WelcomeCard } from './panels/GuidePanel';
 import { NewTlaPanel } from './panels/NewTlaPanel';
@@ -76,7 +76,6 @@ export function Root({ banner }: { banner?: React.ReactNode } = {}) {
       {view === 'schedule' && <ScheduleScreen />}
       {(overlay?.kind === 'search' || overlay?.kind === 'keyboard' || overlay?.kind === 'model') && <ToolsPanel tool={overlay.kind} />}
       {overlay?.kind === 'help' && <HelpPanel />}
-      {overlay?.kind === 'lang' && <LangPanel />}
       {overlay?.kind === 'pin' && <PinPanel />}
       {overlay?.kind === 'newTla' && <NewTlaPanel />}
       {overlay?.kind === 'newSequence' && <NewSequencePanel />}

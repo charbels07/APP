@@ -39,7 +39,8 @@
    (`supabase/README.md` §10–11): Supabase → Edge Functions → Deploy a new function → Via Editor,
    name it exactly `caa-push`, paste the whole of `supabase/functions/caa-push/index.ts` over the
    example in `index.ts` (one file, nothing else), deploy, then turn **off** *Verify JWT* in the
-   function's settings. With the command line: `npx supabase functions deploy caa-push --no-verify-jwt`.
+   function's settings. With the command line: `npx supabase functions deploy caa-push --no-verify-jwt`
+   (`supabase/config.toml` also says `verify_jwt = false` for it).
    No key to create or paste: the function makes its own pair of keys the first time it runs and
    the database keeps them (the private half sealed). It uses the connection already made for the
    team's e-mails (`team_mail_connect`), and needs `pg_net` and `pg_cron` like them.

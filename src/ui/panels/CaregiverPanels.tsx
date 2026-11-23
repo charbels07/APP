@@ -19,7 +19,7 @@ import { eraseLater } from '../../lib/mediaKeep';
 import { libraryAccess, pickPhoto, type LibraryAccess } from '../../lib/photos';
 import { APP_PRESETS, appLinkOf, isIncomplete, openAppUrl } from '../../lib/appLinks';
 import { exportPdf, printDocument } from '../../lib/platform';
-import { boardCells, buildPrintHtml, conceptCell, type PrintOptions } from '../../lib/printHtml';
+import { boardCells, buildPrintHtml, conceptCell, printCancelled, type PrintOptions } from '../../lib/printHtml';
 import { canSpan } from '../../lib/boardOps';
 import { removeCells } from '../../lib/cellActions';
 import { binItems } from '../../lib/wordBin';
@@ -35,7 +35,7 @@ import type { AppLink, ArabicDialect, CellDisplay, Lang, Profile, SymbolRef, UiL
 import { useApp, useBack, type SettingsStash } from '../../state/AppState';
 import { Btn, Field, Panel, Section, Segmented, Toggle, useNavRtl } from '../common';
 import { Icon, type IconName } from '../Icon';
-import { expanded } from '../a11y';
+import { checked, expanded } from '../a11y';
 import { PictoSearch } from '../PictoPicker';
 import { SearchBox } from '../SearchBox';
 import { useSeen } from '../Seen';
@@ -489,6 +489,8 @@ function ConceptEditorBody({ conceptId, only }: { conceptId: string; only?: 'ima
               <Pressable
                 key={c}
                 onPress={() => app.update((d) => setClass(d, conceptId, c))}
+                accessibilityRole="radio"
+                {...checked(cls === c)}
                 style={[s.classChip, { backgroundColor: CLASS_COLORS[c].bg, borderColor: CLASS_COLORS[c].border }, cls === c && s.classActive]}
               >
                 <Text style={s.classText}>{CLASS_NAMES[c][profile.settings.uiLang]}</Text>
@@ -676,9 +678,7 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
     setOwnPicture({ name, credit });
   };
   const pictoQuery = draft.fr || draft.en || draft.ar;
-  // With a child's voice a new word is said with the family's or the therapist's own voice:
-  // it is recorded here, in the board's language, before the word can be added.
-  const mustRecord = profile.settings.voiceAge === 'child';
+  // A recording of the word, in the board's language, is offered but never required (gap review Q48).
   const [recording, setRecording] = useState<string | undefined>();
   const kept = useRef(false);
   const recordingRef = useRef(recording);
@@ -760,6 +760,8 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
               <Pressable
                 key={c}
                 onPress={() => setDraft({ ...draft, cls: c })}
+                accessibilityRole="radio"
+                {...checked(draft.cls === c)}
                 style={[s.classChip, { backgroundColor: CLASS_COLORS[c].bg, borderColor: CLASS_COLORS[c].border }, draft.cls === c && s.classActive]}
               >
                 <Text style={s.classText}>{CLASS_NAMES[c][profile.settings.uiLang]}</Text>
@@ -812,17 +814,14 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
               />
             </View>
           ) : null}
-          {mustRecord && (
-            <Section title={`${t.recordRequired} — ${langName(profile.settings, lang)}`}>
-              <Text style={s.note}>{t.recordRequiredNote}</Text>
-              <Recorder media={recording} onChange={setRecording} />
-            </Section>
-          )}
+          <Section title={`${t.recordOwn} — ${langName(profile.settings, lang)}`}>
+            <Recorder media={recording} onChange={setRecording} />
+          </Section>
           <Btn
             kind="primary"
             icon="check"
             label={busy ? t.creating : t.save}
-            disabled={busy || !(draft.fr || draft.en || draft.ar) || (mustRecord && !recording)}
+            disabled={busy || !(draft.fr || draft.en || draft.ar)}
             onPress={create}
           />
         </View>
@@ -885,6 +884,8 @@ function ScheduleEditor({ id }: { id: string }) {
             })
           }
           style={s.iconPick}
+          accessibilityRole="button"
+          accessibilityLabel={`${t.chooseWord} — ${label(profile, sched.concept, lang)}`}
         >
           <SymbolView symbol={symbolOf(profile, sched.concept)} size={48} />
         </Pressable>
@@ -899,8 +900,8 @@ function ScheduleEditor({ id }: { id: string }) {
           <Text style={s.stepText} numberOfLines={1}>
             {label(profile, st.concept, lang)}
           </Text>
-          <Btn small icon="arrowUp" accessibilityLabel="up" disabled={i === 0} onPress={() => mutate((x) => void x.steps.splice(i - 1, 0, ...x.steps.splice(i, 1)))} />
-          <Btn small icon="arrowDown" accessibilityLabel="down" disabled={i === sched.steps.length - 1} onPress={() => mutate((x) => void x.steps.splice(i + 1, 0, ...x.steps.splice(i, 1)))} />
+          <Btn small icon="arrowUp" accessibilityLabel={t.moveUp} disabled={i === 0} onPress={() => mutate((x) => void x.steps.splice(i - 1, 0, ...x.steps.splice(i, 1)))} />
+          <Btn small icon="arrowDown" accessibilityLabel={t.moveDown} disabled={i === sched.steps.length - 1} onPress={() => mutate((x) => void x.steps.splice(i + 1, 0, ...x.steps.splice(i, 1)))} />
           <Btn
             small
             icon="grid"
@@ -908,11 +909,11 @@ function ScheduleEditor({ id }: { id: string }) {
             accessibilityLabel={t.linkTla}
             onPress={() => mutate((x) => void (x.steps[i].tla = nextTla(st.tla)))}
           />
-          <Btn small icon="minus" accessibilityLabel="-" onPress={() => mutate((x) => void (x.steps[i].timerMin = Math.max(0, (st.timerMin ?? 0) - 1) || undefined))} />
+          <Btn small icon="minus" accessibilityLabel={t.minuteLess} onPress={() => mutate((x) => void (x.steps[i].timerMin = Math.max(0, (st.timerMin ?? 0) - 1) || undefined))} />
           <Text style={s.minutes}>
             {st.timerMin ?? 0} {t.minutes}
           </Text>
-          <Btn small icon="plus" accessibilityLabel="+" onPress={() => mutate((x) => void (x.steps[i].timerMin = (st.timerMin ?? 0) + 1))} />
+          <Btn small icon="plus" accessibilityLabel={t.minuteMore} onPress={() => mutate((x) => void (x.steps[i].timerMin = (st.timerMin ?? 0) + 1))} />
           <Btn small kind="danger" icon="trash" accessibilityLabel={t.remove} onPress={() => mutate((x) => void x.steps.splice(i, 1))} />
         </View>
       ))}
@@ -1405,8 +1406,8 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
           <Text style={[s.label, { flex: 1 }]}>
             {t.sRate} : {st.speechRate.toFixed(1)}×
           </Text>
-          <Btn small icon="minus" accessibilityLabel="-" onPress={() => set((x) => void (x.speechRate = Math.max(0.5, +(x.speechRate - 0.1).toFixed(1))))} />
-          <Btn small icon="plus" accessibilityLabel="+" onPress={() => set((x) => void (x.speechRate = Math.min(1.6, +(x.speechRate + 0.1).toFixed(1))))} />
+          <Btn small icon="minus" accessibilityLabel={t.slower} onPress={() => set((x) => void (x.speechRate = Math.max(0.5, +(x.speechRate - 0.1).toFixed(1))))} />
+          <Btn small icon="plus" accessibilityLabel={t.faster} onPress={() => set((x) => void (x.speechRate = Math.min(1.6, +(x.speechRate + 0.1).toFixed(1))))} />
         </View>
         <Text style={s.label}>{t.sVoiceKind}</Text>
         {/* Four voices, all made from the device's own: nothing else to choose. */}
@@ -1478,7 +1479,7 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
           </>
         )}
         {app.ownCode && <Text style={s.note}>{t.sPinOwnNote}</Text>}
-        <Toggle label={t.sAi} note={t.sAiNote} value={st.aiSuggestions !== false} onChange={(v) => set((x) => void (x.aiSuggestions = v))} />
+        {/* No AI switch: the AI is switched off (gap review Q47); a family's earlier "off" is still respected. */}
         <View style={s.wrapRow}>
           {/* With an account, the backup is on the Account page (Privacy): not twice. */}
           {!board && <BoardExportButton profile={profile} uiLang={profile.settings.uiLang} />}
@@ -1583,8 +1584,11 @@ function PrintPanel({ cards }: { cards?: string[] }) {
     };
   }, [target, o, profile, lang, t, cards]);
 
+  // A print or a PDF that could not be made is said here (never a silent button).
+  const [printFailed, setPrintFailed] = useState(false);
   const run = async (fn: () => Promise<void>) => {
     setBusy(true);
+    setPrintFailed(false);
     try {
       await fn();
       // For the app's team (families who agreed): something was printed, and which kind of support.
@@ -1592,8 +1596,10 @@ function PrintPanel({ cards }: { cards?: string[] }) {
       if (target.kind === 'schedule' || target.kind === 'firstThen') countFeature('printSchedule');
       else if (target.kind === 'board' && target.id !== 'core' && profile.boards[target.id]?.kind === 'tla') countFeature('printTla');
     } catch (e) {
-      reportProblem('print', e);
-      throw e;
+      if (!printCancelled(e)) {
+        reportProblem('print', e);
+        setPrintFailed(true);
+      }
     } finally {
       setBusy(false);
     }
@@ -1654,6 +1660,11 @@ function PrintPanel({ cards }: { cards?: string[] }) {
         <Btn kind="primary" icon="printer" label={t.printNow} disabled={!html || busy} onPress={() => run(() => printDocument(html, o.landscape))} style={{ flex: 1 }} />
         <Btn icon="download" label={t.exportPdf} disabled={!html || busy} onPress={() => run(() => exportPdf(html, o.paper, o.landscape))} style={{ flex: 1 }} />
       </View>
+      {printFailed && (
+        <Text style={s.warnBox} accessibilityLiveRegion="polite" role="alert">
+          {t.printFailed}
+        </Text>
+      )}
     </Panel>
   );
 }

@@ -30,10 +30,10 @@ incident record as soon as it opens.
 | Lawyer | `[lawyer]`, `[phone]` | Before telling families or an authority |
 | CNIL | Online notification form (notifications.cnil.fr) | Personal data breach (`DATA-BREACH.md`) |
 | Supabase support | Dashboard → Support (paid plan: priority) | Server, database, backups |
-| Cloudflare support | Dashboard → Support | Store pages |
+| Cloudflare support | Dashboard → Support | Support pages, the testers' web version |
 | Apple App Store Connect | `[account]` → Contact us | App review, expedited review, app removed |
 | Google Play Console | `[account]` → Help → Contact us | Same |
-| Anthropic | console.anthropic.com | AI key leaked or abused |
+| Anthropic | console.anthropic.com | AI key leaked or abused (only once the AI is turned on: it is switched off today) |
 | Insurance (cyber) | `[insurer]`, `[policy number]` | Breach, ransom, legal costs |
 
 ## 3. Severity
@@ -76,11 +76,11 @@ Names in the dashboards move a little between versions; look for the nearest wor
 
 | Action | How | Effect on families |
 |---|---|---|
-| **Rotate the Supabase secret keys** (a server key leaked) | Project Settings → API Keys → Secret keys: create a new one, then delete the old one. Redeploy `caa-ai` and `caa-mail` and check them (`select public.team_mail_test();`) | None if the app only holds the publishable key |
+| **Rotate the Supabase secret keys** (a server key leaked) | Project Settings → API Keys → Secret keys: create a new one, then delete the old one. Redeploy `caa-mail`, `caa-purge` and `caa-push` ("Verify JWT" off: `supabase/config.toml`) and check them (`select public.team_mail_test();`, `select * from push_check();`) | None if the app only holds the publishable key |
 | **Rotate the JWT signing key** (tokens can be forged) | Project Settings → JWT Keys: create a standby key, rotate, then revoke the previous key. Revoking makes every access token signed with it stop working; the app gets a new one with its refresh token | Short interruption of sync |
 | ⚠️ **Legacy JWT secret** | If the project still uses the legacy JWT secret and the app ships the legacy "anon" key, changing that secret **breaks every installed app** until new store builds are out (the key is built into the app). Check which key the builds use **before** an incident: it must be the publishable key | Severe |
-| **Switch off the AI helper** (`caa-ai`) | Edge Functions → `caa-ai` → delete; or `npx supabase secrets unset ANTHROPIC_API_KEY`. Revoke the key on console.anthropic.com. The app stops showing AI buttons by itself (it asks the server whether the function exists) | AI suggestions disappear; everything else works |
-| **Switch off the team e-mails** (`caa-mail`) | SQL: `delete from public.team_mail_config;` (messages wait, nothing is sent). Remove the Gmail app password used by `SMTP_PASS` | None |
+| **Switch off the AI helper** (`caa-ai`; not deployed today, the AI is switched off) | Edge Functions → `caa-ai` → delete; or `npx supabase secrets unset ANTHROPIC_API_KEY`. Revoke the key on console.anthropic.com. The app stops showing AI buttons by itself (it asks the server whether the function exists) | AI suggestions disappear; everything else works |
+| **Switch off the team e-mails** (`caa-mail`) | SQL: `delete from public.team_mail_config;` (messages wait, nothing is sent). This also stops `caa-purge` and `caa-push`, which use the same key: files to delete and notifications wait in their queues until `team_mail_connect` is run again. Remove the Gmail app password used by `SMTP_PASS` | None (files of erased things are deleted later) |
 | **Gmail account compromised** | Change its password; Google Account → Security → sign out of all devices; delete every app password; make new ones; update Supabase → Authentication → SMTP and the `SMTP_PASS` secret | Sign-in codes stop arriving until SMTP is updated |
 
 ### People and devices

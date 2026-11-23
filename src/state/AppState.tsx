@@ -61,7 +61,6 @@ export type Overlay =
   | { kind: 'search'; back?: Overlay }
   | { kind: 'keyboard'; back?: Overlay }
   | { kind: 'help'; back?: Overlay }
-  | { kind: 'lang'; back?: Overlay }
   /** Caregiver code. `then`: what opens once the code is right. */
   | { kind: 'pin'; then?: AfterCode; back?: Overlay }
   | { kind: 'settings'; back?: Overlay }

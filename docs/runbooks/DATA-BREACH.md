@@ -42,7 +42,8 @@ not when everything is known.
 If the company is established in another EU country than France, its own authority replaces
 the CNIL: `[lead supervisory authority]`.
 
-Our processors (Supabase, Cloudflare, Google for Gmail and sign-in, Apple, Anthropic) must tell
+Our processors (Supabase, Cloudflare, Google for Gmail and sign-in, Apple; Anthropic only if the
+AI is turned on: it is switched off today) must tell
 us of a breach on their side without undue delay (their data processing agreements). When they
 do, our clock starts.
 
@@ -71,7 +72,7 @@ concerned) when the risk is high, in clear words, in **French, English and Arabi
 languages of the app; send the language of the menus of each account first, the other two
 below). Two channels:
 
-1. **E-mail** from `[privacy e-mail]` (the app itself only sends sign-in codes; the e-mail is
+1. **E-mail** from `empowerhub.me@gmail.com` (the app itself only sends sign-in codes; the e-mail is
    sent by the team from its mailbox).
 2. **A notice in the app** (`INCIDENT-RESPONSE.md`, section 5: in-app only, the three languages
    in one notice).
@@ -104,9 +105,9 @@ The Arabic texts below are a first version, to be read by a native speaker befor
 >
 > [If true:] Your child's board keeps working on your devices.
 >
-> Questions: [privacy e-mail]. Our data protection officer: [DPO].
+> Questions: empowerhub.me@gmail.com. Our data protection officer: [DPO].
 >
-> We are sorry. — [Company name]
+> We are sorry. — Empower Hub
 
 ### E-mail — français
 
@@ -133,9 +134,9 @@ The Arabic texts below are a first version, to be read by a native speaker befor
 >
 > [Si c'est vrai :] Le tableau de votre enfant continue de fonctionner sur vos appareils.
 >
-> Questions : [privacy e-mail]. Notre délégué à la protection des données : [DPO].
+> Questions : empowerhub.me@gmail.com. Notre délégué à la protection des données : [DPO].
 >
-> Nous vous présentons nos excuses. — [Company name]
+> Nous vous présentons nos excuses. — Empower Hub
 
 ### E-mail — العربية
 
@@ -161,9 +162,9 @@ The Arabic texts below are a first version, to be read by a native speaker befor
 >
 > [إن كان ذلك صحيحاً:] تبقى لوحة طفلكم تعمل على أجهزتكم.
 >
-> للأسئلة: [privacy e-mail]. مسؤول حماية البيانات لدينا: [DPO].
+> للأسئلة: empowerhub.me@gmail.com. مسؤول حماية البيانات لدينا: [DPO].
 >
-> نعتذر منكم. — [Company name]
+> نعتذر منكم. — Empower Hub
 
 </div>
 

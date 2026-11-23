@@ -18,7 +18,7 @@ import { useSeen } from "../Seen";
 import { SymbolView } from "../SymbolView";
 import { C, radius } from "../theme";
 import { MonthView, WeekView } from "./PlansViews";
-import { checked } from '../a11y';
+import { checked, selected } from '../a11y';
 
 export const scheduleTitle = (
   s: Schedule,
@@ -102,12 +102,15 @@ export function ScheduleScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ gap: 6 }}
             style={{ flexShrink: 1 }}
+            accessibilityRole="tablist"
           >
             {profile.schedules.map((s) => {
               const active = s.id === schedule?.id;
               return (
                 <Pressable
                   key={s.id}
+                  accessibilityRole="tab"
+                  {...selected(active)}
                   onPress={() =>
                     active && editMode
                       ? app.setOverlay({ kind: "scheduleEditor", id: s.id })
@@ -217,7 +220,12 @@ export function ScheduleScreen() {
       ) : (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.dayPlan}>
           <View style={[styles.bigRow, styles.bigRowMin, { flex: 1.25 }]}>
-            {current ? (
+            {!steps.length ? (
+              // No sequence, or one without steps: never "All done" for what was never there.
+              <View style={[styles.big, styles.empty]}>
+                <Text style={styles.emptyText}>{schedule ? t.noStepsYet : t.noSequence}</Text>
+              </View>
+            ) : current ? (
               <BigCard
                 heading={t.now}
                 conceptId={current.concept}
@@ -538,6 +546,8 @@ const styles = StyleSheet.create({
   },
   allDone: { borderColor: C.success, justifyContent: "center" },
   allDoneText: { fontSize: 28, fontWeight: "800", color: C.success },
+  empty: { borderColor: C.border, justifyContent: "center", alignItems: "center", padding: 16 },
+  emptyText: { fontSize: 18, color: C.textMuted, textAlign: "center" },
   sequence: { gap: 10, alignItems: "stretch", paddingBottom: 4 },
   stepCard: {
     width: 150,

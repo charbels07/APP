@@ -110,9 +110,9 @@ export function TimerCard() {
             {QUICK.map((m) => (
               <Btn key={m} small label={`${m} ${t.minutes}`} onPress={() => app.startTimer(m)} style={styles.quickBtn} />
             ))}
-            <Btn small icon="minus" accessibilityLabel="-" onPress={() => setCustomMin((m) => Math.max(1, m - 1))} />
+            <Btn small icon="minus" accessibilityLabel={t.minuteLess} onPress={() => setCustomMin((m) => Math.max(1, m - 1))} />
             <Btn small label={`${t.start} ${customMin} ${t.minutes}`} onPress={() => app.startTimer(customMin)} />
-            <Btn small icon="plus" accessibilityLabel="+" onPress={() => setCustomMin((m) => Math.min(120, m + 1))} />
+            <Btn small icon="plus" accessibilityLabel={t.minuteMore} onPress={() => setCustomMin((m) => Math.min(120, m + 1))} />
           </View>
           <View style={[styles.quick, short && styles.oneLine]}>
             <Btn small icon="image" label={concept ? t.timerChangePicto : t.timerChoosePicto} onPress={pickPicto} />

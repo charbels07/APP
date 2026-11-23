@@ -9,7 +9,7 @@
 
 | | |
 |---|---|
-| Controller | `[Company name]` |
+| Controller | Empower Hub |
 | DPO | `[DPO]` |
 | Written by | `[name]`, from the code and `docs/SECURITY.md` |
 | Version, date | 0.1, 18 November 2026 |
@@ -21,10 +21,10 @@
 
 | | |
 |---|---|
-| The processing | An AAC app (iPhone, iPad, Android) that gives a voice to children who cannot rely on speech. Families build the child's board; professionals join the child's team with the family's agreement; an optional follow-up shows how the child communicates |
-| Purposes | See `RECORD-OF-PROCESSING.md` (16 purposes) |
+| The processing | An AAC app (iPhone, iPad, Android), sold in the App Store and Google Play only, that gives a voice to children who cannot rely on speech. A web version of the same code is open today to chosen testers (sign-up open, no list of testers), not offered to families. Families build the child's board; professionals join the child's team with the family's agreement; an optional follow-up shows how the child communicates |
+| Purposes | See `RECORD-OF-PROCESSING.md` (17 purposes; the AI helper's is switched off) |
 | Stakes for the people | For the child: communicating at all. For the family: privacy of a disability, of family life, of what the child says |
-| Controller, processors | `[Company name]`; Supabase (server, EU), Google (Gmail), Anthropic (AI helper, when on), Cloudflare (public pages), `[off-site storage]` |
+| Controller, processors | Empower Hub; Supabase (server, EU, with the server functions `caa-mail`, `caa-purge`, `caa-push`), Google (Gmail), Cloudflare (public pages, the testers' web version), `[off-site storage]`; the browsers' notification services (Google FCM, Mozilla, Apple, Microsoft) carry encrypted notifications of the web version. Anthropic is not used: the AI helper is switched off and `caa-ai` is not deployed |
 | Standards followed | GDPR; CNIL recommendations on children's rights online; WCAG 2.2 AA (`docs/ACCESSIBILITY.md`) |
 
 ### 1.2 Data, processes and supports
@@ -32,13 +32,15 @@
 | Data | Life cycle | Supports |
 |---|---|---|
 | Accounts | Created at sign-up → used → deleted on request (fresh proof first); inactive 24 months → reviewed | Supabase Auth, `accounts` |
-| Child's profile (first name, age, set-up answers, board, caregiver code) | Created by a parent (or a verified professional, then handed over) → synced → deleted → 30 days in the bin → erased; snapshots: last 10 | Device (AsyncStorage), `profiles` |
-| Photos, recordings | Made on a device → shared between the child's devices → deleted with the profile (purge queue) | Device files; bucket `profile-media` |
+| Child's profile (first name, age, set-up answers, board, caregiver code) | Created by a parent (or a verified professional, then handed over) → synced → deleted → 30 days in the bin → erased; words and boards deleted on the board: 30 days in the profile's bin; snapshots: last 10 | Device (AsyncStorage), `profiles` |
+| Photos, recordings | Made on a device → shared between the child's devices → a file no board uses stays 30 days, then removed → deleted with the profile (purge queue, `caa-purge`) | Device files; bucket `profile-media` |
 | Follow-up (use, words, sentences), observations | Recorded on the child's devices at the chosen level → sent → shown to allowed members → 24 months (sentences 12) | Device (120 days), `usage_days`, `observations` |
-| Team, invitations, proposals, history | Created by the team → history 24 months | `members`, `invitations`, `proposals`, `history` |
+| Team, invitations, proposals, history | Created by the team → history 24 months; invitations valid 30 days, erased after 60 days if not answered, 12 months if decided | `members`, `invitations`, `proposals`, `history` |
 | Professionals' documents | Uploaded → read once by the team (logged) → identity document deleted at the decision | Bucket `verification-docs`, `verifications` |
 | Counters, problems (with consent) | Counted on the device → sent daily → 180 days | `feature_days`, `error_counts` |
 | Messages, votes | Written by a person → read by the team → 3 years | `feedback`, `roadmap_votes` |
+| Notifications outside the app (web version, with consent) | The browser registers → the database writes a notification (never a child's name, word or sentence) → `caa-push` sends it encrypted through the browser's notification service → 2 days; registration 12 months without use | `push_subs`, `push_out`, `profile_seen` |
+| Deletion list | Written when an account, a profile or a document is erased → `caa-purge` deletes the files → 30 days | `storage_purge` |
 | Backups | Daily (7 days), weekly encrypted off-site (30–90 days) | Supabase; `[off-site storage]` |
 
 ## 2. Fundamental principles
@@ -49,7 +51,7 @@
 |---|---|---|
 | Specified purposes | Each table serves one purpose (`supabase/README.md`, "What is where") | — |
 | Legal basis | Contract for the service; explicit consent of the parent for the follow-up and, likely, for the health-related part of the profile; consent for counters | **Lawyer / DPO to choose** (see the privacy policy draft) |
-| Minimisation | The follow-up is off by default; three levels; sentences only at the highest level; the history holds settings, never what the child said; counters are numbers from a fixed list (no text can travel); technical problems belong to nobody; the AI receives only a topic, a photo or a drawing; the team's e-mail gives no document or address | Diplomas: decide how long they are needed |
+| Minimisation | The follow-up is off by default; three levels; sentences only at the highest level; the history holds settings, never what the child said; counters are numbers from a fixed list (no text can travel); technical problems belong to nobody; the AI helper is switched off (nothing sent); notifications hold no child's name, word or sentence; the team's e-mail gives no document or address | Diplomas: decide how long they are needed |
 | Accuracy | The family edits the board; observations are changed by their author or the family only; signatures are written by the database | — |
 | Retention | Automatic deletion jobs (`RETENTION-SCHEDULE.md`) | Decision rule for inactive accounts; diploma retention; consent proof period |
 
@@ -62,8 +64,8 @@
 | Access, portability | "Download all my data" (one JSON file); profile export; open board format (.obz) |
 | Rectification | Account page; the board in caregiver mode |
 | Erasure | "Delete my account", "Delete the profile of …" (30-day bin), "Erase the recorded data"; server-side purge of files; deletions re-applied after a restore |
-| Restriction, objection | Switches: follow-up level, "Help improve the app", "AI suggestions" |
-| Processors | Contracts *(to sign or check: Supabase, Google, Anthropic, Cloudflare, off-site storage)* |
+| Restriction, objection | Switches: follow-up level, "Help improve the app", notifications (account's preferences) |
+| Processors | Contracts *(to sign or check: Supabase, Google, Cloudflare, off-site storage; the terms of the browsers' notification services)* |
 | Transfers | EU region for the server; US providers *(safeguards to document)* |
 
 ## 3. Risks
@@ -81,7 +83,8 @@ Scale (CNIL): severity and likelihood each **negligible, limited, significant, m
 | Team members | No longer see each other's e-mail or the family's connection code (family and managers only) |
 | The app's team | List unreadable from the app; every `admin_` function checks `is_admin()`; every decision and document opened is logged; figures about use need 5 children of 5 families among those who agreed (never a number below) |
 | Data from others | Links, imported boards, proposals and shared materials cleaned before use (`src/lib/safety.ts`); links never travel with shared content |
-| Files | Private buckets; size and type limits; identity documents deleted at the decision; server-side purge after deletion |
+| Files | Private buckets; size and type limits; identity documents deleted at the decision; server-side purge after deletion (`caa-purge`, called by the database only) |
+| Notifications | Decided and worded by the database; `caa-push` posts only to the four browsers' notification services, each message encrypted for one browser; none to a child's tablet |
 | Device | Sign-out erases the children's data from the device; Android device backups excluded (`allowBackup: false`) |
 | Web pages | Strict browser protections (`public/_headers`, tested) |
 | Resilience | The board works offline; snapshots; bin; daily and off-site backups; restore tests |
@@ -142,7 +145,7 @@ Scale (CNIL): severity and likelihood each **negligible, limited, significant, m
 | Action | Owner | Due |
 |---|---|---|
 | Choose the legal bases; write the consent text (explicit, from a parent) | `[DPO]`, `[lawyer]` | Before launch |
-| Sign or check the data processing agreements (Supabase, Google, Anthropic, Cloudflare, off-site storage) | `[owner]` | Before launch |
+| Sign or check the data processing agreements (Supabase, Google, Cloudflare, off-site storage); Anthropic only before the AI is turned on | `[owner]` | Before launch |
 | Publish the privacy policy (three languages) and fill the store privacy forms | `[owner]` | Before launch |
 | Outside security test | `[owner]` | Before launch |
 | Decide the retention of diplomas, consent proofs and inactive accounts | `[DPO]` | Before launch |

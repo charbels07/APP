@@ -48,7 +48,8 @@ describe('in-app guide', () => {
       const ob = onboardingStrings(lang);
       const quoted = [
         // new board: empty, from a photo, imported; a board put back in the main board's order
-        t.emptyTla, e.photoTitle, e.importFile, e.importShared, e.arrange,
+        // ("Create from a photo" is left out: it only shows with the AI, switched off — gap review Q47.)
+        t.emptyTla, e.importFile, e.importShared, e.arrange,
         // pictogram library
         t.pictoToReview, t.sAbout, t.sSymbols, t.sShowLabels,
         // languages now live in Settings; its pages
@@ -123,6 +124,19 @@ describe('navigation language, separate from the words language', () => {
     expect([fr.toolFind, fr.toolNewWord, fr.toolModel]).toEqual(['Trouver dans le tableau', 'Un nouveau mot', 'Écrire pour modéliser']);
     // The button of the bar and the title of the panel keep their short name.
     expect(fr.search).toBe('Chercher');
+  });
+
+  it('says nothing about AI while the AI is switched off (gap review Q47), nor that a recording stays on the device', () => {
+    const { SETUP_HELP } = require('../data/setupHelp') as typeof import('../data/setupHelp');
+    for (const lang of ['fr', 'en', 'ar'] as const) {
+      const text = GUIDE.flatMap((c) => [c.title[lang], ...c.steps[lang], c.tip?.[lang] ?? '']).join(' ') + JSON.stringify(SETUP_HELP);
+      expect(text).not.toMatch(/\bIA\b|\bAI\b|ذكاء/);
+      expect(text).not.toMatch(/reste sur l’appareil où|stays on the device where|يبقى التسجيل على الجهاز/);
+      const t = strings(lang) as unknown as Record<string, unknown>;
+      expect(t.sAi).toBeUndefined();
+      expect(t.drawUnavailable).toBeUndefined();
+      expect(JSON.stringify(t.recordNote)).not.toMatch(/reste sur cet appareil|stays on this device|يبقى على هذا الجهاز/);
+    }
   });
 
   it('tells what changed around searching, folders and recordings', () => {

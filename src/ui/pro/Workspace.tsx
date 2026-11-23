@@ -179,7 +179,7 @@ export function Workspace({ verification, onVerify, openUserId }: { verification
         <H text={p.welcomeBack(account?.displayName ?? '')} />
         <Note text={p.todayQ} />
         {!verified && (
-          <Pressable onPress={onVerify} style={[ss.row, { borderColor: '#FEC84B', backgroundColor: C.editSoft }]}>
+          <Pressable onPress={onVerify} accessibilityRole="button" style={[ss.row, { borderColor: '#FEC84B', backgroundColor: C.editSoft }]}>
             <Icon name="shield" size={22} color={C.edit} />
             <Text style={[ss.title, { flex: 1, color: C.edit }]}>{p.licencePending}</Text>
           </Pressable>

@@ -2,7 +2,7 @@
 import type { UiLang } from '../model/types';
 
 /** Shown on the welcome screen and in messages. Change it here when the app gets its name. */
-export const APP_NAME = 'CAA';
+export const APP_NAME = 'Empower Communication';
 
 const fr = {
   welcomeTitle: 'Le pouvoir de communiquer',

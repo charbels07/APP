@@ -88,6 +88,15 @@ describe('a damaged profile still gives a board', () => {
     expect(m.boards.core.kind).toBe('core');
   });
 
+  it('a visual scene that cannot be read: its place stays, an unreadable picture is left out', () => {
+    const sound = damaged((p) => (p.boards.tla_park.scene = { image: { kind: 'media', name: '1762000000001_ab12cd.jpg' } }));
+    expect(sound.boards.tla_park.scene).toEqual({ image: { kind: 'media', name: '1762000000001_ab12cd.jpg' } });
+    expect(damaged((p) => (p.boards.tla_park.scene = { image: { kind: 'video' } })).boards.tla_park.scene).toEqual({});
+    expect(damaged((p) => (p.boards.tla_park.scene = 'big')).boards.tla_park.scene).toBeUndefined();
+    // The cards of the board do not move.
+    expect(damaged((p) => (p.boards.tla_park.scene = 7)).boards.tla_park.cells).toEqual(saved().boards.tla_park.cells);
+  });
+
   it('a folder the family made whose board is missing opens empty', () => {
     const m = damaged((p) => {
       const free = p.boards.mine.cells.findIndex((c: unknown) => c === null);

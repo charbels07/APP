@@ -299,6 +299,18 @@
   panel passes `onBack={useBack()}` to `Panel`, which shows "Back" (Escape and a touch beside go back, the
   cross closes everything). When a panel opens another one, give `back`; never leave only the cross (the
   guide's "Try it" too; when the code is needed, `{ kind: 'pin', then: <the panel>, back }`).
+- Whiteboard (owner's request, 24 November 2026): a button of the bar under Timer (`bar.whiteboard`, shown unless
+  false; Settings → Universal bar), view `whiteboard` (`src/ui/screens/WhiteboardScreen.tsx`, pure part
+  `src/lib/whiteboard.ts`). What is drawn lives in `AppState` memory only: never in the profile, never sent.
+- Visual scene of an activity board (`board.scene = { image? }`, "New scene" in caregiver mode beside "New board",
+  `ScenePanel` in `CaregiverPanels.tsx`): a big picture on the left, the board on the right; "Board / Visual scene"
+  is a choice of the moment (`sceneShown`, not saved). A scene change sends the whole board (`diffProfiles`); its
+  photo follows the media rules (`eraseLater`, names found anywhere in the profile). No "paste a link" for it.
+- Misspelt words (`src/lib/spelling.ts`): `searchPictos` adds sound-alike / one-letter-away results only when the
+  exact search finds few (`FUZZY_BELOW`); `guessSpelling` gives "Did you mean" (`onGuess` of `PictoSearch`). A
+  sentence as a board's topic gets a picture per word (`contentWords`, `pictoForWord`, `planFromSentence`).
+- A professional's own board (`ChildDraftBoard`): after Save / Discard / sending, the new version is pushed into the
+  board on screen (`subscribe`), never by re-mounting `AppProvider` (that sent her back to the main board, code first).
 - Searching a word or a picture always goes through `src/ui/SearchBox.tsx` (say the word, draw when
   `aiAvailable()`, type): never a bare `TextInput` for a search. It works outside a board too (`profile`,
   `uiLang` props; `useAppMaybe`). Several `VoiceButton`s can be on one screen: each only hears its own session.

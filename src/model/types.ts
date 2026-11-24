@@ -110,6 +110,11 @@ export interface Board {
   cols: number;
   /** Row-major, length rows*cols. `null` = empty slot. */
   cells: (Cell | null)[];
+  /**
+   * Activity boards: a visual scene, a big picture shown on the left of the board's pictograms
+   * ("New scene" in caregiver mode). `image` not set yet: the place waits for its picture.
+   */
+  scene?: { image?: SymbolRef };
 }
 
 export interface ScheduleStep {
@@ -171,8 +176,8 @@ export interface Settings {
   grammar: boolean;
   /** Fixed zone with urgent/repair messages (spec §7). */
   quickZone: boolean;
-  /** Optional universal-bar buttons (CAA and Help can never be hidden). */
-  bar: { tla: boolean; schedule: boolean; timer: boolean };
+  /** Optional universal-bar buttons (CAA and Help can never be hidden). `whiteboard`: shown unless false. */
+  bar: { tla: boolean; schedule: boolean; timer: boolean; whiteboard?: boolean };
   speechRate: number;
   voices: Partial<Record<Lang, string>>;
   pin: string;

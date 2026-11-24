@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { PICTO_LIBRARIES } from '../data/pictoLibraries';
 import { loadPictoLibrary, pictoImageUri } from '../lib/pictoLibrary';
-import { libraryOf, PICTO_AMBIGUOUS, PICTO_AR_AUTO, PICTO_FR_AUTO, searchPictos, type PreparedIndex } from '../lib/pictoSearch';
+import { libraryOf, PICTO_AMBIGUOUS, PICTO_AR_AUTO, PICTO_FR_AUTO, searchPictosAndGuess, type PreparedIndex } from '../lib/pictoSearch';
+import { boardToolsStrings } from '../i18n/boardTools';
 import { reportProblem } from '../lib/product';
 import { normalize } from '../lib/search';
 import type { Lang } from '../model/types';
 import { useApp } from '../state/AppState';
+import { Btn } from './common';
 import { Icon } from './Icon';
 import { SearchBox } from './SearchBox';
 import { C, radius } from './theme';
@@ -117,6 +119,7 @@ export function PictoSearch({
   lang,
   showInput = true,
   onResults,
+  onGuess,
 }: {
   initialQuery?: string;
   /** When given, the search follows this text (e.g. the word being typed). */
@@ -127,6 +130,11 @@ export function PictoSearch({
   lang?: Lang;
   showInput?: boolean;
   onResults?: (ids: number[]) => void;
+  /**
+   * What was typed is not a word of the library: the spelling it probably meant, chosen by the
+   * person ("Did you mean « trottinette »?"). Given when the text is typed elsewhere (`query`).
+   */
+  onGuess?: (spelling: string) => void;
 }) {
   const app = useApp();
   const { t } = app;
@@ -139,13 +147,15 @@ export function PictoSearch({
     return () => clearTimeout(id);
   }, [query]);
   const [ids, setIds] = useState<number[]>([]);
+  const [guess, setGuess] = useState<string | undefined>();
   const [only, setOnly] = useState<string | undefined>();
   const l = lang ?? app.profile.settings.uiLang;
   useEffect(() => {
     if (lib === null) return;
-    const local = lib ? searchPictos(lib, debounced, l, max, only) : [];
-    setIds(local);
-    onResults?.(local);
+    const found = lib ? searchPictosAndGuess(lib, debounced, l, max, only) : { ids: [] as number[] };
+    setIds(found.ids);
+    setGuess(found.guess);
+    onResults?.(found.ids);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lib, debounced, l, max, only]);
   const slot = l === 'fr' ? 4 : l === 'ar' ? 6 : 5;
@@ -182,6 +192,20 @@ export function PictoSearch({
           ))}
         </View>
       )}
+      {guess && (showInput || onGuess) ? (
+        <View style={styles.guess}>
+          <Text style={styles.guessText}>{boardToolsStrings(app.profile.settings.uiLang).didYouMean}</Text>
+          <Btn
+            small
+            kind="primary"
+            label={app.profile.settings.uiLang === 'fr' ? `« ${guess} » ?` : app.profile.settings.uiLang === 'ar' ? `«${guess}»؟` : `“${guess}”?`}
+            onPress={() => {
+              if (controlledQuery === undefined) setOwn(guess);
+              onGuess?.(guess);
+            }}
+          />
+        </View>
+      ) : null}
       {lib && debounced.trim() && !ids.length ? <Text style={styles.note}>{t.pictoNone}</Text> : null}
       <View style={styles.grid}>
         {ids.map((id) => (
@@ -195,6 +219,8 @@ export function PictoSearch({
 
 const styles = StyleSheet.create({
   note: { fontSize: 13, color: C.textMuted },
+  guess: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  guessText: { fontSize: 14, fontWeight: '700', color: C.text },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   thumb: {
     alignItems: 'center',

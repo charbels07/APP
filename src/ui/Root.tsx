@@ -23,6 +23,7 @@ import { editStrings } from '../i18n/edit';
 import { BoardScreen } from './screens/BoardScreen';
 import { ScheduleScreen } from './screens/ScheduleScreen';
 import { TlaScreen } from './screens/TlaScreen';
+import { WhiteboardScreen } from './screens/WhiteboardScreen';
 import { SentenceStrip } from './SentenceStrip';
 import { Seen } from './Seen';
 import { SymbolView } from './SymbolView';
@@ -74,6 +75,7 @@ export function Root({ banner }: { banner?: React.ReactNode } = {}) {
       {view === 'board' && <BoardScreen />}
       {view === 'tla' && <TlaScreen />}
       {view === 'schedule' && <ScheduleScreen />}
+      {view === 'whiteboard' && <WhiteboardScreen />}
       {(overlay?.kind === 'search' || overlay?.kind === 'keyboard' || overlay?.kind === 'model') && <ToolsPanel tool={overlay.kind} />}
       {overlay?.kind === 'help' && <HelpPanel />}
       {overlay?.kind === 'pin' && <PinPanel />}

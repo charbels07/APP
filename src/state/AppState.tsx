@@ -15,8 +15,9 @@ import { beep, prepareVoices, speakSegments, speakText, stopSpeech } from '../li
 import type { Cell, DemoStep, Lang, Profile, StripItem, UiLang } from '../model/types';
 import { typedChips, type TypedChip } from '../lib/typedWords';
 import type { UsageEvent } from './usageTracker';
+import { EMPTY_WHITEBOARD, type Whiteboard } from '../lib/whiteboard';
 
-export type View = 'board' | 'tla' | 'schedule';
+export type View = 'board' | 'tla' | 'schedule' | 'whiteboard';
 
 /**
  * The word picker. Choosing a word is open to the child (the timer's picture); "Create a new
@@ -87,7 +88,9 @@ export type Overlay =
   | { kind: 'newSequence' }
   | { kind: 'guide'; back?: Overlay }
   /** Words and activity boards deleted in the last 30 days (src/lib/wordBin.ts). */
-  | { kind: 'wordBin'; back?: Overlay };
+  | { kind: 'wordBin'; back?: Overlay }
+  /** The visual scene of an activity board: its big picture, chosen or changed (caregiver mode). */
+  | { kind: 'scene'; id: string; back?: Overlay };
 
 /**
  * After the caregiver code: open another app or a web page (`name`: what the sentence of the keypad
@@ -196,6 +199,17 @@ interface AppCtx {
   goBack: () => void;
   openTla: (id?: string) => void;
   openSchedule: () => void;
+  /** The whiteboard (button of the bar, under the timer). */
+  openWhiteboard: () => void;
+  /** What is drawn on the whiteboard: kept in memory on this device only, never in the profile. */
+  whiteboard: Whiteboard;
+  setWhiteboard: (fn: (w: Whiteboard) => Whiteboard) => void;
+  /**
+   * An activity board with a visual scene: shown with its big picture (true) or as the board
+   * alone. A choice of the moment on this device (the scene is shown each time the app opens).
+   */
+  sceneShown: (boardId: string) => boolean;
+  setSceneShown: (boardId: string, shown: boolean) => void;
   pressHelp: () => void;
 
   /** Demonstrations (modelling): record taps, replay them with an animated pointer. */
@@ -262,6 +276,7 @@ const OVERLAY_SCREEN: Partial<Record<NonNullable<Overlay>['kind'], Screen>> = {
   print: 'print',
   newTla: 'newTla',
   newSequence: 'newSeq',
+  scene: 'editor',
   scheduleEditor: 'newSeq',
   help: 'help',
   lock: 'lock',
@@ -689,6 +704,27 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
     setOverlay(null);
   }, []);
 
+  const openWhiteboard = useCallback(() => {
+    viewRef.current = { view: 'whiteboard' };
+    setView('whiteboard');
+    setOverlay(null);
+  }, []);
+  const [whiteboard, setWhiteboardState] = useState<Whiteboard>(EMPTY_WHITEBOARD);
+  const setWhiteboard = useCallback((fn: (w: Whiteboard) => Whiteboard) => setWhiteboardState(fn), []);
+  const [scenesHidden, setScenesHidden] = useState<Record<string, true>>({});
+  const sceneShown = useCallback((id: string) => !scenesHidden[id], [scenesHidden]);
+  const setSceneShown = useCallback(
+    (id: string, shown: boolean) =>
+      setScenesHidden((h) => {
+        if (shown === !h[id]) return h;
+        const next = { ...h };
+        if (shown) delete next[id];
+        else next[id] = true;
+        return next;
+      }),
+    [],
+  );
+
   const pressHelp = useCallback(() => {
     const p = profileRef.current;
     // Level 1: speak immediately, without any intermediate menu (spec §18).
@@ -877,7 +913,8 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
 
   editModeRef.current = editMode;
   // Pages: which board, folder, activity board, planning or keyboard is on screen.
-  const pageId = overlay?.kind === 'keyboard' ? 'keyboard' : view === 'board' ? path[path.length - 1] : view === 'tla' ? tlaId ?? 'tla' : 'schedule';
+  const pageId =
+    overlay?.kind === 'keyboard' ? 'keyboard' : view === 'board' ? path[path.length - 1] : view === 'tla' ? tlaId ?? 'tla' : view === 'whiteboard' ? 'whiteboard' : 'schedule';
   useEffect(() => {
     emit({ type: 'page', page: pageId });
   }, [pageId, emit]);
@@ -885,7 +922,10 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
   const overlayKind = overlay?.kind;
   const inFolder = path.length > 1;
   useEffect(() => {
-    setScreen((overlayKind && OVERLAY_SCREEN[overlayKind]) || (overlayKind ? 'other' : view === 'board' ? (inFolder ? 'folder' : 'board') : view === 'tla' ? 'tla' : 'schedule'));
+    setScreen(
+      (overlayKind && OVERLAY_SCREEN[overlayKind]) ||
+        (overlayKind ? 'other' : view === 'board' ? (inFolder ? 'folder' : 'board') : view === 'tla' ? 'tla' : view === 'whiteboard' ? 'other' : 'schedule'),
+    );
   }, [overlayKind, view, inFolder]);
 
   const setEditMode = useCallback((on: boolean) => {
@@ -1021,6 +1061,11 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
       goBack,
       openTla,
       openSchedule,
+      openWhiteboard,
+      whiteboard,
+      setWhiteboard,
+      sceneShown,
+      setSceneShown,
       pressHelp,
       recording,
       startRecording,
@@ -1058,7 +1103,7 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
       ownCode, freeEdit, noteTouch,
       profile, update, replaceProfile, setUiLang, preview, t, lang, view, path, tlaId, overlay, editMode, setEditMode, strip,
       stripState.history.length, touchConcept, addText, speakStrip, speakConcept, deleteLast, clearStrip, undo, goHome,
-      openFolder, goBack, openTla, openSchedule, pressHelp, recording, startRecording, finishRecording,
+      openFolder, goBack, openTla, openSchedule, openWhiteboard, whiteboard, setWhiteboard, sceneShown, setSceneShown, pressHelp, recording, startRecording, finishRecording,
       playing, playSteps, stopPlaying, pointer, demoCaption, wiggle, pulse, appLaunch, launchApp, openLink, openAppNow, cancelAppLaunch,
       moveSource, selection, clipboard, highlight, showMeWhere, clearHighlight, timer,
       startTimer, setTimerConcept, pauseTimer, resumeTimer, resetTimer, setTimerOpen,

@@ -4,6 +4,7 @@ import { useSession } from '../../state/Session';
 import { PictoCredit } from '../PictoCredits';
 import { onboardingStrings } from '../../i18n/onboarding';
 import { editStrings } from '../../i18n/edit';
+import { boardToolsStrings } from '../../i18n/boardTools';
 import { accessStrings } from '../../i18n/access';
 import { DWELL_TIMES } from '../../lib/dwell';
 import { SCAN_LOOPS, SCAN_SPEEDS, scanOf } from '../../lib/scanning';
@@ -48,6 +49,7 @@ import { useProof } from '../ProveItsYou';
 import { resetKeeping } from '../../lib/resetBoard';
 import { eraseMediaOf } from '../../lib/deviceData';
 import { SymbolView, useMediaUri } from '../SymbolView';
+import { SceneImage } from '../SceneImage';
 import { useWiggle } from '../wiggle';
 import { scheduleTitle } from '../screens/ScheduleScreen';
 import { CellMenu, MoveToTlaPanel, ShareTlaPanel, TlaMenu } from './EditMenus';
@@ -168,9 +170,87 @@ export function CaregiverOverlay() {
       return <ShareTlaPanel id={overlay.id} />;
     case 'moveToTla':
       return <MoveToTlaPanel />;
+    case 'scene':
+      return <ScenePanel id={overlay.id} />;
     default:
       return null;
   }
+}
+
+// ── Visual scene of an activity board ──
+
+/**
+ * "New scene" (caregiver mode, beside "New board"): the big picture shown on the left of the
+ * activity board's pictograms. A photo or a picture saved on the device ("Your library"; on a
+ * computer, a picture saved from the web too), or a pictogram of the app's library. A photo that
+ * is replaced or removed stays 30 days (`eraseLater`), like every picture of the board.
+ */
+function ScenePanel({ id }: { id: string }) {
+  const app = useApp();
+  const back = useBack();
+  const { profile, t } = app;
+  const x = boardToolsStrings(profile.settings.uiLang);
+  const [source, setSource] = useState<PictureSource>('photo');
+  const board = profile.boards[id];
+  if (!board) return null;
+  const image = board.scene?.image;
+  const setImage = (next: SymbolRef | undefined, remove = false) =>
+    app.update((d) => {
+      const b = d.boards[id];
+      if (!b) return;
+      const old = b.scene?.image;
+      if (old?.kind === 'media' && (!next || next.kind !== 'media' || next.name !== old.name)) void eraseLater([old.name]);
+      if (remove) delete b.scene;
+      else b.scene = next ? { image: next } : {};
+    });
+  const done = () => app.setOverlay(null);
+  return (
+    <Panel title={x.sceneTitle} onClose={done} onBack={back} tone="edit">
+      <Text style={s.note}>{x.sceneNote}</Text>
+      {image ? (
+        <View style={s.scenePreview}>
+          <SceneImage image={image} label={x.scenePicture} style={{ width: '100%', height: '100%' }} />
+        </View>
+      ) : null}
+      <PictureSources value={source} onChange={setSource} />
+      {source === 'photo' && (
+        <OwnLibrary
+          onPick={async (from) => {
+            const name = await pickPhoto(from);
+            if (!name) return;
+            setImage({ kind: 'media', name });
+            countFeature('photo');
+            done();
+          }}
+        />
+      )}
+      {source === 'pictos' && (
+        <PictoSearch
+          initialQuery={label(profile, board.concept, profile.settings.uiLang)}
+          lang={profile.settings.uiLang}
+          onPick={async (pid) => {
+            const ref = await pictoRef(pid).catch(() => undefined);
+            if (!ref) return;
+            setImage(ref);
+            done();
+          }}
+        />
+      )}
+      <View style={[s.row, { flexWrap: 'wrap' }]}>
+        <Btn
+          kind="danger"
+          icon="trash"
+          label={x.sceneRemove}
+          onPress={() => {
+            setImage(undefined, true);
+            done();
+          }}
+          style={{ flexGrow: 1 }}
+        />
+        <Btn kind="primary" icon="check" label={t.close} onPress={done} style={{ flexGrow: 1 }} />
+      </View>
+    </Panel>
+  );
 }
 
 // ── Profile mutation helpers (built-in vocabulary is never modified, only overridden) ──
@@ -811,6 +891,8 @@ function PickerPanel({ title, onPick }: { title?: string; onPick: (id: string) =
                   setPictoTouched(true);
                   setPicto(id);
                 }}
+                // A spelling mistake: the word is written as the library spells it, if the person wants.
+                onGuess={(spelling) => setDraft((d) => (d.fr ? { ...d, fr: spelling } : d.en ? { ...d, en: spelling } : { ...d, ar: spelling }))}
               />
             </View>
           ) : null}
@@ -1452,6 +1534,11 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
           </View>
         )}
         <Toggle label={t.timer} value={st.bar.timer} onChange={(v) => set((x) => void (x.bar.timer = v))} />
+        <Toggle
+          label={boardToolsStrings(st.uiLang).whiteboard}
+          value={st.bar.whiteboard !== false}
+          onChange={(v) => set((x) => void (x.bar.whiteboard = v))}
+        />
       </Group>
 
       <Group title={t.sHelp} icon="help">
@@ -1670,6 +1757,7 @@ function PrintPanel({ cards }: { cards?: string[] }) {
 }
 
 const s = StyleSheet.create({
+  scenePreview: { height: 220, borderRadius: radius.md, borderWidth: 1.5, borderColor: C.border, backgroundColor: C.surfaceAlt, overflow: 'hidden' },
   warnBox: { fontSize: 13, backgroundColor: C.editSoft, color: C.edit, padding: 10, borderRadius: radius.md },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   wrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

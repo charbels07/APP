@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-na
 import { useApp } from '../state/AppState';
 import { useBoard } from '../state/BoardContext';
 import { adminStrings } from '../i18n/admin';
+import { boardToolsStrings } from '../i18n/boardTools';
 import { useSession } from '../state/Session';
 import { HELP_ID } from '../lib/scanning';
 import { useDwellTarget, useRestMs, useScanned } from '../state/access';
@@ -69,6 +70,15 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
       onPress: () => app.setTimerOpen(!timer.open),
       active: timer.open || !!timer.endAt,
       show: bar.timer,
+    },
+    // Under the timer: a whiteboard to draw on (colours, eraser, thickness, clear all).
+    {
+      key: 'whiteboard',
+      icon: 'whiteboard',
+      label: boardToolsStrings(profile.settings.uiLang).whiteboard,
+      onPress: app.openWhiteboard,
+      active: view === 'whiteboard',
+      show: bar.whiteboard !== false,
     },
   ];
   const priority: Item[] = [
@@ -188,7 +198,8 @@ function BarButton({
       </View>
       {!iconsOnly && (
         <Text
-          numberOfLines={1}
+          // A long name ("Tableau blanc") goes on two lines in the column rather than being cut.
+          numberOfLines={size === 'main' ? 2 : 1}
           style={[
             styles.label,
             (size === 'main' || size === 'row') && styles.labelMain,
@@ -220,7 +231,7 @@ const styles = StyleSheet.create({
   priorityRow: { flex: 1.5, minHeight: 64, paddingHorizontal: 2, borderRadius: 14 },
   active: { backgroundColor: C.railActive },
   label: { color: C.railText, fontSize: 11, fontWeight: '600' },
-  labelMain: { fontSize: 13, fontWeight: '800' },
+  labelMain: { fontSize: 13, fontWeight: '800', textAlign: 'center' },
   labelPriority: { fontSize: 16, fontWeight: '900' },
   badge: {
     position: 'absolute',

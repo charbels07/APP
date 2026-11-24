@@ -112,7 +112,8 @@ export function diffProfiles(base: Profile, draft: Profile): Op[] {
     const a = base.boards[id];
     const b = draft.boards[id];
     if (same(a, b)) continue;
-    if (!a || !b || a.rows !== b.rows || a.cols !== b.cols || a.kind !== b.kind || a.concept !== b.concept) {
+    // The visual scene (a big picture beside an activity board) travels with its board.
+    if (!a || !b || a.rows !== b.rows || a.cols !== b.cols || a.kind !== b.kind || a.concept !== b.concept || !same(a.scene, b.scene)) {
       ops.push({ path: ['board', id], before: clone(a), after: clone(b) });
       continue;
     }

@@ -12,6 +12,7 @@ import { securityStrings } from '../i18n/security';
 import { backupStrings } from '../i18n/backup';
 import { consentText } from '../lib/consent';
 import { accessStrings } from '../i18n/access';
+import { boardToolsStrings } from '../i18n/boardTools';
 
 describe('in-app guide', () => {
   it('covers both tracks, in French and English, with the same steps', () => {
@@ -27,6 +28,15 @@ describe('in-app guide', () => {
     }
     expect(new Set(GUIDE.map((c) => c.id)).size).toBe(GUIDE.length);
     expect(GUIDE_TRACK_INTRO.start.fr && GUIDE_TRACK_INTRO.pro.en && GUIDE_TRACK_INTRO.pro.ar).toBeTruthy();
+  });
+
+  it('names the whiteboard, the visual scenes and the spelling help as they are on screen', () => {
+    const text = (lang: 'fr' | 'en' | 'ar') => GUIDE.flatMap((c) => c.steps[lang]).join(' ');
+    for (const lang of ['fr', 'en', 'ar'] as const) {
+      const b = boardToolsStrings(lang);
+      for (const label of [b.whiteboard, b.pen, b.eraser, b.color, b.thickness, b.background, b.undo, b.redo, b.clear, b.newScene, b.showScene, b.showBoard, b.sceneRemove, b.didYouMean, ...b.sizes, ...Object.values(b.backgrounds)])
+        expect(text(lang)).toContain(label);
+    }
   });
 
   it('quotes the buttons with their real names', () => {

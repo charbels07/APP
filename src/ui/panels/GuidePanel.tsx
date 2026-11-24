@@ -70,6 +70,8 @@ export function GuidePanel() {
         return;
       case 'tla':
         return app.openTla();
+      case 'whiteboard':
+        return app.openWhiteboard();
       case 'schedule':
         return app.openSchedule();
       case 'caregiver':

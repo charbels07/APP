@@ -9,7 +9,8 @@ import { mainBoardOrder, tlaLayout, type Placed } from '../../lib/boardOrder';
 import { pickPhotoForAi, type AiPhoto } from '../../lib/photoForAi';
 import { allConceptIds, getConcept, label, symbolOf } from '../../lib/lexicon';
 import { pictoCredit, pictoRef } from '../../lib/pictoLibrary';
-import type { PreparedIndex } from '../../lib/pictoSearch';
+import { guessSpelling, type PreparedIndex } from '../../lib/pictoSearch';
+import { boardToolsStrings } from '../../i18n/boardTools';
 import { normalize } from '../../lib/search';
 import { planAutomatically, planFromAi, planFromLibrary, type PlanItem, type TlaPlan } from '../../lib/tlaPlanner';
 import type { Board, Concept, Profile, Schedule, SymbolRef, WordClass } from '../../model/types';
@@ -288,16 +289,19 @@ export function NewTlaPanel() {
     }
   };
 
-  const suggest = () => {
-    if (!lib || !topic.trim()) return;
+  // A word of the topic the library does not know: the spelling it probably meant.
+  const [spelling, setSpelling] = useState<string | undefined>();
+  const suggest = (about = topic) => {
+    if (!lib || !about.trim()) return;
     edited.current = false;
     setAdding(null);
-    const fromLibrary = planFromLibrary(lib, topic, ui);
+    setSpelling(guessSpelling(lib, about, ui));
+    const fromLibrary = planFromLibrary(lib, about, ui);
     if (fromLibrary) setPlan(fromLibrary);
     else if (aiEnabled) {
       setPlan(null);
       askAi();
-    } else setPlan(planAutomatically(lib, topic, ui));
+    } else setPlan(planAutomatically(lib, about, ui));
   };
 
   const create = async (p: TlaPlan | null) => {
@@ -351,17 +355,32 @@ export function NewTlaPanel() {
     app.openTla(boardId);
   };
 
+  const bt = boardToolsStrings(ui);
   const sourceText =
-    plan?.source === 'library' ? t.sourceLibrary : plan?.source === 'ai' ? t.sourceAi : plan ? t.sourceAuto : '';
+    plan?.source === 'library' ? t.sourceLibrary : plan?.source === 'ai' ? t.sourceAi : plan?.sentence ? bt.sourceSentence : plan ? t.sourceAuto : '';
 
   return (
     <Panel title={t.newTlaTitle} onClose={() => app.setOverlay(null)} onBack={onBack} tone="edit" maxWidth={900} scrollLocked={holding}>
       <View style={styles.row}>
         <View style={styles.grow}>
-          <Field label={t.tlaTopic} value={topic} onChangeText={setTopic} onSubmitEditing={suggest} autoFocus placeholder={t.topicExample} />
+          <Field label={t.tlaTopic} value={topic} onChangeText={setTopic} onSubmitEditing={() => suggest()} autoFocus placeholder={t.topicExample} />
         </View>
-        <Btn kind="primary" icon="star" label={t.suggest} disabled={!lib || !topic.trim() || thinking} onPress={suggest} style={styles.grow} />
+        <Btn kind="primary" icon="star" label={t.suggest} disabled={!lib || !topic.trim() || thinking} onPress={() => suggest()} style={styles.grow} />
       </View>
+      {spelling && normalize(spelling) !== normalize(topic) && (
+        <View style={styles.sourceRow}>
+          <Text style={styles.spellText}>{bt.didYouMean}</Text>
+          <Btn
+            small
+            kind="primary"
+            label={ui === 'fr' ? `« ${spelling} » ?` : ui === 'ar' ? `«${spelling}»؟` : `“${spelling}”?`}
+            onPress={() => {
+              setTopic(spelling);
+              suggest(spelling);
+            }}
+          />
+        </View>
+      )}
       {lib === null && <Text style={styles.note}>{t.pictoLoading}</Text>}
 
       {aiEnabled && (
@@ -471,6 +490,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'flex-end' },
   grow: { flexGrow: 1, flexBasis: 240, minWidth: 0 },
   note: { fontSize: 13, color: C.textMuted },
+  spellText: { fontSize: 14, fontWeight: '700', color: C.text },
   warn: { backgroundColor: C.editSoft, color: C.edit, padding: 10, borderRadius: radius.md },
   thinking: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: radius.md, backgroundColor: C.accentSoft },
   sourceRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },

@@ -169,22 +169,38 @@ export function ChildDraftBoard({
   const [access, setAccess] = useState<MyAccess | null>(null);
   const [draft, setDraft] = useState<Profile | null>(null);
   const [sending, setSending] = useState(false);
-  const [key, setKey] = useState(0);
+  // After the first opening, a newer version (after "Save", "Discard" or sending) is handed to the
+  // board that is on screen: it is never rebuilt, so the activity board shown, caregiver mode and
+  // the panel being used stay as they were (rebuilding sent her back to the main board, code first).
+  const pushRef = useRef<((p: Profile) => void) | null>(null);
+  const subscribe = useMemo(
+    () => (apply: (p: Profile) => void) => {
+      pushRef.current = apply;
+      return () => {
+        if (pushRef.current === apply) pushRef.current = null;
+      };
+    },
+    [],
+  );
   const [error, setError] = useState<string | null>(null);
   // A profile created by this professional: saved directly, and closing with changes asks first.
   const [saving, setSaving] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [closing, setClosing] = useState(false);
-  // The settings shortcut: once (the board is rebuilt after each save).
+  // The settings shortcut: once.
   const [toSettings, setToSettings] = useState(!!openSettings);
 
+  const opened = useRef(false);
   const load = async () => {
     const [r, a] = await Promise.all([api.getProfile(profileId), api.myAccess(profileId)]);
     const data = migrate(r.data);
     setBase({ data, version: r.version, name: r.name });
     setAccess(a);
-    setDraft(resume ? applyOps(data, resume.ops, { force: true }).profile : data);
-    setKey((k) => k + 1);
+    // A proposal being taken up again is put on top at the first opening only.
+    const next = !opened.current && resume ? applyOps(data, resume.ops, { force: true }).profile : data;
+    opened.current = true;
+    setDraft(next);
+    pushRef.current?.(next);
   };
   useEffect(() => {
     load().catch((e) => setError(errorText(sess.s, e)));
@@ -290,9 +306,9 @@ export function ChildDraftBoard({
           Only the app's team is never asked one. */}
       <ProBoardContext.Provider value={{ profileId, childName: base.name, access }}>
         <AppProvider
-          key={key}
           initial={draft}
           onChange={setDraft}
+          subscribe={subscribe}
           uiLang={uiLang}
           setUiLang={setUiLang}
           freeEdit={sess.isAdmin}

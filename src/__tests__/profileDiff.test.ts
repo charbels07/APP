@@ -22,6 +22,15 @@ describe('changes as a list of ops', () => {
     expect(ops).toHaveLength(3);
   });
 
+  it('sends the visual scene of an activity board with its board', () => {
+    const base = createDefaultProfile();
+    const draft = structuredClone(base);
+    draft.boards.tla_park.scene = { image: { kind: 'media', name: '1762000000001_ab12cd.jpg' } };
+    const ops = diffProfiles(base, draft);
+    expect(ops.map((o) => o.path)).toEqual([['board', 'tla_park']]);
+    expect(applyOps(base, ops).profile.boards.tla_park.scene).toEqual(draft.boards.tla_park.scene);
+  });
+
   it('applies changes, detects conflicts and undoes', () => {
     const draft = copy(base);
     draft.boards.food.cells[0] = { concept: 'pizza' };

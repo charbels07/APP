@@ -59,8 +59,16 @@ export function boardOf(id: string, v: unknown): Board | null {
   if (cells.length < rows * cols) cells = [...cells, ...Array<null>(rows * cols - cells.length).fill(null)];
   const kind = b.kind === 'core' || b.kind === 'folder' || b.kind === 'tla' ? b.kind : id === 'core' ? 'core' : 'folder';
   const concept = str(b.concept) ? b.concept : '';
-  if (cells === b.cells && rows === b.rows && cols === b.cols && kind === b.kind && concept === b.concept && b.id === id) return b;
-  return { ...b, id, kind, concept, rows, cols, cells };
+  // The visual scene: an object whose picture, if any, can be drawn; otherwise left out.
+  const sceneOk = b.scene === undefined || (isObj(b.scene) && (b.scene.image === undefined || symbolOk(b.scene.image)));
+  if (cells === b.cells && rows === b.rows && cols === b.cols && kind === b.kind && concept === b.concept && b.id === id && sceneOk) return b;
+  const out: Board = { ...b, id, kind, concept, rows, cols, cells };
+  if (!sceneOk) {
+    if (isObj(b.scene) && symbolOk((b.scene as Obj).image)) out.scene = { image: (b.scene as Obj).image as SymbolRef };
+    else if (isObj(b.scene)) out.scene = {};
+    else delete out.scene;
+  }
+  return out;
 }
 
 const labelsOf = (v: unknown): Partial<Record<Lang, string>> | undefined => {

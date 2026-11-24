@@ -228,7 +228,7 @@ export const DEFAULT_SETTINGS: Settings = {
   addToStrip: true,
   grammar: true,
   quickZone: false,
-  bar: { tla: true, schedule: true, timer: true },
+  bar: { tla: true, schedule: true, timer: true, whiteboard: true },
   speechRate: 1,
   voices: {},
   pin: '1234',

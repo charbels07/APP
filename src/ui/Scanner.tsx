@@ -55,7 +55,7 @@ export function Scanner({ paused: covered = false }: { paused?: boolean } = {}) 
   useEffect(() => {
     if (panelOpen) setStopped(false);
   }, [panelOpen]);
-  const paused = panelOpen || app.playing || app.recording || !!app.appLaunch || !profile.guide?.seen || app.view === 'schedule';
+  const paused = panelOpen || app.playing || app.recording || !!app.appLaunch || !profile.guide?.seen || app.view === 'schedule' || app.view === 'whiteboard';
   const on = cfg.mode !== 'off' && !paused && !!grid;
   const active = on && !stopped;
   const mode: ScanMode = cfg.mode === 'step' ? 'step' : 'auto';

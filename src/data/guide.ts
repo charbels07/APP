@@ -18,6 +18,7 @@ export type GuideAction =
   | 'tla'
   | 'schedule'
   | 'timer'
+  | 'whiteboard'
   | 'apps'
   | 'keyboard'
   | 'caregiver'
@@ -67,13 +68,13 @@ const BASE: BaseChapter[] = [
     title: { fr: 'L’écran en un coup d’œil', en: 'The screen at a glance' },
     steps: {
       fr: [
-        'À gauche, la barre universelle, toujours au même endroit : CAA (accueil), TLA, Planning, Minuteur, le gros bouton rouge Aide, puis les outils Chercher (la loupe), Guide, Réglages, Verrou et Accompagnant. La loupe ouvre trois onglets : Trouver dans le tableau (chercher un mot), Un nouveau mot (l’écrire au clavier) et Écrire pour modéliser (montrer une phrase sur le tableau).',
+        'À gauche, la barre universelle, toujours au même endroit : CAA (accueil), TLA, Planning, Minuteur, Tableau blanc, le gros bouton rouge Aide, puis les outils Chercher (la loupe), Guide, Réglages, Verrou et Accompagnant. La loupe ouvre trois onglets : Trouver dans le tableau (chercher un mot), Un nouveau mot (l’écrire au clavier) et Écrire pour modéliser (montrer une phrase sur le tableau).',
         'En haut, la bande de phrase : chaque mot touché s’y ajoute.',
         'Au centre, la grille de mots. Chaque mot garde toujours sa place : c’est ce qui permet à l’enfant d’apprendre les gestes par cœur.',
         'Les couleurs indiquent le type de mot : jaune = personnes, vert = actions, bleu = descriptions, orange = objets, violet = questions, rose = mots sociaux, rouge = négation, gris = petits mots.',
       ],
       en: [
-        'On the left, the universal bar, always in the same place: AAC (home), Boards, Schedule, Timer, the big red Help button, then the tools Search (the magnifying glass), Guide, Settings, Lock and Caregiver. The magnifying glass opens three tabs: Find on the board (look for a word), A new word (type it) and Write to model (show a sentence on the board).',
+        'On the left, the universal bar, always in the same place: AAC (home), Boards, Schedule, Timer, Whiteboard, the big red Help button, then the tools Search (the magnifying glass), Guide, Settings, Lock and Caregiver. The magnifying glass opens three tabs: Find on the board (look for a word), A new word (type it) and Write to model (show a sentence on the board).',
         'At the top, the sentence strip: every word you touch is added to it.',
         'In the middle, the word grid. Each word always keeps its place: that is how the child learns the movements by heart.',
         'Colours show the kind of word: yellow = people, green = actions, blue = describing, orange = things, purple = questions, pink = social words, red = negation, grey = little words.',
@@ -249,6 +250,25 @@ const BASE: BaseChapter[] = [
     action: 'timer',
   },
   {
+    id: 'whiteboard',
+    track: 'start',
+    icon: 'whiteboard',
+    title: { fr: 'Le tableau blanc', en: 'The whiteboard' },
+    steps: {
+      fr: [
+        'Tableau blanc (dans la barre, sous Minuteur) : une page pour dessiner avec le doigt, expliquer, faire choisir ou écrire ensemble.',
+        'Crayon ou Gomme, la Couleur, l’Épaisseur (Fin, Moyen, Épais, Très épais) et le Fond (Blanc, Quadrillé, Lignes). Annuler le dernier trait et Rétablir ; Effacer le dessin demande d’abord une confirmation.',
+        'Le dessin reste quand on revient au tableau de mots, tant que l’application est ouverte ; il n’est pas enregistré et ne quitte pas l’appareil. Le minuteur reste utilisable au-dessus. Le bouton se masque dans Réglages → Tableau → Barre universelle.',
+      ],
+      en: [
+        'Whiteboard (in the bar, under Timer): a page to draw on with the finger, to explain, to offer a choice or to write together.',
+        'Pen or Eraser, the Colour, the Thickness (Thin, Medium, Thick, Very thick) and the Background (Plain, Grid, Lines). Undo the last line and Redo; Clear the drawing asks first.',
+        'The drawing stays when you go back to the word board, as long as the app is open; it is not saved and never leaves the device. The timer can still be used above it. The button can be hidden in Settings → Board → Universal bar.',
+      ],
+    },
+    action: 'whiteboard',
+  },
+  {
     id: 'apps',
     track: 'start',
     icon: 'external',
@@ -395,13 +415,13 @@ const BASE: BaseChapter[] = [
     title: { fr: 'Ajouter, remplacer, déplacer, retirer', en: 'Adding, replacing, moving, removing' },
     steps: {
       fr: [
-        'Case vide → Créer un nouveau mot (écrivez-le ou touchez Dire le mot ; le pictogramme est proposé tout seul, ou choisissez Votre bibliothèque pour une image à vous ; Votre voix pour ce mot est facultative : enregistré, le mot est dit avec votre voix ; sinon, avec la voix choisie) ou choisissez un mot existant (écrivez ou dites-le pour le trouver). Retour, en haut de l’écran, revient à l’écran d’avant ; la croix ferme tout.',
+        'Case vide → Créer un nouveau mot (écrivez-le ou touchez Dire le mot ; le pictogramme est proposé tout seul, même si le mot est mal écrit, avec Vouliez-vous dire pour corriger l’orthographe ; ou choisissez Votre bibliothèque pour une image à vous ; Votre voix pour ce mot est facultative : enregistré, le mot est dit avec votre voix ; sinon, avec la voix choisie) ou choisissez un mot existant (écrivez ou dites-le pour le trouver). Retour, en haut de l’écran, revient à l’écran d’avant ; la croix ferme tout.',
         'Sur une case : Remplacer par un autre mot, ou Retirer de ce tableau.',
         'Déplacer cette case, puis touchez la nouvelle place (une case vide, ou un mot pour les échanger). Pour les mots de base : à décider avec l’orthophoniste.',
         'Le dossier « mes mots » est prévu pour les mots de l’enfant : prénoms, jeux préférés, lieux familiers.',
       ],
       en: [
-        'Empty card → Create a new word (type it or touch Say the word; the pictogram is suggested automatically, or choose Your library for a picture of your own; Your voice for this word is optional: once recorded, the word is said with your voice; otherwise, with the voice chosen) or choose an existing word (type or say it to find it). Back, at the top of the screen, returns to the screen before; the cross closes everything.',
+        'Empty card → Create a new word (type it or touch Say the word; the pictogram is suggested automatically, even for a misspelt word, with Did you mean to correct the spelling; or choose Your library for a picture of your own; Your voice for this word is optional: once recorded, the word is said with your voice; otherwise, with the voice chosen) or choose an existing word (type or say it to find it). Back, at the top of the screen, returns to the screen before; the cross closes everything.',
         'On a card: Replace with another word, or Remove from this board.',
         'Move this card, then touch the new place (an empty slot, or a word to swap them). For core words: decide with the speech therapist.',
         'The “my words” folder is meant for the child’s own words: names, favourite games, familiar places.',
@@ -421,6 +441,8 @@ const BASE: BaseChapter[] = [
         'Touchez un mot ou une étape pour le retirer, ajoutez-en : sur le tableau créé, chaque type de mot a sa colonne comme sur le tableau principal (personnes, actions, petits mots, descriptions, questions, mots sociaux, choses), et un mot ajouté va dans la sienne. Pour changer l’ordre des étapes, appui long sur une étape puis glisser (ou les petites flèches). Puis Créer le TLA.',
         'Option « Créer aussi la séquence de ces étapes » : la séquence est reliée au TLA, avec minuteurs (ex. four 30 min). Elle apparaît dans Planning.',
         'Autres façons : Créer un TLA vide (vous choisissez chaque mot) ; Importer un fichier ou Partagés avec moi (un TLA qu’on vous a envoyé).',
+        'Le sujet peut être une phrase (« Une souris verte qui courait dans l’herbe ») : chaque mot reçoit son image (souris, vert, courir, herbe), puis des images proches de chacun. Un mot mal écrit est quand même reconnu, et Vouliez-vous dire propose la bonne orthographe.',
+        'Scène visuelle : en mode accompagnant, Nouvelle scène (à côté de Nouveau TLA) fait de la place à gauche pour une grande image (Votre bibliothèque : une photo ou une image enregistrée, aussi une image enregistrée depuis le web sur un ordinateur ; ou Bibliothèque de l’application) et pousse les pictos du TLA à droite. En haut, TLA ou Scène visuelle choisit l’affichage. En mode accompagnant, toucher la grande image la change ; Retirer la scène l’enlève.',
       ],
       en: [
         'Boards → New board (the caregiver code is asked if needed) → type the topic (e.g. “baking a cake”) → Suggest words.',
@@ -428,6 +450,8 @@ const BASE: BaseChapter[] = [
         'Touch a word or a step to remove it, add more: on the board that is created, each kind of word has its own column like the main board (people, actions, little words, describing words, questions, social words, things), and a word you add goes to its column. To change the order of the steps, hold a step then slide it (or use the small arrows). Then Create board.',
         'Option “Also create a sequence of these steps”: the sequence is linked to the board, with timers (e.g. oven 30 min). It appears in Schedule.',
         'Other ways: Create an empty board (you choose every word); Import a file or Shared with me (a board someone sent you).',
+        'The topic can be a sentence (“A green mouse running in the grass”): each word gets its picture (mouse, green, run, grass), then pictures close to each one. A misspelt word is still recognised, and Did you mean offers the right spelling.',
+        'Visual scene: in caregiver mode, New scene (next to New board) makes room on the left for a big picture (Your library: a photo or a saved picture, including one saved from the web on a computer; or App’s library) and pushes the board’s pictograms to the right. At the top, Board or Visual scene chooses how it is shown. In caregiver mode, touching the big picture changes it; Remove the scene takes it away.',
       ],
     },
     action: 'newTla',
@@ -483,7 +507,7 @@ const BASE: BaseChapter[] = [
         'Langues : Langues de l’enfant, Langue de communication (ce que dit l’appareil, ce qui est écrit sur les cases), Arabe (le dialecte, quand l’arabe est coché) et Langue de navigation (menus, boutons, guide).',
         'Phrase : prononcer chaque mot, ajouter à la phrase, grammaire automatique (à couper pour travailler une forme), accords au féminin (seulement avec le français ou l’arabe parmi les langues de l’enfant : l’anglais n’a pas d’accords), zone rapide (oui, non, stop, attends…), ouvrir l’application citée dans la phrase. Toucher : la façon de sélectionner (toucher puis lever le doigt, dès que le doigt touche, ou garder le doigt appuyé avec une durée d’appui), la pause avant de retoucher la même image (2 s : fini les « pas pas pas »).',
         'Mots et images : les mots affichés (niveau), Bibliothèque de symboles (Pictogrammes ou Emoji), Afficher le texte sous les images, taille des images, et Mots et tableaux supprimés (un mot ou un tableau d’activité supprimé est gardé 30 jours : Remettre le replace à sa place). Affichage : boutons et texte plus grands ou contraste élevé, moins d’animations (ce choix arrête le mouvement des images), les images qui bougent quand on les touche (le bouton Essayer montre le mouvement).',
-        'Barre universelle : masquer TLA, Planning ou Minuteur si l’enfant n’en a pas besoin (CAA et Aide restent toujours). Sous Planning : le planning de la semaine et celui du mois. Rien ne change tant que vous n’avez pas touché Enregistrer, en bas de la page ; Annuler les modifications revient en arrière.',
+        'Barre universelle : masquer TLA, Planning, Minuteur ou Tableau blanc si l’enfant n’en a pas besoin (CAA et Aide restent toujours). Sous Planning : le planning de la semaine et celui du mois. Rien ne change tant que vous n’avez pas touché Enregistrer, en bas de la page ; Annuler les modifications revient en arrière.',
         'Voix : la vitesse, et Type de voix : Femme, Homme, Fille ou Garçon (Fille et Garçon sont des voix de l’appareil rendues plus aiguës ; les appareils n’ont pas de vraies voix d’enfant). Voix utilisée montre la voix de chaque langue : elle vient de l’appareil, et « voix approchée » signifie qu’il n’a pas de voix de ce type pour cette langue (on peut en installer dans les réglages de l’appareil). Si l’appareil n’a aucune voix pour une langue de l’enfant, un message le dit et explique où en installer une (iPad : Réglages → Accessibilité → Contenu énoncé → Voix ; Android : Paramètres → Système → Langues → Synthèse vocale). Le tableau le dit aussi, en une ligne au-dessus des mots, quand l’appareil n’a pas de voix pour la langue du tableau. Bouton Aide : le message dit en premier, les informations utiles.',
         'Aussi : Bouton Aide (ci-dessus), Code et données (le code accompagnant, Réinitialiser le profil : le tableau de départ revient, le code, le suivi, le partage et les langues restent ; avec un compte, confirmez d’abord que c’est vous ; Exporter le tableau (avec ses photos et sons) est dans la page Compte ; sans compte, il est ici avec Exporter pour une autre appli de CAA (.obz)) et À propos (crédits et licences des pictogrammes). Le Mode verrouillé (enfant) et le Guide s’ouvrent depuis la barre.',
       ],
@@ -492,7 +516,7 @@ const BASE: BaseChapter[] = [
         'Languages: Child’s languages, Communication language (what the device says, what is written on the cards), Arabic (the dialect, when Arabic is ticked) and Navigation language (menus, buttons, guide).',
         'Sentence: say each word, add to sentence, automatic grammar (turn off to practise a form), feminine agreement (only with French or Arabic among the child’s languages: English has no agreement), quick zone (yes, no, stop, wait…), open the app named in the sentence. Touch: the access method (touch then lift the finger, as soon as the finger touches, or keep the finger pressed with a hold time), the pause before touching the same picture again (2 s: no more “no no no”).',
         'Words and pictures: the words shown (level), Symbol library (Pictograms or Emoji), Show text under images, picture size, and Deleted words and boards (a deleted word or activity board is kept 30 days: Put back returns it to its place). Display: larger buttons and text or high contrast, fewer animations (this choice stops the wiggling), pictures that wiggle when touched (the Try it button shows the movement).',
-        'Universal bar: hide Boards, Schedule or Timer if the child doesn’t need them (AAC and Help always stay). Under Schedule: the week schedule and the month schedule. Nothing changes until you touch Save, at the bottom of the page; Cancel changes goes back.',
+        'Universal bar: hide Boards, Schedule, Timer or Whiteboard if the child doesn’t need them (AAC and Help always stay). Under Schedule: the week schedule and the month schedule. Nothing changes until you touch Save, at the bottom of the page; Cancel changes goes back.',
         'Voice: the speed, and Voice type: Woman, Man, Girl or Boy (Girl and Boy are voices of the device made higher; devices have no real children’s voices). Voice used shows the voice of each language: it comes from the device, and “approximate voice” means the device has no voice of that type for that language (more can be installed in the device’s own settings). If the device has no voice at all for one of the child’s languages, a message says so and tells where to install one (iPad: Settings → Accessibility → Spoken Content → Voices; Android: Settings → System → Languages → Text-to-speech). The board says it too, in one line above the words, when the device has no voice for the board’s language. Help button: the first message said, the useful information.',
         'Also: Help button (above), Code and data (the caregiver code, Reset profile: the starting board comes back, the code, follow-up, sharing and languages stay; with an account, confirm it is you first; Export the board (with its photos and sounds) is on the Account page; without an account it is here, with Export for another AAC app (.obz)) and About (pictogram credits and licences). The Child lock and the Guide open from the bar.',
       ],
@@ -731,7 +755,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   screen: {
     title: 'الشاشة بلمحة',
     steps: [
-      'على اليسار، الشريط الدائم، دائماً في المكان نفسه: التواصل (الرئيسية)، اللوحات، الجدول، المؤقت، زر «مساعدة» الأحمر الكبير، ثم الأدوات: «بحث» (العدسة المكبّرة)، الدليل، «الإعدادات»، «قفل»، المرافق. تفتح العدسة ثلاثة تبويبات: «البحث في اللوحة» (إيجاد كلمة)، «كلمة جديدة» (كتابتها) و«الكتابة للنمذجة» (إظهار جملة على اللوحة).',
+      'على اليسار، الشريط الدائم، دائماً في المكان نفسه: التواصل (الرئيسية)، اللوحات، الجدول، المؤقت، اللوح الأبيض، زر «مساعدة» الأحمر الكبير، ثم الأدوات: «بحث» (العدسة المكبّرة)، الدليل، «الإعدادات»، «قفل»، المرافق. تفتح العدسة ثلاثة تبويبات: «البحث في اللوحة» (إيجاد كلمة)، «كلمة جديدة» (كتابتها) و«الكتابة للنمذجة» (إظهار جملة على اللوحة).',
       'في الأعلى، شريط الجملة: تُضاف إليه كل كلمة تلمسها.',
       'في الوسط، شبكة الكلمات. تبقى كل كلمة دائماً في مكانها: هكذا يتعلّم الطفل الحركات عن ظهر قلب.',
       'تدلّ الألوان على نوع الكلمة: الأصفر = الأشخاص، الأخضر = الأفعال، الأزرق = الصفات، البرتقالي = الأشياء، البنفسجي = الأسئلة، الوردي = الكلمات الاجتماعية، الأحمر = النفي، الرمادي = الكلمات الصغيرة.',
@@ -807,6 +831,14 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
       'يظهر فوق اللوحة من دون أن يخفي أي صورة. بجانبه صورة ما ينتظره الطفل (المسبح، الحديقة…): تُقال في النهاية. يستطيع الطفل اختيار كلمة موجودة؛ أما «إنشاء كلمة جديدة» (صورة، تسجيل) فيطلب رمز المرافق.',
     ],
   },
+  whiteboard: {
+    title: 'اللوح الأبيض',
+    steps: [
+      '«اللوح الأبيض» (في الشريط، تحت «المؤقت»): صفحة للرسم بالإصبع، للشرح، أو لعرض خيارات، أو للكتابة معاً.',
+      '«قلم» أو «ممحاة»، «اللون»، «السماكة» (رفيع، متوسط، سميك، سميك جدًا) و«الخلفية» (أبيض، مربّعات، أسطر). «التراجع عن آخر خط» و«إعادة»؛ أما «مسح الرسم» فيطلب التأكيد أولاً.',
+      'يبقى الرسم عند العودة إلى لوحة الكلمات ما دام التطبيق مفتوحاً؛ لا يُحفظ ولا يغادر الجهاز. يبقى المؤقت قابلاً للاستعمال فوقه. يمكن إخفاء الزر من الإعدادات ← اللوحة ← الشريط الدائم.',
+    ],
+  },
   apps: {
     title: 'التطبيقات',
     steps: [
@@ -869,7 +901,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   addWord: {
     title: 'إضافة، استبدال، نقل، إزالة',
     steps: [
-      'خانة فارغة ← «إنشاء كلمة جديدة» (اكتبها أو المس «قل الكلمة»؛ يُقترح الرمز تلقائياً، أو اختر «مكتبتك» لصورة من عندك؛ و«صوتك لهذه الكلمة» اختياري: إذا سُجّلت، تُنطق الكلمة بصوتك؛ وإلا فبالصوت المختار) أو اختر كلمة موجودة (اكتبها أو قلها للعثور عليها). «رجوع»، في أعلى الشاشة، يعيد إلى الشاشة السابقة؛ وعلامة الإغلاق تغلق كل شيء.',
+      'خانة فارغة ← «إنشاء كلمة جديدة» (اكتبها أو المس «قل الكلمة»؛ يُقترح الرمز تلقائياً، حتى لو كُتبت الكلمة بخطأ، مع «هل تقصدون» لتصحيح الكتابة؛ أو اختر «مكتبتك» لصورة من عندك؛ و«صوتك لهذه الكلمة» اختياري: إذا سُجّلت، تُنطق الكلمة بصوتك؛ وإلا فبالصوت المختار) أو اختر كلمة موجودة (اكتبها أو قلها للعثور عليها). «رجوع»، في أعلى الشاشة، يعيد إلى الشاشة السابقة؛ وعلامة الإغلاق تغلق كل شيء.',
       'على البطاقة: «استبدال بكلمة أخرى» أو «إزالة من هذه اللوحة».',
       '«نقل هذه البطاقة»، ثم المس المكان الجديد (خانة فارغة، أو كلمة لتبديل مكانيهما). بالنسبة للكلمات الأساسية: يُقرَّر ذلك مع أخصائية النطق.',
       'مجلد «كلماتي» مخصّص لكلمات الطفل الخاصة: الأسماء، الألعاب المفضلة، الأماكن المألوفة.',
@@ -883,6 +915,8 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
       'المس كلمة أو خطوة لإزالتها، أضف غيرها: في اللوحة المُنشأة يكون لكل نوع من الكلمات عموده كما في اللوحة الرئيسية (الأشخاص، الأفعال، الكلمات الصغيرة، الأوصاف، الأسئلة، الكلمات الاجتماعية، الأشياء)، والكلمة التي تضيفها تذهب إلى عمودها. لتغيير ترتيب الخطوات اضغط مطولاً على خطوة ثم اسحبها (أو استعمل الأسهم الصغيرة). ثم «إنشاء اللوحة».',
       'خيار «إنشاء تسلسل لهذه الخطوات أيضاً»: يرتبط التسلسل باللوحة، مع مؤقتات (مثلاً الفرن 30 دقيقة). يظهر في «الجدول».',
       'طرق أخرى: «إنشاء لوحة فارغة» (تختار كل كلمة بنفسك)؛ «استيراد ملف» أو «مُشارَكة معي» (لوحة أرسلها لك شخص).',
+      'يمكن أن يكون الموضوع جملة («Une souris verte qui courait dans l’herbe»): تأخذ كل كلمة صورتها (فأرة، أخضر، يركض، عشب)، ثم صوراً قريبة من كل كلمة. الكلمة المكتوبة بخطأ تُعرف رغم ذلك، و«هل تقصدون» يقترح الكتابة الصحيحة.',
+      '«مشهد بصري»: في وضع المرافق، «مشهد جديد» (بجانب «لوحة جديدة») يفسح مكاناً على اليسار لصورة كبيرة («مكتبتك»: صورة فوتوغرافية أو صورة محفوظة، ومنها صورة محفوظة من الإنترنت على الحاسوب؛ أو «مكتبة التطبيق») ويدفع رموز اللوحة إلى اليمين. في الأعلى، «لوحة» أو «مشهد بصري» يختار طريقة العرض. في وضع المرافق، لمس الصورة الكبيرة يغيّرها؛ و«إزالة المشهد» يحذفها.',
     ],
   },
   editSchedule: {
@@ -909,7 +943,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
       '«اللغات»: «لغات الطفل»، «لغة التواصل» (ما يقوله الجهاز وما يُكتب على البطاقات)، «العربية» (اللهجة، إذا كانت العربية محدّدة) و«لغة التنقل» (القوائم والأزرار والدليل).',
       '«الجملة»: نطق كل كلمة، إضافة الكلمات إلى الجملة، القواعد التلقائية (أوقفها للتدرّب على صيغة)، التأنيث (فقط إذا كانت الفرنسية أو العربية من لغات الطفل: لا تأنيث في الإنجليزية)، المنطقة السريعة (نعم، لا، توقف، انتظر…)، فتح التطبيق المذكور في الجملة. «اللمس»: طريقة الاختيار (المس ثم ارفع الإصبع، بمجرد أن يلمس الإصبع، أو إبقاء الإصبع مضغوطاً مع مدة الضغط)، مهلة قبل لمس الصورة نفسها مجدداً (ثانيتان).',
       '«الكلمات والصور»: الكلمات الظاهرة (المستوى)، «مكتبة الرموز» (رموز أو إيموجي)، «إظهار النص تحت الصور»، حجم الصور، و«الكلمات واللوحات المحذوفة» (تُحفظ الكلمة أو لوحة النشاط المحذوفة 30 يومًا: «إعادة» يعيدها إلى مكانها). «العرض»: أزرار ونص أكبر أو تباين عالٍ، حركة أقل (هذا الخيار يوقف حركة الصور)، الصور التي تتحرّك عند لمسها (زر «جرّب» يُظهر الحركة).',
-      'الشريط الدائم: إخفاء «اللوحات» أو «الجدول» أو «المؤقت» إذا لم يحتجها الطفل («التواصل» و«مساعدة» يبقيان دائماً). تحت «الجدول»: جدول الأسبوع وجدول الشهر. لا يتغيّر شيء قبل لمس «حفظ» أسفل الصفحة؛ «إلغاء التغييرات» يعيد كل شيء كما كان.',
+      'الشريط الدائم: إخفاء «اللوحات» أو «الجدول» أو «المؤقت» أو «اللوح الأبيض» إذا لم يحتجها الطفل («التواصل» و«مساعدة» يبقيان دائماً). تحت «الجدول»: جدول الأسبوع وجدول الشهر. لا يتغيّر شيء قبل لمس «حفظ» أسفل الصفحة؛ «إلغاء التغييرات» يعيد كل شيء كما كان.',
       'الصوت: السرعة، و«نوع الصوت»: امرأة، رجل، بنت أو صبي («بنت» و«صبي» من أصوات الجهاز بعد جعلها أحدّ؛ لا توجد في الأجهزة أصوات أطفال حقيقية). «الصوت المستخدم» يبيّن صوت كل لغة: يأتي من الجهاز، و«صوت تقريبي» يعني أن الجهاز لا يملك صوتاً من هذا النوع لهذه اللغة (يمكن تثبيت أصوات أخرى من إعدادات الجهاز). إذا لم يكن على الجهاز أي صوت لإحدى لغات الطفل، تظهر رسالة تقول ذلك وتشرح أين يُثبَّت صوت (iPad: الإعدادات ← تسهيلات الاستخدام ← المحتوى المنطوق ← الأصوات؛ Android: الإعدادات ← النظام ← اللغات ← تحويل النص إلى كلام). وتقول اللوحة ذلك أيضاً، في سطر فوق الكلمات، عندما لا يملك الجهاز صوتاً للغة اللوحة. زر المساعدة: الرسالة الأولى التي تُقال، والمعلومات المفيدة.',
       'أيضاً: «زر المساعدة» (أعلاه)، «الرمز والبيانات» (رمز المرافق، «إعادة ضبط الملف الشخصي»: تعود لوحة البداية ويبقى الرمز والمتابعة والمشاركة واللغات؛ مع حساب، أكّد أولًا أنك أنت؛ «تصدير اللوحة (مع صورها وأصواتها)» في صفحة «الحساب»؛ من دون حساب، يوجد هنا مع «تصدير لتطبيق تواصل بديل آخر (.obz)») و«حول التطبيق» (حقوق وتراخيص الرموز). «وضع القفل (للطفل)» والدليل يُفتحان من الشريط.',
     ],

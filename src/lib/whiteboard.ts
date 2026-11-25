@@ -1,6 +1,7 @@
 /**
  * The whiteboard (button of the bar, under the timer): lines drawn with the finger, in colours
- * and thicknesses, an eraser, undo / redo and "Clear the drawing". Pure: the screen is
+ * and thicknesses, an eraser, undo / redo and "Clear the drawing", and pictures (from the device,
+ * the camera or the web) under the ink, moved, resized and made see-through. Pure: the screen is
  * src/ui/screens/WhiteboardScreen.tsx.
  *
  * What is drawn stays on this device, in memory, while the app is open (going to the board and
@@ -32,9 +33,29 @@ export interface Line {
   points: number[];
   color: string;
   width: number;
-  /** Drawn with the eraser: paints the paper's white over what is under it. */
+  /** Drawn with the eraser: rubs out the ink drawn before it (never the pictures under the ink). */
   erase?: boolean;
 }
+
+/** A picture put on the whiteboard; the ink is drawn over it. Pixels of the drawing area. */
+export interface Picture {
+  id: string;
+  /** file:, blob:, data: or https: address, used on this device only (never saved or sent). */
+  uri: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  /** 1 = solid; the transparency steps are `PICTURE_OPACITIES`. */
+  opacity: number;
+}
+
+/** Transparency offered for a picture (0 %, 25 %, 50 %, 75 % see-through). */
+export const PICTURE_OPACITIES = [1, 0.75, 0.5, 0.25];
+/** Each "bigger" / "smaller" changes the size by this much. */
+export const PICTURE_STEP = 1.2;
+const MIN_PICTURE = 40;
+const MAX_PICTURE = 4000;
 
 export interface Whiteboard {
   lines: Line[];
@@ -42,11 +63,16 @@ export interface Whiteboard {
   undone: Line[];
   color: WhiteboardColor;
   size: number;
-  tool: 'pen' | 'eraser';
+  /** 'move': touching a picture chooses it and sliding moves it (nothing is drawn). */
+  tool: 'pen' | 'eraser' | 'move';
   background: WhiteboardBackground;
+  /** Pictures, the first one lowest. */
+  pictures: Picture[];
+  /** The picture whose size and transparency are being changed. */
+  selected?: string;
 }
 
-export const EMPTY_WHITEBOARD: Whiteboard = { lines: [], undone: [], color: 'black', size: 1, tool: 'pen', background: 'plain' };
+export const EMPTY_WHITEBOARD: Whiteboard = { lines: [], undone: [], color: 'black', size: 1, tool: 'pen', background: 'plain', pictures: [] };
 
 /** The SVG path of a line; a single touch leaves a dot. */
 export function linePath(points: number[]): string {
@@ -92,4 +118,87 @@ export function extend(line: Line, x: number, y: number): boolean {
   if (n >= 2 && Math.hypot(x - line.points[n - 2], y - line.points[n - 1]) < 2) return false;
   line.points.push(x, y);
   return true;
+}
+
+// ── Pictures ──
+
+let pictureSeq = 0;
+
+/**
+ * A new picture, as large as 60 % of the drawing area allows (its proportions kept), in the middle,
+ * on top of the other pictures; it is the one chosen.
+ */
+export function addPicture(wb: Whiteboard, uri: string, natural: { width: number; height: number }, area: { w: number; h: number }): Whiteboard {
+  const nw = natural.width > 0 ? natural.width : 1;
+  const nh = natural.height > 0 ? natural.height : 1;
+  const scale = Math.min((area.w * 0.6) / nw, (area.h * 0.6) / nh, 1e9);
+  const w = Math.max(MIN_PICTURE, Math.round(nw * scale));
+  const h = Math.max(MIN_PICTURE, Math.round(nh * scale));
+  const id = `p${Date.now().toString(36)}${(pictureSeq++).toString(36)}`;
+  const pic: Picture = { id, uri, x: Math.round((area.w - w) / 2), y: Math.round((area.h - h) / 2), w, h, opacity: 1 };
+  return { ...wb, pictures: [...wb.pictures, pic], selected: id };
+}
+
+const change = (wb: Whiteboard, id: string | undefined, fn: (p: Picture) => Picture): Whiteboard =>
+  id && wb.pictures.some((p) => p.id === id) ? { ...wb, pictures: wb.pictures.map((p) => (p.id === id ? fn(p) : p)) } : wb;
+
+/** Bigger (factor > 1) or smaller, around its middle, within reasonable bounds. */
+export function resizePicture(wb: Whiteboard, id: string | undefined, factor: number): Whiteboard {
+  return change(wb, id, (p) => {
+    const f = Math.min(MAX_PICTURE / Math.max(p.w, p.h), Math.max(MIN_PICTURE / Math.min(p.w, p.h), factor));
+    const w = Math.round(p.w * f);
+    const h = Math.round(p.h * f);
+    return { ...p, w, h, x: Math.round(p.x + (p.w - w) / 2), y: Math.round(p.y + (p.h - h) / 2) };
+  });
+}
+
+export function setPictureOpacity(wb: Whiteboard, id: string | undefined, opacity: number): Whiteboard {
+  return change(wb, id, (p) => ({ ...p, opacity: Math.max(0.1, Math.min(1, opacity)) }));
+}
+
+/** Slid by the finger; at least a corner of it stays inside the drawing area. */
+export function movePicture(wb: Whiteboard, id: string | undefined, x: number, y: number, area: { w: number; h: number }): Whiteboard {
+  return change(wb, id, (p) => ({
+    ...p,
+    x: Math.round(Math.max(-p.w + 30, Math.min(area.w - 30, x))),
+    y: Math.round(Math.max(-p.h + 30, Math.min(area.h - 30, y))),
+  }));
+}
+
+export function removePicture(wb: Whiteboard, id: string | undefined): Whiteboard {
+  if (!id) return wb;
+  const pictures = wb.pictures.filter((p) => p.id !== id);
+  // Nothing left to move: the pen is back.
+  const tool = !pictures.length && wb.tool === 'move' ? 'pen' : wb.tool;
+  return { ...wb, pictures, tool, selected: wb.selected === id ? undefined : wb.selected };
+}
+
+/** The picture under a point (the highest one), if any. */
+export function pictureAt(wb: Whiteboard, x: number, y: number): Picture | undefined {
+  for (let i = wb.pictures.length - 1; i >= 0; i--) {
+    const p = wb.pictures[i];
+    if (x >= p.x && x <= p.x + p.w && y >= p.y && y <= p.y + p.h) return p;
+  }
+  return undefined;
+}
+
+/**
+ * The ink in layers for drawing: the pen lines between two eraser passes, each layer rubbed out by
+ * every eraser line that came after it (so the eraser removes ink, never a picture under it).
+ */
+export function inkLayers(lines: Line[]): { pens: Line[]; erasers: Line[] }[] {
+  const out: { pens: Line[]; erasers: Line[] }[] = [];
+  let cur: { pens: Line[]; erasers: Line[] } = { pens: [], erasers: [] };
+  for (const l of lines) {
+    if (l.erase) cur.erasers.push(l);
+    else {
+      if (cur.erasers.length) {
+        out.push(cur);
+        cur = { pens: [], erasers: [] };
+      }
+      cur.pens.push(l);
+    }
+  }
+  if (cur.pens.length || cur.erasers.length) out.push(cur);
+  return out;
 }

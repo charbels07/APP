@@ -34,7 +34,9 @@ describe('in-app guide', () => {
     const text = (lang: 'fr' | 'en' | 'ar') => GUIDE.flatMap((c) => c.steps[lang]).join(' ');
     for (const lang of ['fr', 'en', 'ar'] as const) {
       const b = boardToolsStrings(lang);
-      for (const label of [b.whiteboard, b.pen, b.eraser, b.color, b.thickness, b.background, b.undo, b.redo, b.clear, b.newScene, b.showScene, b.showBoard, b.sceneRemove, b.didYouMean, ...b.sizes, ...Object.values(b.backgrounds)])
+      for (const label of [b.whiteboard, b.pen, b.eraser, b.color, b.thickness, b.background, b.undo, b.redo, b.clear, b.newScene, b.showScene, b.showBoard, b.sceneRemove, b.didYouMean, ...b.sizes, ...Object.values(b.backgrounds),
+        // pictures on the whiteboard; the scene's size and circles
+        b.addPicture, b.pastePicture, b.move, b.smaller, b.bigger, b.transparency, b.removePicture, b.sceneChange, b.clearCircles])
         expect(text(lang)).toContain(label);
     }
   });

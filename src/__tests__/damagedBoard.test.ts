@@ -93,6 +93,9 @@ describe('a damaged profile still gives a board', () => {
     expect(sound.boards.tla_park.scene).toEqual({ image: { kind: 'media', name: '1762000000001_ab12cd.jpg' } });
     expect(damaged((p) => (p.boards.tla_park.scene = { image: { kind: 'video' } })).boards.tla_park.scene).toEqual({});
     expect(damaged((p) => (p.boards.tla_park.scene = 'big')).boards.tla_park.scene).toBeUndefined();
+    // The picture's size: kept when it can be used, left out otherwise (the usual size then).
+    expect(damaged((p) => (p.boards.tla_park.scene = { size: 0.5 })).boards.tla_park.scene).toEqual({ size: 0.5 });
+    expect(damaged((p) => (p.boards.tla_park.scene = { size: 9, image: { kind: 'emoji', value: '🌳' } })).boards.tla_park.scene).toEqual({ image: { kind: 'emoji', value: '🌳' } });
     // The cards of the board do not move.
     expect(damaged((p) => (p.boards.tla_park.scene = 7)).boards.tla_park.cells).toEqual(saved().boards.tla_park.cells);
   });

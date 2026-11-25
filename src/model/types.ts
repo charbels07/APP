@@ -114,7 +114,11 @@ export interface Board {
    * Activity boards: a visual scene, a big picture shown on the left of the board's pictograms
    * ("New scene" in caregiver mode). `image` not set yet: the place waits for its picture.
    */
-  scene?: { image?: SymbolRef };
+  scene?: {
+    image?: SymbolRef;
+    /** The share of the width (of the height on a narrow screen) the picture takes, 0.2–0.75 (src/lib/sceneMarks.ts). */
+    size?: number;
+  };
 }
 
 export interface ScheduleStep {

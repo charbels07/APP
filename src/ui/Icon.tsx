@@ -27,6 +27,7 @@ const ICONS = {
       {P('m9 10 5 5')}
     </>
   ),
+  move: P('M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20'),
   scene: (
     <>
       <Rect x={2} y={4} width={11} height={16} rx={1.5} />

@@ -60,13 +60,17 @@ export function boardOf(id: string, v: unknown): Board | null {
   const kind = b.kind === 'core' || b.kind === 'folder' || b.kind === 'tla' ? b.kind : id === 'core' ? 'core' : 'folder';
   const concept = str(b.concept) ? b.concept : '';
   // The visual scene: an object whose picture, if any, can be drawn; otherwise left out.
-  const sceneOk = b.scene === undefined || (isObj(b.scene) && (b.scene.image === undefined || symbolOk(b.scene.image)));
+  const sizeOk = (v: unknown) => v === undefined || (typeof v === 'number' && v >= 0.2 && v <= 0.75);
+  const sceneOk = b.scene === undefined || (isObj(b.scene) && (b.scene.image === undefined || symbolOk(b.scene.image)) && sizeOk(b.scene.size));
   if (cells === b.cells && rows === b.rows && cols === b.cols && kind === b.kind && concept === b.concept && b.id === id && sceneOk) return b;
   const out: Board = { ...b, id, kind, concept, rows, cols, cells };
   if (!sceneOk) {
-    if (isObj(b.scene) && symbolOk((b.scene as Obj).image)) out.scene = { image: (b.scene as Obj).image as SymbolRef };
-    else if (isObj(b.scene)) out.scene = {};
-    else delete out.scene;
+    if (isObj(b.scene)) {
+      const sc = b.scene as Obj;
+      out.scene = {};
+      if (symbolOk(sc.image)) out.scene.image = sc.image as SymbolRef;
+      if (sizeOk(sc.size) && sc.size !== undefined) out.scene.size = sc.size as number;
+    } else delete out.scene;
   }
   return out;
 }

@@ -9,6 +9,7 @@ import { Btn, Segmented } from '../common';
 import { Grid } from '../Grid';
 import { Icon } from '../Icon';
 import { SceneImage } from '../SceneImage';
+import { sceneSize, stepScene, toggleMark, type Mark } from '../../lib/sceneMarks';
 import { SymbolView } from '../SymbolView';
 import { C, radius } from '../theme';
 import { selected } from '../a11y';
@@ -33,6 +34,17 @@ export function TlaScreen() {
     if (!current.scene) app.update((d) => void (d.boards[id] && (d.boards[id].scene = {})));
     app.setSceneShown(id, true);
     app.setOverlay({ kind: 'scene', id });
+  };
+  // Circles drawn on the scene's picture with a double touch: a gesture of the moment, never saved.
+  const [marks, setMarks] = useState<Record<string, Mark[]>>({});
+  const sceneShare = sceneSize(current?.scene?.size);
+  const resizeScene = (dir: 1 | -1) => {
+    if (!current) return;
+    const id = current.id;
+    app.update((d) => {
+      const sc = d.boards[id]?.scene;
+      if (sc) sc.size = stepScene(sc.size, dir);
+    });
   };
   // Caregiver mode: a double tap on a tab opens the activity board's menu (edit, duplicate, share, print).
   const lastTap = useRef<{ id: string; at: number; timer: ReturnType<typeof setTimeout> } | null>(null);
@@ -146,8 +158,16 @@ export function TlaScreen() {
       )}
       {current && showScene ? (
         <View style={[styles.sceneRow, width < 560 && styles.sceneStacked]}>
-          <ScenePane board={current} onChoose={editMode ? openScene : undefined} label={x.scenePicture} choose={x.sceneChoose} />
-          <View style={styles.sceneBoard}>
+          <ScenePane
+            board={current}
+            share={sceneShare}
+            onChoose={editMode ? openScene : undefined}
+            onResize={editMode ? resizeScene : undefined}
+            marks={marks[current.id] ?? []}
+            onMarks={(m) => setMarks((all) => ({ ...all, [current.id]: m }))}
+          />
+          {/* The board takes the rest of the room, whatever size the picture is given. */}
+          <View style={[styles.sceneBoard, { flex: 1 - sceneShare }]}>
             <Grid board={current} />
           </View>
         </View>
@@ -163,36 +183,82 @@ export function TlaScreen() {
   );
 }
 
-/** The big picture of the scene; in caregiver mode, touching it changes it. */
-function ScenePane({ board, onChoose, label, choose }: { board: Board; onChoose?: () => void; label: string; choose: string }) {
+/**
+ * The big picture of the scene. A double touch on a place circles it (again on the circle: it goes).
+ * In caregiver mode: "Smaller picture" / "Bigger picture" (the board beside it takes the rest), and an
+ * empty place opens the choice of the picture.
+ */
+function ScenePane({
+  board,
+  share,
+  onChoose,
+  onResize,
+  marks,
+  onMarks,
+}: {
+  board: Board;
+  share: number;
+  onChoose?: () => void;
+  onResize?: (dir: 1 | -1) => void;
+  marks: Mark[];
+  onMarks: (m: Mark[]) => void;
+}) {
+  const { profile } = useApp();
+  const x = boardToolsStrings(profile.settings.uiLang);
   const image = board.scene?.image;
-  const inner = image ? (
-    <SceneImage image={image} label={label} style={styles.sceneImage} />
-  ) : (
-    <View style={styles.sceneEmpty}>
-      <Icon name="image" size={44} color={C.textMuted} />
-      {onChoose ? <Text style={styles.sceneHint}>{choose}</Text> : null}
-    </View>
-  );
-  if (!onChoose) return <View style={styles.scene}>{inner}</View>;
+  const flex = { flex: share };
+  if (!image)
+    return onChoose ? (
+      <Pressable
+        onPress={onChoose}
+        accessibilityRole="button"
+        accessibilityLabel={x.sceneChoose}
+        style={({ pressed }) => [styles.scene, flex, styles.sceneEdit, pressed && { opacity: 0.8 }]}
+      >
+        <View style={styles.sceneEmpty}>
+          <Icon name="image" size={44} color={C.textMuted} />
+          <Text style={styles.sceneHint}>{x.sceneChoose}</Text>
+        </View>
+      </Pressable>
+    ) : (
+      <View style={[styles.scene, flex]}>
+        <View style={styles.sceneEmpty}>
+          <Icon name="image" size={44} color={C.textMuted} />
+        </View>
+      </View>
+    );
   return (
-    <Pressable
-      onPress={onChoose}
-      accessibilityRole="button"
-      accessibilityLabel={image ? label : choose}
-      style={({ pressed }) => [styles.scene, styles.sceneEdit, pressed && { opacity: 0.8 }]}
-    >
-      {inner}
-    </Pressable>
+    <View style={[styles.scene, flex, onResize && styles.sceneEdit]}>
+      <SceneImage
+        image={image}
+        label={x.sceneTouch}
+        style={styles.sceneImage}
+        marks={marks}
+        onDoubleTouch={(px, py, w, h) => onMarks(toggleMark(marks, px, py, w, h))}
+      />
+      {onResize && (
+        <View style={styles.sceneTools}>
+          <Btn small icon="minus" accessibilityLabel={x.smaller} disabled={share <= 0.2} onPress={() => onResize(-1)} />
+          <Btn small icon="plus" accessibilityLabel={x.bigger} disabled={share >= 0.75} onPress={() => onResize(1)} />
+        </View>
+      )}
+      {marks.length > 0 && (
+        <View style={styles.sceneClear}>
+          <Btn small icon="x" label={x.clearCircles} onPress={() => onMarks([])} />
+        </View>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   sceneRow: { flex: 1, flexDirection: 'row', gap: 8 },
   sceneStacked: { flexDirection: 'column' },
-  scene: { flex: 0.7, minHeight: 120, borderRadius: radius.md, backgroundColor: C.surface, borderWidth: 1.5, borderColor: C.border, overflow: 'hidden' },
+  scene: { minHeight: 120, borderRadius: radius.md, backgroundColor: C.surface, borderWidth: 1.5, borderColor: C.border, overflow: 'hidden' },
   sceneEdit: { borderStyle: 'dashed', borderColor: C.edit },
-  sceneBoard: { flex: 1.3, minWidth: 0, minHeight: 0 },
+  sceneBoard: { minWidth: 0, minHeight: 0 },
+  sceneTools: { position: 'absolute', top: 6, left: 6, flexDirection: 'row', gap: 6 },
+  sceneClear: { position: 'absolute', bottom: 6, right: 6 },
   sceneImage: { flex: 1 },
   sceneEmpty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8, padding: 12 },
   sceneHint: { fontSize: 16, fontWeight: '700', color: C.text, textAlign: 'center' },

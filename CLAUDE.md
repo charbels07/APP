@@ -302,10 +302,15 @@
 - Whiteboard (owner's request, 24 November 2026): a button of the bar under Timer (`bar.whiteboard`, shown unless
   false; Settings → Universal bar), view `whiteboard` (`src/ui/screens/WhiteboardScreen.tsx`, pure part
   `src/lib/whiteboard.ts`). What is drawn lives in `AppState` memory only: never in the profile, never sent.
+  Pictures on it (owner's request, 25 November 2026: "from my library or from the web"): device, camera, a copied
+  picture, or an https address (`src/lib/whiteboardPicture.ts`; never copied into the media store, never sent);
+  under the ink, moved / resized / see-through. The eraser is an SVG mask on the ink (`inkLayers`), never white paint.
 - Visual scene of an activity board (`board.scene = { image? }`, "New scene" in caregiver mode beside "New board",
   `ScenePanel` in `CaregiverPanels.tsx`): a big picture on the left, the board on the right; "Board / Visual scene"
   is a choice of the moment (`sceneShown`, not saved). A scene change sends the whole board (`diffProfiles`); its
   photo follows the media rules (`eraseLater`, names found anywhere in the profile). No "paste a link" for it.
+  `scene.size` (0.2–0.75, `src/lib/sceneMarks.ts`) is the picture's share, set with − / + in caregiver mode; the board
+  takes the rest. A double touch on the picture draws a circle (`toggleMark`): screen state only, never saved.
 - Misspelt words (`src/lib/spelling.ts`): `searchPictos` adds sound-alike / one-letter-away results only when the
   exact search finds few (`FUZZY_BELOW`); `guessSpelling` gives "Did you mean" (`onGuess` of `PictoSearch`). A
   sentence as a board's topic gets a picture per word (`contentWords`, `pictoForWord`, `planFromSentence`).

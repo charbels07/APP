@@ -19,7 +19,9 @@ import { plain } from './safety';
 import { migrate } from './storage';
 import { unzipStore, zipStore, type ZipEntry } from './zip';
 
-export const BOARD_FORMAT = 'empower-board';
+export const BOARD_FORMAT = 'daleth-board';
+/** Files exported before the app was renamed (25 November 2026) still import. */
+const OLD_BOARD_FORMATS = ['empower-board'];
 
 /** A name the file can have whatever the child's name ("/" and the like are left out). */
 export function backupFileName(childName: string | undefined): string {
@@ -87,7 +89,7 @@ export function readBoardFile(bytes: Uint8Array): ReadBoard {
     }
   } else json = JSON.parse(new TextDecoder().decode(bytes));
   const env = json as { format?: unknown; profile?: unknown } | null;
-  const raw = (env && env.format === BOARD_FORMAT ? env.profile : json) as { boards?: { core?: unknown } } | null;
+  const raw = (env && (env.format === BOARD_FORMAT || OLD_BOARD_FORMATS.includes(env.format as string)) ? env.profile : json) as { boards?: { core?: unknown } } | null;
   if (!raw || typeof raw !== 'object' || !raw.boards?.core) throw new Error('not a board');
   const profile = migrate(raw as unknown as Partial<Profile>);
   // Only the files the board uses.

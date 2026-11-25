@@ -252,9 +252,9 @@
   `package.json` (`appIdentity.test.ts`). `ios.bundleIdentifier`, `android.package` and `eas.json` are the
   owner's to choose. Support e-mail `daleth.contact@gmail.com`, company "DALETH", Beirut, Lebanon. Kept on purpose
   (technical names, renaming them breaks something): the Cloudflare project `empower-communication` (`wrangler.jsonc`,
-  must match the dashboard), the app's `scheme` `empowercommunication` and `slug` (Supabase redirect URLs), the
-  export formats `empower-board` / `empower-communication/export-1` (older files must still import), the backup names
-  `empower-db-*` / `empower-backups`.
+  must match the dashboard), the app's `scheme` `empowercommunication` and `slug` (Supabase redirect URLs), the backup
+  names `empower-db-*` / `empower-backups`. New files are labelled `daleth-board` / `daleth-aac/export-1`; a board file
+  labelled `empower-board` (made before the rename) must still import (`OLD_BOARD_FORMATS` in `backupFile.ts`).
 - Activity boards (TLA) order their topic words like the child's main board (`src/lib/boardOrder.ts`:
   `mainBoardOrder`, `tlaLayout`, `arrangeTla`). Automatic when a board is created; on a board already made
   it is only done on request ("Arrange like the main board" in the board's menu): never re-order a board

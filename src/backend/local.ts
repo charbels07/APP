@@ -765,7 +765,7 @@ export class LocalBackend implements Backend {
       const of = <T extends { profileId?: string }>(list: T[] | undefined) => (list ?? []).filter((x) => x.profileId && mine.has(x.profileId));
       return clone({
         exportedAt: new Date().toISOString(),
-        format: 'empower-communication/export-1',
+        format: 'daleth-aac/export-1',
         account: LocalBackend.public(me),
         consents: (db.consents ?? []).filter((c) => c.userId === me.id),
         children: Object.values(db.profiles).filter((p) => mine.has(p.id)).map((p) => ({ ...p, data: board(p.data) })),

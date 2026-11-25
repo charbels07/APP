@@ -24,6 +24,13 @@ function family() {
 }
 
 describe('the board file', () => {
+  it('is labelled Daleth AAC, and a file exported before the rename still opens', () => {
+    const wrap = (format: string) => new TextEncoder().encode(JSON.stringify({ format, version: 1, profile: boardForFile(family()) }));
+    expect(readBoardFile(wrap('daleth-board')).profile.boards.core.cells).toEqual(family().boards.core.cells);
+    expect(readBoardFile(wrap('empower-board')).profile.boards.core.cells).toEqual(family().boards.core.cells);
+    expect(() => readBoardFile(wrap('something-else'))).toThrow('not a board');
+  });
+
   it('holds the board and its photos and sounds, never the caregiver code', async () => {
     const read = async (n: string) => (n === MISSING ? undefined : new Uint8Array([1, 2, 3, n.length]));
     const { bytes, missing } = await backupBytes(family(), 'Adam', read);

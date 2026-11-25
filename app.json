@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Empower Communication",
+    "name": "Daleth AAC",
     "slug": "empower-communication",
     "version": "0.1.0",
     "orientation": "default",
@@ -32,8 +32,8 @@
       "allowBackup": false
     },
     "web": {
-      "name": "Empower Communication",
-      "shortName": "Empower Communication",
+      "name": "Daleth AAC",
+      "shortName": "Daleth AAC",
       "favicon": "./assets/favicon.png"
     },
     "locales": {

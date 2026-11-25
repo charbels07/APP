@@ -135,7 +135,7 @@ select test.ok((select count(*) = 1 and bool_and(note = 'note de Rita') from lis
 
 -- 10. A material shared "to edit" cannot be taken.
 select set_config('request.jwt.claim.sub', :'rita', false);
-insert into resources (owner_id, owner_name, kind, title, data) values (:'rita', 'Empower Communication', 'tla', 'Dentiste', '{}');
+insert into resources (owner_id, owner_name, kind, title, data) values (:'rita', 'Daleth AAC', 'tla', 'Dentiste', '{}');
 select test.ok((select owner_name = 'Rita' from resources), 'a material is signed by the database');
 select share_resource((select id from resources), 'eve@example.com', null, 'edit');
 select set_config('request.jwt.claim.sub', :'eve', false);

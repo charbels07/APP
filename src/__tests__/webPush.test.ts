@@ -40,11 +40,11 @@ function open(b: ReturnType<typeof browser>, body: Uint8Array): string {
 
 test('a notification is readable by the browser it was written for, and by nobody else', async () => {
   const b = browser();
-  const message = JSON.stringify({ title: 'Empower', body: 'لم يُفتح اللوح اليوم بعد.' });
+  const message = JSON.stringify({ title: 'Daleth AAC', body: 'لم يُفتح اللوح اليوم بعد.' });
   const body = await encryptFor(b.p256dh, b.authKey, new TextEncoder().encode(message));
   expect([...body.slice(16, 21)]).toEqual([0, 0, 16, 0, 65]);
   expect(open(b, body)).toBe(message);
-  expect(Buffer.from(body).includes(Buffer.from('Empower'))).toBe(false);
+  expect(Buffer.from(body).includes(Buffer.from('Daleth AAC'))).toBe(false);
   expect(() => open(browser(), body)).toThrow();
 });
 

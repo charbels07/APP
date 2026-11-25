@@ -72,7 +72,7 @@ concerned) when the risk is high, in clear words, in **French, English and Arabi
 languages of the app; send the language of the menus of each account first, the other two
 below). Two channels:
 
-1. **E-mail** from `empowerhub.me@gmail.com` (the app itself only sends sign-in codes; the e-mail is
+1. **E-mail** from `daleth.contact@gmail.com` (the app itself only sends sign-in codes; the e-mail is
    sent by the team from its mailbox).
 2. **A notice in the app** (`INCIDENT-RESPONSE.md`, section 5: in-app only, the three languages
    in one notice).
@@ -85,7 +85,7 @@ The Arabic texts below are a first version, to be read by a native speaker befor
 
 ### E-mail — English
 
-> **Subject:** Important: a security incident concerning your Empower Communication account
+> **Subject:** Important: a security incident concerning your Daleth AAC account
 >
 > Hello,
 >
@@ -105,13 +105,13 @@ The Arabic texts below are a first version, to be read by a native speaker befor
 >
 > [If true:] Your child's board keeps working on your devices.
 >
-> Questions: empowerhub.me@gmail.com. Our data protection officer: [DPO].
+> Questions: daleth.contact@gmail.com. Our data protection officer: [DPO].
 >
-> We are sorry. — Empower Hub
+> We are sorry. — DALETH
 
 ### E-mail — français
 
-> **Objet :** Important : un incident de sécurité concerne votre compte Empower Communication
+> **Objet :** Important : un incident de sécurité concerne votre compte Daleth AAC
 >
 > Bonjour,
 >
@@ -134,15 +134,15 @@ The Arabic texts below are a first version, to be read by a native speaker befor
 >
 > [Si c'est vrai :] Le tableau de votre enfant continue de fonctionner sur vos appareils.
 >
-> Questions : empowerhub.me@gmail.com. Notre délégué à la protection des données : [DPO].
+> Questions : daleth.contact@gmail.com. Notre délégué à la protection des données : [DPO].
 >
-> Nous vous présentons nos excuses. — Empower Hub
+> Nous vous présentons nos excuses. — DALETH
 
 ### E-mail — العربية
 
 <div dir="rtl" lang="ar">
 
-> **الموضوع:** مهمّ: حادث أمني يخصّ حسابكم في Empower Communication
+> **الموضوع:** مهمّ: حادث أمني يخصّ حسابكم في Daleth AAC
 >
 > مرحباً،
 >
@@ -162,9 +162,9 @@ The Arabic texts below are a first version, to be read by a native speaker befor
 >
 > [إن كان ذلك صحيحاً:] تبقى لوحة طفلكم تعمل على أجهزتكم.
 >
-> للأسئلة: empowerhub.me@gmail.com. مسؤول حماية البيانات لدينا: [DPO].
+> للأسئلة: daleth.contact@gmail.com. مسؤول حماية البيانات لدينا: [DPO].
 >
-> نعتذر منكم. — Empower Hub
+> نعتذر منكم. — DALETH
 
 </div>
 

@@ -7,7 +7,7 @@
 
 # Our continuity pledge
 
-A child who communicates with Empower depends on it the way another child depends on their
+A child who communicates with Daleth AAC depends on it the way another child depends on their
 voice. These are our promises for the day something goes wrong: our server, our money, our
 company.
 
@@ -54,4 +54,4 @@ Before this promise is published:
 
 ## Contact
 
-Empower Hub, Beirut, Lebanon — `empowerhub.me@gmail.com`.
+DALETH, Beirut, Lebanon — `daleth.contact@gmail.com`.

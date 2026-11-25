@@ -522,7 +522,7 @@ possible.**
 
 | What | How it was done |
 |---|---|
-| "Help us improve Empower" | The form of your aunt's screenshot, on the account page of parents and of professionals (`src/ui/admin/WriteTeam.tsx`): six subjects to write about, or "Vote for upcoming features". The text field reminds people not to write personal or medical information. A message is sent on purpose by an adult, so it does not need the "Help improve the app" switch. |
+| "Help us improve Daleth AAC" | The form of your aunt's screenshot, on the account page of parents and of professionals (`src/ui/admin/WriteTeam.tsx`): six subjects to write about, or "Vote for upcoming features". The text field reminds people not to write personal or medical information. A message is sent on purpose by an adult, so it does not need the "Help improve the app" switch. |
 | Votes | The team writes ideas (in three languages) in the Requests page; people vote once per account (a child's tablet does not vote). Tables `roadmap` and `roadmap_votes`. |
 | Feature counters | A fixed list of 30 names in `src/lib/product.ts` (16 features such as `timer`, `print`, and 14 "inside a task" counters such as `searchNone`). Any screen says `countFeature('print')`. The device adds them up **per day**: "timer: 3". No word, no sentence, no text, no time of day. `src/state/productCounters.ts` keeps the day on the device and sends it. |
 | Technical problems | The app listens for errors nobody caught, and a few known failures (microphone, printing, AI, pictogram library). What is sent is only: the kind, the error's type (`TypeError`), the place in the code as "line:column", the kind of screen, the system, the app's version. **Never the error's message**, because a message can quote what somebody typed. In the database a problem is a counter that belongs to nobody: no child, no account, no device. |
@@ -743,7 +743,7 @@ without their board or without a word being said. No database change.
   change it in the account's preferences. Two things are sent: a reminder at 12:00 (the device's
   own time) to parents whose child's board was not opened that day, and a new idea put to the vote
   (to the parents, the professionals or both, as chosen in Back office → Requests). Never a
-  child's name, word or sentence. On iPhone and iPad they only work once Empower was added to the
+  child's name, word or sentence. On iPhone and iPad they only work once Daleth AAC was added to the
   Home Screen (Apple's rule). A board used without internet all morning looks "not opened" to the
   server: the parent may then get the reminder anyway. Not tried on real phones yet
   (`docs/runbooks/NOTIFICATIONS.md` says how to turn it on and check it).

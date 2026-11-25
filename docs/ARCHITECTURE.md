@@ -9,7 +9,7 @@ it to another team. Assessment items: 14.10, 14.13. For the "why" of each featur
 ```mermaid
 flowchart LR
   subgraph Devices["Families' and professionals' devices"]
-    App["Empower app<br/>iPhone, iPad, Android<br/>(Expo / React Native)"]
+    App["Daleth AAC app<br/>iPhone, iPad, Android<br/>(Expo / React Native)"]
     Web["Web version<br/>chosen testers only"]
     Local[("On the device<br/>board copy, follow-up not sent yet,<br/>photos and recordings,<br/>session in Keychain / Keystore")]
     OS["Device services<br/>voices, dictation"]
@@ -156,7 +156,7 @@ elsewhere). Never remove one of these by hand.
 | `src/ui/settings/` | Settings pages: Team, Account (privacy, deletion, devices) |
 | `src/ui/data/` | The Progress page (follow-up charts) |
 | `src/ui/pro/` | The professional workspace |
-| `src/ui/admin/` | The back office and "Help us improve Empower" |
+| `src/ui/admin/` | The back office and "Help us improve Daleth AAC" |
 | `src/state/` | Shared state: `Session.tsx` (who is signed in, which step), `AppState.tsx` (the board, overlays), `profileSync.ts` (device copy ↔ server, every 30 s with `profileVersion`; a refused save never stops receiving; what stays on each device: `src/lib/deviceOnly.ts`), `usageTracker.ts` (follow-up), `productCounters.ts` (counters for the team), `ownCode.ts` (a professional's own code) |
 | `src/lib/` | Logic without screens: grammar, search, voices, permissions, `profileDiff.ts` (changes, proposals, undo), `safety.ts` (cleaning what comes from others), `deviceData.ts`, `product.ts`, `notices.ts`, `childLock(.web).ts`… |
 | `src/backend/` | One contract (`Backend.ts`), two servers: `supabase.ts` (real) and `local.ts` (demo on the device); `index.ts` picks one |

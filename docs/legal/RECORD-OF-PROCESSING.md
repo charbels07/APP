@@ -8,10 +8,10 @@
 
 | | |
 |---|---|
-| Controller | Empower Hub, Beirut, Lebanon, `[registration number]` |
+| Controller | DALETH, Beirut, Lebanon, `[registration number]` |
 | Representative (if the company is outside the EU) | `[name]` |
 | Data protection officer | `[DPO]`, `[DPO e-mail]` |
-| Contact for requests | `empowerhub.me@gmail.com` |
+| Contact for requests | `daleth.contact@gmail.com` |
 | Last update | `[date]` (first draft: 18 November 2026, from the code; services, functions and retention checked again on 23 November 2026) |
 | Where the product is offered | The App Store and Google Play only. A web version is open today to chosen testers (sign-up open, no list of testers); it is not offered to families |
 
@@ -126,7 +126,7 @@ Processors used by several purposes (their agreements to sign or check):
 
 | | |
 |---|---|
-| Purpose | Answer people and improve the app ("Help us improve Empower") |
+| Purpose | Answer people and improve the app ("Help us improve Daleth AAC") |
 | People | Parents, professionals |
 | Data | Subject, text, app version, system, account; votes (one per account, with the account type) |
 | Recipients | The app's team |

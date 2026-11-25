@@ -144,7 +144,7 @@ When a family deletes an account or a child's profile, it must not come back wit
   decision of 23 November 2026), longer than the oldest off-site copy (90 days at most): the deletion
   list of the damaged project (or of the newest copy) covers every deletion made after any copy.
 - If the damaged project cannot be read at all: use the newest off-site copy's deletion list,
-  plus the deletion requests received by e-mail at `empowerhub.me@gmail.com` since that copy.
+  plus the deletion requests received by e-mail at `daleth.contact@gmail.com` since that copy.
 
 After the restore, in the SQL Editor of the restored project, with the IDs deleted **after the
 date of the copy**:

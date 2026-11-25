@@ -127,6 +127,6 @@ export function newTotpSecret(): string {
 }
 
 /** The link authenticator apps read from a QR code. */
-export function totpUri(secret: string, account: string, issuer = 'Empower Communication'): string {
+export function totpUri(secret: string, account: string, issuer = 'Daleth AAC'): string {
   return `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(account)}?secret=${secret}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`;
 }

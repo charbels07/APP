@@ -67,8 +67,8 @@ describe('caa-mail: the postman of the team', () => {
   it('sends each waiting message to the team’s address, through the app’s mailbox, and says so to the database', async () => {
     mockRpc.mockResolvedValueOnce({
       data: [
-        { id: 'm1', subject: 'Empower Communication: a professional is waiting for verification', body: 'A professional sent their documents.\n\n- Profession: Speech-language therapist' },
-        { id: 'm2', subject: 'Empower Communication: figures of the week (7 Nov - 13 Nov)', body: 'ACCOUNTS\n- Parents in total: 12' },
+        { id: 'm1', subject: 'Daleth AAC: a professional is waiting for verification', body: 'A professional sent their documents.\n\n- Profession: Speech-language therapist' },
+        { id: 'm2', subject: 'Daleth AAC: figures of the week (7 Nov - 13 Nov)', body: 'ACCOUNTS\n- Parents in total: 12' },
       ],
       error: null,
     });
@@ -81,7 +81,7 @@ describe('caa-mail: the postman of the team', () => {
     for (const [mail] of mockSendMail.mock.calls) {
       // Always the team's address: nothing in the call can choose another one.
       expect(mail.to).toBe('team@example.test');
-      expect(mail.from).toEqual({ name: 'Empower Communication', address: 'app@example.test' });
+      expect(mail.from).toEqual({ name: 'Daleth AAC', address: 'app@example.test' });
       expect(mail.text.length).toBeGreaterThan(10);
       expect(mail.html).toContain('<li');
     }

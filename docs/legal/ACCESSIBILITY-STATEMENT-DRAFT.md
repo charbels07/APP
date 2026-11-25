@@ -6,13 +6,13 @@
 > compliant" with confidence: the status below is a proposal. Publish in French, English and
 > Arabic.
 
-# Accessibility statement — Empower Communication
+# Accessibility statement — Daleth AAC
 
-Empower Hub wants Empower Communication to be usable by everyone: children who
+DALETH wants Daleth AAC to be usable by everyone: children who
 communicate with it, and the adults around them, including people who use a screen reader, a
 keyboard, a switch or a large text size.
 
-This statement covers the Empower Communication apps for iPhone, iPad and Android, version
+This statement covers the Daleth AAC apps for iPhone, iPad and Android, version
 `[version]`, and the pages `[website]/support/` and `[website]/delete-account/`.
 
 ## Status
@@ -63,9 +63,9 @@ EN 301 549.
 
 If something in the app is hard or impossible to use for you or your child:
 
-- in the app: Settings → Account → "Help us improve Empower" → "Report an accessibility
+- in the app: Settings → Account → "Help us improve Daleth AAC" → "Report an accessibility
   difficulty" (professionals: Account & licence);
-- by e-mail: `empowerhub.me@gmail.com`.
+- by e-mail: `daleth.contact@gmail.com`.
 
 We answer within `[number]` working days. If our answer does not satisfy you, you can contact
 `[the competent authority of your country — in France, the Défenseur des droits]`.

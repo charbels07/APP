@@ -1,5 +1,5 @@
 /**
- * One name and one version (gap review Q51): "Empower Communication" under the icon, on the web page and in
+ * One name and one version (gap review Q51): "Daleth AAC" under the icon, on the web page and in
  * the invitations; the version told to the server (app.json) is the one of package.json.
  */
 import fs from 'fs';
@@ -12,14 +12,14 @@ const read = (file: string) => JSON.parse(fs.readFileSync(path.join(ROOT, file),
 describe('the app’s name and version', () => {
   const expo = read('app.json').expo;
 
-  it('is "Empower Communication" everywhere, under the icon included', () => {
-    expect(expo.name).toBe('Empower Communication');
-    expect(expo.web.name).toBe('Empower Communication');
-    expect(expo.web.shortName).toBe('Empower Communication');
+  it('is "Daleth AAC" everywhere, under the icon included', () => {
+    expect(expo.name).toBe('Daleth AAC');
+    expect(expo.web.name).toBe('Daleth AAC');
+    expect(expo.web.shortName).toBe('Daleth AAC');
     const manifest = read('public/manifest.json');
-    expect(manifest.name).toBe('Empower Communication');
-    expect(manifest.short_name).toBe('Empower Communication');
-    expect(APP_NAME).toBe('Empower Communication');
+    expect(manifest.name).toBe('Daleth AAC');
+    expect(manifest.short_name).toBe('Daleth AAC');
+    expect(APP_NAME).toBe('Daleth AAC');
   });
 
   it('has one version number', () => {

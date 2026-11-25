@@ -195,7 +195,7 @@ select team_mail_weekly();
 select test.ok((select count(*) = 1 from team_mail where kind = 'weekly'), 'one weekly e-mail a week, even if the job runs twice');
 select test.ok((select body like '%ACCOUNTS%' and body like '%- Parents in total: 5%' and body like '%- Professionals in total: 3%' and body like '%- Waiting for your decision: 3 (oldest: 0 days)%'
                    and body not like '%Rita%' and body not like '%Child 1%' and body not like '%Sarah%' and body not like '%@%'
-                   and subject like 'Empower Communication: figures of the week (%' from team_mail where kind = 'weekly'),
+                   and subject like 'Daleth AAC: figures of the week (%' from team_mail where kind = 'weekly'),
   'the weekly e-mail holds counts only: no name, no address');
 
 -- 8. Tools for the owner of the project.

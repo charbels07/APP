@@ -3,8 +3,8 @@ import type { UiLang } from '../model/types';
 
 const fr = {
   askTitle: 'Activer les notifications ?',
-  askParent: 'Empower Communication peut vous envoyer un court rappel à 12 h les jours où le tableau n’a pas encore été ouvert, et vous prévenir quand une nouvelle idée est soumise au vote.',
-  askPro: 'Empower Communication peut vous prévenir quand une nouvelle idée est soumise au vote.',
+  askParent: 'Daleth AAC peut vous envoyer un court rappel à 12 h les jours où le tableau n’a pas encore été ouvert, et vous prévenir quand une nouvelle idée est soumise au vote.',
+  askPro: 'Daleth AAC peut vous prévenir quand une nouvelle idée est soumise au vote.',
   askNote: 'Jamais le nom ni les mots d’un enfant dans une notification. Vous pouvez les désactiver à tout moment dans les préférences de votre compte.',
   yes: 'Activer',
   later: 'Pas maintenant',
@@ -14,13 +14,13 @@ const fr = {
   device: 'Notifications sur cet appareil',
   reminder: 'Rappel à 12 h si le tableau n’a pas été ouvert',
   ideas: 'Nouvelles idées à voter',
-  homeScreen: 'Sur iPhone et iPad : ajoutez d’abord Empower Communication à l’écran d’accueil (Partager, puis « Sur l’écran d’accueil ») et ouvrez-le depuis là.',
+  homeScreen: 'Sur iPhone et iPad : ajoutez d’abord Daleth AAC à l’écran d’accueil (Partager, puis « Sur l’écran d’accueil ») et ouvrez-le depuis là.',
 };
 
 const en: typeof fr = {
   askTitle: 'Turn on notifications?',
-  askParent: 'Empower Communication can send you a short reminder at 12:00 on the days the board has not been opened yet, and tell you when a new idea is put to the vote.',
-  askPro: 'Empower Communication can tell you when a new idea is put to the vote.',
+  askParent: 'Daleth AAC can send you a short reminder at 12:00 on the days the board has not been opened yet, and tell you when a new idea is put to the vote.',
+  askPro: 'Daleth AAC can tell you when a new idea is put to the vote.',
   askNote: 'Never a child’s name or words in a notification. You can turn them off at any time in your account’s preferences.',
   yes: 'Turn on',
   later: 'Not now',
@@ -30,13 +30,13 @@ const en: typeof fr = {
   device: 'Notifications on this device',
   reminder: 'Reminder at 12:00 if the board was not opened',
   ideas: 'New ideas to vote on',
-  homeScreen: 'On iPhone and iPad: first add Empower Communication to the Home Screen (Share, then “Add to Home Screen”) and open it from there.',
+  homeScreen: 'On iPhone and iPad: first add Daleth AAC to the Home Screen (Share, then “Add to Home Screen”) and open it from there.',
 };
 
 const ar: typeof fr = {
   askTitle: 'تفعيل الإشعارات؟',
-  askParent: 'يستطيع Empower Communication أن يرسل لك تذكيرًا قصيرًا عند الساعة 12 في الأيام التي لم يُفتح فيها اللوح بعد، وأن يخبرك عند طرح فكرة جديدة للتصويت.',
-  askPro: 'يستطيع Empower Communication أن يخبرك عند طرح فكرة جديدة للتصويت.',
+  askParent: 'يستطيع Daleth AAC أن يرسل لك تذكيرًا قصيرًا عند الساعة 12 في الأيام التي لم يُفتح فيها اللوح بعد، وأن يخبرك عند طرح فكرة جديدة للتصويت.',
+  askPro: 'يستطيع Daleth AAC أن يخبرك عند طرح فكرة جديدة للتصويت.',
   askNote: 'لا يظهر اسم الطفل ولا كلماته في أي إشعار. يمكنك إيقافها في أي وقت من تفضيلات حسابك.',
   yes: 'تفعيل',
   later: 'ليس الآن',
@@ -46,7 +46,7 @@ const ar: typeof fr = {
   device: 'الإشعارات على هذا الجهاز',
   reminder: 'تذكير عند الساعة 12 إذا لم يُفتح اللوح',
   ideas: 'أفكار جديدة للتصويت',
-  homeScreen: 'على iPhone و iPad: أضف Empower Communication أولًا إلى الشاشة الرئيسية (مشاركة، ثم «إضافة إلى الشاشة الرئيسية») وافتحه من هناك.',
+  homeScreen: 'على iPhone و iPad: أضف Daleth AAC أولًا إلى الشاشة الرئيسية (مشاركة، ثم «إضافة إلى الشاشة الرئيسية») وافتحه من هناك.',
 };
 
 export type PushStrings = typeof fr;

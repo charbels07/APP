@@ -42,7 +42,7 @@ Run it again at any time: `npm run test:a11y` (about 10 minutes; needs Playwrigh
 | Empty cards, sentence chips and schedule steps had a name but no role. | The name was ignored | They are declared as buttons. |
 | The sentence strip was a button containing other buttons. | Confusing: a button inside a button | The strip is no longer a button for assistive tools (the Speak button does that job); touching it still speaks. |
 | Charts and figure tiles had a description attached to nothing. | The description was not read | Each is now one "image" with its description; column charts can also be shown as tables. |
-| The page always said it was in English, and was titled "CAA". | A French or Arabic page read with English pronunciation | The page now declares the language of the menus and is titled "Empower Communication". |
+| The page always said it was in English, and was titled "CAA". | A French or Arabic page read with English pronunciation | The page now declares the language of the menus and is titled "Daleth AAC". |
 | Words of the board were not tagged with their language. | English menus + Arabic words: Arabic read with an English voice | Each card and each sentence chip carries its language. |
 | Panels (search, guide, settings…) were not announced as dialogs. | No "dialog" announcement, no clear start | Panels are dialogs with their title as name; the page has a "navigation" and a "main" area. |
 

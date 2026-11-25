@@ -4,7 +4,7 @@
  *  - Professionals: look at what a professional sent, accept, ask for something more or refuse;
  *  - Administration: accounts, children's profiles, devices, teamwork (numbers only);
  *  - Product: how the features are used, to decide the next updates;
- *  - Requests: what people wrote ("Help us improve Empower") and the ideas they vote for;
+ *  - Requests: what people wrote ("Help us improve Daleth AAC") and the ideas they vote for;
  *  - Bugs: technical problems, counted by the app or written by people;
  *  - Content: what ships with the app (pictograms, words, languages, guide);
  *  - Security: what the families agreed to share, and the history of what the team did here.

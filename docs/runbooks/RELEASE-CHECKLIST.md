@@ -127,7 +127,7 @@ Never release to everyone on day one.
 
 | Store | How | What we watch |
 |---|---|---|
-| App Store | "Phased release for automatic updates": 7 days (1 %, 2 %, 5 %, 10 %, 20 %, 50 %, 100 %). It can be paused (up to 30 days in all) | Back office → Bugs (technical problems from families who agreed); messages in "Help us improve Empower"; store reviews; crash reports in App Store Connect |
+| App Store | "Phased release for automatic updates": 7 days (1 %, 2 %, 5 %, 10 %, 20 %, 50 %, 100 %). It can be paused (up to 30 days in all) | Back office → Bugs (technical problems from families who agreed); messages in "Help us improve Daleth AAC"; store reviews; crash reports in App Store Connect |
 | Google Play | Staged rollout: 5 %, then 20 %, then 50 %, then 100 %, at least one day each | The same, plus Android vitals in Play Console |
 
 Go to the next step only if no critical or high bug appeared.

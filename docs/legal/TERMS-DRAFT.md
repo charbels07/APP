@@ -5,13 +5,13 @@
 > version must exist in French, English and Arabic. Store terms (Apple, Google) also apply to
 > purchases; these terms must not contradict them.
 
-# Terms of use — Empower Communication
+# Terms of use — Daleth AAC
 
-Version `[number]`, `[date]`. Published by Empower Hub, Beirut, Lebanon ("we").
+Version `[number]`, `[date]`. Published by DALETH, Beirut, Lebanon ("we").
 
 ## 1. What the app is
 
-Empower Communication is an augmentative and alternative communication (AAC) app: a board of
+Daleth AAC is an augmentative and alternative communication (AAC) app: a board of
 pictures and words that speaks for a child who cannot rely on speech. It works on iPhone, iPad
 and Android, in French, English and Arabic, and is sold in the App Store and Google Play only. A
 web version is open today to chosen testers; it is not offered to families. *(Reviewer: whether
@@ -124,4 +124,4 @@ countries outside the EU.]`
 
 ## 14. Contact
 
-Empower Hub, Beirut, Lebanon — `empowerhub.me@gmail.com` (support and questions about your data).
+DALETH, Beirut, Lebanon — `daleth.contact@gmail.com` (support and questions about your data).

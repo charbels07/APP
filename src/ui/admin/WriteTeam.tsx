@@ -1,6 +1,6 @@
 /**
- * "Help us improve Empower": on the account page of a parent and of a professional.
- * One question ("what would make Empower more useful for you?"), seven answers:
+ * "Help us improve Daleth AAC": on the account page of a parent and of a professional.
+ * One question ("what would make Daleth AAC more useful for you?"), seven answers:
  *  - six subjects to write about (a new feature, missing vocabulary, a pictogram, a language or
  *    dialect, an accessibility difficulty, a technical problem): a message for the app's team;
  *  - or voting for the ideas the team is thinking about.

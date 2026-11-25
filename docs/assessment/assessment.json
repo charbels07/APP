@@ -1,14 +1,14 @@
 {
  "meta": {
-  "pdf_title": "Empower Communication – Assessment",
+  "pdf_title": "Daleth AAC – Assessment",
   "pdf_subject": "Technical, financial, legal and operational assessment",
   "pdf_author": "Prepared with Claude Code from the application repository",
-  "footer": "Empower Communication · Technical, financial, legal and operational assessment",
+  "footer": "Daleth AAC · Technical, financial, legal and operational assessment",
   "updated": "18 November 2026",
   "contents_title": "Contents"
  },
  "cover": {
-  "title": "Empower Communication",
+  "title": "Daleth AAC",
   "subtitle": "Technical, financial, legal and operational assessment",
   "intro": "Answers to the 22-part questionnaire (about 300 questions), and a launch plan of everything still to do. For each question: the answer, an estimated cost, the supporting source, the person responsible and the deadline. Where a question cannot be answered from the application, the entry explains how to think about it and whom to ask.",
   "facts": [
@@ -3451,7 +3451,7 @@
        "label": "decision",
        "answer": [
         {
-         "p": "Yes, after a clearance search: \"Empower\" is a common word in trademarks, so conflicts in software, education and health classes (9, 41, 42, 44) are possible. Note that the app's configuration still names it \"CAA\": settle the final brand before the store launch."
+         "p": "Yes, after a clearance search for \"DALETH\" and \"Daleth AAC\" in software, education and health classes (9, 41, 42, 44), now that the company and the app were renamed (November 2026)."
         }
        ],
        "cost": "Search €500–€1,500",
@@ -4618,7 +4618,7 @@
        "label": "estimate",
        "answer": [
         {
-         "p": "A shared help-desk inbox (free tiers, then €15–50 per agent a month), a public help centre (reusing the guide), the in-app \"Help us improve Empower\" form (exists, read in the back office), a status page (free tiers), reply templates in French, English and Arabic, an incident register."
+         "p": "A shared help-desk inbox (free tiers, then €15–50 per agent a month), a public help centre (reusing the guide), the in-app \"Help us improve Daleth AAC\" form (exists, read in the back office), a status page (free tiers), reply templates in French, English and Arabic, an incident register."
         }
        ],
        "cost": "€0–€150 / month",
@@ -4733,7 +4733,7 @@
        "label": "app",
        "answer": [
         {
-         "p": "In the app: \"Help us improve Empower\" (six subjects, including problems and ideas) and votes on ideas written by the team (one vote per account). Automatically: technical problems counted from consenting families. And e-mail."
+         "p": "In the app: \"Help us improve Daleth AAC\" (six subjects, including problems and ideas) and votes on ideas written by the team (one vote per account). Automatically: technical problems counted from consenting families. And e-mail."
         }
        ],
        "cost": "–",
@@ -6107,7 +6107,7 @@
       "style": "note",
       "blocks": [
        {
-        "small": "<b>For the new feature:</b> the new e-mail text is pasted in Supabase (Emails → Templates → Reset password), checked line by line against the project's file on 18 November. Two small steps remain: change the subject, which still says only \"Nouveau mot de passe · New password\" (for example \"Votre code Empower · Your Empower code\"), and make sure the page is saved; then send yourself a code with \"Forgot the code?\" to see the real e-mail."
+        "small": "<b>For the new feature:</b> the new e-mail text is pasted in Supabase (Emails → Templates → Reset password), checked line by line against the project's file on 18 November. Two small steps remain: change the subject, which still says only \"Nouveau mot de passe · New password\" (for example \"Votre code Daleth AAC · Your Daleth AAC code\"), and make sure the page is saved; then send yourself a code with \"Forgot the code?\" to see the real e-mail."
        }
       ]
      }

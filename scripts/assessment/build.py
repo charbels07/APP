@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the assessment PDF from its source.
 
-    python3 scripts/assessment/build.py            # docs/assessment/assessment.json -> docs/assessment/Empower-Communication-Assessment.pdf
+    python3 scripts/assessment/build.py            # docs/assessment/assessment.json -> docs/assessment/Daleth-AAC-Assessment.pdf
     python3 scripts/assessment/build.py --format   # rewrite the source in its standard layout (clean diffs)
 
 The source holds every word of the document; this script only lays it out (A4, Carlito, the navy /
@@ -43,7 +43,7 @@ from reportlab.platypus.tableofcontents import TableOfContents
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 DEFAULT_SOURCE = os.path.join(ROOT, 'docs', 'assessment', 'assessment.json')
-DEFAULT_OUT = os.path.join(ROOT, 'docs', 'assessment', 'Empower-Communication-Assessment.pdf')
+DEFAULT_OUT = os.path.join(ROOT, 'docs', 'assessment', 'Daleth-AAC-Assessment.pdf')
 
 # ---------------------------------------------------------------- colours
 TEXT = colors.HexColor('#222831')

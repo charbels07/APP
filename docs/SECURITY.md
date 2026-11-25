@@ -1,4 +1,4 @@
-# Security of Empower Communication
+# Security of Daleth AAC
 
 Written in plain words, for someone who is not a security specialist. It says what the app
 protects, what was checked in November 2026, what was fixed, **what only you can do in the

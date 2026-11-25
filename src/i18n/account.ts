@@ -2,7 +2,7 @@
 import type { UiLang } from '../model/types';
 
 /** Shown on the welcome screen and in messages. Change it here when the app gets its name. */
-export const APP_NAME = 'Empower Communication';
+export const APP_NAME = 'Daleth AAC';
 
 const fr = {
   welcomeTitle: 'Le pouvoir de communiquer',
@@ -143,7 +143,7 @@ const fr = {
 type Dict = typeof fr;
 
 const en: Dict = {
-  welcomeTitle: 'Empower Communication',
+  welcomeTitle: 'Daleth AAC',
   welcomeLine: 'Every voice matters, and every word opens a world of communication, connection and possibilities.',
   welcomePoints: [
     'Words always in the same place, so they are learnt fast.',

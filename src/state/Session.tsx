@@ -421,7 +421,7 @@ export function SessionProvider({ children, api = backend() }: { children: React
   useEffect(() => {
     if (typeof document === 'undefined') return;
     document.documentElement.lang = uiLang;
-    document.title = 'Empower Communication';
+    document.title = 'Daleth AAC';
   }, [uiLang]);
   const setUiLang = useCallback(
     (l: UiLang) => {

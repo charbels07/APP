@@ -246,10 +246,15 @@
   nothing on screen, in the guide or in the set-up help mentions AI, and Settings has no AI switch (a family's
   earlier "off", `settings.aiSuggestions === false`, is still respected, by "Draw" too). Before turning it on:
   a ceiling in SQL, the consent text and the documents saying what is sent, the families asked again.
-- The app's name is "Empower Communication" everywhere (Q51): `app.json` name, the web manifest (under the icon
+- The app's name is "Daleth AAC" everywhere (Q51; renamed from "Empower Communication" on 25 November 2026, company
+  "DALETH", formerly "Empower Hub"): `app.json` name, the web manifest (under the icon
   too), `APP_NAME`, the texts, the noon reminder's title (`push_words`). One version number: `app.json` =
   `package.json` (`appIdentity.test.ts`). `ios.bundleIdentifier`, `android.package` and `eas.json` are the
-  owner's to choose. Support e-mail `empowerhub.me@gmail.com`, company "Empower Hub", Beirut, Lebanon.
+  owner's to choose. Support e-mail `daleth.contact@gmail.com`, company "DALETH", Beirut, Lebanon. Kept on purpose
+  (technical names, renaming them breaks something): the Cloudflare project `empower-communication` (`wrangler.jsonc`,
+  must match the dashboard), the app's `scheme` `empowercommunication` and `slug` (Supabase redirect URLs), the
+  export formats `empower-board` / `empower-communication/export-1` (older files must still import), the backup names
+  `empower-db-*` / `empower-backups`.
 - Activity boards (TLA) order their topic words like the child's main board (`src/lib/boardOrder.ts`:
   `mainBoardOrder`, `tlaLayout`, `arrangeTla`). Automatic when a board is created; on a board already made
   it is only done on request ("Arrange like the main board" in the board's menu): never re-order a board
@@ -343,7 +348,7 @@
   Professionals, Administration, Product, Requests, Bugs, Content, Security. A new figure goes to the page
   it belongs to, with a one-line intro kept short. The demo server answers with invented figures
   (`src/lib/demoBackOffice.ts`, flagged `example`). Content is counted from the app's own data files.
-- "Help us improve Empower Communication" (`src/ui/admin/WriteTeam.tsx`): six subjects (`FeedbackKind`) plus votes
+- "Help us improve Daleth AAC" (`src/ui/admin/WriteTeam.tsx`): six subjects (`FeedbackKind`) plus votes
   (`roadmap`, one vote per account, ideas written by the team in three languages). It is a message sent on
   purpose: it never depends on the sharing switch. Keep the "no personal or medical information" reminder.
 - Services and keys: `docs/API-KEYS.md` (keep it up to date when a feature starts needing one).

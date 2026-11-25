@@ -11,11 +11,11 @@ import { preset } from '../lib/permissions';
 describe('the invitation e-mail', () => {
   it('opens the mail app with the address, the subject and the whole message', () => {
     const x = settingsStrings('en');
-    const body = x.inviteMessage('Rita', 'Adam', 'MEW22JD5', 'Empower Communication', 'https://app.example');
-    const link = inviteMailLink('sarah@clinic.fr', x.inviteSubject('Adam', 'Empower Communication'), body);
+    const body = x.inviteMessage('Rita', 'Adam', 'MEW22JD5', 'Daleth AAC', 'https://app.example');
+    const link = inviteMailLink('sarah@clinic.fr', x.inviteSubject('Adam', 'Daleth AAC'), body);
     expect(link.startsWith('mailto:sarah@clinic.fr?subject=')).toBe(true);
     const read = decodeURIComponent(link);
-    expect(read).toContain('Rita invites you to join Adam’s team in the Empower Communication app.');
+    expect(read).toContain('Rita invites you to join Adam’s team in the Daleth AAC app.');
     expect(read).toContain('https://app.example');
     expect(read).toContain('MEW22JD5');
     // line breaks survive (written as %0A in the link)
@@ -28,8 +28,8 @@ describe('the invitation e-mail', () => {
   });
   it('asks which mail service to use: each one opens a new message already written', () => {
     const x = settingsStrings('en');
-    const body = x.inviteMessage('Rita', 'Adam', 'MEW22JD5', 'Empower Communication', 'https://app.example');
-    const subject = x.inviteSubject('Adam', 'Empower Communication');
+    const body = x.inviteMessage('Rita', 'Adam', 'MEW22JD5', 'Daleth AAC', 'https://app.example');
+    const subject = x.inviteSubject('Adam', 'Daleth AAC');
     expect(MAIL_SERVICES).toEqual(['gmail', 'outlook', 'yahoo', 'device']);
     const starts: Record<string, string> = {
       gmail: 'https://mail.google.com/mail/?view=cm&fs=1&to=sarah%40clinic.fr&su=',
@@ -71,7 +71,7 @@ describe('the invitation e-mail', () => {
   it('the message exists in the three languages, with the code and where to type it', () => {
     for (const lang of ['fr', 'en', 'ar'] as const) {
       const x = settingsStrings(lang);
-      const msg = x.inviteMessage('Rita', 'Adam', 'MEW22JD5', 'Empower Communication', '');
+      const msg = x.inviteMessage('Rita', 'Adam', 'MEW22JD5', 'Daleth AAC', '');
       expect(msg).toContain('MEW22JD5');
       expect(msg).toContain('Rita');
       expect(msg).not.toContain('undefined');

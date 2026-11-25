@@ -71,6 +71,6 @@ The nightly job `retention_daily` runs at 03:25 UTC; the bin is emptied at 03:10
 | Notifications outside the app (web version, if turned on) | The browser's notification service (Google FCM, Mozilla, Apple, Microsoft) | Carried encrypted until delivered, at most the message's lifetime (3 hours for the reminder, 2 days for a new idea); their own policies |
 | Dictation audio | Apple or Google, when not on the device | Their own policies |
 | E-mails to the team | The team's mailbox (Gmail) | `[to decide]` |
-| Requests received by e-mail | `empowerhub.me@gmail.com` | `[to decide]` |
+| Requests received by e-mail | `daleth.contact@gmail.com` | `[to decide]` |
 
 Review this schedule with the DPIA, once a year and at every release that adds a kind of data.

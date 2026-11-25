@@ -5,11 +5,11 @@
 > PIA method: 1. context, 2. fundamental principles, 3. risks, 4. validation. The measures listed
 > are those found in the code on 18 November 2026; the levels of risk are proposals for the DPO.
 
-# Impact assessment (DPIA) — Empower Communication
+# Impact assessment (DPIA) — Daleth AAC
 
 | | |
 |---|---|
-| Controller | Empower Hub |
+| Controller | DALETH |
 | DPO | `[DPO]` |
 | Written by | `[name]`, from the code and `docs/SECURITY.md` |
 | Version, date | 0.1, 18 November 2026 |
@@ -24,7 +24,7 @@
 | The processing | An AAC app (iPhone, iPad, Android), sold in the App Store and Google Play only, that gives a voice to children who cannot rely on speech. A web version of the same code is open today to chosen testers (sign-up open, no list of testers), not offered to families. Families build the child's board; professionals join the child's team with the family's agreement; an optional follow-up shows how the child communicates |
 | Purposes | See `RECORD-OF-PROCESSING.md` (17 purposes; the AI helper's is switched off) |
 | Stakes for the people | For the child: communicating at all. For the family: privacy of a disability, of family life, of what the child says |
-| Controller, processors | Empower Hub; Supabase (server, EU, with the server functions `caa-mail`, `caa-purge`, `caa-push`), Google (Gmail), Cloudflare (public pages, the testers' web version), `[off-site storage]`; the browsers' notification services (Google FCM, Mozilla, Apple, Microsoft) carry encrypted notifications of the web version. Anthropic is not used: the AI helper is switched off and `caa-ai` is not deployed |
+| Controller, processors | DALETH; Supabase (server, EU, with the server functions `caa-mail`, `caa-purge`, `caa-push`), Google (Gmail), Cloudflare (public pages, the testers' web version), `[off-site storage]`; the browsers' notification services (Google FCM, Mozilla, Apple, Microsoft) carry encrypted notifications of the web version. Anthropic is not used: the AI helper is switched off and `caa-ai` is not deployed |
 | Standards followed | GDPR; CNIL recommendations on children's rights online; WCAG 2.2 AA (`docs/ACCESSIBILITY.md`) |
 
 ### 1.2 Data, processes and supports

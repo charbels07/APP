@@ -40,7 +40,7 @@ const fr = {
   failed: 'Cela n’a pas marché. Vérifiez la connexion internet et réessayez.',
   // At sign-in
   codeTitle: 'Code de connexion',
-  codeIntro: 'La connexion en deux étapes est activée pour ce compte. Ouvrez votre application d’authentification et tapez le code à 6 chiffres d’Empower Communication.',
+  codeIntro: 'La connexion en deux étapes est activée pour ce compte. Ouvrez votre application d’authentification et tapez le code à 6 chiffres d’Daleth AAC.',
   codeGo: 'Continuer',
   signOut: 'Se déconnecter',
   // Back office
@@ -106,7 +106,7 @@ const en: Dict = {
   demoNow: 'Demonstration: the code now is',
   failed: 'It did not work. Check the internet connection and try again.',
   codeTitle: 'Sign-in code',
-  codeIntro: 'Two-step sign-in is on for this account. Open your authenticator app and type the 6-digit code for Empower Communication.',
+  codeIntro: 'Two-step sign-in is on for this account. Open your authenticator app and type the 6-digit code for Daleth AAC.',
   codeGo: 'Continue',
   signOut: 'Sign out',
   boRequired: 'The back office holds the professionals’ certificates: it only opens with two-step sign-in. Turn it on below.',
@@ -168,7 +168,7 @@ const ar: Dict = {
   demoNow: 'عرض تجريبي: الرمز الآن هو',
   failed: 'لم ينجح ذلك. تحقّق من الاتصال بالإنترنت وحاول مجددًا.',
   codeTitle: 'رمز تسجيل الدخول',
-  codeIntro: 'تسجيل الدخول بخطوتين مفعّل لهذا الحساب. افتح تطبيق المصادقة واكتب الرمز المكوّن من 6 أرقام الخاص بـ Empower Communication.',
+  codeIntro: 'تسجيل الدخول بخطوتين مفعّل لهذا الحساب. افتح تطبيق المصادقة واكتب الرمز المكوّن من 6 أرقام الخاص بـ Daleth AAC.',
   codeGo: 'متابعة',
   signOut: 'تسجيل الخروج',
   boRequired: 'تحتوي لوحة الإدارة على شهادات المختصين: لا تُفتح إلا بتسجيل الدخول بخطوتين. فعّله أدناه.',

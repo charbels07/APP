@@ -35,7 +35,7 @@ export function DownloadMyData() {
           try {
             await proof.run(async () => {
               const data = await api.exportMyData();
-              await exportJson(`empower-data-${new Date().toISOString().slice(0, 10)}.json`, data);
+              await exportJson(`daleth-data-${new Date().toISOString().slice(0, 10)}.json`, data);
               setMsg({ ok: true, text: t.downloaded });
             });
           } catch (e) {

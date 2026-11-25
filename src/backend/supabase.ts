@@ -705,7 +705,7 @@ export class SupabaseBackend implements Backend {
     for (const old of f?.all ?? []) {
       if (old.status !== 'verified') await this.sb.auth.mfa.unenroll({ factorId: old.id }).catch(() => {});
     }
-    const { data: d, error } = await this.sb.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Empower Communication', issuer: 'Empower Communication' });
+    const { data: d, error } = await this.sb.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Daleth AAC', issuer: 'Daleth AAC' });
     if (error || !d) fail(error);
     return { factorId: d.id, secret: d.totp.secret, uri: d.totp.uri, qrSvg: svgOfDataUrl(d.totp.qr_code) };
   }

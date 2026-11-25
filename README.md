@@ -1,4 +1,4 @@
-# Empower Communication — Augmentative & Alternative Communication (AAC) app
+# Daleth AAC — Augmentative & Alternative Communication (AAC) app
 
 Tablet-first AAC app for French, English and Arabic (three languages for the words and for the
 menus; the family chooses the Arabic: Lebanese, Syrian, Jordanian / Palestinian, Egyptian, Saudi,

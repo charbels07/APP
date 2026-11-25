@@ -27,7 +27,7 @@
 import nodemailer from 'npm:nodemailer@6.9.16';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const SENDER_NAME = 'Empower Communication';
+const SENDER_NAME = 'Daleth AAC';
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 

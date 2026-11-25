@@ -582,13 +582,13 @@ published. Until it has run, the noon reminder is titled "Empower" (nothing else
   (`dictationProblem` in `src/lib/dictation.ts`: microphone not allowed, not possible here, nothing heard, no
   internet, other; a stop by the person says nothing), never "the online demo". In a browser the line saying
   that the browser's service (Google's, Apple's…) hears the sentence is shown while listening (`dictateOnlineWeb`).
-- [x] **Support and delete-account pages** (three languages): `empowerhub.me@gmail.com` (for data questions too),
-  "Empower Hub · Beirut, Lebanon"; privacy e-mail and "[number] working days" taken out; no bracket left. The
+- [x] **Support and delete-account pages** (three languages): `daleth.contact@gmail.com` (for data questions too),
+  "DALETH · Beirut, Lebanon"; privacy e-mail and "[number] working days" taken out; no bracket left. The
   deletion steps quote the real buttons (bin 30 days, hand-over or erase per child, `profiles_left`, the proof);
   backups "90 days at most, no photos or recordings" (`scripts/backup-offsite.sh` refuses more; the 7 / 60 days
   were not certain and are gone). What stays after deletion is said (observations written on another family's
   profile under the author's name, team notices 12 months, a professional's verification log 5 years).
-- [x] **Name and version (Q51).** "Empower Communication" in `app.json` (name, slug `empower-communication`,
+- [x] **Name and version (Q51).** "Daleth AAC" in `app.json` (name, slug `empower-communication`,
   `web.name` / `shortName`: the page title and under the icon), the web manifest, `APP_NAME` (invitations, the
   professional workspace), every text that said "Empower", the service worker's fallback title and the noon
   reminder (migration above). One version: `package.json` follows `app.json`, 0.1.0 (the one the app shows and

@@ -5,21 +5,21 @@
 > removed before publication. The published version must exist in French, English and Arabic,
 > at a public address given to the App Store and Google Play.
 
-# Privacy policy — Empower Communication
+# Privacy policy — Daleth AAC
 
 Version `[number]`, `[date]`.
 
 ## 1. Who we are
 
-Empower Communication is an app that helps children who cannot rely on speech to communicate
+Daleth AAC is an app that helps children who cannot rely on speech to communicate
 with pictures and a voice (augmentative and alternative communication, "AAC"). It is published by
-Empower Hub, `[legal form]`, Beirut, Lebanon, `[registration number]` ("we").
+DALETH, `[legal form]`, Beirut, Lebanon, `[registration number]` ("we").
 
 The app is sold in the App Store and Google Play only. A web version of the app is open today to
 chosen testers; it is not offered to families. *Reviewer: say whether the testers' web version
 needs its own mention (its sign-up is open: there is no list of testers).*
 
-- Questions about your data and requests: `empowerhub.me@gmail.com`
+- Questions about your data and requests: `daleth.contact@gmail.com`
 - Our data protection officer: `[DPO]`, `[DPO e-mail]`
 
 We are the **controller** of the data described here: we decide why and how it is used.
@@ -60,7 +60,7 @@ For children's data that can reveal a disability, see section 6.*
 | **Observations**: notes written by adults about communication moments (context, partner, autonomy, result) | To follow the child's progress with the team | Explicit consent of the parent *(to confirm)* |
 | **Linked devices**: name, kind, system, last sync; tablets linked with a code have an account without e-mail | To show you which devices have access, and to remove one | Contract |
 | **Professionals' verification**: full name, country, profession, organisation, diploma or licence, identity document | To check that a professional is who they say before they can join a child's team | Legitimate interest (protecting children) *(to confirm)* |
-| **Messages to our team** ("Help us improve Empower"): the subject, your text, the app version and system; votes for ideas | To answer you and improve the app | Legitimate interest |
+| **Messages to our team** ("Help us improve Daleth AAC"): the subject, your text, the app version and system; votes for ideas | To answer you and improve the app | Legitimate interest |
 | **Feature counters and technical problems**, only if you agree to "Help improve the app": how many times each feature is used (from a fixed list, never which words), technical problems (which screen, which version; not linked to anyone) | To decide the next updates and fix problems | Consent of the parent |
 | **Anonymous figures** for our team (numbers from the follow-up and settings), only if you agree to "Help improve the app" | To improve the app | Consent of the parent |
 | **Your agreement** when you create a child's profile (date and version of the text) | To prove the agreement | Legal obligation |
@@ -179,12 +179,12 @@ The full schedule is in `[link to the retention schedule]`.
 
 | Right | In the app | Or |
 |---|---|---|
-| **See and get a copy** of your data | "Download all my data": one file with your account, your children's profiles, teams, invitations, proposals, history, devices, follow-up, observations, messages, votes and agreements *(place on screen: Settings → Account → Privacy and data — to check once merged)*. "Export the profile (file)" and the board's open format (.obz) for the board itself | `empowerhub.me@gmail.com` |
-| **Correct** | Settings → Account → My account (name, e-mail, password); the board in caregiver mode | `empowerhub.me@gmail.com` |
-| **Delete** | Settings → Account → Privacy and data → "Delete my account", or "Delete the profile of …" for one child (30 days in the bin first). Professionals: Account & licence → "Delete my account" | `empowerhub.me@gmail.com`, or `[website]/delete-account/` |
-| **Withdraw your agreement** | Progress → choose "Do not record any data", and "Erase the recorded data"; turn off "Help improve the app" (what was counted for the child is erased at once); turn off notifications in your account's preferences | `empowerhub.me@gmail.com` |
-| **Object / restrict** | The same switches | `empowerhub.me@gmail.com` |
-| **Portability** | "Download all my data" (JSON) and the .obz export | `empowerhub.me@gmail.com` |
+| **See and get a copy** of your data | "Download all my data": one file with your account, your children's profiles, teams, invitations, proposals, history, devices, follow-up, observations, messages, votes and agreements *(place on screen: Settings → Account → Privacy and data — to check once merged)*. "Export the profile (file)" and the board's open format (.obz) for the board itself | `daleth.contact@gmail.com` |
+| **Correct** | Settings → Account → My account (name, e-mail, password); the board in caregiver mode | `daleth.contact@gmail.com` |
+| **Delete** | Settings → Account → Privacy and data → "Delete my account", or "Delete the profile of …" for one child (30 days in the bin first). Professionals: Account & licence → "Delete my account" | `daleth.contact@gmail.com`, or `[website]/delete-account/` |
+| **Withdraw your agreement** | Progress → choose "Do not record any data", and "Erase the recorded data"; turn off "Help improve the app" (what was counted for the child is erased at once); turn off notifications in your account's preferences | `daleth.contact@gmail.com` |
+| **Object / restrict** | The same switches | `daleth.contact@gmail.com` |
+| **Portability** | "Download all my data" (JSON) and the .obz export | `daleth.contact@gmail.com` |
 
 We answer within one month. We may ask you to prove that the account is yours. You can also
 complain to the CNIL (cnil.fr) or to the data protection authority of your country.
@@ -196,7 +196,7 @@ grows, nothing new is sent until you agree again.
 
 ## 14. Contact
 
-Empower Hub, Beirut, Lebanon — `empowerhub.me@gmail.com` — DPO: `[DPO]`.
+DALETH, Beirut, Lebanon — `daleth.contact@gmail.com` — DPO: `[DPO]`.
 
 *Reviewer: also check the store forms (App Store "App Privacy", Google Play "Data safety")
 against this text and `docs/legal/RECORD-OF-PROCESSING.md`.*

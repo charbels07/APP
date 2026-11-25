@@ -158,7 +158,7 @@ push then rebuilds and republishes the web version by itself.
 
 | Field in Cloudflare | Value |
 |---|---|
-| Project name | `empower-communication` (the same as `name` in `wrangler.jsonc`) |
+| Project name | `daleth-aac` (renamed 25 November 2026; the same as `name` in `wrangler.jsonc`) |
 | Build command | `npm run build:web` |
 | Deploy command | `npx wrangler deploy` (the default) |
 | Build variables | `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` (the project's address and its *publishable* key: both are public, they ship inside every copy of the app) |

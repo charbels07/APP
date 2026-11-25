@@ -23,7 +23,7 @@ self.addEventListener('push', function (event) {
   event.waitUntil(
     self.registration.showNotification(text(d.title, 120) || 'Daleth AAC', {
       body: text(d.body, 300),
-      tag: text(d.tag, 40) || 'empower',
+      tag: text(d.tag, 40) || 'daleth',
       icon: '/icon-192.png',
       badge: '/icon-192.png',
       dir: 'auto',

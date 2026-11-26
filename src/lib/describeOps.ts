@@ -133,6 +133,7 @@ const SETTING_NAMES: Record<string, Record<UiLang, string>> = {
   dwell: { fr: 'choix en gardant le pointeur dessus', en: 'choosing by resting the pointer', ar: 'الاختيار بإبقاء المؤشر' },
   touchPoint: { fr: 'toucher qui compte', en: 'touch that counts', ar: 'اللمسة التي تُحتسب' },
   bigTouch: { fr: 'zone de toucher agrandie', en: 'bigger touch area', ar: 'منطقة لمس أكبر' },
+  bigOnHold: { fr: 'mot en grand sur appui long', en: 'word shown big on a long press', ar: 'الكلمة بحجم كبير عند الضغط المطوّل' },
   wiggle: { fr: 'pictos qui bougent', en: 'moving pictures', ar: 'الصور المتحركة' },
   reduceMotion: { fr: 'moins d’animations', en: 'fewer animations', ar: 'حركة أقل' },
   quickZone: { fr: 'zone rapide', en: 'quick zone', ar: 'المنطقة السريعة' },

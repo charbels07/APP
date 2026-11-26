@@ -19,6 +19,7 @@ const fr = {
   touchPoint: 'Toucher qui compte',
   touchPoints: { lift: 'Où le doigt se lève', land: 'Où il se pose d’abord' },
   bigTouch: 'Zone de toucher agrandie',
+  bigOnHold: 'Appui long sur un mot : le montrer en grand',
   // On the board
   next: 'Avancer',
   choose: 'Choisir',
@@ -46,6 +47,7 @@ const en: Dict = {
   touchPoint: 'Touch that counts',
   touchPoints: { lift: 'Where the finger lifts', land: 'Where it first lands' },
   bigTouch: 'Bigger touch area',
+  bigOnHold: 'Long press on a word: show it big',
   next: 'Next',
   choose: 'Choose',
   waiting: 'Scanning paused: press the switch',
@@ -70,6 +72,7 @@ const ar: Dict = {
   touchPoint: 'اللمسة التي تُحتسب',
   touchPoints: { lift: 'حيث يُرفع الإصبع', land: 'حيث يلمس أولاً' },
   bigTouch: 'منطقة لمس أكبر',
+  bigOnHold: 'الضغط المطوّل على كلمة: إظهارها بحجم كبير',
   next: 'التالي',
   choose: 'اختيار',
   waiting: 'المسح متوقف مؤقتاً: اضغط على المفتاح',

@@ -93,7 +93,7 @@ describe('in-app guide', () => {
         backupStrings(lang).binTitle, backupStrings(lang).putBack, backupStrings(lang).versions, backupStrings(lang).keepNow, backupStrings(lang).wordBin,
         consentText[lang].title, st.exportObz,
         // choosing without pointing: switches, resting the pointer, a hand that shakes
-        accessStrings(lang).scan, accessStrings(lang).dwell, accessStrings(lang).touchPoint, accessStrings(lang).bigTouch, accessStrings(lang).scanScreen, accessStrings(lang).restart, accessStrings(lang).scanSpeak,
+        accessStrings(lang).scan, accessStrings(lang).dwell, accessStrings(lang).touchPoint, accessStrings(lang).bigTouch, accessStrings(lang).bigOnHold, accessStrings(lang).scanScreen, accessStrings(lang).restart, accessStrings(lang).scanSpeak,
       ];
       for (const label of quoted) expect(text(lang)).toContain(label);
       // Removed things are no longer described.

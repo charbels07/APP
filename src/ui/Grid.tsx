@@ -277,10 +277,13 @@ export function Grid({ board }: { board: Board }) {
         containerRef.current?.measureInWindow((x: number) => (containerX.current = x));
         return;
       }
-      // Use mode: a long press on a folder shows its most requested words without opening it;
-      // on a word it simply says it (a slow touch still counts).
+      // Use mode: a long press on a folder shows its most requested words without opening it; on a
+      // word it says it and shows it big over the board (Settings → Touch; off: a slow touch counts).
       if (cell?.folder && a.profile.boards[cell.folder] && !a.playing && !a.recording) a.setOverlay({ kind: 'peek', folder: cell.folder });
-      else onCellPress(index);
+      else if (cell && !cell.folder && a.profile.settings.bigOnHold !== false && !a.playing && !a.recording) {
+        a.speakConcept(cell.concept);
+        a.setOverlay({ kind: 'bigWord', concept: cell.concept });
+      } else onCellPress(index);
     },
     [board.id, onCellPress, dragXY],
   );

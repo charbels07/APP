@@ -41,6 +41,14 @@ describe('in-app guide', () => {
     }
   });
 
+  it('explains the long press on a word: on from the start, how to turn it off, when it does not apply', () => {
+    const step = (lang: 'fr' | 'en' | 'ar') => GUIDE.find((c) => c.id === 'sentence')!.steps[lang].join(' ');
+    for (const lang of ['fr', 'en', 'ar'] as const) {
+      const a = onboardingStrings(lang).access;
+      for (const label of [accessStrings(lang).bigOnHold, strings(lang).save, a.press, a.hold]) expect(step(lang)).toContain(label);
+    }
+  });
+
   it('quotes the buttons with their real names', () => {
     const text = (lang: 'fr' | 'en' | 'ar') => GUIDE.flatMap((c) => c.steps[lang]).join(' ');
     for (const lang of ['fr', 'en', 'ar'] as const) {

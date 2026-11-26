@@ -17,9 +17,10 @@ import { sessionStore } from '../lib/keepSignedIn';
 import type { Profile, UiLang } from '../model/types';
 import { isSyncable } from '../lib/mediaPlan';
 import type { ProblemItem } from '../lib/product';
+import type { BillingStatus, MyBilling } from '../lib/billing';
 import type { Op } from '../lib/profileDiff';
 import type { AccessLevel, CollaboratorRole, PermissionSet } from '../lib/permissions';
-import { BackendError, type AdminRetention, type Backend, type BinEntry, type CodeSent, type SecurityState, type SignInMethods, type SignUpInput, type Snapshot, type TwoStepSetup } from './Backend';
+import { BackendError, type AdminRetention, type Backend, type BinEntry, type BoardBilling, type CodeSent, type SecurityState, type SignInMethods, type SignUpInput, type Snapshot, type TwoStepSetup } from './Backend';
 import { normEmail, normPhone } from './local';
 import {
   DEFAULT_PREFS,
@@ -189,6 +190,7 @@ async function data<T>(q: PromiseLike<{ data: T | null; error: { message?: strin
 }
 
 /** The database has not received the newest update yet (the app may be published before it). */
+const BILLING_STATUSES: BillingStatus[] = ['free', 'paid', 'trial', 'grace', 'paused', 'frozen'];
 const missingFunction = (e: unknown) => /could not find the function|does not exist|PGRST202/i.test(String((e as { message?: string })?.message ?? e));
 /** A new function the older database does not have, with no older way to do it: "not yet" for the screens. */
 async function newRpc<T>(q: PromiseLike<{ data: T | null; error: { message?: string } | null; status?: number }>): Promise<T> {
@@ -1370,6 +1372,45 @@ export class SupabaseBackend implements Backend {
 
   async deleteObservation(id: string): Promise<void> {
     await data(this.sb.from('observations').delete().eq('id', id));
+  }
+
+  // ── Payment ──
+
+  async billingState(profileId: string): Promise<BoardBilling> {
+    try {
+      const r = await data<Row>(this.sb.rpc('billing_state', { p_profile: profileId }));
+      return {
+        status: BILLING_STATUSES.includes(r.status) ? r.status : 'free',
+        live: !!r.live,
+        until: r.until ? Date.parse(r.until) : undefined,
+        renews: !!r.renews,
+        payer: !!r.payer,
+      };
+    } catch (e) {
+      // A database without payment: nothing is ever blocked.
+      if (!missingFunction(e)) throw e;
+      return { status: 'free', live: false, payer: false };
+    }
+  }
+
+  async billingMine(): Promise<MyBilling> {
+    try {
+      const r = await data<Row | null>(this.sb.rpc('billing_mine'));
+      const f = r?.family as Row | null | undefined;
+      return {
+        live: !!r?.live,
+        family: f ? { until: f.until ? Date.parse(f.until) : Number.MAX_SAFE_INTEGER, renews: !!f.renews, store: f.store ?? 'other' } : undefined,
+        pro: !!r?.pro,
+      };
+    } catch (e) {
+      if (!missingFunction(e)) throw e;
+      return { live: false, pro: false };
+    }
+  }
+
+  async billingRefresh(): Promise<void> {
+    const { error } = await this.sb.functions.invoke('caa-billing', { body: { refresh: true } });
+    if (error) throw new BackendError('offline', error.message);
   }
 
   // ── Notifications ──

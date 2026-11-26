@@ -9,6 +9,7 @@
  * Account only say what they will hold: they open once the account is created.
  */
 import React, { useCallback, useEffect, useState } from 'react';
+import { changesBlocked } from '../../lib/billing';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import type { Invitation, Proposal } from '../../backend/types';
 import { dataStrings } from '../../i18n/data';
@@ -38,7 +39,11 @@ export function SettingsScreen() {
   const pro = useProBoard();
   const { uiLang, account, api, s, go } = useSession();
   const x = settingsStrings(uiLang);
-  const [tab, setTab] = useState<Tab>('board');
+  // The family's payment paused or froze the board: only the Account page (subscribe, sign out,
+  // "Download all my data", delete) — nothing that changes the board (src/lib/billing.ts).
+  const paidOff = !!board && changesBlocked(board.billing?.status) && !app.freeEdit;
+  const asked = app.overlay?.kind === 'settings' ? app.overlay.tab : undefined;
+  const [tab, setTab] = useState<Tab>(paidOff || asked === 'account' ? 'account' : 'board');
   // The search bar: what is typed, simplified (no accents, no capitals); it works on the Board page.
   const [query, setQuery] = useState('');
   const q = normalize(query).trim();
@@ -50,7 +55,7 @@ export function SettingsScreen() {
   const t = app.t;
   const isDevice = account?.provider === 'device';
   const seesData = !!board && !isDevice && (board.manager || !!board.access?.perms.viewData);
-  const tabs: Tab[] = board ? (isDevice ? ['board', 'account'] : ['board', 'team', ...(seesData ? (['data'] as Tab[]) : []), 'account']) : ['board', 'team', 'data', 'account'];
+  const tabs: Tab[] = paidOff ? ['account'] : board ? (isDevice ? ['board', 'account'] : ['board', 'team', ...(seesData ? (['data'] as Tab[]) : []), 'account']) : ['board', 'team', 'data', 'account'];
   // For the app's team (families who agreed): the way to the follow-up was on screen.
   useSeen(seesData && 'followUp');
 
@@ -124,23 +129,26 @@ export function SettingsScreen() {
         ) : undefined
       }
     >
-      <View style={ss.search}>
-        <Icon name="search" size={20} color={C.textMuted} />
-        <TextInput
-          value={query}
-          onChangeText={(v) => {
-            setQuery(v);
-            // Most settings are on the Board page: searching shows that page, filtered.
-            if (v.trim() && tab !== 'board') setTab('board');
-          }}
-          placeholder={t.sSearch}
-          placeholderTextColor={C.placeholder}
-          style={ss.searchInput}
-          accessibilityLabel={t.sSearch}
-          autoCorrect={false}
-        />
-        {query ? <Btn small kind="ghost" icon="x" label={t.sSearchClear} onPress={() => setQuery('')} /> : null}
-      </View>
+      {/* Paused or frozen by payment: the Account page alone, no search (it leads to the Board page). */}
+      {!paidOff && (
+        <View style={ss.search}>
+          <Icon name="search" size={20} color={C.textMuted} />
+          <TextInput
+            value={query}
+            onChangeText={(v) => {
+              setQuery(v);
+              // Most settings are on the Board page: searching shows that page, filtered.
+              if (v.trim() && tab !== 'board') setTab('board');
+            }}
+            placeholder={t.sSearch}
+            placeholderTextColor={C.placeholder}
+            style={ss.searchInput}
+            accessibilityLabel={t.sSearch}
+            autoCorrect={false}
+          />
+          {query ? <Btn small kind="ghost" icon="x" label={t.sSearchClear} onPress={() => setQuery('')} /> : null}
+        </View>
+      )}
       <Segmented<Tab>
         value={tab}
         onChange={(next) =>

@@ -44,6 +44,7 @@ import { noticeText } from '../../lib/notices';
 import { peopleStrings } from '../../i18n/people';
 import { forgetChild } from '../../lib/deviceData';
 import { APP_VERSION } from '../../lib/appVersion';
+import { LicenceSection } from '../Billing';
 
 const SECTIONS: ProSection[] = ['dashboard', 'users', 'library', 'collab', 'learn', 'account'];
 const SECTION_ICON: Record<ProSection, IconName> = {
@@ -896,9 +897,13 @@ function ProAccount({ p, verification, users, onVerify }: { p: ProStrings; verif
       <MyAccount x={x} />
       <ProfileBin />
       <Preferences x={x} />
-      <Section title={x.subscription}>
-        <Note text={x.subscriptionLater} />
-      </Section>
+      <LicenceSection
+        fallback={
+          <Section title={x.subscription}>
+            <Note text={x.subscriptionLater} />
+          </Section>
+        }
+      />
       <WriteTeam />
       <DownloadMyData />
       <DeleteAccount x={x} />

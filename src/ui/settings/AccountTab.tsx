@@ -1,6 +1,6 @@
 /**
  * "Account" page: my account and security, my children, devices and sync (with pairing),
- * permissions summary, subscription (later), privacy and data, preferences, help.
+ * permissions summary, subscription (once payment is on), privacy and data, preferences, help.
  * Nothing here can interrupt the child's communication.
  */
 import { APP_VERSION } from '../../lib/appVersion';
@@ -35,6 +35,7 @@ import { TwoStepCard } from '../TwoStep';
 import { BoardVersions, ProfileBin } from './Backups';
 import { DownloadMyData } from './DownloadMyData';
 import { backupStrings } from '../../i18n/backup';
+import { SubscriptionSection } from '../Billing';
 
 export function AccountTab({ board, openTeam }: { board: BoardCtx; openTeam: () => void }) {
   const sess = useSession();
@@ -57,9 +58,13 @@ export function AccountTab({ board, openTeam }: { board: BoardCtx; openTeam: () 
       <SyncSection board={board} x={x} />
       <BoardVersions board={board} />
       <Sharing board={board} x={x} openTeam={openTeam} />
-      <Section title={x.subscription}>
-        <Note text={x.subscriptionLater} />
-      </Section>
+      <SubscriptionSection
+        fallback={
+          <Section title={x.subscription}>
+            <Note text={x.subscriptionLater} />
+          </Section>
+        }
+      />
       <Privacy board={board} x={x} />
       <Preferences x={x} noLang />
       <WriteTeam />

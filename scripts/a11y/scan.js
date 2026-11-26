@@ -88,6 +88,24 @@ const results = [];
       await btn('Back').click(); await btn('Forgot the code?').click();
       await p.getByLabel('Account password').fill('secret123'); await btn('Confirm').click(); await p.getByText('It is you.', { exact: false }).first().waitFor(); await scan('16d-pin-new-code');
     });
+    // Payment switched on in the demo server, the free week over 10 days ago: the dot on the bar, the
+    // message after the code (no "Later" while paused), then the Account page alone.
+    await step('16e-payment', async () => {
+      const digits = async (c) => { for (const d of c) { await p.getByRole('button', { name: d, exact: true }).last().click(); await p.waitForTimeout(100); } };
+      await p.keyboard.press('Escape'); await p.waitForTimeout(300); await p.keyboard.press('Escape'); await p.waitForTimeout(300);
+      await p.evaluate(() => {
+        const k = 'caa.server.v1'; const db = JSON.parse(localStorage.getItem(k)); const since = Date.now() - 10 * 864e5;
+        db.billing = { live: true, liveSince: since, family: {}, pro: [] };
+        for (const a of Object.values(db.accounts)) a.createdAt = since;
+        localStorage.setItem(k, JSON.stringify(db));
+      });
+      await p.reload(); await p.getByRole('button', { name: /^Settings, subscription reminder$/ }).first().waitFor({ timeout: 20000 });
+      await scan('16e-board-payment-dot');
+      await p.getByRole('button', { name: /^Settings, subscription reminder$/ }).first().click(); await p.waitForTimeout(400); await digits('2580');
+      await p.getByText('everything is paused except the child talking', { exact: false }).first().waitFor(); await p.waitForTimeout(600); await scan('16f-payment-message');
+      await btn('My account').click(); await p.waitForTimeout(800); await scan('16g-payment-account');
+      await p.keyboard.press('Escape'); await p.waitForTimeout(300);
+    });
     await p.evaluate(() => localStorage.removeItem('caa.session.v1')); await p.reload(); await p.getByRole('button').first().waitFor();
   }
   // The board, through the demo team account (a ready-made profile, no questions).

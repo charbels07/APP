@@ -20,6 +20,8 @@ import { useSessionMaybe } from '../../state/Session';
 import { forgotCodeWays } from '../../lib/forgotCode';
 import { ProveItsYou } from '../ProveItsYou';
 import { openAppUrl } from '../../lib/appLinks';
+import { afterCodeStop, laterKey, today } from '../../lib/billing';
+import type { AfterCode } from '../../state/AppState';
 
 export function pathText(loc: Location, app: ReturnType<typeof useApp>): string {
   const { profile, lang, t } = app;
@@ -225,6 +227,24 @@ export { pinPause, pinTooEasy };
  * and cannot be closed (the bar, and Help on it, stay reachable); once the code is chosen the
  * board is simply there, or the guide on the first opening of a new board.
  */
+/**
+ * What opens once the code is right (or "Later" under the subscription's message): another app or a
+ * page, a demonstration's recording, a panel on its own (settings, lock, guide, a new word…), or the
+ * tools of caregiver mode.
+ */
+export function goOnAfterCode(app: ReturnType<typeof useApp>, then: AfterCode | undefined) {
+  if (then?.kind === 'openLink') {
+    app.setOverlay(null);
+    void openAppUrl(then.url);
+    return;
+  }
+  if (then?.kind === 'recordDemo') return app.startRecording();
+  // The settings, "Lock the screen", the guide, a new word for the timer open on their own: the board stays as the child uses it.
+  if (then && opensAlone(then)) return app.setOverlay(then);
+  app.setEditMode(true);
+  app.setOverlay(then ?? null);
+}
+
 export function PinPanel({ first = false }: { first?: boolean }) {
   const app = useApp();
   const board = useBoard();
@@ -276,19 +296,24 @@ export function PinPanel({ first = false }: { first?: boolean }) {
   // Another app or a web page is about to open from the board (a parental gate: `linkNeedsCode`).
   const leaving = then?.kind === 'openLink' ? then : undefined;
   const rtl = useNavRtl();
+  // The subscription's message waits until tomorrow once "Later" was chosen today (this device).
+  const [laterToday, setLaterToday] = useState(false);
+  const boardId = board?.profileId;
+  useEffect(() => {
+    if (!boardId) return;
+    AsyncStorage.getItem(laterKey(boardId))
+      .then((d) => setLaterToday(d === today()))
+      .catch(() => {});
+  }, [boardId]);
   const open = () => {
     // Chosen at the board's opening: the board stays as the child uses it.
     if (first) return beforeGuide ? app.setOverlay({ kind: 'guide' }) : undefined;
-    if (then?.kind === 'openLink') {
-      app.setOverlay(null);
-      void openAppUrl(then.url);
-      return;
+    // Payment: the reminder, or (paused, frozen) nothing that changes the board (src/lib/billing.ts).
+    const pay = board?.billing;
+    if (pay && afterCodeStop({ status: pay.status, payer: pay.payer, laterToday, then: then?.kind, team: app.freeEdit }) !== 'none') {
+      return app.setOverlay({ kind: 'payment', then });
     }
-    if (then?.kind === 'recordDemo') return app.startRecording();
-    // The settings, "Lock the screen", the guide, a new word for the timer open on their own: the board stays as the child uses it.
-    if (then && opensAlone(then)) return app.setOverlay(then);
-    app.setEditMode(true);
-    if (then) app.setOverlay(then);
+    goOnAfterCode(app, then);
   };
   const again = (text: string | null) => {
     setMsg(text);

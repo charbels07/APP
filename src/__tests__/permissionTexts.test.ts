@@ -44,9 +44,9 @@ describe('permission sentences', () => {
     expect(locales.ar.NSCameraUsageDescription).toContain('المساحة الخاصة بالطفل في حساب العائلة');
   });
 
-  it('leave the app’s identifiers to the owner', () => {
-    expect(expo.ios.bundleIdentifier).toBeUndefined();
-    expect(expo.android.package).toBeUndefined();
+  it('use the identifiers the owner chose (26 November 2026): they never change once published', () => {
+    expect(expo.ios.bundleIdentifier).toBe('com.daleth.aac');
+    expect(expo.android.package).toBe('com.daleth.aac');
   });
 
   it('the short words of the board are not played in the background (no background audio mode, no media service)', () => {

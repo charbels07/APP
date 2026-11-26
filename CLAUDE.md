@@ -249,8 +249,9 @@
 - The app's name is "Daleth AAC" everywhere (Q51; renamed from "Empower Communication" on 25 November 2026, company
   "DALETH", formerly "Empower Hub"): `app.json` name, the web manifest (under the icon
   too), `APP_NAME`, the texts, the noon reminder's title (`push_words`). One version number: `app.json` =
-  `package.json` (`appIdentity.test.ts`). `ios.bundleIdentifier`, `android.package` and `eas.json` are the
-  owner's to choose. Support e-mail `daleth.contact@gmail.com`, company "DALETH", Beirut, Lebanon. The Cloudflare
+  `package.json` (`appIdentity.test.ts`). The store identifiers are `com.daleth.aac` on both
+  stores (owner's choice, 26 November 2026; never change them once published); builds go through `eas.json`
+  (development / preview / production, `docs/runbooks/STORE-BUILDS.md`). Support e-mail `daleth.contact@gmail.com`, company "DALETH", Beirut, Lebanon. The Cloudflare
   project is `daleth-aac` (`wrangler.jsonc` must match the dashboard's name; web address
   `daleth-aac.sarrouhcharbel.workers.dev`). Kept on purpose (technical names, renaming them breaks something): the app's `scheme` `empowercommunication` and `slug` (Supabase redirect URLs), the backup
   names `empower-db-*` / `empower-backups`. New files are labelled `daleth-board` / `daleth-aac/export-1`; a board file
@@ -457,3 +458,20 @@
   same). Never a child's name, word or sentence in a notification; none to a child's tablet; a new kind of
   notification is written in SQL (`push_words`, three languages) with its checks in `supabase/tests/push_scenario.sql`.
   The worker never opens an address found in a message and caches nothing.
+- Payment (owner's decisions, November 2026: Q28, Q44–Q46 and a free week; `src/lib/billing.ts`, migration
+  `20261126000000_billing.sql`, attacks in `supabase/tests/billing_scenario.sql`, steps in
+  `docs/runbooks/STORE-BUILDS.md`): sold in the stores only, through RevenueCat (`src/lib/purchases.ts`,
+  `.web.ts` buys nothing; entitlements and offerings `family` / `pro`). Off until the owner runs
+  `billing_go_live()`: never block anything while `billing_config.live` is false. The family that owns the
+  child pays: never subscribed = a free week (no card, no store trial), ended = 7 days with nothing blocked;
+  then days 8–14 paused, then frozen; paused and frozen refuse the same things (board changes, media, follow-up,
+  team, tablet codes, copies by hand: `billing_guard` triggers, `can_send_media`), never reading, the child's
+  voice, the Account page, "Download all my data", deleting or handing the child to the other parent; nothing
+  is deleted, paying gives everything back. A professional's own draft is free; her licence (`pro_paid`) is
+  needed to be on a team as a therapist or teacher. Who paid is written only by `caa-billing` with RevenueCat's
+  own answer (`billing_record`, service key), never by the app. Reminders never on the board: a dot on Settings
+  and Caregiver (`remindsToPay`), the message after the code (`afterCodeStop`, overlay `payment`; "Later" once
+  a day), the 18:00 notification (`billing_reminders`, three languages in `push_words`). While paused or
+  frozen the code opens the message, and Settings opens on Account only. Prices are always the store's
+  (`priceString`), never written in the app. Every store sheet goes through `outside()`. The demo server mirrors
+  it (`LocalBackend.requirePaid`, `demoBilling`).

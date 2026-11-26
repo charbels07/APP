@@ -29,6 +29,13 @@ Supabase values are allowed inside the app.
 | **`caa-purge`** | Deletes the stored files of an erased account, child's profile or professional's document (queue `storage_purge`) | None: Supabase hands it its server key (`SUPABASE_SECRET_KEY`) | To deploy with the database files of 18 November (`supabase/README.md`, section 11) |
 | **`caa-push`** | Delivers the browser notifications of the web version, only to the browsers' own notification services (Google FCM, Mozilla, Apple, Microsoft) | None to buy: it makes its own pair of signing keys, kept by the database. Optional secret `PUSH_CONTACT` (`mailto:…`, an address those services may write to; else `SMTP_USER`) | To turn on: `docs/runbooks/NOTIFICATIONS.md` |
 
+### Payment (`docs/runbooks/STORE-BUILDS.md`)
+
+| Service | What it does | Key | Where it goes | Today |
+|---|---|---|---|---|
+| **RevenueCat**, public SDK keys | The tablet and phone apps show the stores' prices, buy, restore (`src/lib/purchases.ts`) | `EXPO_PUBLIC_REVENUECAT_IOS_KEY` (`appl_…`), `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` (`goog_…`): public | expo.dev → the project → Environment variables (`preview`, `production`); a store build without its key stops (`scripts/check-store-env.js`) | Code ready; waits for the RevenueCat and store accounts |
+| **Server function `caa-billing`** | Writes who has paid, from RevenueCat's own answer: its webhook, or the app right after a purchase (the person's own account only) | `REVENUECAT_SECRET_KEY` (a secret v1 key), `REVENUECAT_WEBHOOK_AUTH` (a long random text, the same in RevenueCat's webhook settings) | Supabase → Edge Functions → Secrets; deployed with "Verify JWT" off (it checks both callers itself) | Code ready, not deployed. Payment stays off until `select public.billing_go_live();` |
+
 The three functions above are called by the database only, with a key the database made (header
 `x-mail-key`); they are deployed with "Verify JWT" off (`supabase/config.toml`).
 
@@ -108,14 +115,14 @@ day, only people who look after a child, and only the topic, the photo or the dr
 |---|---|---|
 | **Apple Developer Program** (yearly fee) | Publishing on the App Store, Apple sign-in, test builds on iPads | To open |
 | **Google Play Console** (one-time fee) | Publishing on Android | To open |
-| **Expo / EAS account** | Builds the iOS and Android apps in the cloud | To create when the first build is made |
+| **Expo / EAS account** | Builds the iOS and Android apps in the cloud (`eas.json`: development, preview, production) | To create; then `npx eas-cli init` (`docs/runbooks/STORE-BUILDS.md`) |
+| **RevenueCat** | Purchases on both stores (free up to 2,500 $ of monthly revenue, then 1 %) | To create once the stores' accounts exist |
 
 ## 7. Not in the app yet, would need a key if added
 
 | Idea | Service |
 |---|---|
 | **Invitation e-mails sent by the app itself** | An e-mail sending service (Brevo, Resend, Mailgun…) and a small server function holding its key. The e-mail sender of section 1 only serves sign-in codes: Supabase does not let the app use it for other messages. Today the person sends the invitation from their own mailbox ("Send by email" asks which one — Gmail, Outlook, Yahoo or the device's mail app — and opens the message already written), or shares / copies the code |
-| Subscriptions and payment | Apple / Google in-app purchases, usually through RevenueCat; Stripe on the website |
 | Notifications in the store apps (iPhone, iPad, Android) | Apple and Google push services, through Expo. The web version already sends browser notifications, with no key to buy or set: the server makes its own pair of keys (`docs/runbooks/NOTIFICATIONS.md`) |
 | A robot check on sign-up | Cloudflare Turnstile (free): a site key in the app, a secret in Supabase |
 | Crash reports | Sentry or similar |

@@ -8,6 +8,7 @@
     "userInterfaceStyle": "light",
     "scheme": "empowercommunication",
     "ios": {
+      "bundleIdentifier": "com.daleth.aac",
       "supportsTablet": true,
       "usesAppleSignIn": true,
       "requireFullScreen": true,
@@ -22,6 +23,7 @@
       }
     },
     "android": {
+      "package": "com.daleth.aac",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -52,7 +54,9 @@
       [
         "expo-media-library",
         {
-          "granularPermissions": ["photo"]
+          "granularPermissions": [
+            "photo"
+          ]
         }
       ],
       "expo-speech-recognition",

@@ -14,6 +14,7 @@ import { Icon } from './Icon';
 import { CaregiverOverlay } from './panels/CaregiverPanels';
 import { SettingsScreen } from './settings/SettingsScreen';
 import { HelpPanel, PinPanel } from './panels/CommPanels';
+import { PaymentPanel } from './Billing';
 import { ToolsPanel } from './panels/ToolsPanel';
 import { GuidePanel, WelcomeCard } from './panels/GuidePanel';
 import { NewTlaPanel } from './panels/NewTlaPanel';
@@ -80,6 +81,7 @@ export function Root({ banner }: { banner?: React.ReactNode } = {}) {
       {(overlay?.kind === 'search' || overlay?.kind === 'keyboard' || overlay?.kind === 'model') && <ToolsPanel tool={overlay.kind} />}
       {overlay?.kind === 'help' && <HelpPanel />}
       {overlay?.kind === 'pin' && <PinPanel />}
+      {overlay?.kind === 'payment' && <PaymentPanel />}
       {overlay?.kind === 'newTla' && <NewTlaPanel />}
       {overlay?.kind === 'newSequence' && <NewSequencePanel />}
       {overlay?.kind === 'guide' && <GuidePanel />}

@@ -106,7 +106,7 @@ export const lastTouchAt = (): number => lastTouch;
 export const idleTooLong = (lastTouch: number, now: number): boolean => now - lastTouch >= IDLE_MS;
 
 /** The panels that belong to the adults whatever opened them. */
-const ADULT_PANELS = new Set(['settings', 'lock', 'print', 'editor', 'cellMenu', 'tlaMenu', 'shareTla', 'moveToTla', 'conceptEditor', 'scheduleEditor', 'newTla', 'newSequence', 'wordBin', 'scene']);
+const ADULT_PANELS = new Set(['settings', 'payment', 'lock', 'print', 'editor', 'cellMenu', 'tlaMenu', 'shareTla', 'moveToTla', 'conceptEditor', 'scheduleEditor', 'newTla', 'newSequence', 'wordBin', 'scene']);
 
 interface PanelLike {
   kind: string;

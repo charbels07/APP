@@ -650,7 +650,12 @@ identifiers wait until the whole app has been checked.
 
 ---
 
-## Payment: decided as rules, NOT to build now (Q28, Q44–Q46)
+## Payment: decided as rules (Q28, Q44–Q46) — built 26 November 2026, off until switched on
+
+Built with RevenueCat (`src/lib/billing.ts`, `src/lib/purchases.ts`, `src/ui/Billing.tsx`, migration
+`20261126000000_billing.sql`, function `caa-billing`; steps in `docs/runbooks/STORE-BUILDS.md`). Added by
+the owner on 26 November 2026: a **free week** before paying (the app's own, no card, no store trial):
+a family that never subscribed has days 1–7 free, then days 8–14 paused, then frozen.
 
 A separate project, after the owner has settled the legal side (company bank account, store rules).
 - Prices under discussion: families 9.99 $ monthly or 99.99 $ yearly; therapists 150 $ once.

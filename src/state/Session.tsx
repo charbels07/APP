@@ -58,8 +58,6 @@ interface DevicePrefs {
   localProfiles?: string[];
   /** The account these copies (and `lastProfile`) belong to: never opened for another account. */
   localOwner?: string;
-  /** Child lock on this device only (the parent's phone stays free). */
-  childLock?: boolean;
   /** The child whose board was open last on this device: opened again when the server cannot answer. */
   lastProfile?: string;
 }
@@ -146,9 +144,6 @@ interface SessionCtx {
   openProfile: (id: string) => void;
   /** The device keeps a copy of this child's profile (forgotten at sign-out). */
   rememberLocal: (id: string) => void;
-  /** Child lock on this device (see src/lib/childLock). */
-  childLock: boolean;
-  setChildLock: (on: boolean) => void;
   /** "Keep me logged in" on this device (ticked unless someone chose otherwise). */
   keep: boolean;
   setKeep: (keep: boolean) => Promise<void>;
@@ -450,7 +445,6 @@ export function SessionProvider({ children, api = backend() }: { children: React
     [saveDevice, account],
   );
 
-  const setChildLock = useCallback((on: boolean) => saveDevice({ childLock: on }), [saveDevice]);
   const setKeep = useCallback(async (v: boolean) => {
     setKeepState(v);
     await setKeepSignedIn(v);
@@ -477,12 +471,10 @@ export function SessionProvider({ children, api = backend() }: { children: React
       updatePrefs,
       openProfile,
       rememberLocal,
-      childLock: !!device?.childLock,
-      setChildLock,
       keep,
       setKeep,
     }),
-    [api, stage, account, uiLang, setUiLang, device?.deviceId, offline, enter, isAdmin, security, refreshSecurity, signOut, refreshAccount, updatePrefs, openProfile, rememberLocal, device?.childLock, setChildLock, keep, setKeep],
+    [api, stage, account, uiLang, setUiLang, device?.deviceId, offline, enter, isAdmin, security, refreshSecurity, signOut, refreshAccount, updatePrefs, openProfile, rememberLocal, keep, setKeep],
   );
 
   return (

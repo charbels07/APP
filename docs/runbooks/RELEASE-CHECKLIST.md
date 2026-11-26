@@ -57,7 +57,7 @@ a phone** (iPhone or Android). Use a test family account and a test child, never
 | 4 | Open a folder, an activity board, the schedule, the timer, the Help button | Each opens and comes back |
 | 5 | Try the four voices (Woman, Man, Girl, Boy) and the speed | Each speaks; a family's recording of a word always wins |
 | 6 | Bar → Settings: type the caregiver code; change a setting; Save | The code is asked first; the change is kept after closing |
-| 7 | Bar → Lock (child lock), then unlock | Locked until the code |
+| 7 | Bar → Lock → code → **Open the device's settings** | Android: the Security page (app pinning); iPad: Settings on Daleth AAC's page. In a browser: no button, one sentence |
 | 8 | Change a word on the phone | It appears on the tablet within a minute (an open board looks every 30 s) |
 | 9 | Add a photo and record a word on the phone | They reach the child's tablet |
 | 10 | Switch scanning and dwell selection (if the release touches the board) | A switch and a dwell select the right card |

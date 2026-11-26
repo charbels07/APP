@@ -1,13 +1,11 @@
 /** Shows the screen of the current step of the journey (see src/state/Session.tsx). */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, AppState as RNAppState, Dimensions, Platform, StyleSheet, Text, View } from 'react-native';
 import { BackendError } from '../backend/Backend';
 import { createDefaultProfile } from '../data/defaults';
 import { errorText } from '../i18n/account';
 import { APP_VERSION } from '../lib/appVersion';
-import { guardLeaving } from '../lib/childLock';
 import { invertOps } from '../lib/profileDiff';
 import type { Profile } from '../model/types';
 import { AppProvider, useApp } from '../state/AppState';
@@ -363,7 +361,6 @@ function BoardStage({ profileId }: { profileId: string }) {
           uiLang={uiLang}
           setUiLang={setUiLang}
           subscribe={subscribe}
-          locked={sess.childLock}
           onUsage={tracker?.record}
           // The accounts of the app's own team are never asked the caregiver code (the owner's
           // choice): caregiver mode, the settings and the lock open at once for them.
@@ -373,7 +370,6 @@ function BoardStage({ profileId }: { profileId: string }) {
         >
           <Root />
           <OpenGuideOnStart />
-          {sess.childLock && <LockEffects />}
           {note && (
             <View style={styles.toast} accessibilityRole="alert">
               <Icon name="users" size={20} color={C.edit} />
@@ -384,19 +380,6 @@ function BoardStage({ profileId }: { profileId: string }) {
       </BoardRescue>
     </BoardContext.Provider>
   );
-}
-
-/** Child lock: back button ignored (Android), leaving the page asks first (web), screen stays on, no status bar. */
-function LockEffects() {
-  useEffect(() => {
-    const undo = guardLeaving();
-    activateKeepAwakeAsync('child-lock').catch(() => {});
-    return () => {
-      undo();
-      void deactivateKeepAwake('child-lock').catch(() => {});
-    };
-  }, []);
-  return <StatusBar hidden />;
 }
 
 /** A readable name for this device in "Devices and sync". */

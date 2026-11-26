@@ -94,7 +94,7 @@
   closed at first (`Group` in `CaregiverPanels.tsx`): Languages, Words and pictures, Display, Touch, Sentence,
   Voice, Universal bar, Help button, Code and data, About. A new control goes into the group it belongs to,
   with a short label and no explaining sentence unless the choice cannot be understood without one. Nothing
-  appears twice: the child lock and the guide are on the bar (not in the settings), the profile's backup is
+  appears twice: "Lock the screen" and the guide are on the bar (not in the settings), the profile's backup is
   on the Account page when there is an account, the menus' language is in Languages (not in a family's
   Account page). The guide's "settings" chapter names the groups; keep its step order (`setupHelp.ts`).
 - App pictograms live in `src/data/concepts.ts` (`app: { url, triggers }`); new built-in folders are added
@@ -278,7 +278,7 @@
   only: no name, word or sentence, and the back-office rule for usage (consenting families, 5 children or
   more). Nothing of it is reachable from the app; a new kind of message is written in SQL with its checks
   in `supabase/tests/team_mail_scenario.sql`.
-- The board's bar has "Settings" and "Lock" (child lock) for the parents: outside caregiver mode they
+- The board's bar has "Settings" and "Lock" ("Lock the screen") for the parents: outside caregiver mode they
   always go through the code (`{ kind: 'pin', then: { kind: 'settings' | 'lock' } }`), and open without
   turning caregiver mode on (`opensAlone`). Never open the settings or the lock from the bar without the code
   (the only exception is an account of the app's team, see `freeEdit`; a professional types her own code).
@@ -296,10 +296,13 @@
   title stay "Search". "Draw" in the first tab only shows while `aiAvailable()` (not removed).
 - The in-app guide (`src/data/guide.ts`) is updated with every change a user can see, in the three
   languages, with the names written on screen (`guide.test.ts` checks many of them).
-- Child lock in a browser (`src/lib/childLock.web.ts`): full screen (asked again at the next touch on the
-  board), no page bounce or pull-to-refresh (`overscroll-behavior` + stopping finger moves that scroll
-  nothing: `canScrollWith`), a question before the page closes. A site cannot block Safari's swipe-down
-  out of full screen: never promise that the browser lock keeps a child in (Guided Access does).
+- No lock inside the app (owner's decision, 26 November 2026: it could not keep a child in). The bar's Lock
+  opens "Lock the screen" (`LockPanel` in `CaregiverPanels.tsx`): only the device keeps a child in the app
+  (Guided Access on iPad / iPhone, app pinning on Android). It gives the steps for this device and, on the
+  tablet apps, "Open the device's settings" (`openLockSettings`, `src/lib/lockSettings(.web).ts`): Android's
+  Security page (no public page for pinning), iOS's Settings on the app's own page (a store app may not open
+  Accessibility: never use `App-Prefs:` / private addresses). A browser cannot open them: a sentence says so.
+  Do not bring back an in-app lock (full screen, blocked Back button, a "locked" board) unless asked.
 - A panel opened from another panel carries it in the overlay's `back` (`src/state/AppState.tsx`); the
   panel passes `onBack={useBack()}` to `Panel`, which shows "Back" (Escape and a touch beside go back, the
   cross closes everything). When a panel opens another one, give `back`; never leave only the cross (the
@@ -421,7 +424,7 @@
 - Links out of the app: on the tablet apps, anything that opens another app or a web page from a screen the child
   reaches goes through `launchApp` / `app.openLink` (`{ kind: 'pin', then: { kind: 'openLink' } }`, `linkNeedsCode`).
   Never call `Linking.openURL` / `openAppUrl` directly there; no switch turns this off (store rules for children's
-  apps). The child lock still opens nothing; `freeEdit` and caregiver mode skip the code.
+  apps). `freeEdit` and caregiver mode skip the code.
 - "Export the board" (`src/lib/backupFile.ts`, gap review Q40): one `.caa.zip` with `board.json` and the photos and
   recordings, never the caregiver code; its name survives any child's name (`backupFileName`). Importing it is
   "a board from another caregiver" (set-up, Q41/Q49): it always arrives through `asReceived` (no code, no links,

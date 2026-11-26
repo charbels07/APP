@@ -39,7 +39,7 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
   const app = useApp();
   const { width, height } = useWindowDimensions();
   const board = useBoard();
-  const { childLock, isAdmin, go } = useSession();
+  const { isAdmin, go } = useSession();
   const iconsOnly = !vertical && width < 520;
   const { t, view, path, overlay, profile, timer, editMode } = app;
   // The adult's panels: straight in while caregiver mode is open, otherwise the caregiver code first.
@@ -97,8 +97,9 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
     { key: 'guide', icon: 'book', label: t.guide, onPress: () => app.setOverlay({ kind: 'guide' }), active: overlay?.kind === 'guide' },
     // For the parents, from the board itself, each behind the caregiver code: the settings…
     { key: 'settings', icon: 'settings', label: t.settings, onPress: behindCode('settings'), active: overlay?.kind === 'settings' },
-    // …and the child lock of this device (only on a real child's board; lit while it is on).
-    { key: 'childLock', icon: 'shield', label: t.lockShort, onPress: behindCode('lock'), active: childLock || overlay?.kind === 'lock', show: !!board },
+    // …and how to lock the screen (only on a real child's board): the device's own lock, whose
+    // settings the panel opens (Guided Access, app pinning; src/lib/lockSettings.ts).
+    { key: 'childLock', icon: 'shield', label: t.lockShort, onPress: behindCode('lock'), active: overlay?.kind === 'lock', show: !!board },
     {
       key: 'lock',
       icon: editMode ? 'unlock' : 'lock',
@@ -120,7 +121,7 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
       active: false,
     });
   const visible = (items: Item[]) => items.filter((m) => m.show !== false);
-  // The tools (search, guide, settings, child lock, caregiver): one column with their names when
+  // The tools (search, guide, settings, lock the screen, caregiver): one column with their names when
   // the screen is tall enough for all of them, otherwise icons side by side.
   const toolColumn = height >= 420 + visible(tools).length * 56;
 

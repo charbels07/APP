@@ -63,12 +63,12 @@ testers of the web version need terms of their own.)* Families use it with the c
   removes it in Settings → Account → Devices.
 - **Our team's accounts** are never used on a device a child uses.
 
-## 5. The caregiver code and the child lock
+## 5. The caregiver code and locking the screen
 
 The caregiver code keeps the adults' tools away from the child's hands. It is not a password:
-choose one that the child does not know. The child lock in the app keeps the child on the board;
-to keep a child inside the app, use the device's own feature (Guided Access on iPhone and iPad,
-screen pinning on Android).
+choose one that the child does not know. The app cannot keep a child inside it by itself: to do
+that, use the device's own feature (Guided Access on iPhone and iPad, app pinning on Android).
+"Lock the screen" in the app explains how and opens the device's settings.
 
 ## 6. Your content
 

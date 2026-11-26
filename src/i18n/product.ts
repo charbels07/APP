@@ -82,7 +82,7 @@ const fr = {
     followUp: 'Suivi de la communication',
     ai: 'Aide par IA',
     guide: 'Guide',
-    lock: 'Verrouillage enfant',
+    lock: 'Verrouiller l’écran',
   } as Record<string, string>,
   notEnough: (n: number | null, min: number) =>
     `${n === 0 ? 'Aucun enfant n’envoie ces chiffres' : `Les enfants de moins de ${min} familles envoient ces chiffres`} pour le moment. Ils apparaissent à partir de ${min} enfants de ${min} familles, pour que personne ne puisse être reconnu.`,
@@ -338,7 +338,7 @@ const en: Dict = {
     followUp: 'Communication follow-up',
     ai: 'AI helper',
     guide: 'Guide',
-    lock: 'Child lock',
+    lock: 'Lock the screen',
   },
   notEnough: (n, min) =>
     `${n === 0 ? 'No child sends these figures' : `The children of fewer than ${min} families send these figures`} for now. They appear from ${min} children of ${min} families up, so that nobody can be recognised.`,
@@ -588,7 +588,7 @@ const ar: Dict = {
     followUp: 'متابعة التواصل',
     ai: 'المساعد بالذكاء الاصطناعي',
     guide: 'الدليل',
-    lock: 'قفل الطفل',
+    lock: 'قفل الشاشة',
   },
   notEnough: (n, min) =>
     `${n === 0 ? 'لا طفل يرسل هذه الأرقام حالياً' : `أطفال أقل من ${min} عائلات يرسلون هذه الأرقام حالياً`}. تظهر ابتداءً من ${min} أطفال من ${min} عائلات، حتى لا يُعرف أحد.`,

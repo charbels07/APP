@@ -27,11 +27,9 @@ describe('the board asks for it', () => {
   const app = src('state/AppState.tsx');
   const launch = app.slice(app.indexOf('const launchApp = useCallback'), app.indexOf('useEffect(() => () => clearTimeout(launchTimer.current)'));
 
-  it('an app pictogram: the child lock first (nothing opens), then the code, before any countdown', () => {
-    const lock = launch.indexOf('lockedRef.current) return');
+  it('an app pictogram: the code first, before any countdown', () => {
     const gate = launch.indexOf('linkNeedsCode(');
-    expect(lock).toBeGreaterThan(-1);
-    expect(gate).toBeGreaterThan(lock);
+    expect(gate).toBeGreaterThan(-1);
     expect(gate).toBeLessThan(launch.indexOf('APPS_NEED_TAP'));
     expect(gate).toBeLessThan(launch.indexOf('setTimeout('));
     expect(launch).toMatch(/kind: 'pin', then: \{ kind: 'openLink'/);

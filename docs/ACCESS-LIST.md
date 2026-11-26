@@ -29,6 +29,7 @@ Rules for every line:
 | **Apple Developer / App Store Connect** | Publishing the iPhone and iPad app, Sign in with Apple, TestFlight | `[owner]` (account holder) | `[developer]` (admin role) | Required by Apple | `[date]` |
 | **Google Play Console** | Publishing the Android app | `[owner]` | `[developer]` | Required by Google | `[date]` |
 | **Anthropic console** (only if the AI is turned on one day) | The AI key of `caa-ai` and its spending limit. Today the AI is switched off, `caa-ai` is not deployed and no key is set | `[owner]` | `[developer]` | `[yes/no]` | `[date]` |
+| **RevenueCat** | The purchases of both stores, their webhook to `caa-billing`, the secret key | `[owner]` | `[developer]` | `[yes/no]` | `[date]` |
 | **Expo / EAS** | Building the apps in the cloud; signing credentials of the builds | `[owner]` | `[developer]` | `[yes/no]` | `[date]` |
 | **Domain registrar** (`[registrar]`, `[domain]`) | The website's address; whoever holds it can redirect the pages and the e-mails | `[owner]` | `[second admin]` | `[yes/no]` | `[date]` |
 | **Off-site backup storage** (`[provider]`) | The encrypted weekly copies (`docs/runbooks/BACKUP-AND-RESTORE.md`) | `[owner]` | `[second admin]` | `[yes/no]` | `[date]` |

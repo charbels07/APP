@@ -280,6 +280,13 @@ built, each with its attack replayed by `npm run test:db`:
 
 What these need on the server is in §4 ("After the update of 18 November 2026").
 
+### Added later: payment (26 November 2026)
+
+| What | How it protects | Where |
+|---|---|---|
+| **Who paid is the stores' word, never the app's** | Purchases are written only by the server function `caa-billing` (with the server's key: `billing_record`), from RevenueCat's own records: its webhook (checked by a shared secret, compared in constant time) or the app's "read me again", which only looks up the signed-in person's own account (a tablet, a stranger's token: refused). The app can neither call `billing_record` nor read `billing_entitlements`. | `…20261126000000_billing.sql`, `supabase/functions/caa-billing`, attacks in `supabase/tests/billing_scenario.sql` |
+| **An unpaid board is refused by the database** | While paused or frozen, triggers refuse a person's changes to the board, follow-up, observations, invitations, new members, tablet codes and copies by hand, and `can_send_media` refuses photos and recordings. Never reading, the child's voice, leaving, deleting, "Download all my data" or handing the child to the other parent. Only the owner switches payment on or off (`billing_go_live`, `billing_stop`: not callable from the app). | same |
+
 ## 4. What only you can do
 
 ### After the update of 22 November 2026 (5 minutes)

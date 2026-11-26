@@ -37,6 +37,8 @@ The nightly job `retention_daily` runs at 03:25 UTC; the bin is emptied at 03:10
 | When a child's board was last opened (one moment per child) | `profile_seen` | Replaced at each opening | With the profile | Built *(Nov. 2026)* |
 | Messages to the team | `feedback` | **3 years** | Automatic job | Built *(Nov. 2026)* |
 | Votes | `roadmap_votes` | As long as the account | With the account | Built |
+| What an account bought (subscription or licence: its end date, renewing or not, store, product; never a card or a receipt) | `billing_entitlements` | As long as the account (an ended subscription stays: it decides "7 days with nothing blocked" instead of a free week) | With the account. Apple or Google and RevenueCat keep their own payment records under their own rules | Built *(Nov. 2026)* |
+| The day of the last payment reminder on a device | `push_subs.billing_reminded_on` | As the device's line | Same as `push_subs` | Built *(Nov. 2026)* |
 | Team's action log | `admin_log` | **5 years** | Automatic job | Built *(Nov. 2026)* |
 | Feature counters | `feature_days` | **180 days**; erased at once when the family stops sharing | Automatic job (`retention_daily`), trigger `forget_product` | Built |
 | Technical problems (linked to nobody) | `error_counts` | **180 days** | Automatic job (`retention_daily`) | Built |

@@ -38,7 +38,9 @@ describe('the board asks for it', () => {
   it('the keypad opens the link after the right code, without turning caregiver mode on', () => {
     expect(opensAlone({ kind: 'openLink' })).toBe(true);
     const pin = src('ui/panels/CommPanels.tsx');
-    const open = pin.slice(pin.indexOf('const open = () => {'), pin.indexOf('const again ='));
+    // What the right code opens lives in goOnAfterCode (also "Later" under the subscription's message).
+    const open = pin.slice(pin.indexOf('export function goOnAfterCode'), pin.indexOf('export function PinPanel'));
+    expect(pin.slice(pin.indexOf('const open = () => {'), pin.indexOf('const again ='))).toContain('goOnAfterCode(app, then)');
     expect(open.indexOf("then?.kind === 'openLink'")).toBeGreaterThan(-1);
     expect(open.indexOf('openAppUrl(then.url)')).toBeLessThan(open.indexOf('setEditMode(true)'));
     // One sentence says another app is about to open.

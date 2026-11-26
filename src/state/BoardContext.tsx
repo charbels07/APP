@@ -4,6 +4,7 @@
  * Not provided in the preview and the set-up trial (no account, nothing saved).
  */
 import { createContext, useContext } from 'react';
+import type { BoardBilling } from '../backend/Backend';
 import type { AccessLevel, CollaboratorRole, PermissionSet } from '../lib/permissions';
 import type { MediaSync } from './mediaSync';
 import type { ProfileSync } from './profileSync';
@@ -28,6 +29,10 @@ export interface BoardCtx {
   tracker?: UsageTracker | null;
   /** Copies of the child's photos and recordings through the account (null until ready). */
   media?: MediaSync | null;
+  /** Where the family's payment stands (src/lib/billing.ts); undefined until the server answered. */
+  billing?: BoardBilling | null;
+  /** Asks the server again (after a purchase, when the Account page opens). */
+  refreshBilling?: () => void;
 }
 
 export const BoardContext = createContext<BoardCtx | null>(null);

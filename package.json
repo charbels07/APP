@@ -13,6 +13,7 @@
     "expo-clipboard": "~58.0.4",
     "expo-constants": "~58.0.15",
     "expo-crypto": "~58.0.7",
+    "expo-dev-client": "~58.0.18",
     "expo-document-picker": "~58.0.4",
     "expo-file-system": "~58.0.13",
     "expo-image-manipulator": "~58.0.16",
@@ -30,6 +31,7 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-native": "0.88.1",
+    "react-native-purchases": "^11.1.0",
     "react-native-safe-area-context": "~5.11.1",
     "react-native-svg": "15.16.0",
     "react-native-web": "~0.21.4"
@@ -59,7 +61,11 @@
     "build:voices": "NODE_USE_ENV_PROXY=1 node --experimental-strip-types scripts/build-voice-packs.ts",
     "test:db": "bash scripts/test-db.sh",
     "test:live": "jest --testPathIgnorePatterns=/node_modules/ --testPathPatterns=live/ --forceExit --runInBand",
-    "test:a11y": "bash scripts/a11y/run.sh"
+    "test:a11y": "bash scripts/a11y/run.sh",
+    "eas-build-pre-install": "node scripts/check-store-env.js",
+    "build:ios": "npx eas-cli build -p ios --profile production",
+    "build:android": "npx eas-cli build -p android --profile production",
+    "build:preview": "npx eas-cli build -p all --profile preview"
   },
   "private": true,
   "jest": {

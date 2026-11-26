@@ -36,6 +36,7 @@ from (values
   ('20261123000000_app_name.sql',           exists (select 1 from pg_proc where proname = 'push_words' and (prosrc like '%Empower Communication%' or prosrc like '%Daleth AAC%'))),
   ('20261123000100_deletion_list.sql',      exists (select 1 from pg_proc where proname = 'retention_daily' and prosrc like '%100 days%')),
   ('20261125000000_daleth_name.sql',        exists (select 1 from pg_proc where proname = 'team_mail_test' and prosrc like '%Daleth AAC%')),
-  ('20261125000100_daleth_formats.sql',     exists (select 1 from pg_proc where proname = 'export_my_data' and prosrc like '%daleth-aac/export-1%'))
+  ('20261125000100_daleth_formats.sql',     exists (select 1 from pg_proc where proname = 'export_my_data' and prosrc like '%daleth-aac/export-1%')),
+  ('20261126000000_billing.sql',            to_regclass('public.billing_entitlements') is not null)
 ) as t(file, ok)
 order by file;

@@ -24,7 +24,8 @@ Processors used by several purposes (their agreements to sign or check):
 | Anthropic | Not used: the AI helper is switched off and `caa-ai` is not deployed (owner's decision, November 2026). *Before it is turned on: this record, the agreement, the consent text, families asked again* | US | — |
 | Cloudflare | Public pages (support, deletion, privacy) and the web version for chosen testers | Worldwide | `[DPA]` |
 | `[off-site storage provider]` | Encrypted weekly copy of the database | EU `[region]` | `[DPA]` |
-| Apple, Google (stores, sign-in) | Distribution, optional sign-in, subscriptions *(to come)* | — | Their terms *(controller or processor: to qualify)* |
+| Apple, Google (stores, sign-in) | Distribution, optional sign-in, taking the payment of subscriptions | — | Their terms *(controller or processor: to qualify)* |
+| RevenueCat Inc. | Purchases of both stores: checks receipts, follows renewals and refunds; receives the account's id and what was bought | US | Data processing agreement `[to sign]`; standard contractual clauses `[to confirm]` |
 | Expo (EAS) | Builds the apps; receives no user data | — | — |
 | Google (Firebase Cloud Messaging, `fcm.googleapis.com`), Mozilla (autopush, `updates.push.services.mozilla.com`), Apple (web push, `*.push.apple.com`), Microsoft (WNS, `*.notify.windows.com`): the browsers' notification services | Carry a notification of the web version to the browser that accepted them; the message is encrypted for that browser, they cannot read it. `caa-push` posts to these four only (checked by the function and by the database) | Worldwide | Their terms *(carrier chosen by the person's browser: to qualify)* |
 
@@ -206,9 +207,17 @@ Processors used by several purposes (their agreements to sign or check):
 | Data | A sentence, the account, sometimes the child's profile |
 | Retention | 12 months |
 
-## 16. Subscriptions *(to come)*
+## 16. Subscriptions and the professional's licence *(built November 2026, off until switched on)*
 
-`[To write with billing: what the stores send us, accounting retention.]`
+| | |
+|---|---|
+| Purpose | Selling the family's subscription and the professional's licence in the App Store and Google Play; deciding what a board may change (free week, 7 days after an ended subscription, paused, frozen: the child always talks) |
+| Data | The account's id (sent to RevenueCat as its user id), what was bought (family or licence), its end date, renewing or not, the store and the product name. **Never** a card, a bank detail, a receipt or anything about the child |
+| Source | Apple or Google, through RevenueCat, read by the server function `caa-billing` (never what the app says) |
+| Recipients | RevenueCat (US) as the purchases processor; Apple or Google (who take the payment, under their own terms); Supabase |
+| Transfers | RevenueCat Inc. (US) `[safeguards: data processing agreement, standard contractual clauses: to confirm]` |
+| Retention | As long as the account (`billing_entitlements`); the stores and RevenueCat keep payment records under their own rules `[accounting retention of the company's own records: to confirm with the accountant]` |
+| Rights | "Download all my data" lists the purchases; cancelling is done in the store (deleting the account does not stop a subscription: the app and the deletion page say so) |
 
 ## 17. Notifications outside the app (web version)
 

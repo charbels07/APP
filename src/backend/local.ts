@@ -15,10 +15,11 @@ import { deleteMedia, mediaUri, saveMedia } from '../lib/media';
 import { isSyncable, MEDIA_LIMITS, mediaKind, mediaNamesIn } from '../lib/mediaPlan';
 import { KEEP_MEDIA } from '../lib/mediaKeep';
 import { exampleBugs, exampleDocument, exampleOverview, exampleProduct, exampleRequests, exampleRoadmap } from '../lib/demoBackOffice';
+import { billingStatus, changesBlocked, type BillingProduct, type BillingState, type MyBilling } from '../lib/billing';
 import { cleanVersion, COUNTERS, PROBLEM_KINDS, SCREENS, sharesProduct, type ProblemItem } from '../lib/product';
 import { demoObservations, demoUsage } from '../lib/demoUsage';
 import { limitToConsent } from '../lib/usageConsent';
-import { BackendError, type AdminRetention, type Backend, type BinEntry, type CodeSent, type SecurityState, type SignUpInput, type Snapshot, type TwoStepSetup } from './Backend';
+import { BackendError, type AdminRetention, type Backend, type BinEntry, type BoardBilling, type DemoBillingChange, type CodeSent, type SecurityState, type SignUpInput, type Snapshot, type TwoStepSetup } from './Backend';
 import { newTotpSecret, totp, totpMatches, totpUri } from '../lib/totp';
 import {
   DEFAULT_PREFS,
@@ -129,6 +130,11 @@ interface DB {
    * already live on this device; the demonstration follows the real server's rules).
    */
   media?: Record<string, { name: string; size: number; createdAt: number }[]>;
+  /**
+   * Payment, as billing_config / billing_entitlements (written as if RevenueCat had said it).
+   * `family[userId].until`: end of the subscription; `pro`: licences bought.
+   */
+  billing?: { live: boolean; liveSince?: number; family: Record<string, { until: number; renews: boolean }>; pro: string[] };
 }
 const emptyDb = (): DB => ({
   accounts: {},
@@ -290,11 +296,37 @@ export class LocalBackend implements Backend {
    */
   private static memberCleared(db: DB, userId: string, role: CollaboratorRole): boolean {
     if (!LocalBackend.cleared(db, userId)) return false;
-    return (role !== 'therapist' && role !== 'teacher') || db.accounts[userId]?.role === 'pro';
+    return (role !== 'therapist' && role !== 'teacher') || (db.accounts[userId]?.role === 'pro' && LocalBackend.proPaid(db, userId));
+  }
+  /** The professional's licence (pro_paid): every professional "has paid" while payment is off. */
+  private static proPaid(db: DB, userId: string): boolean {
+    return !db.billing?.live || db.billing.pro.includes(userId);
+  }
+  /** Where the board of a child owned by `ownerId` stands (billing_for). */
+  private static billingFor(db: DB, ownerId: string): BillingState {
+    const b = db.billing;
+    const owner = db.accounts[ownerId];
+    const f = b?.family[ownerId];
+    return billingStatus({
+      live: !!b?.live,
+      liveSince: b?.liveSince,
+      accountCreated: owner?.createdAt ?? Date.now(),
+      paidUntil: f?.until,
+      renews: f?.renews,
+      proOwned: owner?.role === 'pro',
+      now: Date.now(),
+    });
+  }
+  /** Changes refused while the family's board is paused or frozen (billing_guard); never for the app's team. */
+  private static requirePaid(db: DB, profileId: string, me: StoredAccount) {
+    if ((db.admins ?? []).includes(me.id)) return;
+    const p = db.profiles[profileId];
+    if (p && changesBlocked(LocalBackend.billingFor(db, p.ownerId).status)) throw new BackendError('payment_needed');
   }
   /** A therapist or a teacher joining or given that role: refused without a professional account (cleared_to_join). */
   private static checkJoin(db: DB, userId: string, role: CollaboratorRole) {
     if ((role === 'therapist' || role === 'teacher') && db.accounts[userId]?.role !== 'pro') throw new BackendError('pro_account_needed');
+    if ((role === 'therapist' || role === 'teacher') && LocalBackend.cleared(db, userId) && !LocalBackend.proPaid(db, userId)) throw new BackendError('pro_licence_needed');
     if (!LocalBackend.memberCleared(db, userId, role)) throw new BackendError('pro_not_verified');
   }
   /** The account that owns the profile, signed in as itself (not a tablet). */
@@ -719,6 +751,7 @@ export class LocalBackend implements Backend {
       const data = clone(input.data);
       // The demonstration keeps the consent as the real server does (which also refuses a family's profile without it).
       const consent = input.consent && me.role !== 'pro' ? { userId: me.id, version: input.consent, at: Date.now() } : null;
+      if (!(db.admins ?? []).includes(me.id) && changesBlocked(LocalBackend.billingFor(db, me.id).status)) throw new BackendError('payment_needed');
       if (me.role === 'pro') {
         // A professional prepares a child's profile before the family has an account: only once
         // accepted, and nothing is recorded or shared until the family decides (same as the real server).
@@ -811,6 +844,7 @@ export class LocalBackend implements Backend {
       const p = db.profiles[id];
       const manager = a.owner || a.perms.manager;
       if (!manager && a.level < 3) throw new BackendError('forbidden');
+      LocalBackend.requirePaid(db, id, me);
       const blind = !LocalBackend.seesCode(db, id, me);
       // Core-vocabulary positions change only through an approved proposal.
       if (!manager && JSON.stringify(sent.boards.core) !== JSON.stringify(p.data.boards.core)) throw new BackendError('core_protected');
@@ -940,6 +974,7 @@ export class LocalBackend implements Backend {
   async takeSnapshot(profileId: string): Promise<void> {
     await this.tx((db, m) => {
       LocalBackend.requireManager(db, profileId, LocalBackend.need(m));
+      LocalBackend.requirePaid(db, profileId, LocalBackend.need(m));
       LocalBackend.keepSnapshot(db, db.profiles[profileId], 'manual');
     });
   }
@@ -950,6 +985,7 @@ export class LocalBackend implements Backend {
       const snap = (db.snapshots ?? []).find((x) => x.id === snapshotId);
       if (!snap) throw new BackendError('forbidden');
       LocalBackend.requireManager(db, snap.profileId, me);
+      LocalBackend.requirePaid(db, snap.profileId, me);
       const p = db.profiles[snap.profileId];
       LocalBackend.keepSnapshot(db, p, 'before_restore');
       const d = clone(snap.data);
@@ -1066,6 +1102,7 @@ export class LocalBackend implements Backend {
       if (!a.owner && !LocalBackend.seesCode(db, profileId, me) && input.role !== 'therapist' && input.role !== 'teacher') throw new BackendError('forbidden');
       // "parent" is written by the owner only (how a professional hands a profile to the parents).
       if (!(input.role === 'parent' || TEAM_ROLES.includes(input.role))) throw new BackendError('invalid');
+      if (input.role !== 'parent') LocalBackend.requirePaid(db, profileId, me);
       // A family's second parent is made from the Team page ("Acts as a parent"), not invited as one.
       if (input.role === 'parent' && !(a.owner && db.accounts[db.profiles[profileId].ownerId]?.role === 'pro')) throw new BackendError('forbidden');
       // Someone who may only invite gives at most what they hold, and never the family's own rights.
@@ -1138,6 +1175,7 @@ export class LocalBackend implements Backend {
     const owner = db.profiles[inv.profileId] ? db.accounts[db.profiles[inv.profileId].ownerId] : undefined;
     if (inv.role === 'parent' && !(owner?.role === 'pro' && owner.id === inv.fromUserId && LocalBackend.familyPerson(db, userId) && userId !== owner.id)) throw new BackendError('forbidden');
     if (inv.role !== 'parent') LocalBackend.checkJoin(db, userId, inv.role);
+    if (inv.role !== 'parent') LocalBackend.requirePaid(db, inv.profileId, db.accounts[userId]);
     // Someone who acts as a parent is changed by the owner only: no invitation or request left waiting rewrites their place.
     if (LocalBackend.actsAsParent(db.members.find((x) => x.profileId === inv.profileId && x.userId === userId))) throw new BackendError('already_member');
     // In: their other requests for this child end (one could be approved later with other rights).
@@ -1383,6 +1421,7 @@ export class LocalBackend implements Backend {
       if (!p) throw new BackendError('code_invalid');
       if ((input.role === 'therapist' || input.role === 'teacher') && me.role !== 'pro') throw new BackendError('pro_account_needed');
       if (LocalBackend.access(db, p.id, me.id)) throw new BackendError('already_member');
+      LocalBackend.requirePaid(db, p.id, me);
       if (!LocalBackend.cleared(db, me.id)) throw new BackendError('pro_not_verified');
       const inv: Invitation = {
         id: uid('i'),
@@ -1689,6 +1728,7 @@ export class LocalBackend implements Backend {
       if (access === 'full') LocalBackend.requireTeam(db, profileId, me);
       // A tablet receives the family's code: a professional on the family's team links none.
       if (!LocalBackend.seesCode(db, profileId, me) && db.profiles[profileId].ownerId !== me.id) throw new BackendError('forbidden');
+      LocalBackend.requirePaid(db, profileId, me);
       const code = friendlyCode();
       const expiresAt = Date.now() + CODE_TTL;
       db.pairings = db.pairings.filter((p) => p.expiresAt > Date.now() && !(p.profileId === profileId && (p.createdBy ?? me.id) === me.id));
@@ -1747,6 +1787,7 @@ export class LocalBackend implements Backend {
       // must be there when the family accepts it): not a use-only tablet, not someone removed.
       if (!a || !(a.owner || a.perms.manager || a.level >= 3 || (a.level >= 2 && (a.perms.proposeVocabulary || a.perms.createMaterials)))) throw new BackendError('forbidden');
       if (!isSyncable(name)) throw new BackendError('invalid');
+      LocalBackend.requirePaid(db, profileId, me);
       const kind = mediaKind(name)!;
       if (!contentType.startsWith(`${kind}/`)) throw new BackendError('media_type');
       const size = typeof Blob !== 'undefined' && body instanceof Blob ? body.size : (body as ArrayBuffer).byteLength;
@@ -2203,6 +2244,7 @@ export class LocalBackend implements Backend {
       // Nothing is recorded while a professional owns the profile: the parents have not agreed yet.
       if (db.accounts[db.profiles[profileId].ownerId]?.role === 'pro') throw new BackendError('forbidden');
       LocalBackend.requireOwnDevice(db, profileId, data.deviceId, me);
+      LocalBackend.requirePaid(db, profileId, me);
       const level = (db.profiles[profileId]?.data.settings as { dataCollection?: UsageDay['level'] | 'off' }).dataCollection ?? 'off';
       const kept = limitToConsent(data, level);
       if (!kept) throw new BackendError('forbidden');
@@ -2236,6 +2278,7 @@ export class LocalBackend implements Backend {
     return this.tx((db, m) => {
       const me = LocalBackend.need(m);
       if (me.provider === 'device' || !LocalBackend.canViewData(db, o.profileId, me)) throw new BackendError('forbidden');
+      LocalBackend.requirePaid(db, o.profileId, me);
       db.observations ??= [];
       const old = o.id ? db.observations.find((x) => x.id === o.id && x.profileId === o.profileId) : undefined;
       // An observation is changed by who wrote it, or by the family.
@@ -2299,6 +2342,54 @@ export class LocalBackend implements Backend {
   }
 
   async pushUnsubscribe(_endpoint: string): Promise<void> {}
+
+  // ── Payment ──
+
+  async billingState(profileId: string): Promise<BoardBilling> {
+    return this.tx((db, m) => {
+      const me = LocalBackend.need(m);
+      LocalBackend.requireAccess(db, profileId, me);
+      const owner = db.profiles[profileId].ownerId;
+      return { ...LocalBackend.billingFor(db, owner), payer: owner === me.id && me.provider !== 'device' };
+    });
+  }
+
+  async billingMine(): Promise<MyBilling> {
+    return this.tx((db, m) => {
+      const me = LocalBackend.need(m);
+      const f = db.billing?.family[me.id];
+      return { live: !!db.billing?.live, family: f ? { ...f, store: 'other' as const } : undefined, pro: !!db.billing?.pro.includes(me.id) };
+    });
+  }
+
+  async billingRefresh(): Promise<void> {}
+
+  /** The demonstration's shop and clock: what RevenueCat and the days would do on the real server. */
+  async demoBilling(change: DemoBillingChange): Promise<void> {
+    await this.tx((db, m) => {
+      const me = LocalBackend.need(m);
+      const b = (db.billing ??= { live: false, family: {}, pro: [] });
+      if ('live' in change) {
+        b.live = change.live;
+        if (change.live) b.liveSince ??= Date.now();
+      } else if ('buy' in change) {
+        const id: BillingProduct = change.buy;
+        if (id === 'proLicence') {
+          if (!b.pro.includes(me.id)) b.pro.push(me.id);
+        } else {
+          const from = Math.max(Date.now(), b.family[me.id]?.until ?? 0);
+          b.family[me.id] = { until: from + (id === 'familyYearly' ? 365 : 30) * DAY_MS, renews: true };
+        }
+      } else if ('daysAgo' in change) {
+        // As if the free week had started that many days ago.
+        delete b.family[me.id];
+        b.liveSince = Date.now() - change.daysAgo * DAY_MS;
+        db.accounts[me.id].createdAt = b.liveSince;
+      } else {
+        b.family[me.id] = { until: Date.now() - change.lapsedDaysAgo * DAY_MS, renews: false };
+      }
+    });
+  }
 
   async boardSeen(profileId: string): Promise<void> {
     await this.tx((db, m) => {

@@ -113,7 +113,8 @@ shared computer you can also erase the photos and recordings.
 | **Google**, **Apple** | Sign in with Google / Apple, if you choose it | What you agree to share with them (name, e-mail) | `[to confirm]` | Their own terms |
 | **Cloudflare** | Hosting our public pages (support, account deletion, this policy) and the web version used by testers | Technical data of the visit (IP address) | Worldwide network | Data processing agreement |
 | **Your browser's notification service** (Google Firebase Cloud Messaging for Chrome and the browsers built on it, Mozilla for Firefox, Apple for Safari, Microsoft for Edge on Windows), only if you turn notifications on in the web version | Carrying a notification to your device | The message, encrypted for your browser (they cannot read it); never a child's name or words | Worldwide | Their own terms |
-| **Apple App Store**, **Google Play** | Distributing the app; subscriptions *(to come)* | What their stores collect under their own policies | — | Their own terms |
+| **Apple App Store**, **Google Play** | Distributing the app; taking the payment of a subscription or a licence | What their stores collect under their own policies (we never see your card) | — | Their own terms |
+| **RevenueCat** | Checking purchases made in the stores, renewals and refunds | Your account's id and what you bought (never a child's data) | US | Data processing agreement; standard contractual clauses *(to confirm)* |
 | **Your device's speech services** | Dictation (section 9) | Your voice, when you dictate | Apple, Google | Their own terms |
 
 We never sell or rent data.

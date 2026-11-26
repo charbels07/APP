@@ -9,6 +9,7 @@ import type { Profile } from '../model/types';
 import type { Op } from '../lib/profileDiff';
 import type { AccessLevel, CollaboratorRole, PermissionSet } from '../lib/permissions';
 import type { ProblemItem } from '../lib/product';
+import type { BillingProduct, BillingState, MyBilling } from '../lib/billing';
 import type { UiLang } from '../model/types';
 import type {
   Observation,
@@ -124,6 +125,14 @@ export interface TwoStepSetup {
   /** The QR code as SVG text (the real server makes one). */
   qrSvg?: string;
 }
+
+/** Where a child's board stands for payment, and whether the signed-in person is the one who pays (its owner). */
+export interface BoardBilling extends BillingState {
+  payer: boolean;
+}
+
+/** Demonstration only: what the demo server plays (a purchase, payment switched on or off, days going by). */
+export type DemoBillingChange = { buy: BillingProduct } | { live: boolean } | { daysAgo: number } | { lapsedDaysAgo: number };
 
 export interface Backend {
   readonly kind: 'local' | 'supabase';
@@ -360,6 +369,16 @@ export interface Backend {
   adminRoadmapSave(input: { id?: string; title: Record<UiLang, string>; status: RoadmapStatus; audience?: RoadmapAudience }): Promise<void>;
   /** Demonstration only (local backend): signs in as the app's team, with example requests and figures. */
   demoOpenBackOffice?(): Promise<Account>;
+
+  // ── Payment (src/lib/billing.ts; the database decides: 20261126000000_billing.sql) ──
+  /** Where this child's board stands. "free" when payment is off or the server is not updated yet. */
+  billingState(profileId: string): Promise<BoardBilling>;
+  /** This account's own purchases. */
+  billingMine(): Promise<MyBilling>;
+  /** After a purchase or a restore: the server asks the store's records again (caa-billing). */
+  billingRefresh(): Promise<void>;
+  /** Demonstration only. */
+  demoBilling?(change: DemoBillingChange): Promise<void>;
 
   // ── Notifications ──
   listNotices(): Promise<Notice[]>;

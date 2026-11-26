@@ -2,7 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, AppState as RNAppState, Dimensions, Platform, StyleSheet, Text, View } from 'react-native';
-import { BackendError } from '../backend/Backend';
+import { BackendError, type BoardBilling } from '../backend/Backend';
 import { createDefaultProfile } from '../data/defaults';
 import { errorText } from '../i18n/account';
 import { APP_VERSION } from '../lib/appVersion';
@@ -268,6 +268,23 @@ function BoardStage({ profileId }: { profileId: string }) {
     [sync, tracker, media],
   );
 
+  // The family's payment (src/lib/billing.ts): asked when the board opens, every half hour, when the
+  // app comes back to the front and after a purchase. Unknown (offline): nothing is held back here;
+  // the server still refuses what it must.
+  const [billing, setBilling] = useState<BoardBilling | null>(null);
+  const refreshBilling = useCallback(() => {
+    void api.billingState(profileId).then(setBilling, () => {});
+  }, [api, profileId]);
+  useEffect(() => {
+    refreshBilling();
+    const id = setInterval(refreshBilling, 30 * 60 * 1000);
+    const sub = RNAppState.addEventListener('change', (st) => st === 'active' && refreshBilling());
+    return () => {
+      clearInterval(id);
+      sub.remove();
+    };
+  }, [refreshBilling]);
+
   // Someone else's changes: looked for every 30 s and when the app comes back to the front. Only the
   // version number travels each time (`pull`); the whole profile only when someone saved a newer one.
   // The rights did not arrive (no internet when the board opened): asked again after a few
@@ -353,7 +370,7 @@ function BoardStage({ profileId }: { profileId: string }) {
   if (!sync) return <Splash />;
   const manager = !!access && (access.owner || !!access.perms.manager);
   return (
-    <BoardContext.Provider value={{ profileId, childName: sync.copy.name, sync, access, manager, tracker, media }}>
+    <BoardContext.Provider value={{ profileId, childName: sync.copy.name, sync, access, manager, tracker, media, billing, refreshBilling }}>
       <BoardRescue>
         <AppProvider
           initial={sync.copy.data}

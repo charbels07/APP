@@ -64,7 +64,10 @@ export type Overlay =
   | { kind: 'help'; back?: Overlay }
   /** Caregiver code. `then`: what opens once the code is right. */
   | { kind: 'pin'; then?: AfterCode; back?: Overlay }
-  | { kind: 'settings'; back?: Overlay }
+  /** After the code, the family's subscription (src/ui/Billing.tsx): `then` opens with "Later". */
+  | { kind: 'payment'; then?: AfterCode }
+  /** `tab`: the page it opens on ("My account" from the subscription's message). */
+  | { kind: 'settings'; back?: Overlay; tab?: 'account' }
   /** "Lock the screen": how the device keeps the child in the app (Guided Access, app pinning). */
   | { kind: 'lock' }
   /** `cards`: print these words as picture cards (multi-selection). */

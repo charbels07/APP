@@ -185,7 +185,7 @@ const fr = {
   deleteProfile: 'Supprimer le profil de',
   deleteProfileNote: 'Supprime le profil pour toute l’équipe et sur tous les appareils. Tapez le prénom pour confirmer :',
   deleteAccount: 'Supprimer mon compte',
-  deleteAccountNote: 'Supprime votre compte et les profils dont vous êtes propriétaire. Tapez SUPPRIMER pour confirmer :',
+  deleteAccountNote: 'Supprime votre compte et les profils dont vous êtes propriétaire. Un abonnement ne s’arrête pas avec le compte : annulez-le d’abord dans l’App Store ou Google Play. Tapez SUPPRIMER pour confirmer :',
   deleteWord: 'SUPPRIMER',
   deleteForever: 'Supprimer définitivement',
 
@@ -386,7 +386,7 @@ const en: Dict = {
   deleteProfile: 'Delete the profile of',
   deleteProfileNote: 'Deletes the profile for the whole team and on every device. Type the first name to confirm:',
   deleteAccount: 'Delete my account',
-  deleteAccountNote: 'Deletes your account and the profiles you own. Type DELETE to confirm:',
+  deleteAccountNote: 'Deletes your account and the profiles you own. A subscription does not stop with the account: cancel it first in the App Store or Google Play. Type DELETE to confirm:',
   deleteWord: 'DELETE',
   deleteForever: 'Delete for good',
 
@@ -585,7 +585,7 @@ const ar: Dict = {
   deleteProfile: 'حذف ملف',
   deleteProfileNote: 'يحذف الملف لكل الفريق وعلى كل الأجهزة. اكتب الاسم للتأكيد:',
   deleteAccount: 'حذف حسابي',
-  deleteAccountNote: 'يحذف حسابك والملفات التي تملكها. اكتب «حذف» للتأكيد:',
+  deleteAccountNote: 'يحذف حسابك والملفات التي تملكها. لا يتوقف الاشتراك مع الحساب: ألغِه أولاً في App Store أو Google Play. اكتب «حذف» للتأكيد:',
   deleteWord: 'حذف',
   deleteForever: 'حذف نهائي',
 

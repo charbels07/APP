@@ -6,6 +6,8 @@ import { adminStrings } from '../i18n/admin';
 import { boardToolsStrings } from '../i18n/boardTools';
 import { useSession } from '../state/Session';
 import { HELP_ID } from '../lib/scanning';
+import { remindsToPay } from '../lib/billing';
+import { billingStrings } from '../i18n/billing';
 import { useDwellTarget, useRestMs, useScanned } from '../state/access';
 import { DwellFill, ScanRing } from './AccessMarks';
 import { Icon, type IconName } from './Icon';
@@ -28,6 +30,8 @@ interface Item {
   show?: boolean;
   tone?: Tone;
   badge?: string;
+  /** A quiet reminder for the adults (the family's subscription): never a message on the board. */
+  dot?: boolean;
 }
 
 /**
@@ -47,6 +51,9 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
   // The adult's panels: straight in while caregiver mode is open, otherwise the caregiver code first.
   const behindCode = (kind: 'settings' | 'lock') => () => app.setOverlay(editMode ? { kind } : { kind: 'pin', then: { kind } });
   const bar = profile.settings.bar;
+  // The family's subscription: a dot on "Settings" and "Caregiver" only (the message comes after the code).
+  const dot = remindsToPay(board?.billing?.status) && !isAdmin;
+  const dotLabel = (label: string) => (dot ? `${label}, ${billingStrings(profile.settings.uiLang).dotLabel}` : label);
   // For the app's team (families who agreed): which ways to a feature this bar shows.
   useSeen('board', 'search', 'guide', 'edit', bar.tla && 'tla', bar.schedule && 'schedule', bar.timer && 'timer', (!!board || !!proBoard) && 'lock');
   const timerLabel =
@@ -98,7 +105,7 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
     },
     { key: 'guide', icon: 'book', label: t.guide, onPress: () => app.setOverlay({ kind: 'guide' }), active: overlay?.kind === 'guide' },
     // For the parents, from the board itself, each behind the caregiver code: the settings…
-    { key: 'settings', icon: 'settings', label: t.settings, onPress: behindCode('settings'), active: overlay?.kind === 'settings' },
+    { key: 'settings', icon: 'settings', label: t.settings, onPress: behindCode('settings'), active: overlay?.kind === 'settings', dot },
     // …and how to lock the screen, on a real child's board (the family's, or a professional's draft of
     // it; not the preview): the device's own lock, whose settings the panel opens (src/lib/lockSettings.ts).
     { key: 'childLock', icon: 'shield', label: t.lockShort, onPress: behindCode('lock'), active: overlay?.kind === 'lock', show: !!board || !!proBoard },
@@ -108,6 +115,7 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
       label: t.caregiver,
       onPress: () => (editMode ? app.setEditMode(false) : app.setOverlay({ kind: 'pin' })),
       active: editMode,
+      dot,
     },
   ];
   // Only for the accounts of the app's own team (the database says who they are), on their own
@@ -132,15 +140,15 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
       <View style={[styles.bar, styles.vertical]} role="navigation">
         <View style={styles.colGroup}>
           {visible(main).map(({ key, ...m }) => (
-            <BarButton key={key} id={key} {...m} size="main" />
+            <BarButton key={key} id={key} {...m} spoken={m.dot ? dotLabel(m.label) : undefined} size="main" />
           ))}
           {visible(priority).map(({ key, ...m }) => (
-            <BarButton key={key} id={key} {...m} size="priority" />
+            <BarButton key={key} id={key} {...m} spoken={m.dot ? dotLabel(m.label) : undefined} size="priority" />
           ))}
         </View>
         <View style={toolColumn ? styles.colGroup : styles.toolGrid}>
           {visible(tools).map(({ key, ...m }) => (
-            <BarButton key={key} id={key} {...m} size={toolColumn ? 'toolWide' : 'tool'} iconsOnly={!toolColumn} />
+            <BarButton key={key} id={key} {...m} spoken={m.dot ? dotLabel(m.label) : undefined} size={toolColumn ? 'toolWide' : 'tool'} iconsOnly={!toolColumn} />
           ))}
         </View>
       </View>
@@ -149,7 +157,7 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
   return (
     <View style={[styles.bar, styles.horizontal]} role="navigation">
       {[...visible(main), ...visible(priority), ...visible(tools)].map(({ key, ...m }) => (
-        <BarButton key={key} id={key} {...m} size={m.tone ? 'priorityRow' : 'row'} iconsOnly={iconsOnly} />
+        <BarButton key={key} id={key} {...m} spoken={m.dot ? dotLabel(m.label) : undefined} size={m.tone ? 'priorityRow' : 'row'} iconsOnly={iconsOnly} />
       ))}
     </View>
   );
@@ -163,9 +171,13 @@ function BarButton({
   active,
   tone,
   badge,
+  dot,
   size,
   iconsOnly,
+  spoken,
 }: Omit<Item, 'key' | 'show'> & {
+  /** What a screen reader says (the name, and the reminder when there is a dot). */
+  spoken?: string;
   /** The button's key, to choose it by resting the pointer on it (Settings → Touch). */
   id: string;
   size: 'main' | 'priority' | 'tool' | 'toolWide' | 'row' | 'priorityRow';
@@ -182,7 +194,7 @@ function BarButton({
       onHoverIn={rest.onHoverIn}
       onHoverOut={rest.onHoverOut}
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={spoken ?? label}
       style={({ pressed }) => [
         styles.btn,
         styles[size],
@@ -198,6 +210,7 @@ function BarButton({
             <Text style={styles.badgeText}>{badge}</Text>
           </View>
         ) : null}
+        {dot ? <View style={styles.dot} /> : null}
       </View>
       {!iconsOnly && (
         <Text
@@ -247,4 +260,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   badgeText: { color: '#fff', fontSize: 10, fontWeight: '800' },
+  dot: { position: 'absolute', right: -5, top: -3, width: 11, height: 11, borderRadius: 6, backgroundColor: C.accent, borderWidth: 2, borderColor: C.rail },
 });

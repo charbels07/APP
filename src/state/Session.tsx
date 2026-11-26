@@ -10,6 +10,7 @@
  * What is remembered on this device (AsyncStorage): the interface language, the last account
  * (so a tablet without internet still opens the board) and which child was open.
  */
+import { stopPurchases } from '../lib/purchases';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { backend } from '../backend';
@@ -297,6 +298,8 @@ export function SessionProvider({ children, api = backend() }: { children: React
         await forgetEverything({ keepUnsent: true });
         // The browser stops receiving that person's notifications (the server forgets a dead address by itself).
         await turnPushOff(api).catch(() => {});
+        // The next person on this device does not restore this account's purchases.
+        await stopPurchases();
         const was = deviceRef.current;
         if (was?.account) saveDevice({ account: undefined, lastProfile: undefined, localOwner: was.localOwner ?? was.account.id });
         setAccount(null);
@@ -316,6 +319,8 @@ export function SessionProvider({ children, api = backend() }: { children: React
       if (a && a.provider !== 'device' && !kept && !sameVisit()) {
         await forgetEverything({ beforeSignOut: true });
         await turnPushOff(api).catch(() => {});
+        // The next person on this device does not restore this account's purchases.
+        await stopPurchases();
         await api.signOut().catch(() => {});
         saveDevice({ account: undefined, localProfiles: [], lastProfile: undefined });
         return setStage({ name: 'welcome' });
@@ -377,6 +382,8 @@ export function SessionProvider({ children, api = backend() }: { children: React
     await forgetEverything({ beforeSignOut: true, media: opts?.eraseMedia === true });
     // This device stops receiving this person's notifications.
     await turnPushOff(api).catch(() => {});
+    // The next person on this device does not restore this account's purchases.
+    await stopPurchases();
     await api.signOut().catch(() => {});
     saveDevice({ account: undefined, localProfiles: [], lastProfile: undefined });
     setAccount(null);

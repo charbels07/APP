@@ -16,3 +16,9 @@ verify_jwt = false
 
 [functions.caa-push]
 verify_jwt = false
+
+# RevenueCat's webhook has no sign-in token either. caa-billing checks both of its callers itself:
+# RevenueCat by the shared secret `REVENUECAT_WEBHOOK_AUTH`, the app by the person's own token
+# (it then looks up that account only). Anything else gets 401 (docs/runbooks/STORE-BUILDS.md).
+[functions.caa-billing]
+verify_jwt = false

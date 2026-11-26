@@ -352,6 +352,16 @@ run; the file then closes the old way). What it closes is listed in `docs/SECURI
 The file also erases what had been recorded for profiles still owned by a professional (follow-up
 days and counters stored before the parents agreed) and turns those switches off.
 
+## 13. Payment (26 November 2026)
+
+One database file, `20261126000000_billing.sql`, and one server function, `caa-billing`. Run the file
+whenever you like: **payment stays off** until `select public.billing_go_live();`, so nothing changes
+for anyone before that (the app also works before the file has run: payment is then "free").
+Secrets `REVENUECAT_SECRET_KEY` and `REVENUECAT_WEBHOOK_AUTH`, then
+`supabase functions deploy caa-billing --no-verify-jwt`. Every step, the stores and RevenueCat:
+`docs/runbooks/STORE-BUILDS.md`. `npm run test:db` replays the rules and their attacks
+(`supabase/tests/billing_scenario.sql`).
+
 ## What is where
 
 | Table | Contents |

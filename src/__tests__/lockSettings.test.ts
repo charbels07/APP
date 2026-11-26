@@ -63,4 +63,10 @@ describe('nothing of the old in-app lock is left', () => {
     expect(src('state/AppState.tsx')).not.toMatch(/lockedRef|\blocked\?: boolean/);
     expect(src('ui/panels/CaregiverPanels.tsx')).toMatch(/openLockSettings\(\)/);
   });
+
+  it('the bar shows Lock on a child’s board: the family’s, and a professional’s draft of it', () => {
+    const lock = src('ui/UniversalBar.tsx').split('\n').find((l) => l.includes("key: 'childLock'")) ?? '';
+    expect(lock).toContain("behindCode('lock')");
+    expect(lock).toContain('show: !!board || !!proBoard');
+  });
 });

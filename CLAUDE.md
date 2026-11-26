@@ -297,6 +297,7 @@
 - The in-app guide (`src/data/guide.ts`) is updated with every change a user can see, in the three
   languages, with the names written on screen (`guide.test.ts` checks many of them).
 - No lock inside the app (owner's decision, 26 November 2026: it could not keep a child in). The bar's Lock
+  (on a child's board: the family's, or a professional's draft of it; not the "try it first" preview)
   opens "Lock the screen" (`LockPanel` in `CaregiverPanels.tsx`): only the device keeps a child in the app
   (Guided Access on iPad / iPhone, app pinning on Android). It gives the steps for this device and, on the
   tablet apps, "Open the device's settings" (`openLockSettings`, `src/lib/lockSettings(.web).ts`): Android's

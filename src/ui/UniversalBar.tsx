@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useApp } from '../state/AppState';
-import { useBoard } from '../state/BoardContext';
+import { useBoard, useProBoard } from '../state/BoardContext';
 import { adminStrings } from '../i18n/admin';
 import { boardToolsStrings } from '../i18n/boardTools';
 import { useSession } from '../state/Session';
@@ -39,6 +39,8 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
   const app = useApp();
   const { width, height } = useWindowDimensions();
   const board = useBoard();
+  // A child's board opened by a professional in her workspace (her own code is asked there).
+  const proBoard = useProBoard();
   const { isAdmin, go } = useSession();
   const iconsOnly = !vertical && width < 520;
   const { t, view, path, overlay, profile, timer, editMode } = app;
@@ -46,7 +48,7 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
   const behindCode = (kind: 'settings' | 'lock') => () => app.setOverlay(editMode ? { kind } : { kind: 'pin', then: { kind } });
   const bar = profile.settings.bar;
   // For the app's team (families who agreed): which ways to a feature this bar shows.
-  useSeen('board', 'search', 'guide', 'edit', bar.tla && 'tla', bar.schedule && 'schedule', bar.timer && 'timer', !!board && 'lock');
+  useSeen('board', 'search', 'guide', 'edit', bar.tla && 'tla', bar.schedule && 'schedule', bar.timer && 'timer', (!!board || !!proBoard) && 'lock');
   const timerLabel =
     timer.endAt || (timer.remainingMs > 0 && timer.remainingMs < timer.totalMs) ? formatTime(timer.remainingMs) : t.timer;
 
@@ -97,9 +99,9 @@ export function UniversalBar({ vertical }: { vertical: boolean }) {
     { key: 'guide', icon: 'book', label: t.guide, onPress: () => app.setOverlay({ kind: 'guide' }), active: overlay?.kind === 'guide' },
     // For the parents, from the board itself, each behind the caregiver code: the settings…
     { key: 'settings', icon: 'settings', label: t.settings, onPress: behindCode('settings'), active: overlay?.kind === 'settings' },
-    // …and how to lock the screen (only on a real child's board): the device's own lock, whose
-    // settings the panel opens (Guided Access, app pinning; src/lib/lockSettings.ts).
-    { key: 'childLock', icon: 'shield', label: t.lockShort, onPress: behindCode('lock'), active: overlay?.kind === 'lock', show: !!board },
+    // …and how to lock the screen, on a real child's board (the family's, or a professional's draft of
+    // it; not the preview): the device's own lock, whose settings the panel opens (src/lib/lockSettings.ts).
+    { key: 'childLock', icon: 'shield', label: t.lockShort, onPress: behindCode('lock'), active: overlay?.kind === 'lock', show: !!board || !!proBoard },
     {
       key: 'lock',
       icon: editMode ? 'unlock' : 'lock',

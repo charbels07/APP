@@ -89,6 +89,8 @@ export type Overlay =
   | { kind: 'guide'; back?: Overlay }
   /** Words and activity boards deleted in the last 30 days (src/lib/wordBin.ts). */
   | { kind: 'wordBin'; back?: Overlay }
+  /** Use mode, long press on a word: the word big over the board part of the screen (✕ returns). */
+  | { kind: 'bigWord'; concept: string }
   /** The visual scene of an activity board: its big picture, chosen or changed (caregiver mode). */
   | { kind: 'scene'; id: string; back?: Overlay };
 

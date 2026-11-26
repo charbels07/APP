@@ -92,12 +92,14 @@ const BASE: BaseChapter[] = [
         'L’application accorde toute seule : après « je », « vouloir » se dit « veux ».',
         'Parler (bouton vert) lit toute la phrase. Toucher un mot de la bande le redit.',
         'Effacer enlève le dernier mot, Tout effacer vide la bande, Annuler revient en arrière.',
+        'Appui long sur un mot : il est dit et s’affiche en grand à la place du tableau (la bande et la barre restent). Toucher la grande image le redit ; la croix ✕ revient au tableau. Il ne s’ajoute pas à la bande. Pour qu’un appui long compte comme un toucher, comme avant : Réglages → Toucher → Appui long sur un mot : le montrer en grand.',
       ],
       en: [
         'Touch “I”, then “want”, then “play”: each word is said and added to the strip.',
         'The app handles grammar by itself (in French, “je” + “vouloir” is said “veux”).',
         'Speak (green button) reads the whole sentence. Touching a word in the strip says it again.',
         'Delete removes the last word, Clear all empties the strip, Undo goes back.',
+        'Long press on a word: it is said and shown big in place of the board (the strip and the bar stay). Touching the big picture says it again; the ✕ returns to the board. It is not added to the strip. For a long press to count as a touch, as before: Settings → Touch → Long press on a word: show it big.',
       ],
     },
     tip: {
@@ -534,14 +536,14 @@ const BASE: BaseChapter[] = [
     title: { fr: 'Contacteurs, regard, main qui tremble', en: 'Switches, eye gaze, a hand that shakes' },
     steps: {
       fr: [
-        'Réglages → Toucher (derrière le code accompagnant). Tout est sur Non au départ : le tableau fonctionne comme avant tant que vous ne choisissez rien et ne touchez pas Enregistrer.',
+        'Réglages → Toucher (derrière le code accompagnant). Tout est sur Non au départ : le tableau fonctionne comme avant tant que vous ne choisissez rien et ne touchez pas Enregistrer. Seul Appui long sur un mot : le montrer en grand est sur Oui : mettez-le sur Non si les touchers lents de l’enfant doivent simplement compter.',
         'Toucher qui compte : Où le doigt se lève est le toucher habituel ; Où il se pose d’abord choisit la case où le doigt s’est posé, même s’il glisse sur une autre case avant de se lever (avec Garder le doigt appuyé, le doigt doit rester la durée d’appui, où qu’il glisse). Zone de toucher agrandie : un toucher entre deux cases compte pour la case la plus proche ; les cases gardent leur place et leur taille.',
         'Choisir en gardant le pointeur dessus (0,5 à 3 s) : avec une souris, un pointeur de tête ou un pointeur commandé par le regard qui déplace le curseur, la case se remplit tant que le pointeur reste dessus, puis elle est choisie. Rien d’autre n’y est choisi avant que le pointeur ne la quitte. Parler, Effacer, Retour et les boutons de la barre fonctionnent de la même façon. Sur iPad, le suivi du regard et AssistiveTouch de l’iPad font déjà les touchers : laissez Non.',
         'Balayage (contacteur) : Automatique (l’éclairage avance tout seul, un contacteur choisit) ou Pas à pas (un contacteur avance, un second choisit). Parcours : Ligne puis case (une ligne s’éclaire, le contacteur y entre, puis ses cases s’éclairent une à une) ou Case par case (petits tableaux). Temps sur chaque étape et Tours avant l’arrêt : après ces tours le balayage attend, et l’appui suivant le relance. Dire tout bas le mot éclairé : le mot éclairé est dit doucement avant d’être choisi (le nom d’un dossier n’est jamais dit).',
         'Le contacteur : Espace ou Entrée sur un clavier ou un boîtier de contacteurs (Pas à pas : Espace avance, Entrée choisit), ou Tout l’écran sert de contacteur (un toucher n’importe où sur le tableau choisit ; Pas à pas : moitié gauche avancer, moitié droite choisir). Effacer et Parler (dès qu’il y a une phrase) et Retour (dans un dossier) passent en premier ; après chaque choix le balayage repart du haut, dans le dossier quand un dossier a été ouvert. Le bouton Aide passe en dernier, après la dernière ligne du tableau : c’est le seul bouton de la barre dans le balayage. La barre n’est jamais couverte : Réglages et Accompagnant restent accessibles avec le code. Sur ordinateur, Échap arrête le balayage ; Reprendre le balayage le relance.',
       ],
       en: [
-        'Settings → Touch (behind the caregiver code). Everything here is Off at first: the board works as before until you choose something and touch Save.',
+        'Settings → Touch (behind the caregiver code). Everything here is Off at first: the board works as before until you choose something and touch Save. Only Long press on a word: show it big is On: turn it Off if the child’s slow touches should simply count.',
         'Touch that counts: Where the finger lifts is the usual touch; Where it first lands chooses the card the finger landed on, even if it slips onto another card before lifting (with Keep the finger pressed, the finger must stay down the hold time, wherever it slides). Bigger touch area: a touch in the gap between two cards counts for the nearest card; the cards keep their place and size.',
         'Choose by resting the pointer (0.5 to 3 s): with a mouse, a head pointer or an eye-gaze pointer that moves the cursor, the card fills up while the pointer rests on it, then it is chosen. Nothing more is chosen there until the pointer leaves. Speak, Delete, Back and the buttons of the bar work the same way. On an iPad, its own Eye Tracking and AssistiveTouch already make the touches: leave this Off there.',
         'Switch scanning: Automatic (the highlight moves by itself, one switch chooses) or Step by step (one switch moves, a second chooses). How it goes: Row, then card (a row lights up, the switch enters it, then its cards light one by one) or Card by card (small boards). Time on each step and Turns before it stops: after those turns the scan waits, and the next press starts it again. Say the lit word quietly: the lit word is said softly before it is chosen (a folder’s name is never said).',
@@ -695,14 +697,14 @@ const BASE: BaseChapter[] = [
         'Appui long sur une carte, puis glissez-la : elle prend la place où vous la lâchez (deux cartes s’échangent). « Annuler » apparaît quelques secondes. Sans glisser, l’appui long ouvre la carte (pratique pour un dossier).',
         'Touchez deux fois l’onglet d’un TLA : modifier son titre, Dupliquer, Ranger comme le tableau principal (remet chaque type de mot dans sa colonne, après en avoir ajouté par exemple), Partager (envoyer à quelqu’un qui a un compte, ou enregistrer un fichier), Imprimer.',
         'Sélectionner : touchez plusieurs cartes (Tout sélectionner, Tout désélectionner), puis Copier / Coller, changer la Taille, les envoyer Vers un tableau d’activité, les Imprimer en cartes, ou les retirer avec la corbeille (sur le tableau principal, elle demande de confirmer). Une case + ajoute toujours un mot. Depuis le tableau principal, les cartes envoyées sont copiées : leur place ne change pas.',
-        'En mode utilisation, un appui long sur un dossier montre ses mots les plus demandés sans l’ouvrir.',
+        'En mode utilisation, un appui long sur un dossier montre ses mots les plus demandés sans l’ouvrir ; sur un mot, il le montre en grand (la croix ✕ revient au tableau).',
       ],
       en: [
         'Tap a card twice: Edit, Replace the picture, Record the pronunciation, Add to favourites (“my words”), Duplicate, Delete.',
         'Long press a card, then slide it: it takes the place where you let go (two cards swap). “Undo” shows for a few seconds. Without sliding, the long press opens the card (handy for a folder).',
         'Tap an activity board tab twice: edit its title, Duplicate, Arrange like the main board (puts each kind of word back in its column, after adding some for example), Share (send to someone with an account, or save a file), Print.',
         'Select: tap several cards (Select all, Deselect all), then Copy / Paste, change the Size, send them To an activity board, Print them as cards, or remove them with the bin (on the main board it asks to confirm). A + case always adds a word. From the main board, cards that are sent are copied: their place does not change.',
-        'In use mode, a long press on a folder shows its most asked-for words without opening it.',
+        'In use mode, a long press on a folder shows its most asked-for words without opening it; on a word, it shows the word big (the ✕ returns to the board).',
       ],
     },
     action: 'caregiver',
@@ -772,6 +774,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
       'بالفرنسية، يصرّف التطبيق الأفعال تلقائياً: بعد «je» تُقال «vouloir» على شكل «veux».',
       'زر «تكلّم» (الأخضر) يقرأ الجملة كلها. لمس كلمة في الشريط يعيد قولها.',
       '«حذف» يزيل الكلمة الأخيرة، «مسح الكل» يفرغ الشريط، «تراجع» يعود خطوة إلى الوراء.',
+      'الضغط المطوّل على كلمة: تُقال وتظهر بحجم كبير مكان اللوحة (يبقى الشريط والشريط الدائم). لمس الصورة الكبيرة يعيد قولها؛ وعلامة ✕ تعيد إلى اللوحة. لا تُضاف إلى الشريط. ليُحتسب الضغط المطوّل لمسةً كما من قبل: الإعدادات ← اللمس ← «الضغط المطوّل على كلمة: إظهارها بحجم كبير».',
     ],
     tip: 'زر «أرني المثال» يعرض الجملة بيد متحركة.',
   },
@@ -957,7 +960,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
   access: {
     title: 'المفاتيح، النظر، اليد المرتجفة',
     steps: [
-      'الإعدادات ← اللمس (خلف رمز المرافق). كل شيء متوقف في البداية: تعمل اللوحة كما كانت حتى تختار شيئاً وتلمس حفظ.',
+      'الإعدادات ← اللمس (خلف رمز المرافق). كل شيء متوقف في البداية: تعمل اللوحة كما كانت حتى تختار شيئاً وتلمس حفظ. وحده «الضغط المطوّل على كلمة: إظهارها بحجم كبير» مفعّل: أوقفه إذا كانت لمسات الطفل البطيئة يجب أن تُحتسب ببساطة.',
       'اللمسة التي تُحتسب: «حيث يُرفع الإصبع» هي اللمسة المعتادة؛ «حيث يلمس أولاً» تختار البطاقة التي لمسها الإصبع أولاً حتى لو انزلق إلى بطاقة أخرى قبل رفعه (مع «إبقاء الإصبع مضغوطاً» يجب أن يبقى الإصبع مدة الضغط أينما انزلق). منطقة لمس أكبر: اللمس في الفراغ بين بطاقتين يُحتسب للبطاقة الأقرب؛ تبقى البطاقات في مكانها وبحجمها.',
       'الاختيار بإبقاء المؤشر فوقها (0.5 إلى 3 ث): بالفأرة أو بمؤشر الرأس أو بمؤشر يحرّكه النظر، تمتلئ البطاقة ما دام المؤشر فوقها ثم تُختار. لا يُختار شيء آخر هناك قبل أن يغادرها المؤشر. تكلّم وحذف ورجوع وأزرار الشريط تعمل بالطريقة نفسها. على الآيباد، تتبّع العين وAssistiveTouch يقومان باللمس بأنفسهما: اتركه متوقفاً هناك.',
       'المسح بالمفتاح: تلقائي (تتقدّم الإضاءة وحدها ويختار مفتاح واحد) أو خطوة بخطوة (مفتاح للتقدّم وآخر للاختيار). طريقة المرور: صفّ ثم بطاقة (يضيء صفّ، يدخله المفتاح، ثم تضيء بطاقاته واحدة بعد أخرى) أو بطاقة بعد بطاقة (للوحات الصغيرة). الوقت على كل خطوة وعدد الدورات قبل التوقف: بعدها ينتظر المسح، والضغطة التالية تعيد تشغيله. نطق الكلمة المضاءة بصوت خافت: تُقال الكلمة المضاءة بهدوء قبل اختيارها (اسم المجلد لا يُقال أبداً).',
@@ -1030,7 +1033,7 @@ const AR: Record<string, { title: string; steps: string[]; tip?: string }> = {
       'اضغط مطوّلاً على بطاقة ثم اسحبها: تأخذ المكان الذي تتركها فيه (تتبادل البطاقتان). يظهر «تراجع» لبضع ثوانٍ. من دون سحب، الضغطة الطويلة تفتح البطاقة (مفيدة للمجلد).',
       'المس تبويب لوحة النشاط مرتين: تعديل العنوان، نسخ، «ترتيب مثل اللوحة الرئيسية» (يعيد كل نوع من الكلمات إلى عموده، بعد إضافة كلمات مثلاً)، مشاركة (إرسال إلى شخص لديه حساب، أو حفظ ملف)، طباعة.',
       'تحديد: المس عدة بطاقات («تحديد الكل»، «إلغاء تحديد الكل») ثم نسخ / لصق، تغيير الحجم، إرسالها إلى لوحة نشاط، طباعتها كبطاقات، أو إزالتها بسلة المهملات (على اللوح الرئيسي تطلب تأكيداً). خانة + تضيف كلمة دائماً. من اللوح الرئيسي تُنسخ البطاقات المُرسلة ولا يتغيّر مكانها.',
-      'في وضع الاستعمال، الضغطة الطويلة على مجلد تُظهر كلماته الأكثر طلباً من دون فتحه.',
+      'في وضع الاستعمال، الضغطة الطويلة على مجلد تُظهر كلماته الأكثر طلباً من دون فتحه؛ وعلى كلمة تُظهرها بحجم كبير (علامة ✕ تعيد إلى اللوحة).',
     ],
   },
   progress: {

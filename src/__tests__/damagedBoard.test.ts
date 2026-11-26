@@ -88,6 +88,12 @@ describe('a damaged profile still gives a board', () => {
     expect(m.boards.core.kind).toBe('core');
   });
 
+  it('"show a word big on a long press" of the wrong kind gets the usual value (on)', () => {
+    expect(damaged((p) => (p.settings.bigOnHold = 'yes')).settings.bigOnHold).toBe(true);
+    expect(damaged((p) => (p.settings.bigOnHold = false)).settings.bigOnHold).toBe(false);
+    expect(damaged((p) => delete p.settings.bigOnHold).settings.bigOnHold).toBe(true);
+  });
+
   it('a visual scene that cannot be read: its place stays, an unreadable picture is left out', () => {
     const sound = damaged((p) => (p.boards.tla_park.scene = { image: { kind: 'media', name: '1762000000001_ab12cd.jpg' } }));
     expect(sound.boards.tla_park.scene).toEqual({ image: { kind: 'media', name: '1762000000001_ab12cd.jpg' } });

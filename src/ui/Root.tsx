@@ -24,6 +24,7 @@ import { BoardScreen } from './screens/BoardScreen';
 import { ScheduleScreen } from './screens/ScheduleScreen';
 import { TlaScreen } from './screens/TlaScreen';
 import { WhiteboardScreen } from './screens/WhiteboardScreen';
+import { BigWord } from './BigWord';
 import { SentenceStrip } from './SentenceStrip';
 import { Seen } from './Seen';
 import { SymbolView } from './SymbolView';
@@ -85,6 +86,7 @@ export function Root({ banner }: { banner?: React.ReactNode } = {}) {
       {overlay?.kind === 'wordBin' && <WordBinPanel />}
       {overlay?.kind === 'settings' && <SettingsScreen />}
       {overlay?.kind === 'peek' && <FolderPeek folder={overlay.folder} />}
+      {overlay?.kind === 'bigWord' && <BigWord concept={overlay.concept} />}
       {!banner && !overlay && !chooseFirst && !profile.guide?.seen && !editMode && !app.playing && !app.recording && <WelcomeCard />}
       <CaregiverOverlay />
       {chooseFirst && <PinPanel first />}

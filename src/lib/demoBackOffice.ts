@@ -289,7 +289,7 @@ export function exampleProduct(now: number): AdminProduct {
       s('followUp', 46, 59, 26),
       s('ai', 61, 22, 48),
       s('guide', 70, 61, 0),
-      // 3 children used the child lock: "used" and "seen without using" are only given together.
+      // 3 children's families opened "Lock the screen": "used" and "seen without using" are only given together.
       { key: 'lock', seen: 126, unseen: 5 },
     ],
     byVersion: [

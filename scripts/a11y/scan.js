@@ -106,6 +106,8 @@ const results = [];
     // Search, Keyboard and Model share one panel, opened by the magnifying glass: the last two are its tabs.
     for (const [label, n, tab] of [[L.search, '08-search'], [L.search, '09-keyboard', L.keyboard], [L.help, '10-help'], [L.boards, '11-boards'], [L.schedule, '12-schedule'], [L.timer, '13-timer'], [L.search, '14-model', L.model], [L.guide, '15-guide']])
       await step(n, async () => { await btn(label).click(); await p.waitForTimeout(700); if (tab) { await p.getByRole('tab', { name: tab, exact: true }).click(); await p.waitForTimeout(500); } await scan(n); await p.keyboard.press('Escape').catch(() => {}); const x = p.getByRole('button', { name: /^(close|Close)$/ }).first(); if (await x.count()) await x.click().catch(() => {}); await btn('AAC').click().catch(() => {}); });
+    // The bar's Lock: "Lock the screen" (the device's own lock; a browser has no button to its settings).
+    await step('15h-lock', async () => { await btn('Lock').click(); await p.getByText('Only the device can keep the child', { exact: false }).first().waitFor(); await scan('15h-lock-screen'); await p.keyboard.press('Escape'); await p.waitForTimeout(400); });
     await step('17-caregiver', async () => { await btn(L.caregiver).click(); await p.waitForTimeout(600); await scan('17-caregiver-mode'); });
     await step('18-editor', async () => { const c = await centerOf('want'); await p.mouse.click(c.x, c.y); await p.waitForTimeout(900); await scan('18-word-editor'); const x = p.getByRole('button', { name: /^(close|Close)$/ }).first(); if (await x.count()) await x.click(); });
     // The word picker opened from the word editor: its search (type or say), its "Back", and the new-word form.

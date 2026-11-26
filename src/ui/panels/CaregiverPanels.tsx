@@ -1,4 +1,4 @@
-import { enterFullscreen, exitFullscreen } from '../../lib/childLock';
+import { openLockSettings, opensDeviceSettings } from '../../lib/lockSettings';
 import { useBoard, useProBoard } from '../../state/BoardContext';
 import { useSession } from '../../state/Session';
 import { PictoCredit } from '../PictoCredits';
@@ -102,43 +102,42 @@ function WiggleTry({ label, concept }: { label: string; concept: string }) {
   );
 }
 
-/** The child lock of this device: the switch and how to stop the child leaving the app. */
-function ChildLock() {
-  const app = useApp();
-  const sess = useSession();
-  const { t } = app;
-  return (
-    <>
-      <Toggle
-        label={t.lockToggle}
-        value={sess.childLock}
-        note={t.lockNote}
-        onChange={(on) => {
-          // Full screen must be asked inside the tap (browsers refuse it otherwise).
-          if (on) enterFullscreen();
-          else exitFullscreen();
-          sess.setChildLock(on);
-          if (on) {
-            countFeature('lock');
-            app.setEditMode(false);
-            app.setOverlay(null);
-          }
-        }}
-      />
-      <Text style={s.label}>{t.lockSystemTitle}</Text>
-      <Text style={s.note}>{Platform.OS === 'web' ? t.lockWeb : Platform.OS === 'android' ? t.lockAndroid : t.lockIpad}</Text>
-      {Platform.OS === 'web' && <Text style={s.note}>{t.lockIpad}</Text>}
-      {Platform.OS === 'web' && <Text style={s.note}>{t.lockAndroid}</Text>}
-    </>
-  );
-}
-
-/** The child lock on its own, opened from the board's bar (after the caregiver code). */
+/**
+ * The bar's Lock button (after the caregiver code): only the device can keep the child inside the
+ * app (Guided Access, app pinning). The steps for this device, and on the tablet apps a button that
+ * opens the device's settings (a browser cannot open them).
+ */
 function LockPanel() {
   const app = useApp();
+  const { t } = app;
+  const [refused, setRefused] = useState(false);
+  const steps = Platform.OS === 'android' ? [t.lockAndroid] : Platform.OS === 'ios' ? [t.lockIpad] : [t.lockIpad, t.lockAndroid];
   return (
-    <Panel title={app.t.lockTitle} onClose={() => app.setOverlay(null)} tone="edit" maxWidth={620}>
-      <ChildLock />
+    <Panel title={t.lockTitle} onClose={() => app.setOverlay(null)} tone="edit" maxWidth={620}>
+      <Text style={s.note}>{t.lockIntro}</Text>
+      {steps.map((x) => (
+        <Text key={x} style={s.note}>
+          {x}
+        </Text>
+      ))}
+      {opensDeviceSettings && Platform.OS === 'ios' && <Text style={s.note}>{t.lockIosPage}</Text>}
+      {opensDeviceSettings ? (
+        <Btn
+          kind="primary"
+          icon="settings"
+          label={t.lockOpen}
+          onPress={() => {
+            countFeature('lock');
+            void openLockSettings().then((ok) => setRefused(!ok));
+          }}
+        />
+      ) : (
+        <>
+          <Text style={[s.note, s.lockNote]}>{t.lockWeb}</Text>
+          <Btn label={t.close} onPress={() => app.setOverlay(null)} />
+        </>
+      )}
+      {refused && <Text style={[s.note, s.lockNote]}>{t.lockRefused}</Text>}
     </Panel>
   );
 }
@@ -1040,7 +1039,7 @@ function ScheduleEditor({ id }: { id: string }) {
  * The settings being changed, before they are saved. Every switch of the "Board" page writes
  * here; "Save" writes what was changed into the child's profile, "Cancel changes" throws it away.
  * (Three things do not wait for Save, because they are not the child's settings: the language
- * of the menus, the child lock of this device, and "Reset".)
+ * of the menus and "Reset".)
  *
  * What is kept is the list of what the person changed (src/lib/settingsPatch.ts), shown on top of
  * the profile as it is now: "Save" never puts back an older value of something the person did not

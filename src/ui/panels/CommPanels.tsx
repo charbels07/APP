@@ -285,7 +285,7 @@ export function PinPanel({ first = false }: { first?: boolean }) {
       return;
     }
     if (then?.kind === 'recordDemo') return app.startRecording();
-    // The settings, the child lock, the guide, a new word for the timer open on their own: the board stays as the child uses it.
+    // The settings, "Lock the screen", the guide, a new word for the timer open on their own: the board stays as the child uses it.
     if (then && opensAlone(then)) return app.setOverlay(then);
     app.setEditMode(true);
     if (then) app.setOverlay(then);

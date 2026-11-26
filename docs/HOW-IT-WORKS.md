@@ -109,7 +109,7 @@ This file grows as each feature is built. Each line says **what** was made, **ho
 
 | Feature | How it was built |
 |---|---|
-| Child lock | Settings → Board → Child lock, remembered **per device** (the parent's phone stays free). On the child's device: the Android back button is ignored (`BackHandler`), other apps no longer open from a picture, the screen stays on (`expo-keep-awake`), the status bar is hidden; in a browser the page goes full screen and asks before closing (`src/lib/childLock(.web).ts`). No app can block the iPad's Home gesture by itself: Apple reserves that for **Guided Access** (Android: **screen pinning**); the same section explains how to turn them on. |
+| Child lock | *Replaced in round 40 by "Lock the screen".* Settings → Board → Child lock, remembered per device: Android back button ignored, other apps no longer opened from a picture, screen kept on; in a browser, full screen. No app can block the iPad's Home gesture by itself: Apple reserves that for **Guided Access** (Android: **screen pinning**). |
 | Timer that hides nothing | The timer is now a strip above the board (`TimerCard.tsx`, placed in the page layout instead of floating on top): the board measures the space left and its cards get a little smaller. |
 | Picture of what the child waits for | The timer remembers a word (`timer.concept` in `AppState.tsx`), shown next to it; touching it says the word, and « C’est fini ! piscine » is said at the end. A schedule step's timer uses that step's picture. |
 | Week and month plans | `src/ui/screens/PlansViews.tsx` (React Native): seven columns Monday–Sunday, and a month calendar (`src/data/calendar.ts` builds the weeks; Lebanese month names in Arabic). They are optional (`settings.plans`), chosen at set-up or in Settings. They are stored in the child's profile and added to the change sets (`profileDiff.ts`: one change per weekday or per event), so they sync, merge, can be proposed by a professional, and appear in the history with undo — tested with Jest. |
@@ -613,7 +613,7 @@ About. Searching still works: only the groups that hold the word are shown, alre
 | Removed because it was there twice | Where it stays |
 |---|---|
 | "Open the guide" at the top | The Guide button of the bar |
-| Child lock | The Lock button of the bar |
+| Child lock | The Lock button of the bar (since round 40: "Lock the screen") |
 | Export profile (with an account) | Account → Privacy |
 | Menus' language on a family's Account page | Settings → Board → Languages |
 
@@ -697,6 +697,21 @@ without their board or without a word being said. No database change.
 | Help within reach | Help is the last step of switch scanning (the only button of the bar in the scan). The pictogram credits no longer take the whole screen on a board: they open beside the bar. |
 | Small ones | "As soon as it touches": a finger that stays no longer says the word twice. The follow-up recorder can no longer stop a touch. The family's code field in Settings is shown only to who may choose the code. |
 | Tests | `syncNeverBlocked.test.ts` (23), `damagedBoard.test.ts` (17), `speechFallback.test.ts` (11), `sessionStart.test.ts` (13), `serverDown.test.ts` (15), three more in `scanning.test.ts`. A browser run on the demo build: 20 checks, three of them accessibility scans of the new screens (see the review file). |
+
+## Round 40 — "Lock the screen" instead of the in-app lock (26 November 2026)
+
+Tried on a phone, the web app added to the home screen: the child lock did not keep the child in (a swipe up
+always leaves). No app or website can stop that gesture; only the device can. So the in-app lock was removed
+and the bar's Lock button leads to the device's own lock.
+
+| What | How it was done |
+|---|---|
+| Removed | The "Lock this device for the child" switch, the browser's full screen and its "no pull" guard, the blocked Android Back button, the screen kept on, the hidden status bar, pictograms that no longer opened other apps while locked (`src/lib/childLock(.web).ts`, `LockEffects`, `childLock` of the device, `locked` of `AppProvider`). A device that had the lock on simply opens normally. |
+| Lock → "Lock the screen" | Still behind the caregiver code. One sentence (only the device can keep the child in), the steps for this device (Guided Access on iPad / iPhone, app pinning on Android; both in a browser) and, in the tablet apps, **Open the device's settings** (`src/lib/lockSettings.ts`). |
+| Where the button goes | Android: the Security page, where app pinning is (Android has no public address for the pinning page itself; some makers put it under "More security settings"). iPad / iPhone: Settings, on Daleth AAC's own page: Apple lets a store app open nothing else, so the steps say to go back to the first page, then Accessibility → Guided Access. |
+| In a browser | A web page cannot open the device's settings: no button, one sentence saying to open the Settings app. |
+| Guide | "Caregiver mode" and "Settings" chapters, three languages. |
+| Tests | `lockSettings.test.ts` (which page opens, a refusal never throws, the browser has no button, nothing of the old lock left); `guide.test.ts` checks the guide names "Lock the screen" and "Open the device's settings". **Not tried on a real iPad or Android tablet from here.** |
 
 ## How everything is checked
 

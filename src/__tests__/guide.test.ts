@@ -75,7 +75,7 @@ describe('in-app guide', () => {
         // languages now live in Settings; its pages
         t.sCommLang, t.sInterface, st.tabTeam, st.tabAccount, dataStrings(lang).tab,
         // presentation and access, lock
-        t.gLanguages, t.gWords, t.gDisplay, t.gTouch, t.gSentence, t.gCodeData, t.sChildLangs, t.lockTitle, t.lockShort, t.settings,
+        t.gLanguages, t.gWords, t.gDisplay, t.gTouch, t.gSentence, t.gCodeData, t.sChildLangs, t.lockTitle, t.lockShort, t.lockOpen, t.settings,
         // sequences (step lists) with suggested steps; settings are saved on demand; voice height; selection
         t.newSchedule, t.suggestSteps, t.createSeq, t.editSchedule, t.save, t.sDiscard, e.selectAll, e.selectNone,
         // a step is added through the word picker, which has a way back to the sequence

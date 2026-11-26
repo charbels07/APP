@@ -42,7 +42,7 @@ export interface ModelOverlay {
 
 /**
  * What opens once the caregiver code is right. The new-board panel and printing open in caregiver
- * mode; the settings, the child lock, the guide, a new word for the timer and the demonstrations
+ * mode; the settings, "Lock the screen", the guide, a new word for the timer and the demonstrations
  * open on their own (the board stays in use mode). `recordDemo`: a demonstration starts recording.
  */
 export type AfterCode =
@@ -65,7 +65,7 @@ export type Overlay =
   /** Caregiver code. `then`: what opens once the code is right. */
   | { kind: 'pin'; then?: AfterCode; back?: Overlay }
   | { kind: 'settings'; back?: Overlay }
-  /** The child lock of this device (also in the settings). */
+  /** "Lock the screen": how the device keeps the child in the app (Guided Access, app pinning). */
   | { kind: 'lock' }
   /** `cards`: print these words as picture cards (multi-selection). */
   | { kind: 'print'; cards?: string[]; back?: Overlay }
@@ -326,8 +326,6 @@ export interface AppProviderProps {
   /** Lets the caller replace the profile when someone else changed it. */
   subscribe?: (apply: (p: Profile) => void) => () => void;
   preview?: boolean;
-  /** Child lock: other apps (YouTube…) don't open from a pictogram. */
-  locked?: boolean;
   /** Communication data (with the family's consent): touches, sentences, pages… */
   onUsage?: (e: UsageEvent) => void;
   /**
@@ -354,11 +352,9 @@ export interface OwnCode {
   save: (code: string) => void;
 }
 
-export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, preview = false, locked = false, onUsage, freeEdit = false, ownCode, staysOpen = false, children }: AppProviderProps) {
+export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, preview = false, onUsage, freeEdit = false, ownCode, staysOpen = false, children }: AppProviderProps) {
   const usageRef = useRef(onUsage);
   usageRef.current = onUsage;
-  const lockedRef = useRef(locked);
-  lockedRef.current = locked;
   const [stored, setProfile] = useState<Profile>(initial);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
@@ -480,8 +476,7 @@ export function AppProvider({ initial, onChange, uiLang, setUiLang, subscribe, p
   const launchApp = useCallback((conceptId: string) => {
     const link = appLinkOf(profileRef.current, conceptId);
     clearTimeout(launchTimer.current);
-    // Locked for the child: the word is said, but no other app opens.
-    if (!link || lockedRef.current) return;
+    if (!link) return;
     if (isIncomplete(link)) {
       setAppLaunch({ concept: conceptId, url: '' });
       return;

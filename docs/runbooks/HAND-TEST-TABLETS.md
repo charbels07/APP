@@ -44,14 +44,16 @@ Tick a line only when it worked on the device named in its last column.
 | [ ] | Record a word in a browser (computer, same account), then open the same child's board on the iPad and touch that word. | The browser-made recording plays on the iPad. If it cannot play, the device's voice says the word within about 1.5 s: never silence. | iPad |
 | [ ] | With the voice on **Girl** or **Boy**: Search → **A new word** → **Create a new word**, fill in the word and a picture, do **not** record, **Save**. | The word is saved without a recording (recording is optional now); **Record** is still offered. | both |
 
-## 3. Child lock
+## 3. Lock the screen
 
 | | What to do | What must happen | Device |
 |---|---|---|---|
-| [ ] | iPad: device Settings → Accessibility → **Guided Access** on, with a passcode. In the app, triple-click the side (or Home) button → Start. | The child cannot leave the app (Home, swipe, notifications). Triple-click + passcode leaves. | iPad |
-| [ ] | Android: **Lock** on the bar → caregiver code → **Lock this device for the child**. | The Back button no longer leaves the app; a pictogram that opens another app opens nothing; the screen stays on. To leave: **Lock** → caregiver code. | Android |
-| [ ] | Android: with the lock on, also turn on Screen pinning (device Settings → Security → Screen pinning, "Ask for PIN before unpinning") and pin the app. | Home and Overview do not leave the app until the PIN. | Android |
-| [ ] | With the lock on, touch **Help** on the bar. | Help opens: it is always reachable. | both |
+| [ ] | **Lock** on the bar → caregiver code. | "Lock the screen" opens with the steps for this device and **Open the device's settings**. | both |
+| [ ] | iPad: **Open the device's settings**. | Settings opens on Daleth AAC's page. | iPad |
+| [ ] | iPad: back to the first page of Settings → Accessibility → **Guided Access** on, with a passcode. In the app, triple-click the side (or Home) button → Start. | The child cannot leave the app (Home, swipe, notifications). Triple-click + passcode leaves. | iPad |
+| [ ] | Android: **Open the device's settings**. | The Security page opens (app pinning is there, or under "More security settings"). | Android |
+| [ ] | Android: turn on App pinning ("Ask for PIN before unpinning") and pin the app. | Home and Overview do not leave the app until the PIN. | Android |
+| [ ] | With Guided Access or pinning on, touch **Help** on the bar. | Help opens: it is always reachable. | both |
 
 ## 4. Links behind the code
 
@@ -59,7 +61,6 @@ Tick a line only when it worked on the device named in its last column.
 |---|---|---|---|
 | [ ] | In caregiver mode, on a word: **This pictogram opens an app**, **App link** (e.g. a YouTube address), **Test**. | The link opens; back in the app, caregiver mode is still on. | both |
 | [ ] | Leave caregiver mode; touch that pictogram (as the child would). | The keypad asks the caregiver code first; with the right code the app opens; without it nothing opens. | both |
-| [ ] | The same pictogram with the child lock on. | Nothing opens. | both |
 
 ## 5. Starting without internet
 

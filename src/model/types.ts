@@ -234,6 +234,11 @@ export interface Settings {
   touchPoint?: 'lift' | 'land';
   /** Each card's touch area reaches into the gap around it (the cards keep their place and size). */
   bigTouch?: boolean;
+  /**
+   * Outside caregiver mode, a long press on a word says it and shows it big over the board (an ✕
+   * returns to the board). On unless false; off: a long press counts as a touch, as before.
+   */
+  bigOnHold?: boolean;
   /** Optional plans shown in Planning, next to the day plan (chosen at set-up or in Settings). */
   plans: { week: boolean; month: boolean };
   /**

@@ -252,6 +252,7 @@ export const DEFAULT_SETTINGS: Settings = {
   dwell: 0,
   touchPoint: 'lift',
   bigTouch: false,
+  bigOnHold: true,
   plans: { week: false, month: false },
   dataCollection: 'off',
   shareStats: 'none',

@@ -322,6 +322,10 @@
 - Misspelt words (`src/lib/spelling.ts`): `searchPictos` adds sound-alike / one-letter-away results only when the
   exact search finds few (`FUZZY_BELOW`); `guessSpelling` gives "Did you mean" (`onGuess` of `PictoSearch`). A
   sentence as a board's topic gets a picture per word (`contentWords`, `pictoForWord`, `planFromSentence`).
+- Long press on a word outside caregiver mode (owner's request, 26 November 2026): the word is said and shown big over
+  the board part (overlay `bigWord`, `src/ui/BigWord.tsx`; strip and bar stay; ✕ or Escape returns; not added to the
+  sentence). `settings.bigOnHold` (on unless false; Settings → Touch) turns it off: a slow touch then counts, as before.
+  Folders keep their long-press preview (`peek`).
 - A professional's own board (`ChildDraftBoard`): after Save / Discard / sending, the new version is pushed into the
   board on screen (`subscribe`), never by re-mounting `AppProvider` (that sent her back to the main board, code first).
 - Searching a word or a picture always goes through `src/ui/SearchBox.tsx` (say the word, draw when

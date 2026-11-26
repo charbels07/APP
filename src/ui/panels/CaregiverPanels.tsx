@@ -1410,6 +1410,8 @@ export function BoardSettingsBody({ draft }: { draft: SettingsDraft }) {
           </>
         )}
         <Toggle label={ax.bigTouch} value={!!st.bigTouch} onChange={(v) => set((x) => void (x.bigTouch = v))} />
+        {/* Off for a child whose slow touches should simply count, as before. */}
+        <Toggle label={ax.bigOnHold} value={st.bigOnHold !== false} onChange={(v) => set((x) => void (x.bigOnHold = v))} />
         {/* A mouse, a head pointer or an eye-gaze pointer: resting on a card chooses it. */}
         <Text style={s.label}>{ax.dwell}</Text>
         <Segmented

@@ -139,11 +139,19 @@ it works the same on the web). A store trial would add a second free week and as
 
 ## 5. RevenueCat
 
+Done (27 November 2026): the project "Daleth", the entitlements `family` and `pro`, the offerings
+`family` and `pro` (still without packages). Waiting for Apple: the App Store app (step 1).
+
 1. Create the project, add the **App Store** app (bundle ID, then an App Store Connect API key and
    the In-App Purchase key) and the **Play Store** app (package, then a Google service account with
-   access to the Play Console's financial data).
+   access to the Play Console's financial data). RevenueCat asks for the Apple keys as soon as the
+   App Store app is added: add it once Apple has approved the account (App Store Connect → Users and
+   Access → Integrations). Leave "Custom URL Scheme" empty (it is for RevenueCat's own paywalls, not used).
 2. **Entitlements**: `family` (attach `family_monthly`, `family_yearly`, and both Google base plans)
    and `pro` (attach `pro_licence`). These names are read by the app and the server: keep them exactly.
+   RevenueCat may make one by itself with the project (here `daleth_pro`, with sample products): the
+   app ignores it; never attach the real products to it. Its "Install SDK" and "paywall" cards can be
+   marked done: the SDK is in the app, which draws its own purchase screen.
 3. **Offerings**: `family` with the packages *Monthly* and *Annual*; `pro` with the package *Lifetime*.
 4. **Webhook** (Integrations → Webhooks): URL `https://<project>.supabase.co/functions/v1/caa-billing`,
    Authorization header value: a long random text (48 characters or more) that you also save in

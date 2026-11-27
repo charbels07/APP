@@ -8,8 +8,8 @@ What is already done in the code (26 November 2026):
 - Identifiers: **`com.daleth.aac`** on both stores (`app.json`: `ios.bundleIdentifier`,
   `android.package`). They can never change once an app is published.
 - Build profiles in `eas.json`: `development` (a test app with the developer menu), `preview` (a
-  release-like app shared by link: TestFlight internal / an Android `.apk`), `production` (for the
-  stores, build number raised by EAS itself).
+  release-like app installed by link: on iPhone / iPad only on devices registered first; an Android
+  `.apk`), `production` (for the stores and TestFlight, build number raised by EAS itself).
 - A build without the server's address or the purchase key stops at once
   (`scripts/check-store-env.js`, run by EAS before installing).
 - Payment through RevenueCat (`src/lib/purchases.ts`), written to the database by the server
@@ -46,6 +46,7 @@ slow, and it cannot be undone.
   number, but before the app can be public Google asks for a **closed test with at least 12 testers
   who stay in it 14 days in a row** (accounts opened since 13 November 2023; Play Console → Test and
   release). An organisation account skips that test but needs a D-U-N-S number in the business's name.
+  Chosen: **personal** (owner's decision, 27 November 2026), opened after the Apple app.
 
 Done: the Apple Developer account, as an individual (27 November 2026).
 
@@ -88,6 +89,22 @@ npm run build:preview
 EAS asks to create the iOS certificates and the Android signing key: answer yes, it keeps them
 (**never lose the Android key**: Google Play App Signing keeps a copy once the first build is uploaded).
 iPads and iPhones that test a `preview` build must be registered first: `npx eas-cli device:create`.
+`build:preview` builds both apps, so it stops while the Android purchase key is missing.
+
+**Apple only, through TestFlight** (no device to register; the testers install Apple's TestFlight
+app): build the store version, then send it to App Store Connect:
+
+```bash
+npm run build:ios
+```
+
+```bash
+npx eas-cli submit -p ios --latest
+```
+
+A few minutes after Apple has processed it, the build appears in App Store Connect → the app →
+TestFlight: add the testers there (people of App Store Connect → Users and Access at once; others in
+an external group, after Apple's short beta review).
 
 ## 3. The store records
 

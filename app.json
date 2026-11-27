@@ -65,6 +65,12 @@
       "expo-web-browser",
       "expo-apple-authentication",
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "71480ebf-72da-4250-99db-2bd9a539483b"
+      }
+    },
+    "owner": "daleth.lb"
   }
 }

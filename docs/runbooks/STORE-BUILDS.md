@@ -52,7 +52,11 @@ Done: the Apple Developer account, as an individual (27 November 2026).
 
 ## 2. First build
 
-On a computer with Node 22:
+Done (27 November 2026): the Expo project `empower-communication` of the organisation `daleth.lb`
+(`app.json`: `owner`, `extra.eas.projectId`). The steps below are for a new computer or a new project.
+
+On a computer with Node 22 or newer (on Windows, if PowerShell says "running scripts is disabled",
+run `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned` once):
 
 ```bash
 npm ci
@@ -67,7 +71,11 @@ npx eas-cli init
 ```
 
 `init` links the project to your Expo account and writes its id in `app.json`
-(`extra.eas.projectId`): commit that change.
+(`extra.eas.projectId`, and `owner` when an organisation owns it): commit those two lines only.
+Choose the organisation as the owner, not a person's account. The project must be named like
+`slug` (`empower-communication`): one created on expo.dev under another name cannot be linked.
+`init` may also write the Android permissions it computed from the plugins: leave them out, the
+plugins add them at each build.
 
 In **expo.dev → the project → Environment variables**, for `preview` and `production`:
 

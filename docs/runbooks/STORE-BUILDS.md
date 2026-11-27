@@ -26,7 +26,10 @@ What is already done in the code (26 November 2026):
 | **RevenueCat** (revenuecat.com) | free up to 2,500 $ of monthly revenue, then 1 % | Purchases on both stores, renewals, refunds |
 
 Apple and Google also need the company's **bank account and tax forms** before anything can be
-sold (App Store Connect → Business; Play Console → Payments profile).
+sold (App Store Connect → Business: the **Paid Apps agreement**, also needed to test purchases in the
+Sandbox; Play Console → Payments profile).
+
+Done: the Apple Developer account (27 November 2026).
 
 ## 2. First build
 
@@ -75,6 +78,13 @@ iPads and iPhones that test a `preview` build must be registered first: `npx eas
 requires a parental gate before any purchase or link out (the caregiver code is that gate: every
 purchase screen is behind it) and no third-party analytics or advertising (RevenueCat is for
 purchases only; the app's own figures are off unless the family agrees).
+
+**Sign in with Apple** (the button is shown on iPhone and iPad only, `AuthScreen.tsx`): nothing to
+create at Apple, `usesAppleSignIn` in `app.json` makes EAS turn the capability on for `com.daleth.aac`
+at the first build. In Supabase → Authentication → Providers → Apple: switch it on and put
+`com.daleth.aac` in "Client IDs". The other fields (Services ID, key file, secret) stay empty: they
+are for signing in in a browser, which the app does not offer (that secret expires every 6 months).
+While the provider is off, the button does not show (`signInMethods`).
 
 **Google Play Console** → Create app: "Daleth AAC", app, free (the subscription is inside), then
 the Data safety form, the target audience (choose "parents", not "children" if the app is meant to

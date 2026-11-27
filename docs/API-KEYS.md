@@ -44,7 +44,7 @@ The three functions above are called by the database only, with a key the databa
 | Service | What it does | Key | Where it goes | Today |
 |---|---|---|---|---|
 | **Google sign-in** | "Continue with Google" | Client ID + client secret | Supabase → Authentication → Providers → Google | Done. Publish the "Audience" in Google Cloud before real families |
-| **Apple sign-in** | "Continue with Apple" (Apple asks for it when another sign-in such as Google is offered on iPhone/iPad) | Apple Developer account, Services ID, key file (.p8) | Supabase → Providers → Apple | Prepared in the app, waits for the Apple Developer account |
+| **Apple sign-in** | "Continue with Apple" (Apple asks for it when another sign-in such as Google is offered on iPhone/iPad) | iPhone and iPad only (the app shows the button nowhere else): no key, only the bundle ID `com.daleth.aac` as "Client IDs". A Services ID and a key file (.p8) only if it is one day offered in a browser (that secret expires every 6 months) | Supabase → Providers → Apple | Apple Developer account opened (27 November 2026); to switch on with the first iPhone build (`docs/runbooks/STORE-BUILDS.md`, section 3) |
 | **Phone sign-in (SMS)** | Sign in with a phone number | An SMS provider (Twilio or similar), paid per message | Supabase → Providers → Phone | Off. Optional |
 
 ## 3. AI: switched off
@@ -113,7 +113,7 @@ day, only people who look after a child, and only the topic, the photo or the dr
 
 | Service | What it is for | Today |
 |---|---|---|
-| **Apple Developer Program** (yearly fee) | Publishing on the App Store, Apple sign-in, test builds on iPads | To open |
+| **Apple Developer Program** (yearly fee) | Publishing on the App Store, Apple sign-in, test builds on iPads | Opened 27 November 2026; next steps in `docs/runbooks/STORE-BUILDS.md` |
 | **Google Play Console** (one-time fee) | Publishing on Android | To open |
 | **Expo / EAS account** | Builds the iOS and Android apps in the cloud (`eas.json`: development, preview, production) | To create; then `npx eas-cli init` (`docs/runbooks/STORE-BUILDS.md`) |
 | **RevenueCat** | Purchases on both stores (free up to 2,500 $ of monthly revenue, then 1 %) | To create once the stores' accounts exist |

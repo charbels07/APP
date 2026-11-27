@@ -251,7 +251,7 @@
   too), `APP_NAME`, the texts, the noon reminder's title (`push_words`). One version number: `app.json` =
   `package.json` (`appIdentity.test.ts`). The store identifiers are `com.daleth.aac` on both
   stores (owner's choice, 26 November 2026; never change them once published); builds go through `eas.json`
-  (development / preview / production, `docs/runbooks/STORE-BUILDS.md`). Support e-mail `daleth.contact@gmail.com`, company "DALETH", Beirut, Lebanon. The Cloudflare
+  (development / preview / production, `docs/runbooks/STORE-BUILDS.md`). Support e-mail `daleth.contact@gmail.com`, company "DALETH", Beirut, Lebanon (a sole proprietorship, مؤسسة فردية, in the owner's name: the Apple account is an individual one, so the App Store shows the owner's name as the seller; `STORE-BUILDS.md`). The Cloudflare
   project is `daleth-aac` (`wrangler.jsonc` must match the dashboard's name; web address
   `daleth-aac.sarrouhcharbel.workers.dev`). Kept on purpose (technical names, renaming them breaks something): the app's `scheme` `empowercommunication` and `slug` (Supabase redirect URLs), the backup
   names `empower-db-*` / `empower-backups`. New files are labelled `daleth-board` / `daleth-aac/export-1`; a board file

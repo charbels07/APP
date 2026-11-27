@@ -13,7 +13,7 @@ Version `[number]`, `[date]`.
 
 Daleth AAC is an app that helps children who cannot rely on speech to communicate
 with pictures and a voice (augmentative and alternative communication, "AAC"). It is published by
-DALETH, `[legal form]`, Beirut, Lebanon, `[registration number]` ("we").
+`[owner's full name]`, trading as DALETH (sole proprietorship, مؤسسة فردية), Beirut, Lebanon, `[registration number]` ("we").
 
 The app is sold in the App Store and Google Play only. A web version of the app is open today to
 chosen testers; it is not offered to families. *Reviewer: say whether the testers' web version

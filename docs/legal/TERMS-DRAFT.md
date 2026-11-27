@@ -7,7 +7,7 @@
 
 # Terms of use — Daleth AAC
 
-Version `[number]`, `[date]`. Published by DALETH, Beirut, Lebanon ("we").
+Version `[number]`, `[date]`. Published by `[owner's full name]`, trading as DALETH (sole proprietorship, مؤسسة فردية), Beirut, Lebanon ("we").
 
 ## 1. What the app is
 

@@ -20,8 +20,8 @@ What is already done in the code (26 November 2026):
 
 | Account | Cost | For |
 |---|---|---|
-| **Apple Developer Program** (as an organisation: DALETH, needs a D-U-N-S number) | 99 $ a year | App Store, TestFlight, in-app purchases, Sign in with Apple |
-| **Google Play Console** (organisation) | 25 $ once | Google Play, internal testing, Play billing |
+| **Apple Developer Program** (as an individual, in the owner's name: see below) | 99 $ a year | App Store, TestFlight, in-app purchases, Sign in with Apple |
+| **Google Play Console** (personal or organisation: see below) | 25 $ once | Google Play, internal testing, Play billing |
 | **Expo** (expo.dev), free plan to start | free (paid plans build faster) | Builds the apps in the cloud (`eas build`) and sends them to the stores (`eas submit`) |
 | **RevenueCat** (revenuecat.com) | free up to 2,500 $ of monthly revenue, then 1 % | Purchases on both stores, renewals, refunds |
 
@@ -29,7 +29,25 @@ Apple and Google also need the company's **bank account and tax forms** before a
 sold (App Store Connect → Business: the **Paid Apps agreement**, also needed to test purchases in the
 Sandbox; Play Console → Payments profile).
 
-Done: the Apple Developer account (27 November 2026).
+**The owner's name as the seller** (owner's decision, 27 November 2026): DALETH is opened as a
+sole proprietorship in Lebanon (مؤسسة فردية) in the owner's own name. Apple enrols a sole
+proprietorship as an individual (it does not accept trade names), so the App Store shows the
+owner's legal name as the seller, not "DALETH". If DALETH later becomes a company with a D-U-N-S
+number, Apple can move the account to an organisation on request (Contact us → Account updates):
+slow, and it cannot be undone.
+
+- **Small Business Program** (App Store Connect → Business): apply once the agreement is signed:
+  Apple then keeps 15 % instead of 30 % below 1 million $ of yearly sales.
+- **EU trader status** (App Store Connect → Business → Digital Services Act): an app that is sold is
+  a "trader". To be on the App Store in the EU, an individual must give an address (a P.O. box is
+  accepted), a phone number and an e-mail that Apple **shows on the app's page there**: use the
+  business's address and phone, not the home's. Without it the app is not shown in the EU.
+- **Google Play, personal or organisation**: a personal account (like Apple's) needs no D-U-N-S
+  number, but before the app can be public Google asks for a **closed test with at least 12 testers
+  who stay in it 14 days in a row** (accounts opened since 13 November 2023; Play Console → Test and
+  release). An organisation account skips that test but needs a D-U-N-S number in the business's name.
+
+Done: the Apple Developer account, as an individual (27 November 2026).
 
 ## 2. First build
 

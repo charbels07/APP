@@ -8,7 +8,7 @@
 
 | | |
 |---|---|
-| Controller | DALETH, Beirut, Lebanon, `[registration number]` |
+| Controller | `[owner's full name]`, trading as DALETH (sole proprietorship, مؤسسة فردية), Beirut, Lebanon, `[registration number]` |
 | Representative (if the company is outside the EU) | `[name]` |
 | Data protection officer | `[DPO]`, `[DPO e-mail]` |
 | Contact for requests | `daleth.contact@gmail.com` |

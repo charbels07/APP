@@ -53,7 +53,10 @@ Done: the Apple Developer account, as an individual (27 November 2026).
 ## 2. First build
 
 Done (27 November 2026): the Expo project `empower-communication` of the organisation `daleth.lb`
-(`app.json`: `owner`, `extra.eas.projectId`). The steps below are for a new computer or a new project.
+(`app.json`: `owner`, `extra.eas.projectId`), with its variables `EXPO_PUBLIC_SUPABASE_URL` and
+`EXPO_PUBLIC_SUPABASE_ANON_KEY` (publishable key) for preview and production. Still to add:
+`EXPO_PUBLIC_REVENUECAT_IOS_KEY` (after Apple), then the Android key. The steps below are for a new
+computer or a new project.
 
 On a computer with Node 22 or newer (on Windows, if PowerShell says "running scripts is disabled",
 run `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned` once):

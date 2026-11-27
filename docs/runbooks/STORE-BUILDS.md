@@ -82,7 +82,7 @@ In **expo.dev → the project → Environment variables**, for `preview` and `pr
 | Name | Value | Visibility |
 |---|---|---|
 | `EXPO_PUBLIC_SUPABASE_URL` | the project's address (Supabase → Project Settings → API) | Plain text |
-| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | the public "anon" key | Plain text |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | the **publishable** key (`sb_publishable_…`, Supabase → Project Settings → API Keys), the same as the web version's; never the legacy "anon" key (`docs/runbooks/INCIDENT-RESPONSE.md`) | Plain text |
 | `EXPO_PUBLIC_REVENUECAT_IOS_KEY` | RevenueCat → Project → API keys → the **Apple** public key (`appl_…`) | Plain text |
 | `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` | the **Google** public key (`goog_…`) | Plain text |
 

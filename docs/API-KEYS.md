@@ -115,7 +115,7 @@ day, only people who look after a child, and only the topic, the photo or the dr
 |---|---|---|
 | **Apple Developer Program** (yearly fee) | Publishing on the App Store, Apple sign-in, test builds on iPads | Opened 27 November 2026; next steps in `docs/runbooks/STORE-BUILDS.md` |
 | **Google Play Console** (one-time fee) | Publishing on Android | To open |
-| **Expo / EAS account** | Builds the iOS and Android apps in the cloud (`eas.json`: development, preview, production) | To create; then `npx eas-cli init` (`docs/runbooks/STORE-BUILDS.md`) |
+| **Expo / EAS account** | Builds the iOS and Android apps in the cloud (`eas.json`: development, preview, production) | Done (27 November 2026): organisation `daleth.lb`, project `empower-communication`. Next: its environment variables (`docs/runbooks/STORE-BUILDS.md`) |
 | **RevenueCat** | Purchases on both stores (free up to 2,500 $ of monthly revenue, then 1 %) | To create once the stores' accounts exist |
 
 ## 7. Not in the app yet, would need a key if added
